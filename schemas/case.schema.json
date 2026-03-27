@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TiDB Flaky Case",
+  "type": "object",
+  "required": [
+    "id",
+    "source_pr",
+    "pr_merged_at",
+    "test",
+    "symptoms",
+    "failure_signature",
+    "root_cause_categories",
+    "review_smells",
+    "fix_pattern"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^pr-[0-9]+(-[0-9]+)?$"
+    },
+    "source_pr": {
+      "type": "object",
+      "required": ["number", "url"],
+      "properties": {
+        "number": {"type": "integer", "minimum": 1},
+        "url": {"type": "string", "format": "uri"}
+      },
+      "additionalProperties": true
+    },
+    "pr_merged_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "test": {
+      "type": "object",
+      "required": ["type", "path", "name"],
+      "properties": {
+        "type": {"type": "string", "enum": ["unit", "integration", "realtikv"]},
+        "path": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "symptoms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "failure_signature": {
+      "anyOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "object", "minProperties": 1, "additionalProperties": true}
+      ]
+    },
+    "root_cause_categories": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$"}
+    },
+    "review_smells": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$"}
+    },
+    "fix_pattern": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repro_cmds": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "evidence_links": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "analysis": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}
+
