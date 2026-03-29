@@ -22,7 +22,6 @@ class PRIndexItem:
     pr_url: str
     title: str
     triage_status: str
-    triage_notes: str
 
     def to_json(self) -> str:
         return json.dumps(
@@ -31,7 +30,6 @@ class PRIndexItem:
                 "pr_number": self.pr_number,
                 "pr_url": self.pr_url,
                 "title": self.title,
-                "triage_notes": self.triage_notes,
                 "triage_status": self.triage_status,
             },
             ensure_ascii=False,
@@ -217,27 +215,26 @@ def _read_jsonl(path: Path) -> List[dict]:
     return items
 
 
-def _load_existing_triage(*, root: Path, year: int) -> Dict[int, Tuple[str, str]]:
+def _load_existing_triage(*, root: Path, year: int) -> Dict[int, str]:
     year_dir = root / "backlog" / "pr_index" / str(year)
     if not year_dir.exists():
         return {}
-    triage: Dict[int, Tuple[str, str]] = {}
+    triage: Dict[int, str] = {}
     for path in sorted(year_dir.glob("*.jsonl")):
         for obj in _read_jsonl(path):
             pr_number = obj.get("pr_number")
             if not isinstance(pr_number, int):
                 continue
             status = obj.get("triage_status")
-            notes = obj.get("triage_notes")
-            if isinstance(status, str) and isinstance(notes, str):
-                triage[pr_number] = (status, notes)
+            if isinstance(status, str):
+                triage[pr_number] = status
     return triage
 
 
 def _gen_year_items(
     *,
     year: int,
-    existing_triage: Dict[int, Tuple[str, str]],
+    existing_triage: Dict[int, str],
     base_branch: str,
     tz_name: str,
 ) -> List[PRIndexItem]:
@@ -260,7 +257,7 @@ def _gen_year_items(
             if not (start_local <= merged_at_local < next_local):
                 continue
 
-            triage_status, triage_notes = existing_triage.get(pr_number, ("unreviewed", ""))
+            triage_status = existing_triage.get(pr_number, "unreviewed")
             items.append(
                 PRIndexItem(
                     pr_merged_at=merged_at_local.isoformat(),
@@ -268,7 +265,6 @@ def _gen_year_items(
                     pr_url=url,
                     title=title,
                     triage_status=triage_status,
-                    triage_notes=triage_notes,
                 )
             )
 
