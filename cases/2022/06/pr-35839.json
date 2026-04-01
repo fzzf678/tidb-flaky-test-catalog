@@ -1,0 +1,46 @@
+{
+  "id": "pr-35839",
+  "source_pr": {
+    "number": 35839,
+    "url": "https://github.com/pingcap/tidb/pull/35839",
+    "title": "executor: fix a nil point when @@tidb_enable_collect_execution_info is off and cop cache is on",
+    "body": "\r\n\r\n<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #35829\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nWhen `@@tidb_enable_collect_execution_info` is off,  the `resp.detail` is nil\r\nAnd when cop cache code use it in `resp.detail.TimeDetail.ProcessTime`, tidb get a nil point panic.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [X] Integration test\r\nRun the test case with real tikv\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nFix a nil point panic when @@tidb_enable_collect_execution_info is off and cop cache feature is on. This combination is not the default setting, so most of the time a user would not meet it.\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-06-30T16:02:39+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "tests/realtikvtest/sessiontest/session_test.go",
+    "name": "session_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select /*+ use_index_merge(t1, primary, t1a) */ * from t1 where id < 2 or a > 4 order by a\").Check(testkit.Rows(\"1 1 1 1 1\", \"5 5 5 5 5\")) (tests/realtikvtest/sessiontest/session_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select /*+ use_index_merge(t1, primary, t1a) */ * from t1 where id < 2 or a > 4 order by a\").Check(testkit.Rows(\"1 1 1 1 1\", \"5 5 5 5 5\")) (tests/realtikvtest/sessiontest/session_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/35839",
+    "https://github.com/pingcap/tidb/pull/35839.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/35839.patch",
+  "changed_files": [
+    "store/copr/coprocessor.go",
+    "tests/realtikvtest/sessiontest/session_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select /*+ use_index_merge(t1, primary, t1a) */ * from t1 where id < 2 or a > 4 order by a\").Check(testkit.Rows(\"1 1 1 1 1\", \"5 5 5 5 5\")) (tests/realtikvtest/sessiontest/session_test.go)",
+      "files: store/copr/coprocessor.go, tests/realtikvtest/sessiontest/session_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix a nil point when @@tidb_enable_collect_execution_info is off and cop cache is on\nPR url: https://github.com/pingcap/tidb/pull/35839\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select /*+ use_index_merge(t1, primary, t1a) */ * from t1 where id < 2 or a > 4 order by a\").Check(testkit.Rows(\"1 1 1 1 1\", \"5 5 5 5 5\")) (tests/realtikvtest/sessiontest/session_test.go)\nChanged files (2): store/copr/coprocessor.go, tests/realtikvtest/sessiontest/session_test.go\nPatch url: https://github.com/pingcap/tidb/pull/35839.patch\nPicked test: type=realtikv path=tests/realtikvtest/sessiontest/session_test.go name=session_test"
+}

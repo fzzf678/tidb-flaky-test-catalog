@@ -1,0 +1,80 @@
+{
+  "id": "pr-39041",
+  "source_pr": {
+    "number": 39041,
+    "url": "https://github.com/pingcap/tidb/pull/39041",
+    "title": "*: separate auto_increment ID allocator from _tidb_rowid allocator when AUTO_ID_CACHE=1",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #982\r\n\r\nProblem Summary:\r\n\r\nIn the past, both _row_id and auto_increment_id share the same allocator, so the behaviour is not compatible with MySQL.\r\nWe try to solve it in the past https://github.com/pingcap/tidb/pull/20708/, but that increase the risk of been incompatible to the old TiDB. So we mark it as won't fix. (I have to mention that clustered index relieve some of the cases, and clustered index is enabled by default now, through it does not solve all the issues)\r\n\r\nNow we are trying to introduce a MySQL-compatible mode https://github.com/pingcap/tidb/pull/38449, this is a good time to fix the behaviour. With table option `AUTO_ID_CACHE 1`, the new implementation is used.\r\n\r\n### What is changed and how it works?\r\n\r\nSeperate auto_increment ID allocator from _tidb_rowid allocator oinly when table option AUTO_ID_CACHE=1 is used.\r\n\r\n1. `create table ... AUTO_ID_CACHE 1 ...` decides whether to use `SepAutoInc` by checking  AutoIdCache and Version in model.TableInfo\r\n2. Correct the call side of RowID and AutoIncrementID\r\n3. If `Allocators.Get()` find `SepAutoInc` is not set, it changes `AutoIncrementID` to `RowID`; otherwise `AutoIncrementID` is used\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [X] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-11-29T20:20:00+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_integration_test.go",
+    "name": "db_integration_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select (a & 3) from t order by 1;\").Check(testkit.Rows(\"1\", \"2\")) (ddl/db_integration_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select (a & 3) from t order by 1;\").Check(testkit.Rows(\"1\", \"2\")) (ddl/db_integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/39041",
+    "https://github.com/pingcap/tidb/pull/39041.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/39041.patch",
+  "changed_files": [
+    "autoid_service/BUILD.bazel",
+    "autoid_service/autoid.go",
+    "br/pkg/lightning/backend/kv/allocator.go",
+    "ddl/column.go",
+    "ddl/db_integration_test.go",
+    "ddl/db_test.go",
+    "ddl/ddl_api.go",
+    "ddl/ddl_worker.go",
+    "ddl/multi_schema_change_test.go",
+    "ddl/partition.go",
+    "ddl/table.go",
+    "ddl/table_test.go",
+    "executor/autoidtest/autoid_test.go",
+    "executor/executor.go",
+    "executor/executor_test.go",
+    "executor/infoschema_reader.go",
+    "executor/insert_common.go",
+    "executor/issuetest/executor_issue_test.go",
+    "executor/seqtest/seq_executor_test.go",
+    "executor/write.go",
+    "infoschema/builder.go",
+    "infoschema/infoschema.go",
+    "infoschema/tables.go",
+    "meta/autoid/autoid.go",
+    "meta/autoid/autoid_service.go",
+    "meta/meta_autoid.go",
+    "parser/model/model.go",
+    "session/BUILD.bazel",
+    "session/schema_amender_test.go",
+    "table/table.go",
+    "table/tables/tables.go",
+    "table/tables/tables_test.go",
+    "table/temptable/BUILD.bazel",
+    "table/temptable/ddl.go",
+    "table/temptable/main_test.go",
+    "telemetry/data_feature_usage_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select (a & 3) from t order by 1;\").Check(testkit.Rows(\"1\", \"2\")) (ddl/db_integration_test.go)",
+      "files: autoid_service/BUILD.bazel, autoid_service/autoid.go, br/pkg/backup/client.go, br/pkg/lightning/backend/kv/allocator.go, ddl/column.go, ddl/db_integration_test.go, ddl/db_test.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/multi_schema_change_test.go, ddl/partition.go, ddl/table.go, ddl/table_test.go, executor/autoidtest/autoid_test.go, executor/executor.go, executor/executor_issue_test.go, executor/executor_test.go, executor/infoschema_reader.go, executor/insert_common.go, executor/seqtest/seq_executor_test.go, executor/write.go, infoschema/builder.go, infoschema/infoschema.go, infoschema/tables.go, meta/autoid/autoid.go, meta/autoid/autoid_service.go, meta/autoid/memid.go, meta/meta_autoid.go, parser/model/model.go, session/BUILD.bazel, session/schema_amender_test.go, table/table.go, table/tables/tables.go, table/tables/tables_test.go, table/temptable/BUILD.bazel, table/temptable/ddl.go, table/temptable/main_test.go, telemetry/data_feature_usage_test.go"
+    ]
+  },
+  "analysis": "PR title: *: separate auto_increment ID allocator from _tidb_rowid allocator when AUTO_ID_CACHE=1\nPR url: https://github.com/pingcap/tidb/pull/39041\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select (a & 3) from t order by 1;\").Check(testkit.Rows(\"1\", \"2\")) (ddl/db_integration_test.go)\nChanged files (36): autoid_service/BUILD.bazel, autoid_service/autoid.go, br/pkg/lightning/backend/kv/allocator.go, ddl/column.go, ddl/db_integration_test.go, ddl/db_test.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/multi_schema_change_test.go, ddl/partition.go, ddl/table.go, ddl/table_test.go, executor/autoidtest/autoid_test.go, executor/executor.go, executor/executor_test.go, executor/infoschema_reader.go, executor/insert_common.go, executor/issuetest/executor_issue_test.go, executor/seqtest/seq_executor_test.go, executor/write.go, infoschema/builder.go, infoschema/infoschema.go, infoschema/tables.go, meta/autoid/autoid.go, meta/autoid/autoid_service.go, meta/meta_autoid.go, parser/model/model.go, session/BUILD.bazel, session/schema_amender_test.go, table/table.go, table/tables/tables.go, table/tables/tables_test.go, table/temptable/BUILD.bazel, table/temptable/ddl.go, table/temptable/main_test.go, telemetry/data_feature_usage_test.go\nPatch url: https://github.com/pingcap/tidb/pull/39041.patch\nPicked test: type=unit path=ddl/db_integration_test.go name=db_integration_test"
+}

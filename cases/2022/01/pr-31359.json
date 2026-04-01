@@ -1,0 +1,46 @@
+{
+  "id": "pr-31359",
+  "source_pr": {
+    "number": 31359,
+    "url": "https://github.com/pingcap/tidb/pull/31359",
+    "title": "executor: make handles be ordered when build table reader for IndexMerge",
+    "body": "Signed-off-by: guo-shaoge <shaoge1994@163.com>\r\n\r\n<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #31295\r\n\r\nProblem Summary: \r\n\r\n\r\n    DROP TABLE IF EXISTS tab2;\r\n    CREATE TABLE tab2(pk INTEGER PRIMARY KEY, col0 INTEGER, col1 FLOAT, col2 TEXT, col3 INTEGER, col4 FLOAT, col5 TEXT);\r\n    CREATE INDEX idx_tab2_0 ON tab2 (col0 DESC,col3 DESC);\r\n    CREATE UNIQUE INDEX idx_tab2_3 ON tab2 (col4,col0 DESC);\r\n    CREATE INDEX idx_tab2_4 ON tab2 (col3,col1 DESC);\r\n    INSERT INTO tab2 VALUES(0,146,632.63,'shwwd',703,412.47,'xsppr');\r\n    INSERT INTO tab2 VALUES(1,81,536.29,'trhdh',49,726.3,'chuxv');\r\n    INSERT INTO tab2 VALUES(2,311,541.72,'txrvb',493,581.92,'xtrra');\r\n    INSERT INTO tab2 VALUES(3,669,293.27,'vcyum',862,415.14,'nbutk');\r\n    INSERT INTO tab2 VALUES(4,681,49.46,'odzhp',106,324.65,'deudp');\r\n    INSERT INTO tab2 VALUES(5,319,769.65,'aeqln',855,197.9,'apipa');\r\n    INSERT INTO tab2 VALUES(6,610,302.62,'bixap',184,840.31,'vggit');\r\n    INSERT INTO tab2 VALUES(7,253,453.21,'gjccm',107,104.5,'lvunv');\r\n    SPLIT TABLE tab2 BY (5);\r\n    SELECT /*+ use_index_merge(tab2) */ pk FROM tab2 WHERE (col4 > 565.89 OR col0 > 68 ) and col0 > 10;\r\n\r\nBecause we split `tab2` by 5, so we now have two region.\r\n1. region1: `range: (-inf, 5)`\r\n2. region2: `range: [5, +inf)`\r\n\r\nThe last `SELECT` give errors because we only got `region2` when sending cop request. Actually we need `region1` and `region2` both.\r\n\r\nWhy got the wrong region: `(*RegionCache) SplitKeyRangesByLocations` is responsible for region division using kvRange. If kvRanges are:\r\n\r\n    kvRanges[0]:        [6, 8)\r\n    kvRanges[1]: [4,    6)\r\n\r\nThis [if branch](https://github.com/pingcap/tidb/blob/9cc1b169f9080b34eda8468d7a974d2a387673dd/store/copr/region_cache.go#L84) will make `region1` not be returned.\r\n(Looks like `(*RegionCache) SplitKeyRangesByLocations` requires the kvRanges should be ordered by startKey, otherwise we may got wrong region.)\r\n\r\n### What is changed and how it works?\r\nOrder `handles` when build table reader for IndexMerge, which will fix this problem. Also it's good for performance because less cop rps is needed.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nexecutor: make handles be ordered when build table reader for IndexMerge\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-01-06T12:44:37+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/index_merge_reader_test.go",
+    "name": "index_merge_reader_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"SELECT /*+ use_index_merge(tab2) */ pk FROM tab2 WHERE (col4 > 565.89 OR col0 > 68 ) and col0 > 10 order by 1;\").Check(testkit.Rows(\"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\")) (executor/index_merge_reader_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"SELECT /*+ use_index_merge(tab2) */ pk FROM tab2 WHERE (col4 > 565.89 OR col0 > 68 ) and col0 > 10 order by 1;\").Check(testkit.Rows(\"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\")) (executor/index_merge_reader_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/31359",
+    "https://github.com/pingcap/tidb/pull/31359.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/31359.patch",
+  "changed_files": [
+    "executor/index_merge_reader.go",
+    "executor/index_merge_reader_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"SELECT /*+ use_index_merge(tab2) */ pk FROM tab2 WHERE (col4 > 565.89 OR col0 > 68 ) and col0 > 10 order by 1;\").Check(testkit.Rows(\"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\")) (executor/index_merge_reader_test.go)",
+      "files: executor/index_merge_reader.go, executor/index_merge_reader_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: make handles be ordered when build table reader for IndexMerge\nPR url: https://github.com/pingcap/tidb/pull/31359\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"SELECT /*+ use_index_merge(tab2) */ pk FROM tab2 WHERE (col4 > 565.89 OR col0 > 68 ) and col0 > 10 order by 1;\").Check(testkit.Rows(\"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\")) (executor/index_merge_reader_test.go)\nChanged files (2): executor/index_merge_reader.go, executor/index_merge_reader_test.go\nPatch url: https://github.com/pingcap/tidb/pull/31359.patch\nPicked test: type=unit path=executor/index_merge_reader_test.go name=index_merge_reader_test"
+}

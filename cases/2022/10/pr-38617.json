@@ -1,0 +1,48 @@
+{
+  "id": "pr-38617",
+  "source_pr": {
+    "number": 38617,
+    "url": "https://github.com/pingcap/tidb/pull/38617",
+    "title": "*: support auto_random on composite clustered primary key",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #38572\r\n\r\nProblem Summary: \r\n\r\n> For now, TiDB doesn't allow defining AUTO_RANDOM attribute on composite primary keys, even when the key is the clustered index:\r\n> \r\n> Sometimes defining a primary key is useful, for example, to match the requirement of partition keys, so we could relax this restriction.\r\n\r\n### What is changed and how it works?\r\n\r\nThis PR allows the AUTO_RANDOM attribute to be defined on the column that is the first column in a clustered composite primary key. For example, \r\n\r\n```sql\r\nmysql> create table t (a bigint auto_random, b int, primary key(a, b) clustered);\r\nQuery OK, 0 rows affected, 1 warning (0.03 sec)\r\n``` \r\n\r\nHowever, if the column is not the first column in a composite primary key, it still returns an error:\r\n\r\n```sql\r\nmysql> create table t (a bigint auto_random, b int, primary key(b, a) clustered);\r\nERROR 8216 (HY000): Invalid auto random: column 'a' must be the first column in primary key\r\n```\r\n\r\nThere are two reasons to impose such a restriction:\r\n\r\n- From the users' perspective, defining such a AUTO_RANDOM column is useless to eliminating the write hot spot, which is a key function of AUTO_RANDOM.\r\n- From the DB developers' perspective, AUTO_RANDOM is actually a table attribute. To relax this restriction, we need to add a field type flag like `auto_random_flag` to identify whether a column is AUTO_RANDOM, which means the more code changes.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nSupport defining AUTO_RANDOM on the first column in a composite clustered primary key.\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-10-27T10:45:57+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/ddl_test.go",
+    "name": "ddl_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select b from t order by b;\").Check(testkit.Rows(\"1\", \"2\")) (executor/ddl_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select b from t order by b;\").Check(testkit.Rows(\"1\", \"2\")) (executor/ddl_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/38617",
+    "https://github.com/pingcap/tidb/pull/38617.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/38617.patch",
+  "changed_files": [
+    "ddl/ddl_api.go",
+    "ddl/serial_test.go",
+    "executor/ddl_test.go",
+    "meta/autoid/errors.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select b from t order by b;\").Check(testkit.Rows(\"1\", \"2\")) (executor/ddl_test.go)",
+      "files: ddl/ddl_api.go, ddl/serial_test.go, executor/ddl_test.go, meta/autoid/errors.go"
+    ]
+  },
+  "analysis": "PR title: *: support auto_random on composite clustered primary key\nPR url: https://github.com/pingcap/tidb/pull/38617\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select b from t order by b;\").Check(testkit.Rows(\"1\", \"2\")) (executor/ddl_test.go)\nChanged files (4): ddl/ddl_api.go, ddl/serial_test.go, executor/ddl_test.go, meta/autoid/errors.go\nPatch url: https://github.com/pingcap/tidb/pull/38617.patch\nPicked test: type=unit path=executor/ddl_test.go name=ddl_test"
+}

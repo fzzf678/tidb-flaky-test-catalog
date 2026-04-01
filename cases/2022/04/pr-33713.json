@@ -1,0 +1,48 @@
+{
+  "id": "pr-33713",
+  "source_pr": {
+    "number": 33713,
+    "url": "https://github.com/pingcap/tidb/pull/33713",
+    "title": "executor: migrate test-infra to testify for executor_test.testSuite(6|8)",
+    "body": "Issue Number: close #33433 close #33434\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-04-06T11:34:31+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t order by a limit 3\").Check(testkit.Rows(\"0 0\", \"1 0\", \"2 0\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t order by a limit 3\").Check(testkit.Rows(\"0 0\", \"1 0\", \"2 0\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/33713",
+    "https://github.com/pingcap/tidb/pull/33713.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/33713.patch",
+  "changed_files": [
+    "executor/executor_legacy_test.go",
+    "executor/executor_test.go",
+    "executor/write_test.go",
+    "util/schemacmp/table_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t order by a limit 3\").Check(testkit.Rows(\"0 0\", \"1 0\", \"2 0\")) (executor/executor_test.go)",
+      "files: executor/executor_legacy_test.go, executor/executor_test.go, executor/write_test.go, util/schemacmp/table_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: migrate test-infra to testify for executor_test.testSuite(6|8)\nPR url: https://github.com/pingcap/tidb/pull/33713\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t order by a limit 3\").Check(testkit.Rows(\"0 0\", \"1 0\", \"2 0\")) (executor/executor_test.go)\nChanged files (4): executor/executor_legacy_test.go, executor/executor_test.go, executor/write_test.go, util/schemacmp/table_test.go\nPatch url: https://github.com/pingcap/tidb/pull/33713.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

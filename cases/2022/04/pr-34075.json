@@ -1,0 +1,52 @@
+{
+  "id": "pr-34075",
+  "source_pr": {
+    "number": 34075,
+    "url": "https://github.com/pingcap/tidb/pull/34075",
+    "title": "*: use global auto analyze ID in order to kill auto analyze globally",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #34076\r\n\r\nProblem Summary:\r\nCurrently the ID of auto analyze is fixed, which is incompatible with global kill feature.\r\n\r\n### What is changed and how it works?\r\n\r\nUse global auto analyze ID(serverID + fixed auto analyze ID). In this way we can support killing auto analyze globally(i.e., forward kill command to the instance running auto analyze).\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-04-20T17:58:03+08:00",
+  "test": {
+    "type": "unit",
+    "path": "bindinfo/bind_test.go",
+    "name": "bind_test"
+  },
+  "symptoms": [
+    "// only the first will actually do setSystemTimeZoneVariable, thus we can avoid data race."
+  ],
+  "failure_signature": "// only the first will actually do setSystemTimeZoneVariable, thus we can avoid data race.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: use global auto analyze ID in order to kill auto analyze globally",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/34075",
+    "https://github.com/pingcap/tidb/pull/34075.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/34075.patch",
+  "changed_files": [
+    "domain/domain.go",
+    "executor/analyze.go",
+    "planner/core/planbuilder.go",
+    "server/server.go",
+    "statistics/handle/handle.go",
+    "statistics/handle/handle_test.go",
+    "statistics/handle/update.go",
+    "util/processinfo.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: // only the first will actually do setSystemTimeZoneVariable, thus we can avoid data race.",
+      "files: bindinfo/bind_test.go, bindinfo/session_handle_test.go, domain/domain.go, domain/domain_test.go, executor/analyze.go, executor/executor_pkg_test.go, executor/explainfor_test.go, executor/infoschema_cluster_table_test.go, executor/prepared_test.go, executor/seqtest/prepared_test.go, infoschema/tables_test.go, planner/core/logical_plans.go, planner/core/planbuilder.go, server/server.go, statistics/handle/handle.go, statistics/handle/handle_test.go, statistics/handle/update.go, util/processinfo.go"
+    ]
+  },
+  "analysis": "PR title: *: use global auto analyze ID in order to kill auto analyze globally\nPR url: https://github.com/pingcap/tidb/pull/34075\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // only the first will actually do setSystemTimeZoneVariable, thus we can avoid data race.\nChanged files (8): domain/domain.go, executor/analyze.go, planner/core/planbuilder.go, server/server.go, statistics/handle/handle.go, statistics/handle/handle_test.go, statistics/handle/update.go, util/processinfo.go\nPatch url: https://github.com/pingcap/tidb/pull/34075.patch\nPicked test: type=unit path=bindinfo/bind_test.go name=bind_test"
+}

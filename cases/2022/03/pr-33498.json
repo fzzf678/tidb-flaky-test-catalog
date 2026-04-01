@@ -1,0 +1,51 @@
+{
+  "id": "pr-33498",
+  "source_pr": {
+    "number": 33498,
+    "url": "https://github.com/pingcap/tidb/pull/33498",
+    "title": "executor: support extractor for mem table region status",
+    "body": "Signed-off-by: yisaer <disxiaofei@163.com>\r\n\r\n<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/33348\r\n\r\nProblem Summary:\r\n\r\nSupport push down conditions `table_id` in selection for `tikv_region_status` memory table in order to avoid fetch all region status each time which may cause tidb OOM during importing data by lightning\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\nAs unit test couldn't test result due to having no pd, I manually tested result.\r\n\r\n```sql\r\nmysql> select * from information_schema.TIKV_REGION_STATUS where table_id = 19;\r\n+-----------+--------------------------------------+--------------------------------------+----------+---------+------------+----------+----------+------------+----------------+---------------+---------------+------------+------------------+------------------+-------------------------+---------------------------+\r\n| REGION_ID | START_KEY                            | END_KEY                              | TABLE_ID | DB_NAME | TABLE_NAME | IS_INDEX | INDEX_ID | INDEX_NAME | EPOCH_CONF_VER | EPOCH_VERSION | WRITTEN_BYTES | READ_BYTES | APPROXIMATE_SIZE | APPROXIMATE_KEYS | REPLICATIONSTATUS_STATE | REPLICATIONSTATUS_STATEID |\r\n+-----------+--------------------------------------+--------------------------------------+----------+---------+------------+----------+----------+------------+----------------+---------------+---------------+------------+------------------+------------------+-------------------------+---------------------------+\r\n|        20 | 7480000000000000FF1300000000000000F8 | 7480000000000000FF1500000000000000F8 |       19 | mysql   | help_topic |        1 |        1 | name       |              1 |            10 |             0 |          0 |                1 |                0 | NULL                    |                      NULL |\r\n|        20 | 7480000000000000FF1300000000000000F8 | 7480000000000000FF1500000000000000F8 |       19 | mysql   | help_topic |        0 |     NULL | NULL       |              1 |            10 |             0 |          0 |                1 |                0 | NULL                    |                      NULL |\r\n+-----------+--------------------------------------+--------------------------------------+----------+---------+------------+----------+----------+------------+----------------+---------------+---------------+------------+------------------+------------------+-------------------------+---------------------------+\r\n2 rows in set (0.01 sec)\r\n\r\nmysql> explain select * from information_schema.TIKV_REGION_STATUS where table_id = 19;\r\n+----------------+----------+------+--------------------------+------------------+\r\n| id             | estRows  | task | access object            | operator info    |\r\n+----------------+----------+------+--------------------------+------------------+\r\n| MemTableScan_5 | 10000.00 | root | table:TIKV_REGION_STATUS | table_id in {19} |\r\n+----------------+----------+------+--------------------------+------------------+\r\n1 row in set (0.00 sec)\r\n\r\nmysql> explain select * from information_schema.TIKV_REGION_STATUS where table_id >18 and table_id < 20;\r\n+----------------------+----------+------+--------------------------+------------------------------------+\r\n| id                   | estRows  | task | access object            | operator info                      |\r\n+----------------------+----------+------+--------------------------+------------------------------------+\r\n| Selection_5          | 8000.00  | root |                          | gt(Column#4, 18), lt(Column#4, 20) |\r\n| └─MemTableScan_6     | 10000.00 | root | table:TIKV_REGION_STATUS |                                    |\r\n+----------------------+----------+------+--------------------------+------------------------------------+\r\n2 rows in set (0.00 sec)\r\n\r\nmysql> select * from information_schema.TIKV_REGION_STATUS where table_id >18 and table_id < 20;\r\n+-----------+--------------------------------------+--------------------------------------+----------+---------+------------+----------+----------+------------+----------------+---------------+---------------+------------+------------------+------------------+-------------------------+---------------------------+\r\n| REGION_ID | START_KEY                            | END_KEY                              | TABLE_ID | DB_NAME | TABLE_NAME | IS_INDEX | INDEX_ID | INDEX_NAME | EPOCH_CONF_VER | EPOCH_VERSION | WRITTEN_BYTES | READ_BYTES | APPROXIMATE_SIZE | APPROXIMATE_KEYS | REPLICATIONSTATUS_STATE | REPLICATIONSTATUS_STATEID |\r\n+-----------+--------------------------------------+--------------------------------------+----------+---------+------------+----------+----------+------------+----------------+---------------+---------------+------------+------------------+------------------+-------------------------+---------------------------+\r\n|        20 | 7480000000000000FF1300000000000000F8 | 7480000000000000FF1500000000000000F8 |       19 | mysql   | help_topic |        1 |        1 | name       |              1 |            10 |             0 |          0 |                1 |                0 | NULL                    |                      NULL |\r\n|        20 | 7480000000000000FF1300000000000000F8 | 7480000000000000FF1500000000000000F8 |       19 | mysql   | help_topic |        0 |     NULL | NULL       |              1 |            10 |             0 |          0 |                1 |                0 | NULL                    |                      NULL |\r\n+-----------+--------------------------------------+--------------------------------------+----------+---------+------------+----------+----------+------------+----------------+---------------+---------------+------------+------------------+------------------+-------------------------+---------------------------+\r\n2 rows in set (0.02 sec)\r\n```\r\n\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-03-30T16:12:29+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/memtable_predicate_extractor_test.go",
+    "name": "memtable_predicate_extractor_test"
+  },
+  "symptoms": [
+    "sort.Slice(tableids, func(i, j int) bool { (planner/core/memtable_predicate_extractor_test.go)"
+  ],
+  "failure_signature": "sort.Slice(tableids, func(i, j int) bool { (planner/core/memtable_predicate_extractor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/33498",
+    "https://github.com/pingcap/tidb/pull/33498.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/33498.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/infoschema_reader.go",
+    "planner/core/logical_plan_builder.go",
+    "planner/core/memtable_predicate_extractor.go",
+    "planner/core/memtable_predicate_extractor_test.go",
+    "store/helper/helper.go",
+    "util/pdapi/const.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Slice(tableids, func(i, j int) bool { (planner/core/memtable_predicate_extractor_test.go)",
+      "files: executor/builder.go, executor/infoschema_reader.go, planner/core/logical_plan_builder.go, planner/core/memtable_predicate_extractor.go, planner/core/memtable_predicate_extractor_test.go, store/helper/helper.go, util/pdapi/const.go"
+    ]
+  },
+  "analysis": "PR title: executor: support extractor for mem table region status\nPR url: https://github.com/pingcap/tidb/pull/33498\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Slice(tableids, func(i, j int) bool { (planner/core/memtable_predicate_extractor_test.go)\nChanged files (7): executor/builder.go, executor/infoschema_reader.go, planner/core/logical_plan_builder.go, planner/core/memtable_predicate_extractor.go, planner/core/memtable_predicate_extractor_test.go, store/helper/helper.go, util/pdapi/const.go\nPatch url: https://github.com/pingcap/tidb/pull/33498.patch\nPicked test: type=unit path=planner/core/memtable_predicate_extractor_test.go name=memtable_predicate_extractor_test"
+}

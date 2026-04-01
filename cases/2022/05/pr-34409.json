@@ -1,0 +1,120 @@
+{
+  "id": "pr-34409",
+  "source_pr": {
+    "number": 34409,
+    "url": "https://github.com/pingcap/tidb/pull/34409",
+    "title": "br: support PiTR feature",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref https://github.com/pingcap/tidb/issues/29501\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\nThe new feature: PiTR\r\n- Take a backup of key-value recored in TiKV If you  run `br log start ...`\r\n- Restore table and record from snapshot-ts to restore-ts if you run `br restore point ...`\r\n\r\n### Relative design/tests\r\n- [Specification](https://docs.google.com/document/d/1nr4Ubd5oKBK1mY6eqJtktTtaFvZ_6HxUZhMUQIuCCcw/edit#heading=h.m5g2iqfkn37v)\r\n- [Design](https://pingcap.feishu.cn/docs/doccnMvA0vKi8cnzIb2fAfUC6nd)\r\n- [Test plan](https://docs.google.com/document/d/1tFXxjMQzLnSKf-MQyga7eb1H8DRmivD2kl3PQxpCVzM/edit?n=FD_342_Feature_test_plan)\r\n  - [Issues record in development](https://docs.google.com/document/d/1pa-L1JV1W0fZRy44fAnSOEPjdSlxEVYZviDh7arTey8/edit#heading=h.ujsh83watf91)\r\n  - [Base test cases](https://docs.google.com/spreadsheets/d/1ryPfNryaFl9o2_We0oGzmGa3os2aus-cv-tqgBpses0/edit#gid=0)\r\n \r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [x] Performance regression: Consumes more CPU\r\n- [x] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [x] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nSupport the new feature of PiTR.\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-05-12T17:08:35+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/restore/rawkv_client_test.go",
+    "name": "rawkv_client_test"
+  },
+  "symptoms": [
+    "+gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA= | sort.Slice(fakeRawkvClient.kvs, func(i, j int) bool { (br/pkg/restore/rawkv_client_test.go)"
+  ],
+  "failure_signature": "+gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA= | sort.Slice(fakeRawkvClient.kvs, func(i, j int) bool { (br/pkg/restore/rawkv_client_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/34409",
+    "https://github.com/pingcap/tidb/pull/34409.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/34409.patch",
+  "changed_files": [
+    "br/cmd/br/backup.go",
+    "br/cmd/br/debug.go",
+    "br/cmd/br/main.go",
+    "br/cmd/br/restore.go",
+    "br/cmd/br/stream.go",
+    "br/pkg/backup/client.go",
+    "br/pkg/backup/client_test.go",
+    "br/pkg/backup/schema.go",
+    "br/pkg/backup/schema_test.go",
+    "br/pkg/conn/conn.go",
+    "br/pkg/conn/conn_test.go",
+    "br/pkg/errors/errors.go",
+    "br/pkg/glue/console_glue.go",
+    "br/pkg/glue/console_glue_test.go",
+    "br/pkg/gluetidb/glue.go",
+    "br/pkg/gluetikv/glue.go",
+    "br/pkg/logutil/logging.go",
+    "br/pkg/metautil/metafile.go",
+    "br/pkg/restore/client.go",
+    "br/pkg/restore/db_test.go",
+    "br/pkg/restore/import.go",
+    "br/pkg/restore/import_retry.go",
+    "br/pkg/restore/import_retry_test.go",
+    "br/pkg/restore/pipeline_items.go",
+    "br/pkg/restore/rawkv_client.go",
+    "br/pkg/restore/rawkv_client_test.go",
+    "br/pkg/restore/split.go",
+    "br/pkg/restore/split_test.go",
+    "br/pkg/restore/stream_metas.go",
+    "br/pkg/restore/stream_metas_test.go",
+    "br/pkg/restore/util.go",
+    "br/pkg/restore/util_test.go",
+    "br/pkg/storage/azblob.go",
+    "br/pkg/storage/flags.go",
+    "br/pkg/storage/gcs.go",
+    "br/pkg/storage/local.go",
+    "br/pkg/storage/local_test.go",
+    "br/pkg/storage/s3.go",
+    "br/pkg/storage/s3_test.go",
+    "br/pkg/storage/storage.go",
+    "br/pkg/stream/client.go",
+    "br/pkg/stream/decode_kv.go",
+    "br/pkg/stream/decode_kv_test.go",
+    "br/pkg/stream/integration_test.go",
+    "br/pkg/stream/meta_kv.go",
+    "br/pkg/stream/meta_kv_test.go",
+    "br/pkg/stream/models.go",
+    "br/pkg/stream/prefix_scanner.go",
+    "br/pkg/stream/rewrite_meta_rawkv.go",
+    "br/pkg/stream/rewrite_meta_rawkv_test.go",
+    "br/pkg/stream/stream_mgr.go",
+    "br/pkg/stream/stream_misc_test.go",
+    "br/pkg/stream/stream_status.go",
+    "br/pkg/summary/collector.go",
+    "br/pkg/summary/summary.go",
+    "br/pkg/task/backup.go",
+    "br/pkg/task/backup_raw.go",
+    "br/pkg/task/backup_test.go",
+    "br/pkg/task/common.go",
+    "br/pkg/task/restore.go",
+    "br/pkg/task/restore_raw.go",
+    "br/pkg/task/stream.go",
+    "br/pkg/task/stream_test.go",
+    "br/pkg/utils/backoff.go",
+    "br/pkg/utils/json.go",
+    "br/pkg/utils/safe_point.go",
+    "distsql/request_builder.go",
+    "errors.toml",
+    "executor/brie.go",
+    "go.mod",
+    "go.sum",
+    "meta/meta.go",
+    "meta/meta_test.go",
+    "parser/model/model.go",
+    "tablecodec/tablecodec.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: +gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA= | sort.Slice(fakeRawkvClient.kvs, func(i, j int) bool { (br/pkg/restore/rawkv_client_test.go)",
+      "files: br/cmd/br/backup.go, br/cmd/br/debug.go, br/cmd/br/main.go, br/cmd/br/restore.go, br/cmd/br/stream.go, br/pkg/backup/client.go, br/pkg/backup/client_test.go, br/pkg/backup/schema.go, br/pkg/backup/schema_test.go, br/pkg/conn/conn.go, br/pkg/conn/conn_test.go, br/pkg/errors/errors.go, br/pkg/glue/console_glue.go, br/pkg/glue/console_glue_test.go, br/pkg/gluetidb/glue.go, br/pkg/gluetikv/glue.go, br/pkg/logutil/logging.go, br/pkg/metautil/metafile.go, br/pkg/restore/client.go, br/pkg/restore/db_test.go, br/pkg/restore/import.go, br/pkg/restore/import_retry.go, br/pkg/restore/import_retry_test.go, br/pkg/restore/pipeline_items.go, br/pkg/restore/rawkv_client.go, br/pkg/restore/rawkv_client_test.go, br/pkg/restore/split.go, br/pkg/restore/split_test.go, br/pkg/restore/stream_metas.go, br/pkg/restore/stream_metas_test.go, br/pkg/restore/util.go, br/pkg/restore/util_test.go, br/pkg/storage/azblob.go, br/pkg/storage/flags.go, br/pkg/storage/gcs.go, br/pkg/storage/local.go, br/pkg/storage/local_test.go, br/pkg/storage/s3.go, br/pkg/storage/s3_test.go, br/pkg/storage/storage.go, br/pkg/stream/client.go, br/pkg/stream/decode_kv.go, br/pkg/stream/decode_kv_test.go, br/pkg/stream/integration_test.go, br/pkg/stream/meta_kv.go, br/pkg/stream/meta_kv_test.go, br/pkg/stream/models.go, br/pkg/stream/prefix_scanner.go, br/pkg/stream/rewrite_meta_rawkv.go, br/pkg/stream/rewrite_meta_rawkv_test.go, br/pkg/stream/stream_mgr.go, br/pkg/stream/stream_misc_test.go, br/pkg/stream/stream_status.go, br/pkg/summary/collector.go, br/pkg/summary/summary.go, br/pkg/task/backup.go, br/pkg/task/backup_raw.go, br/pkg/task/backup_test.go, br/pkg/task/common.go, br/pkg/task/restore.go, br/pkg/task/restore_raw.go, br/pkg/task/stream.go, br/pkg/task/stream_test.go, br/pkg/utils/backoff.go, br/pkg/utils/json.go, br/pkg/utils/safe_point.go, br/pkg/utils/schema.go, distsql/request_builder.go, errors.toml, executor/brie.go, go.mod, go.sum, meta/meta.go, meta/meta_test.go, parser/model/model.go, tablecodec/tablecodec.go"
+    ]
+  },
+  "analysis": "PR title: br: support PiTR feature\nPR url: https://github.com/pingcap/tidb/pull/34409\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: +gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA= | sort.Slice(fakeRawkvClient.kvs, func(i, j int) bool { (br/pkg/restore/rawkv_client_test.go)\nChanged files (75): br/cmd/br/backup.go, br/cmd/br/debug.go, br/cmd/br/main.go, br/cmd/br/restore.go, br/cmd/br/stream.go, br/pkg/backup/client.go, br/pkg/backup/client_test.go, br/pkg/backup/schema.go, br/pkg/backup/schema_test.go, br/pkg/conn/conn.go, br/pkg/conn/conn_test.go, br/pkg/errors/errors.go, br/pkg/glue/console_glue.go, br/pkg/glue/console_glue_test.go, br/pkg/gluetidb/glue.go, br/pkg/gluetikv/glue.go, br/pkg/logutil/logging.go, br/pkg/metautil/metafile.go, br/pkg/restore/client.go, br/pkg/restore/db_test.go, br/pkg/restore/import.go, br/pkg/restore/import_retry.go, br/pkg/restore/import_retry_test.go, br/pkg/restore/pipeline_items.go, br/pkg/restore/rawkv_client.go, br/pkg/restore/rawkv_client_test.go, br/pkg/restore/split.go, br/pkg/restore/split_test.go, br/pkg/restore/stream_metas.go, br/pkg/restore/stream_metas_test.go, br/pkg/restore/util.go, br/pkg/restore/util_test.go, br/pkg/storage/azblob.go, br/pkg/storage/flags.go, br/pkg/storage/gcs.go, br/pkg/storage/local.go, br/pkg/storage/local_test.go, br/pkg/storage/s3.go, br/pkg/storage/s3_test.go, br/pkg/storage/storage.go, br/pkg/stream/client.go, br/pkg/stream/decode_kv.go, br/pkg/stream/decode_kv_test.go, br/pkg/stream/integration_test.go, br/pkg/stream/meta_kv.go, br/pkg/stream/meta_kv_test.go, br/pkg/stream/models.go, br/pkg/stream/prefix_scanner.go, br/pkg/stream/rewrite_meta_rawkv.go, br/pkg/stream/rewrite_meta_rawkv_test.go, br/pkg/stream/stream_mgr.go, br/pkg/stream/stream_misc_test.go, br/pkg/stream/stream_status.go, br/pkg/summary/collector.go, br/pkg/summary/summary.go, br/pkg/task/backup.go, br/pkg/task/backup_raw.go, br/pkg/task/backup_test.go, br/pkg/task/common.go, br/pkg/task/restore.go, br/pkg/task/restore_raw.go, br/pkg/task/stream.go, br/pkg/task/stream_test.go, br/pkg/utils/backoff.go, br/pkg/utils/json.go, br/pkg/utils/safe_point.go, distsql/request_builder.go, errors.toml, executor/brie.go, go.mod, go.sum, meta/meta.go, meta/meta_test.go, parser/model/model.go, tablecodec/tablecodec.go\nPatch url: https://github.com/pingcap/tidb/pull/34409.patch\nPicked test: type=unit path=br/pkg/restore/rawkv_client_test.go name=rawkv_client_test"
+}

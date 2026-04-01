@@ -1,0 +1,46 @@
+{
+  "id": "pr-31324",
+  "source_pr": {
+    "number": 31324,
+    "url": "https://github.com/pingcap/tidb/pull/31324",
+    "title": "planner: fix bug caused by wrong column indice in NominalSort's sort item",
+    "body": "Signed-off-by: guo-shaoge <shaoge1994@163.com>\r\n\r\n<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #31035\r\n\r\nProblem Summary: TiDB panic because column indice is wrong.\r\n\r\n1. NominalSort's sort item is `COL2 + 9843176`, `COL2`'s indice is wrong, it should be 1, but we got 0.\r\n2. NominalSort is converted to Projection in `InjectExtraProjection`\r\n3. In `(*defaultEvaluator).run`, we use the wrong col index(0) to evaluate `COL2 + 9843176`.(col index 0 is text type, but col2 is decimal, that's why tidb panic when decode mydecimal)\r\n\r\n### What is changed and how it works?\r\n\r\nAlso resolve indice for NominalSort.\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nplanner: fix bug caused by wrong column index in NominalSort's sort item\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-01-10T12:47:42+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t1 order by c2 + 10;\").Check(testkit.Rows(\"眐 -962541614831459.7458\")) (planner/core/integration_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t1 order by c2 + 10;\").Check(testkit.Rows(\"眐 -962541614831459.7458\")) (planner/core/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/31324",
+    "https://github.com/pingcap/tidb/pull/31324.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/31324.patch",
+  "changed_files": [
+    "planner/core/integration_test.go",
+    "planner/core/resolve_indices.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t1 order by c2 + 10;\").Check(testkit.Rows(\"眐 -962541614831459.7458\")) (planner/core/integration_test.go)",
+      "files: planner/core/integration_test.go, planner/core/resolve_indices.go"
+    ]
+  },
+  "analysis": "PR title: planner: fix bug caused by wrong column indice in NominalSort's sort item\nPR url: https://github.com/pingcap/tidb/pull/31324\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t1 order by c2 + 10;\").Check(testkit.Rows(\"眐 -962541614831459.7458\")) (planner/core/integration_test.go)\nChanged files (2): planner/core/integration_test.go, planner/core/resolve_indices.go\nPatch url: https://github.com/pingcap/tidb/pull/31324.patch\nPicked test: type=unit path=planner/core/integration_test.go name=integration_test"
+}

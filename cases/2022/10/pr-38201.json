@@ -1,0 +1,62 @@
+{
+  "id": "pr-38201",
+  "source_pr": {
+    "number": 38201,
+    "url": "https://github.com/pingcap/tidb/pull/38201",
+    "title": "*: support `ATTRIBUTE` and `COMMENT` in `CREATE USER` and `ALTER USER` statements",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #38172\r\n\r\nProblem Summary:\r\n\r\nMySQL 8.0.21 introduced `ATTRIBUTE` and `COMMENT` in `CREATE USER` and `ALTER USER` statements, TiDB hasn't implemented it yet.\r\n\r\n### What is changed and how it works?\r\n\r\nAdd a column `user_attributes` to `mysql.user` table to store `ATTRIBUTE` and `COMMENT`, and add a view `information_schema.user_attributes` for users to access user attributes.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [x] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [x] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\n1. Support `ATTRIBUTE` and `COMMENT` in `CREATE USER` and `ALTER USER` statements\r\n2. Add a new column `user_attributes` to `mysql.user`, and add a new view `information_schema.user_attributes`\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-10-20T14:35:55+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/simple_test.go",
+    "name": "simple_test"
+  },
+  "symptoms": [
+    "tk.MustQueryWithContext(ctx, `SELECT user, host, attribute FROM information_schema.user_attributes ORDER BY user`).Check( (executor/simple_test.go)"
+  ],
+  "failure_signature": "tk.MustQueryWithContext(ctx, `SELECT user, host, attribute FROM information_schema.user_attributes ORDER BY user`).Check( (executor/simple_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/38201",
+    "https://github.com/pingcap/tidb/pull/38201.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/38201.patch",
+  "changed_files": [
+    "executor/BUILD.bazel",
+    "executor/builder.go",
+    "executor/infoschema_reader.go",
+    "executor/show.go",
+    "executor/showtest/show_test.go",
+    "executor/simple.go",
+    "executor/simple_test.go",
+    "infoschema/tables.go",
+    "parser/ast/misc.go",
+    "parser/misc.go",
+    "parser/parser.go",
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "planner/core/planbuilder.go",
+    "session/bootstrap.go",
+    "session/bootstrap_test.go",
+    "types/json_binary_test.go",
+    "types/json_constants.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQueryWithContext(ctx, `SELECT user, host, attribute FROM information_schema.user_attributes ORDER BY user`).Check( (executor/simple_test.go)",
+      "files: DEPS.bzl, br/pkg/lightning/config/BUILD.bazel, build/nogo_config.json, ddl/db_partition_test.go, ddl/db_test.go, ddl/partition.go, ddl/tiflash_replica_test.go, executor/BUILD.bazel, executor/builder.go, executor/infoschema_cluster_table_test.go, executor/infoschema_reader.go, executor/infoschema_reader_test.go, executor/show.go, executor/showtest/show_test.go, executor/simple.go, executor/simple_test.go, infoschema/tables.go, parser/ast/dml.go, parser/ast/misc.go, parser/misc.go, parser/parser.go, parser/parser.y, parser/parser_test.go, planner/core/BUILD.bazel, planner/core/plan_cache_utils.go, planner/core/planbuilder.go, privilege/privileges/privileges.go, server/BUILD.bazel, server/driver_tidb.go, session/bootstrap.go, session/bootstrap_test.go, session/nontransactional.go, session/nontransactional_test.go, sessionctx/variable/BUILD.bazel, sessiontxn/isolation/BUILD.bazel, statistics/BUILD.bazel, testkit/testkit.go, types/json_binary_functions.go, types/json_binary_test.go, types/json_constants.go"
+    ]
+  },
+  "analysis": "PR title: *: support `ATTRIBUTE` and `COMMENT` in `CREATE USER` and `ALTER USER` statements\nPR url: https://github.com/pingcap/tidb/pull/38201\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQueryWithContext(ctx, `SELECT user, host, attribute FROM information_schema.user_attributes ORDER BY user`).Check( (executor/simple_test.go)\nChanged files (18): executor/BUILD.bazel, executor/builder.go, executor/infoschema_reader.go, executor/show.go, executor/showtest/show_test.go, executor/simple.go, executor/simple_test.go, infoschema/tables.go, parser/ast/misc.go, parser/misc.go, parser/parser.go, parser/parser.y, parser/parser_test.go, planner/core/planbuilder.go, session/bootstrap.go, session/bootstrap_test.go, types/json_binary_test.go, types/json_constants.go\nPatch url: https://github.com/pingcap/tidb/pull/38201.patch\nPicked test: type=unit path=executor/simple_test.go name=simple_test"
+}

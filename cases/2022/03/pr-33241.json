@@ -1,0 +1,46 @@
+{
+  "id": "pr-33241",
+  "source_pr": {
+    "number": 33241,
+    "url": "https://github.com/pingcap/tidb/pull/33241",
+    "title": "statistics: allow using not-loaded stats when ndv is 0",
+    "body": "### What problem does this PR solve?\r\n\r\n\r\nIssue Number: ref https://github.com/pingcap/tidb/issues/32758 close #33280\r\n\r\nProblem Summary:\r\n\r\nIn #32764, we improved the method to check if stats on a column is loaded. But we missed a case: if a column contains only NULLs, we can use the stats even it's not loaded.\r\n\r\n### What is changed and how it works?\r\n\r\nFix the above-stated case. We cannot directly put the logic in `IsLoaded` because it's possible that this is a pseudo stats and we should distinguish these cases.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test (TICASE-1247)\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-03-22T17:08:33+08:00",
+  "test": {
+    "type": "unit",
+    "path": "statistics/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "res := tk.MustQuery(\"explain format = 'brief' select * from t1 left join t2 on t1.a=t2.a order by t1.a, t2.a\") (statistics/integration_test.go)"
+  ],
+  "failure_signature": "res := tk.MustQuery(\"explain format = 'brief' select * from t1 left join t2 on t1.a=t2.a order by t1.a, t2.a\") (statistics/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/33241",
+    "https://github.com/pingcap/tidb/pull/33241.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/33241.patch",
+  "changed_files": [
+    "statistics/histogram.go",
+    "statistics/integration_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: res := tk.MustQuery(\"explain format = 'brief' select * from t1 left join t2 on t1.a=t2.a order by t1.a, t2.a\") (statistics/integration_test.go)",
+      "files: statistics/histogram.go, statistics/integration_test.go"
+    ]
+  },
+  "analysis": "PR title: statistics: allow using not-loaded stats when ndv is 0\nPR url: https://github.com/pingcap/tidb/pull/33241\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: res := tk.MustQuery(\"explain format = 'brief' select * from t1 left join t2 on t1.a=t2.a order by t1.a, t2.a\") (statistics/integration_test.go)\nChanged files (2): statistics/histogram.go, statistics/integration_test.go\nPatch url: https://github.com/pingcap/tidb/pull/33241.patch\nPicked test: type=unit path=statistics/integration_test.go name=integration_test"
+}

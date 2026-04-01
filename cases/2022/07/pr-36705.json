@@ -1,0 +1,59 @@
+{
+  "id": "pr-36705",
+  "source_pr": {
+    "number": 36705,
+    "url": "https://github.com/pingcap/tidb/pull/36705",
+    "title": "*: fix timestamp conversion",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/36707\r\n\r\nProblem Summary:\r\n\r\nThis PR fixes inaccurate timestamp conversion algorithms that appeared in various packages.\r\n\r\nFrom the perspective of dimensional analysis, the following algorithm does not hold:\r\n\r\n```go\r\ntime.Now().UnixNano() / int64(time.Millisecond)\r\n```\r\n\r\n> The above calculation doesn't really make sense. You don't divide nanoseconds by miliseconds. It happens to be the case that golang choses to represent times down to nanosecond and the constant 'Millisecond' is 1,000,000. Mathematically speaking, calculation should be: time.Now().UnixNano() * (time.Nanosecond / time.Millisecond).\r\n\r\nReference:  https://stackoverflow.com/a/24122933\r\n\r\nI've scanned the code base and implemented a corrected version based on [time.UnixMilli](https://cs.opensource.google/go/go/+/go1.18.4:src/time/time.go;l=1349) and [time.UnixMicro](https://cs.opensource.google/go/go/+/go1.18.4:src/time/time.go;l=1355), which were introduced to the standard library in go 1.17.\r\n\r\nNote that [util.TSOToRoughTime](https://github.com/pingcap/tidb/blob/master/util/tso.go) is intentionally unmodified.\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-07-29T19:05:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/backup/client_test.go",
+    "name": "client_test"
+  },
+  "symptoms": [
+    "// SetRowCount sets the number of rows. Make sure it can pass `make race`."
+  ],
+  "failure_signature": "// SetRowCount sets the number of rows. Make sure it can pass `make race`.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: fix timestamp conversion",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/36705",
+    "https://github.com/pingcap/tidb/pull/36705.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/36705.patch",
+  "changed_files": [
+    "br/pkg/backup/client_test.go",
+    "br/pkg/lightning/mydump/parquet_parser.go",
+    "br/pkg/lightning/restore/checksum_test.go",
+    "executor/hot_regions_history_table_test.go",
+    "executor/memtable_reader.go",
+    "executor/memtable_reader_test.go",
+    "executor/metrics_reader.go",
+    "parser/model/ddl.go",
+    "planner/core/memtable_predicate_extractor.go",
+    "planner/core/memtable_predicate_extractor_test.go",
+    "session/txninfo/summary.go",
+    "session/txninfo/txn_info.go",
+    "statistics/handle/update.go",
+    "store/mockstore/unistore/tikv/mock_region.go",
+    "store/mockstore/unistore/tikv/mvcc.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: // SetRowCount sets the number of rows. Make sure it can pass `make race`.",
+      "files: br/pkg/backup/client_test.go, br/pkg/lightning/backend/backend_test.go, br/pkg/lightning/mydump/parquet_parser.go, br/pkg/lightning/restore/checksum_test.go, executor/hot_regions_history_table_test.go, executor/memtable_reader.go, executor/memtable_reader_test.go, executor/metrics_reader.go, executor/stale_txn_test.go, parser/model/ddl.go, planner/core/memtable_predicate_extractor.go, planner/core/memtable_predicate_extractor_test.go, session/txninfo/summary.go, session/txninfo/txn_info.go, statistics/handle/update.go, store/mockstore/unistore/tikv/mock_region.go, store/mockstore/unistore/tikv/mvcc.go"
+    ]
+  },
+  "analysis": "PR title: *: fix timestamp conversion\nPR url: https://github.com/pingcap/tidb/pull/36705\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // SetRowCount sets the number of rows. Make sure it can pass `make race`.\nChanged files (15): br/pkg/backup/client_test.go, br/pkg/lightning/mydump/parquet_parser.go, br/pkg/lightning/restore/checksum_test.go, executor/hot_regions_history_table_test.go, executor/memtable_reader.go, executor/memtable_reader_test.go, executor/metrics_reader.go, parser/model/ddl.go, planner/core/memtable_predicate_extractor.go, planner/core/memtable_predicate_extractor_test.go, session/txninfo/summary.go, session/txninfo/txn_info.go, statistics/handle/update.go, store/mockstore/unistore/tikv/mock_region.go, store/mockstore/unistore/tikv/mvcc.go\nPatch url: https://github.com/pingcap/tidb/pull/36705.patch\nPicked test: type=unit path=br/pkg/backup/client_test.go name=client_test"
+}

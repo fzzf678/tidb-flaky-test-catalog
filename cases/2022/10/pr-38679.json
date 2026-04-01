@@ -1,0 +1,47 @@
+{
+  "id": "pr-38679",
+  "source_pr": {
+    "number": 38679,
+    "url": "https://github.com/pingcap/tidb/pull/38679",
+    "title": "ddl: make \"add foreign key\" step in multiple schema versions",
+    "body": "Signed-off-by: crazycs520 <crazycs520@gmail.com>\r\n\r\n<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #38678 \r\n\r\nAt the same point in time, there may be two versions of the schema in the TiDB cluster, so we can't create foreign key in one schema version, since this may break foreign key constraint, such as delete reference table\r\nwithout foreign key constrain check in child table.\r\n\r\n```sql\r\n-- In TiDB-1 and Schema Version is 1\r\ninsert into t_has_foreign_key values (1, 1);\r\n-- In TiDB-0 and  Schema Version is 0\r\ndelete from t_reference where id = 1; --Since doesn't know foreign key information in old version, so doesn't do foreign key constrain check.\r\n```\r\n\r\nSo The DDL owner handle add foreign key constrain step should be:\r\n\r\n1. None -> Write Only: add foreign key constrain which state is `write-only` into table.\r\n3. Write Only - Write Reorg: check all row in the table whether has related foreign key exists in reference table, we can use following SQL to check:\r\n   ```sql\r\n   select count(*) from t2 where t2.a not in (select id from t1);\r\n   ```\r\n   The expected result is `0`, otherwise, an error is returned and cancel the ddl job.\r\n4. Write Reorg -> Public: update the foreign key constraint state to `public`.\r\n\r\nA problem is, How the DML treat the foreign key with on delete/update cascade behaviour which state is non-public?\r\nHere is an example:\r\n\r\n```sql\r\ncreate table t1 (id int key,a int, index(a));\r\ncreate table t2 (id int key,a int, index(a));\r\ninsert into t1 values (1,1);\r\ninsert into t2 values (1,1);\r\nalter  table t2 add constraint fk_1 foreign key (a) references t1(id) ON DELETE CASCADE;\r\n```\r\n\r\nThe schema change of foreign key `fk_1` is from `None` -> `Write-Only` -> `Write-Reorg` -> `Public`。\r\nWhen the foreign key `fk_1` in `Write-Only` state, a DML request has come to be processed:\r\n\r\n```sql\r\ndelete from t1 where id = 1;\r\n```\r\n\r\nThen, TiDB shouldn't do cascade delete for foreign key `fk_1` in state `Write-Only`, since the `Add Foreign Key` DDL job maybe\r\nfailed in `Write-Reorg` state and rollback the DDL job. But it is hard to rollback the cascade deleted executed before.\r\n\r\nSo, when execute DML with `non-publick` foreign key, TiDB will do foreign key constraint check instead of foreign key cascade behaviour.\r\n\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-10-28T14:41:57+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/foreign_key_test.go",
+    "name": "foreign_key_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t1 order by id\").Check(testkit.Rows(\"1 1\", \"2 2\", \"3 3\")) (ddl/foreign_key_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t1 order by id\").Check(testkit.Rows(\"1 1\", \"2 2\", \"3 3\")) (ddl/foreign_key_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/38679",
+    "https://github.com/pingcap/tidb/pull/38679.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/38679.patch",
+  "changed_files": [
+    "ddl/foreign_key.go",
+    "ddl/foreign_key_test.go",
+    "planner/core/foreign_key.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t1 order by id\").Check(testkit.Rows(\"1 1\", \"2 2\", \"3 3\")) (ddl/foreign_key_test.go)",
+      "files: ddl/foreign_key.go, ddl/foreign_key_test.go, planner/core/foreign_key.go"
+    ]
+  },
+  "analysis": "PR title: ddl: make \"add foreign key\" step in multiple schema versions\nPR url: https://github.com/pingcap/tidb/pull/38679\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t1 order by id\").Check(testkit.Rows(\"1 1\", \"2 2\", \"3 3\")) (ddl/foreign_key_test.go)\nChanged files (3): ddl/foreign_key.go, ddl/foreign_key_test.go, planner/core/foreign_key.go\nPatch url: https://github.com/pingcap/tidb/pull/38679.patch\nPicked test: type=unit path=ddl/foreign_key_test.go name=foreign_key_test"
+}

@@ -1,0 +1,46 @@
+{
+  "id": "pr-32511",
+  "source_pr": {
+    "number": 32511,
+    "url": "https://github.com/pingcap/tidb/pull/32511",
+    "title": "executor: migrate test-infra to testify for inspection_result_test.go",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #28590 \r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-03-01T19:11:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/inspection_result_test.go",
+    "name": "inspection_result_test"
+  },
+  "symptoms": [
+    "rs, err := tk.Session().Execute(ctx, \"select /*+ time_range('2020-02-12 10:35:00','2020-02-12 10:37:00') */ item, type, instance,status_address, value, reference, details from information_schema.inspection_result where rule='threshold-check' order by item\") (executor/inspection_result_test.go)"
+  ],
+  "failure_signature": "rs, err := tk.Session().Execute(ctx, \"select /*+ time_range('2020-02-12 10:35:00','2020-02-12 10:37:00') */ item, type, instance,status_address, value, reference, details from information_schema.inspection_result where rule='threshold-check' order by item\") (executor/inspection_result_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/32511",
+    "https://github.com/pingcap/tidb/pull/32511.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/32511.patch",
+  "changed_files": [
+    "executor/inspection_result_test.go",
+    "executor/memtable_reader_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rs, err := tk.Session().Execute(ctx, \"select /*+ time_range('2020-02-12 10:35:00','2020-02-12 10:37:00') */ item, type, instance,status_address, value, reference, details from information_schema.inspection_result where rule='threshold-check' order by item\") (executor/inspection_result_test.go)",
+      "files: executor/inspection_result_test.go, executor/memtable_reader_test.go, testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: executor: migrate test-infra to testify for inspection_result_test.go\nPR url: https://github.com/pingcap/tidb/pull/32511\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rs, err := tk.Session().Execute(ctx, \"select /*+ time_range('2020-02-12 10:35:00','2020-02-12 10:37:00') */ item, type, instance,status_address, value, reference, details from information_schema.inspection_result where rule='threshold-check' order by item\") (executor/inspection_result_test.go)\nChanged files (2): executor/inspection_result_test.go, executor/memtable_reader_test.go\nPatch url: https://github.com/pingcap/tidb/pull/32511.patch\nPicked test: type=unit path=executor/inspection_result_test.go name=inspection_result_test"
+}

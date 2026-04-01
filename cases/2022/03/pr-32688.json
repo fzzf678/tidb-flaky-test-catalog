@@ -1,0 +1,59 @@
+{
+  "id": "pr-32688",
+  "source_pr": {
+    "number": 32688,
+    "url": "https://github.com/pingcap/tidb/pull/32688",
+    "title": "executor: migrate test-infra to testify for infoschema_reader_test.go",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #28587\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-03-01T16:31:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/write_test.go",
+    "name": "write_test"
+  },
+  "symptoms": [
+    "-// this SerialSuites is used to solve the data race caused by TableStatsCacheExpiry, | tk.MustQuery(\"select * from t order by c_int;\").Check(testkit.RowsWithSep(\"|\", \"21|silver sight\", \"22|gold witch\", \"24|gray singer\")) (executor/write_test.go)"
+  ],
+  "failure_signature": "-// this SerialSuites is used to solve the data race caused by TableStatsCacheExpiry, | tk.MustQuery(\"select * from t order by c_int;\").Check(testkit.RowsWithSep(\"|\", \"21|silver sight\", \"22|gold witch\", \"24|gray singer\")) (executor/write_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/32688",
+    "https://github.com/pingcap/tidb/pull/32688.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/32688.patch",
+  "changed_files": [
+    "executor/ddl_test.go",
+    "executor/explain_test.go",
+    "executor/hot_regions_history_table_test.go",
+    "executor/infoschema_cluster_table_test.go",
+    "executor/infoschema_reader_test.go",
+    "executor/insert_test.go",
+    "executor/memtable_reader_test.go",
+    "executor/partition_table_test.go",
+    "executor/seqtest/seq_executor_test.go",
+    "executor/show_test.go",
+    "executor/tikv_regions_peers_table_test.go",
+    "executor/write_test.go",
+    "testkit/testutil/handle.go",
+    "util/testutil/testutil.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: -// this SerialSuites is used to solve the data race caused by TableStatsCacheExpiry, | tk.MustQuery(\"select * from t order by c_int;\").Check(testkit.RowsWithSep(\"|\", \"21|silver sight\", \"22|gold witch\", \"24|gray singer\")) (executor/write_test.go)",
+      "files: executor/ddl_test.go, executor/explain_test.go, executor/hot_regions_history_table_test.go, executor/infoschema_cluster_table_test.go, executor/infoschema_reader_test.go, executor/insert_test.go, executor/memtable_reader_test.go, executor/partition_table_test.go, executor/seqtest/seq_executor_test.go, executor/show_test.go, executor/tikv_regions_peers_table_test.go, executor/write_test.go, testkit/testutil/handle.go, util/testutil/testutil.go"
+    ]
+  },
+  "analysis": "PR title: executor: migrate test-infra to testify for infoschema_reader_test.go\nPR url: https://github.com/pingcap/tidb/pull/32688\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: -// this SerialSuites is used to solve the data race caused by TableStatsCacheExpiry, | tk.MustQuery(\"select * from t order by c_int;\").Check(testkit.RowsWithSep(\"|\", \"21|silver sight\", \"22|gold witch\", \"24|gray singer\")) (executor/write_test.go)\nChanged files (14): executor/ddl_test.go, executor/explain_test.go, executor/hot_regions_history_table_test.go, executor/infoschema_cluster_table_test.go, executor/infoschema_reader_test.go, executor/insert_test.go, executor/memtable_reader_test.go, executor/partition_table_test.go, executor/seqtest/seq_executor_test.go, executor/show_test.go, executor/tikv_regions_peers_table_test.go, executor/write_test.go, testkit/testutil/handle.go, util/testutil/testutil.go\nPatch url: https://github.com/pingcap/tidb/pull/32688.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
+}

@@ -1,0 +1,47 @@
+{
+  "id": "pr-35647",
+  "source_pr": {
+    "number": 35647,
+    "url": "https://github.com/pingcap/tidb/pull/35647",
+    "title": "testkit: add a WithTiKV flag to support run unit test on real TiKV",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #35646 \r\n\r\nProblem Summary:\r\n\r\nAdd a `-with-tikv` flag to the unit test.\r\n\r\n### What is changed and how it works?\r\n\r\nAfter this change, I can run **any** test case with a real TiKV, for example:\r\n\r\n```\r\ncd executor\r\ngo test -run TestFix31530 -with-tikv 127.0.0.1:2379\r\n``` \r\n\r\nI can verify out test cases with real tikv. Here is how I do that:\r\n\r\n1. Create a docker image:\r\n\r\n```\r\ncat Dockerfile\r\nFROM buildpack-deps:focal as base\r\n\r\nCOPY pd-server /bin/\r\nCOPY tikv-server /bin/\r\nCOPY start.sh /\r\n\r\nENV LANG C.UTF-8\r\nENV LC_ALL C.UTF-8\r\n\r\nFROM base AS branch-version-1\r\n```\r\n\r\n```\r\ncat start.sh\r\n#!/bin/bash\r\nset -eu\r\n\r\n/bin/pd-server --client-urls http://0.0.0.0:2379 --data-dir \"/data/pd\" &\r\n/bin/tikv-server --status-addr 0.0.0.0:20180  --pd 0.0.0.0:2379 -A 127.0.0.1:20160 -C \"/conf/tikv.toml\" -s \"/data/tikv\"\r\n```\r\n\r\n2. build the image\r\n\r\n```\r\ndocker build -t tikv-img .\r\n```\r\n\r\n3. Run the tikv in container\r\n\r\n```\r\ndocker run --net=host --rm --name tmp1 tikv-img:bootstrap /start.sh\r\n```\r\n\r\n`--net` use the local port, `--rm` means remove the container after the test is done.\r\n\r\n4. Run unit test with the tikv docker container\r\n\r\nFor example:\r\n\r\n```\r\ngo test -run TestFix31530 -with-tikv 127.0.0.1:2379\r\n```\r\n\r\n5. Automate the test script\r\n\r\nI modify the `make ut` script to automate the tests.\r\nCreate the tikv docker container before test and cleanup them.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [ ] Integration test\r\n- [X] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-06-30T14:16:39+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/gcworker/gc_worker_test.go",
+    "name": "gc_worker_test"
+  },
+  "symptoms": [
+    "// it takes a longer when race is enabled. so it is set more timeout value."
+  ],
+  "failure_signature": "// it takes a longer when race is enabled. so it is set more timeout value.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "testkit: add a WithTiKV flag to support run unit test on real TiKV",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/35647",
+    "https://github.com/pingcap/tidb/pull/35647.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/35647.patch",
+  "changed_files": [
+    "store/gcworker/gc_worker_test.go",
+    "testkit/mockstore.go",
+    "tools/check/ut.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: // it takes a longer when race is enabled. so it is set more timeout value.",
+      "files: store/gcworker/gc_worker_test.go, testkit/mockstore.go, tools/check/ut.go"
+    ]
+  },
+  "analysis": "PR title: testkit: add a WithTiKV flag to support run unit test on real TiKV\nPR url: https://github.com/pingcap/tidb/pull/35647\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // it takes a longer when race is enabled. so it is set more timeout value.\nChanged files (3): store/gcworker/gc_worker_test.go, testkit/mockstore.go, tools/check/ut.go\nPatch url: https://github.com/pingcap/tidb/pull/35647.patch\nPicked test: type=unit path=store/gcworker/gc_worker_test.go name=gc_worker_test"
+}

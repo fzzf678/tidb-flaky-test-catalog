@@ -1,0 +1,47 @@
+{
+  "id": "pr-34714",
+  "source_pr": {
+    "number": 34714,
+    "url": "https://github.com/pingcap/tidb/pull/34714",
+    "title": "session: migrate test-infra to testify for part of session_test",
+    "body": "Issue Number: ref #28328\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-05-17T15:38:38+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "tests/realtikvtest/sessiontest/session_test.go",
+    "name": "session_test"
+  },
+  "symptoms": [
+    "id, _, _, err = tk.Session().PrepareStmt(\"select a from multiexec where b = ? order by b\") (tests/realtikvtest/sessiontest/session_test.go)"
+  ],
+  "failure_signature": "id, _, _, err = tk.Session().PrepareStmt(\"select a from multiexec where b = ? order by b\") (tests/realtikvtest/sessiontest/session_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/34714",
+    "https://github.com/pingcap/tidb/pull/34714.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/34714.patch",
+  "changed_files": [
+    "session/session_legacy_test.go",
+    "tests/realtikvtest/sessiontest/session_test.go",
+    "tests/realtikvtest/txntest/txn_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: id, _, _, err = tk.Session().PrepareStmt(\"select a from multiexec where b = ? order by b\") (tests/realtikvtest/sessiontest/session_test.go)",
+      "files: session/session_legacy_test.go, tests/realtikvtest/sessiontest/session_test.go, tests/realtikvtest/txntest/txn_test.go"
+    ]
+  },
+  "analysis": "PR title: session: migrate test-infra to testify for part of session_test\nPR url: https://github.com/pingcap/tidb/pull/34714\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: id, _, _, err = tk.Session().PrepareStmt(\"select a from multiexec where b = ? order by b\") (tests/realtikvtest/sessiontest/session_test.go)\nChanged files (3): session/session_legacy_test.go, tests/realtikvtest/sessiontest/session_test.go, tests/realtikvtest/txntest/txn_test.go\nPatch url: https://github.com/pingcap/tidb/pull/34714.patch\nPicked test: type=realtikv path=tests/realtikvtest/sessiontest/session_test.go name=session_test"
+}

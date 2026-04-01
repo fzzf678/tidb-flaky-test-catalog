@@ -1,0 +1,46 @@
+{
+  "id": "pr-33981",
+  "source_pr": {
+    "number": 33981,
+    "url": "https://github.com/pingcap/tidb/pull/33981",
+    "title": "statistics: DumpIndexUsageToKV use batch insert to reduce cost",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #33980\r\n\r\nProblem Summary: Before `DumpIndexUsageToKV` use `for loop insert`,if the table has many index and these index are all used, it wil cost a lot.So we can enhance to use `batch insert` to reduce cost.\r\n\r\n### What is changed and how it works?\r\nconvert `for loop insert` to `batch insert`\r\n\r\nBefore VS After\r\n```\r\ncd statistics/handle\r\ngo test -run BenchmarkIndexUsageInformationInsert -bench BenchmarkIndexUsageInformationInsert -benchmem -benchtime=20s\r\n\r\nfor loop insert      6998           3379135 ns/op        994594 B/op      12659 allocs/op\r\nbatch insert        18472           1299401 ns/op        473919 B/op       5628 allocs/op\r\n```\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nReduce `DumpIndexUsageToKV` cost(Net IO) from TIDB to TIKV\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-04-26T22:44:51+08:00",
+  "test": {
+    "type": "unit",
+    "path": "statistics/handle/handle_test.go",
+    "name": "handle_test"
+  },
+  "symptoms": [
+    "AND idx.table_name = \"t_idx\" ORDER BY idx.key_name` (statistics/handle/handle_test.go)"
+  ],
+  "failure_signature": "AND idx.table_name = \"t_idx\" ORDER BY idx.key_name` (statistics/handle/handle_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/33981",
+    "https://github.com/pingcap/tidb/pull/33981.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/33981.patch",
+  "changed_files": [
+    "statistics/handle/handle_test.go",
+    "statistics/handle/update.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: AND idx.table_name = \"t_idx\" ORDER BY idx.key_name` (statistics/handle/handle_test.go)",
+      "files: statistics/handle/handle_test.go, statistics/handle/update.go"
+    ]
+  },
+  "analysis": "PR title: statistics: DumpIndexUsageToKV use batch insert to reduce cost\nPR url: https://github.com/pingcap/tidb/pull/33981\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: AND idx.table_name = \"t_idx\" ORDER BY idx.key_name` (statistics/handle/handle_test.go)\nChanged files (2): statistics/handle/handle_test.go, statistics/handle/update.go\nPatch url: https://github.com/pingcap/tidb/pull/33981.patch\nPicked test: type=unit path=statistics/handle/handle_test.go name=handle_test"
+}

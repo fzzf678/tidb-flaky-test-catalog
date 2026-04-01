@@ -1,0 +1,54 @@
+{
+  "id": "pr-38386",
+  "source_pr": {
+    "number": 38386,
+    "url": "https://github.com/pingcap/tidb/pull/38386",
+    "title": "log-backup: using streaming to load metadata for preventing OOM",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #38404\r\n\r\nProblem Summary:\r\nThis PR make the restore procedure load the metadata lazily. \r\n\r\n### What is changed and how it works?\r\n\r\nThis PR has introduced a new package `iter`, which provides the `impure` iterator type `TryNextor`.\r\n\r\nThen the restore procedure is someway rewritten, to allow the restoration of data files become pipelined.\r\n\r\nFor better testing and isolate the code using generics, this PR also extracted the file read part from the `restore.Client` to `restore.logFileManager`.\r\n\r\n#### Test Result\r\n|- master -|- This PR -|\r\n|-----|-------|\r\n|<img width=\"923\" alt=\"image\" src=\"https://user-images.githubusercontent.com/36239017/195045371-c9515f09-dff3-4ab4-951a-4f231c6b3d4f.png\">|<img width=\"891\" alt=\"image\" src=\"https://user-images.githubusercontent.com/36239017/195045399-b3401ecb-c3c4-4d25-9180-bbdf0aeeb551.png\">|\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [x] Performance regression: Consumes more CPU\r\n\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nReduced the memory peak memory usage.\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-10-28T13:45:58+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/restore/log_client_test.go",
+    "name": "log_client_test"
+  },
+  "symptoms": [
+    "sort.Slice(l, func(i, j int) bool { (br/pkg/restore/log_client_test.go)"
+  ],
+  "failure_signature": "sort.Slice(l, func(i, j int) bool { (br/pkg/restore/log_client_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/38386",
+    "https://github.com/pingcap/tidb/pull/38386.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/38386.patch",
+  "changed_files": [
+    "br/pkg/restore/client.go",
+    "br/pkg/restore/log_client.go",
+    "br/pkg/restore/log_client_test.go",
+    "br/pkg/task/stream.go",
+    "br/pkg/utils/iter/combinator_test.go",
+    "br/pkg/utils/iter/combinator_types.go",
+    "br/pkg/utils/iter/combinators.go",
+    "br/pkg/utils/iter/iter.go",
+    "br/pkg/utils/iter/source.go",
+    "br/pkg/utils/iter/source_types.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Slice(l, func(i, j int) bool { (br/pkg/restore/log_client_test.go)",
+      "files: br/pkg/restore/client.go, br/pkg/restore/log_client.go, br/pkg/restore/log_client_test.go, br/pkg/task/stream.go, br/pkg/utils/iter/combinator_test.go, br/pkg/utils/iter/combinator_types.go, br/pkg/utils/iter/combinators.go, br/pkg/utils/iter/iter.go, br/pkg/utils/iter/source.go, br/pkg/utils/iter/source_types.go"
+    ]
+  },
+  "analysis": "PR title: log-backup: using streaming to load metadata for preventing OOM\nPR url: https://github.com/pingcap/tidb/pull/38386\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Slice(l, func(i, j int) bool { (br/pkg/restore/log_client_test.go)\nChanged files (10): br/pkg/restore/client.go, br/pkg/restore/log_client.go, br/pkg/restore/log_client_test.go, br/pkg/task/stream.go, br/pkg/utils/iter/combinator_test.go, br/pkg/utils/iter/combinator_types.go, br/pkg/utils/iter/combinators.go, br/pkg/utils/iter/iter.go, br/pkg/utils/iter/source.go, br/pkg/utils/iter/source_types.go\nPatch url: https://github.com/pingcap/tidb/pull/38386.patch\nPicked test: type=unit path=br/pkg/restore/log_client_test.go name=log_client_test"
+}

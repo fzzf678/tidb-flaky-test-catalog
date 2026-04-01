@@ -1,0 +1,48 @@
+{
+  "id": "pr-33394",
+  "source_pr": {
+    "number": 33394,
+    "url": "https://github.com/pingcap/tidb/pull/33394",
+    "title": "executor: migrate test-infra to testify for executor_test.go testSuiteP1",
+    "body": "Issue Number: ref #28577 \r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-03-24T19:32:33+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "+ // test race | tk.MustQuery(\"select 1 order by 1;\").Check(testkit.Rows(\"1\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "+ // test race | tk.MustQuery(\"select 1 order by 1;\").Check(testkit.Rows(\"1\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/33394",
+    "https://github.com/pingcap/tidb/pull/33394.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/33394.patch",
+  "changed_files": [
+    "executor/executor_legacy_test.go",
+    "executor/executor_test.go",
+    "testkit/testkit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: + // test race | tk.MustQuery(\"select 1 order by 1;\").Check(testkit.Rows(\"1\")) (executor/executor_test.go)",
+      "files: executor/executor_legacy_test.go, executor/executor_test.go, testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: executor: migrate test-infra to testify for executor_test.go testSuiteP1\nPR url: https://github.com/pingcap/tidb/pull/33394\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: + // test race | tk.MustQuery(\"select 1 order by 1;\").Check(testkit.Rows(\"1\")) (executor/executor_test.go)\nChanged files (3): executor/executor_legacy_test.go, executor/executor_test.go, testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/33394.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

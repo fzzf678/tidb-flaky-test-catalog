@@ -1,0 +1,75 @@
+{
+  "id": "pr-35300",
+  "source_pr": {
+    "number": 35300,
+    "url": "https://github.com/pingcap/tidb/pull/35300",
+    "title": "*: enable more flaky test, enable more shard_count and update bazel config",
+    "body": "Signed-off-by: Weizhen Wang <wangweizhen@pingcap.com>\r\n\r\n<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #35247\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\n- enable more flaky test\r\n- enable more shard_count\r\n- split test cases into subdirectories to speed up the build and the test.\r\n\r\nWhy are test cases speed up by being splited into subdirectories?\r\n\r\n1、execute has too many test cases in the same folder. If we change one of the test cases, we need to rebuild all of it. It will take many times.\r\n2、bazel limit 50 shard_count.  it can not run parallel, too many test cases run at slow speed.\r\n3、test cases run in the shard. it is isolated by the sandbox. so it can not suffer from the other test cases. the test will run more stable.\r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-06-13T17:52:33+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/simpletest/simple_test.go",
+    "name": "simple_test"
+  },
+  "symptoms": [
+    "*: enable more flaky test, enable more shard_count and update bazel config | tk.MustExec(\"DO GROUP_CONCAT(NULLIF(ELT(1, @e), 2.0) ORDER BY 1)\") (executor/simpletest/simple_test.go)"
+  ],
+  "failure_signature": "*: enable more flaky test, enable more shard_count and update bazel config | tk.MustExec(\"DO GROUP_CONCAT(NULLIF(ELT(1, @e), 2.0) ORDER BY 1)\") (executor/simpletest/simple_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/35300",
+    "https://github.com/pingcap/tidb/pull/35300.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/35300.patch",
+  "changed_files": [
+    "br/pkg/lightning/BUILD.bazel",
+    "br/pkg/lightning/metric/BUILD.bazel",
+    "br/pkg/lightning/restore/BUILD.bazel",
+    "ddl/cancel_test.go",
+    "ddl/column_change_test.go",
+    "distsql/BUILD.bazel",
+    "executor/BUILD.bazel",
+    "executor/analyze_test.go",
+    "executor/analyzetest/BUILD.bazel",
+    "executor/analyzetest/analyze_test.go",
+    "executor/analyzetest/main_test.go",
+    "executor/copr_cache_test.go",
+    "executor/showtest/BUILD.bazel",
+    "executor/simple_test.go",
+    "executor/simpletest/BUILD.bazel",
+    "executor/simpletest/simple_test.go",
+    "executor/splittest/BUILD.bazel",
+    "executor/splittest/main_test.go",
+    "executor/splittest/split_table_test.go",
+    "expression/BUILD.bazel",
+    "expression/aggregation/BUILD.bazel",
+    "meta/BUILD.bazel",
+    "metrics/BUILD.bazel",
+    "server/BUILD.bazel",
+    "sessiontxn/isolation/BUILD.bazel",
+    "store/mockstore/mockcopr/BUILD.bazel",
+    "store/mockstore/unistore/metrics/BUILD.bazel",
+    "testkit/BUILD.bazel",
+    "testkit/testkit.go",
+    "tidb-server/BUILD.bazel"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: *: enable more flaky test, enable more shard_count and update bazel config | tk.MustExec(\"DO GROUP_CONCAT(NULLIF(ELT(1, @e), 2.0) ORDER BY 1)\") (executor/simpletest/simple_test.go)",
+      "files: br/pkg/lightning/BUILD.bazel, br/pkg/lightning/metric/BUILD.bazel, br/pkg/lightning/restore/BUILD.bazel, ddl/BUILD.bazel, ddl/cancel_test.go, ddl/column_change_test.go, distsql/BUILD.bazel, executor/BUILD.bazel, executor/analyze_test.go, executor/analyzetest/BUILD.bazel, executor/analyzetest/analyze_test.go, executor/analyzetest/main_test.go, executor/copr_cache_test.go, executor/showtest/BUILD.bazel, executor/simple_test.go, executor/simpletest/BUILD.bazel, executor/simpletest/simple_test.go, executor/splittest/BUILD.bazel, executor/splittest/main_test.go, executor/splittest/split_table_test.go, expression/BUILD.bazel, expression/aggregation/BUILD.bazel, meta/BUILD.bazel, metrics/BUILD.bazel, server/BUILD.bazel, sessiontxn/isolation/BUILD.bazel, store/mockstore/mockcopr/BUILD.bazel, store/mockstore/unistore/metrics/BUILD.bazel, testkit/BUILD.bazel, testkit/testkit.go, tidb-server/BUILD.bazel"
+    ]
+  },
+  "analysis": "PR title: *: enable more flaky test, enable more shard_count and update bazel config\nPR url: https://github.com/pingcap/tidb/pull/35300\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: *: enable more flaky test, enable more shard_count and update bazel config | tk.MustExec(\"DO GROUP_CONCAT(NULLIF(ELT(1, @e), 2.0) ORDER BY 1)\") (executor/simpletest/simple_test.go)\nChanged files (30): br/pkg/lightning/BUILD.bazel, br/pkg/lightning/metric/BUILD.bazel, br/pkg/lightning/restore/BUILD.bazel, ddl/cancel_test.go, ddl/column_change_test.go, distsql/BUILD.bazel, executor/BUILD.bazel, executor/analyze_test.go, executor/analyzetest/BUILD.bazel, executor/analyzetest/analyze_test.go, executor/analyzetest/main_test.go, executor/copr_cache_test.go, executor/showtest/BUILD.bazel, executor/simple_test.go, executor/simpletest/BUILD.bazel, executor/simpletest/simple_test.go, executor/splittest/BUILD.bazel, executor/splittest/main_test.go, executor/splittest/split_table_test.go, expression/BUILD.bazel, expression/aggregation/BUILD.bazel, meta/BUILD.bazel, metrics/BUILD.bazel, server/BUILD.bazel, sessiontxn/isolation/BUILD.bazel, store/mockstore/mockcopr/BUILD.bazel, store/mockstore/unistore/metrics/BUILD.bazel, testkit/BUILD.bazel, testkit/testkit.go, tidb-server/BUILD.bazel\nPatch url: https://github.com/pingcap/tidb/pull/35300.patch\nPicked test: type=unit path=executor/simpletest/simple_test.go name=simple_test"
+}

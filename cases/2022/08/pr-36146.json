@@ -1,0 +1,55 @@
+{
+  "id": "pr-36146",
+  "source_pr": {
+    "number": 36146,
+    "url": "https://github.com/pingcap/tidb/pull/36146",
+    "title": "ddl: Add `sql_require_primary_key` sysvar",
+    "body": "\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/28544\r\n\r\nProblem Summary: \r\n\r\nThis is a feature from MySQL 8.0:\r\nhttps://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_sql_require_primary_key\r\n\r\nIt allows you to enforce tables have a primary key. In MySQL it is important because Row-based replication benefits from it.\r\n\r\nWith TiDB, TiCDC (mysql sink) will not replicate tables without a primary/unique key by default. If you chose to replicate tables without a primary key, the data will be duplicated. For our use-case this is an issue, since we use TiCDC to async replicate between clusters we intend to failover to.\r\n\r\n### What is changed and how it works?\r\n\r\n`sql_require_primary_key` sysvar has been added. When enabled it will throw an error if a create table ddl doesn't have a primary key.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nThe system variable `sql_require_primary_key` has been added. This behaves the same as the feature in MySQL 8.0, and when enabled tables can not be created without primary keys.\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-08-03T17:20:07+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "*: enable flaky test for all test (#36385)"
+  ],
+  "failure_signature": "*: enable flaky test for all test (#36385)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: Add `sql_require_primary_key` sysvar",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/36146",
+    "https://github.com/pingcap/tidb/pull/36146.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/36146.patch",
+  "changed_files": [
+    "ddl/ddl_api.go",
+    "errno/errcode.go",
+    "errno/errname.go",
+    "errors.toml",
+    "expression/integration_test.go",
+    "infoschema/error.go",
+    "planner/core/testdata/expression_rewriter_suite_in.json",
+    "planner/core/testdata/expression_rewriter_suite_out.json",
+    "planner/core/testdata/integration_suite_in.json",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: *: enable flaky test for all test (#36385)",
+      "files: ddl/ddl_api.go, errno/errcode.go, errno/errname.go, errors.toml, expression/integration_test.go, infoschema/error.go, parser/hintparser.go, parser/parser.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go"
+    ]
+  },
+  "analysis": "PR title: ddl: Add `sql_require_primary_key` sysvar\nPR url: https://github.com/pingcap/tidb/pull/36146\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: *: enable flaky test for all test (#36385)\nChanged files (11): ddl/ddl_api.go, errno/errcode.go, errno/errname.go, errors.toml, expression/integration_test.go, infoschema/error.go, planner/core/testdata/expression_rewriter_suite_in.json, planner/core/testdata/expression_rewriter_suite_out.json, planner/core/testdata/integration_suite_in.json, sessionctx/variable/session.go, sessionctx/variable/sysvar.go\nPatch url: https://github.com/pingcap/tidb/pull/36146.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+}

@@ -1,0 +1,52 @@
+{
+  "id": "pr-38646",
+  "source_pr": {
+    "number": 38646,
+    "url": "https://github.com/pingcap/tidb/pull/38646",
+    "title": "ddl: improve the reorg task scheduling",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #35983\r\n\r\nProblem Summary:\r\n\r\nIn the data reorganization stage of adding index, we wrap the table ranges to a few tasks and then send them to several workers. These workers named \"add index workers\" or \"backfill workers\", which run in parallel to improve the performance of creating index records.\r\n\r\nThe main thread organizes the tasks in batch. Each batch contains `@@tidb_ddl_reorg_worker_cnt` tasks. The tasks in batch are sent to the backfill workers one by one:\r\n\r\nhttps://github.com/pingcap/tidb/blob/ac0d36b2c96c30ea7ef3310558f5b024dd388eba/ddl/backfilling.go#L393-L396\r\n\r\nWe cannot proceed with the next batch until all the workers finish:\r\n\r\nhttps://github.com/pingcap/tidb/blob/ac0d36b2c96c30ea7ef3310558f5b024dd388eba/ddl/backfilling.go#L367-L369\r\n\r\nAs a result, the time consumed on a batch is determined by the slowest backfill worker. The CPU utilization is not good.\r\n\r\n### What is changed and how it works?\r\n\r\nThis PR proposes a better model: All backfill workers share the same task channel and the same result channel. Once a worker finishes a task, it could pick up the next one instantly without waiting.\r\n\r\nHowever, this change breaks the order of the task execution. For example, task 6 may be handled earlier than task 5. We need another way to determine the \"next handle\", which is persisted to the storage as a check point. In this PR, `doneTaskKeeper` solves this problem.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n\r\n---\r\n\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\n  - Local environment\r\n  - Sysbench table `sbtest1`\r\n    ```sql\r\n    sbtest1 | CREATE TABLE `sbtest1` (\r\n    `id` int(11) NOT NULL AUTO_INCREMENT,\r\n    `k` int(11) NOT NULL DEFAULT '0',\r\n    `c` char(120) NOT NULL DEFAULT '',\r\n    `pad` char(60) NOT NULL DEFAULT '',\r\n    PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,\r\n    KEY `k_1` (`k`),\r\n    KEY `idx` (`k`)\r\n    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=10224220\r\n    ```\r\n  - 10 millions records\r\n  - `@@tidb_ddl_enable_fast_reorg` = 1\r\n  - `@@tidb_ddl_reorg_worker_cnt` = 4\r\n  - `@@tidb_ddl_reorg_batch_size` = 256\r\n\r\nBefore this PR:\r\n```sql\r\nmysql> alter table sbtest1 add index idx(k);\r\nQuery OK, 0 rows affected (36.71 sec)\r\n```\r\n\r\n```\r\n[2022/10/26 13:54:49.549 +08:00] [INFO] [backfilling.go:713] [\"[ddl] start backfill workers to reorg record\"] [type=\"add index\"] [workerCnt=4] [regionCnt=65] [startKey=7480000000000000485f728000000000000001] [endKey=7480000000000000485f72800000000098f84d]\r\n[2022/10/26 13:54:49.549 +08:00] [INFO] [backfilling.go:289] [\"[ddl] backfill worker start\"] [type=\"add index\"] [workerID=3]\r\n...\r\n[2022/10/26 13:55:10.579 +08:00] [INFO] [reorg.go:237] [\"[ddl] run reorg job done\"] [\"handled rows\"=10000000]\r\n[2022/10/26 13:55:10.579 +08:00] [INFO] [backfilling.go:326] [\"[ddl] backfill worker exit\"] [type=\"add index\"] [workerID=0]\r\n```\r\n\r\nIt takes 21 seconds to finish the backfilling stage.\r\n\r\nAfter this PR:\r\n\r\n```sql\r\nmysql> alter table sbtest1 add index idx(k);\r\nQuery OK, 0 rows affected (30.44 sec)\r\n```\r\n\r\n```\r\n[2022/10/26 13:52:41.490 +08:00] [INFO] [backfilling.go:736] [\"[ddl] start backfill workers to reorg record\"] [type=\"add index\"] [workerCnt=4] [regionCnt=65] [startKey=7480000000000000485f728000000000000001] [endKey=7480000000000000485f72800000000098f84d]\r\n[2022/10/26 13:52:41.490 +08:00] [INFO] [backfilling.go:296] [\"[ddl] backfill worker start\"] [type=\"add index\"] [workerID=3]\r\n...\r\n[2022/10/26 13:52:56.673 +08:00] [INFO] [backfilling.go:343] [\"[ddl] backfill worker exit\"] [type=\"add index\"] [workerID=3]\r\n[2022/10/26 13:52:56.673 +08:00] [INFO] [reorg.go:237] [\"[ddl] run reorg job done\"] [\"handled rows\"=10000000]\r\n[2022/10/26 13:52:56.673 +08:00] [INFO] [backfilling.go:343] [\"[ddl] backfill worker exit\"] [type=\"add index\"] [workerID=0]\r\n[2022/10/26 13:52:56.673 +08:00] [INFO] [backfilling.go:343] [\"[ddl] backfill worker exit\"] [type=\"add index\"] [workerID=1]\r\n[2022/10/26 13:52:56.673 +08:00] [INFO] [backfilling.go:343] [\"[ddl] backfill worker exit\"] [type=\"add index\"] [workerID=2]\r\n```\r\n\r\nIt takes 15 seconds to finish the backfill stage.\r\n\r\n---\r\n\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-11-10T10:49:52+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/backfilling_test.go",
+    "name": "backfilling_test"
+  },
+  "symptoms": [
+    "fix data race"
+  ],
+  "failure_signature": "fix data race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: improve the reorg task scheduling",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/38646",
+    "https://github.com/pingcap/tidb/pull/38646.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/38646.patch",
+  "changed_files": [
+    "ddl/BUILD.bazel",
+    "ddl/backfilling.go",
+    "ddl/backfilling_test.go",
+    "ddl/column.go",
+    "ddl/ddl_workerpool_test.go",
+    "ddl/index.go",
+    "ddl/index_merge_tmp.go",
+    "ddl/index_modify_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix data race",
+      "files: ddl/BUILD.bazel, ddl/backfilling.go, ddl/backfilling_test.go, ddl/column.go, ddl/ddl_workerpool_test.go, ddl/index.go, ddl/index_merge_tmp.go, ddl/index_modify_test.go, ddl/main_test.go, session/BUILD.bazel"
+    ]
+  },
+  "analysis": "PR title: ddl: improve the reorg task scheduling\nPR url: https://github.com/pingcap/tidb/pull/38646\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (8): ddl/BUILD.bazel, ddl/backfilling.go, ddl/backfilling_test.go, ddl/column.go, ddl/ddl_workerpool_test.go, ddl/index.go, ddl/index_merge_tmp.go, ddl/index_modify_test.go\nPatch url: https://github.com/pingcap/tidb/pull/38646.patch\nPicked test: type=unit path=ddl/backfilling_test.go name=backfilling_test"
+}

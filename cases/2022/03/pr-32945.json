@@ -1,0 +1,46 @@
+{
+  "id": "pr-32945",
+  "source_pr": {
+    "number": 32945,
+    "url": "https://github.com/pingcap/tidb/pull/32945",
+    "title": "table: fix ForListColumnPruning.valueMap's data race",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/32823\r\n\r\nProblem Summary:\r\n`ForListColumnPruning.valueMap` may have the data race. `LocatePartition` may be called in parallel, resulting in the following:\r\n\r\nRead valueMap: https://github.com/pingcap/tidb/blob/master/table/tables/partition.go#L824\r\nWrite valueMap: https://github.com/pingcap/tidb/blob/master/table/tables/partition.go#L788\r\n\r\n### What is changed and how it works?\r\nAdd a lock for `valueMap`.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\nBefore this PR， running the `TestLocatePartition` will return `fatal error: concurrent map writes`.\r\n\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nFix the issue that does `select` for list partition may have the data race.\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-03-09T21:03:50+08:00",
+  "test": {
+    "type": "unit",
+    "path": "table/tables/partition_test.go",
+    "name": "partition_test"
+  },
+  "symptoms": [
+    "table: fix ForListColumnPruning.valueMap's data race"
+  ],
+  "failure_signature": "table: fix ForListColumnPruning.valueMap's data race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "table: fix ForListColumnPruning.valueMap's data race",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/32945",
+    "https://github.com/pingcap/tidb/pull/32945.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/32945.patch",
+  "changed_files": [
+    "table/tables/partition.go",
+    "table/tables/partition_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: table: fix ForListColumnPruning.valueMap's data race",
+      "files: table/tables/partition.go, table/tables/partition_test.go"
+    ]
+  },
+  "analysis": "PR title: table: fix ForListColumnPruning.valueMap's data race\nPR url: https://github.com/pingcap/tidb/pull/32945\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: table: fix ForListColumnPruning.valueMap's data race\nChanged files (2): table/tables/partition.go, table/tables/partition_test.go\nPatch url: https://github.com/pingcap/tidb/pull/32945.patch\nPicked test: type=unit path=table/tables/partition_test.go name=partition_test"
+}
