@@ -1,0 +1,52 @@
+{
+  "id": "pr-402",
+  "source_pr": {
+    "number": 402,
+    "url": "https://github.com/pingcap/tidb/pull/402",
+    "title": "update ambiguous check",
+    "body": "- Use CheckReferAmbiguous to check fields ambiguous uniformly. \n- Fix panic when adding hidden aggregate field.\n- Fix https://github.com/pingcap/tidb/issues/337\n"
+  },
+  "pr_merged_at": "2015-10-16T19:28:00+08:00",
+  "test": {
+    "type": "unit",
+    "path": "tidb_test.go",
+    "name": "tidb_test"
+  },
+  "symptoms": [
+    "mustExecMatch(c, se, \"select c1 as a, c1 as b from t order by c1\", [][]interface{}{{1, 1}, {2, 2}}) (tidb_test.go)"
+  ],
+  "failure_signature": "mustExecMatch(c, se, \"select c1 as a, c1 as b from t order by c1\", [][]interface{}{{1, 1}, {2, 2}}) (tidb_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/402",
+    "https://github.com/pingcap/tidb/pull/402.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/402.patch",
+  "changed_files": [
+    "expression/helper.go",
+    "field/result_field.go",
+    "plan/plans/select_list.go",
+    "plan/plans/select_list_test.go",
+    "rset/rsets/groupby.go",
+    "rset/rsets/groupby_test.go",
+    "rset/rsets/orderby.go",
+    "tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: mustExecMatch(c, se, \"select c1 as a, c1 as b from t order by c1\", [][]interface{}{{1, 1}, {2, 2}}) (tidb_test.go)",
+      "files: expression/helper.go, field/result_field.go, plan/plans/select_list.go, plan/plans/select_list_test.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, rset/rsets/orderby.go, tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: update ambiguous check\nPR url: https://github.com/pingcap/tidb/pull/402\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: mustExecMatch(c, se, \"select c1 as a, c1 as b from t order by c1\", [][]interface{}{{1, 1}, {2, 2}}) (tidb_test.go)\nChanged files (8): expression/helper.go, field/result_field.go, plan/plans/select_list.go, plan/plans/select_list_test.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, rset/rsets/orderby.go, tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/402.patch\nPicked test: type=unit path=tidb_test.go name=tidb_test"
+}

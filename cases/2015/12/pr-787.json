@@ -1,0 +1,48 @@
+{
+  "id": "pr-787",
+  "source_pr": {
+    "number": 787,
+    "url": "https://github.com/pingcap/tidb/pull/787",
+    "title": "Shenli/optimizer error",
+    "body": "@coocood \n"
+  },
+  "pr_merged_at": "2015-12-24T11:25:36+08:00",
+  "test": {
+    "type": "unit",
+    "path": "tidb-server/server/server_test.go",
+    "name": "server_test"
+  },
+  "symptoms": [
+    "_, err = txn2.Exec(\"select * from test order by row(c, c);\") (tidb-server/server/server_test.go)"
+  ],
+  "failure_signature": "_, err = txn2.Exec(\"select * from test order by row(c, c);\") (tidb-server/server/server_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/787",
+    "https://github.com/pingcap/tidb/pull/787.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/787.patch",
+  "changed_files": [
+    "optimizer/optimizer.go",
+    "optimizer/validator.go",
+    "terror/terror.go",
+    "tidb-server/server/server_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: _, err = txn2.Exec(\"select * from test order by row(c, c);\") (tidb-server/server/server_test.go)",
+      "files: optimizer/optimizer.go, optimizer/validator.go, terror/terror.go, tidb-server/server/server_test.go"
+    ]
+  },
+  "analysis": "PR title: Shenli/optimizer error\nPR url: https://github.com/pingcap/tidb/pull/787\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: _, err = txn2.Exec(\"select * from test order by row(c, c);\") (tidb-server/server/server_test.go)\nChanged files (4): optimizer/optimizer.go, optimizer/validator.go, terror/terror.go, tidb-server/server/server_test.go\nPatch url: https://github.com/pingcap/tidb/pull/787.patch\nPicked test: type=unit path=tidb-server/server/server_test.go name=server_test"
+}

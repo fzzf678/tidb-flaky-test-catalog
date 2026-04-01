@@ -1,0 +1,89 @@
+{
+  "id": "pr-651",
+  "source_pr": {
+    "number": 651,
+    "url": "https://github.com/pingcap/tidb/pull/651",
+    "title": "optimizer, executor: Use new plan for simple select statement.",
+    "body": "composite index, IN, OR, LIKE expression and order by can use index now.\n"
+  },
+  "pr_merged_at": "2015-12-09T17:37:26+08:00",
+  "test": {
+    "type": "unit",
+    "path": "optimizer/infobinder_test.go",
+    "name": "infobinder_test"
+  },
+  "symptoms": [
+    "{\"select c1, c2 as c1 from t1 order by c1\", false}, (optimizer/infobinder_test.go)"
+  ],
+  "failure_signature": "{\"select c1, c2 as c1 from t1 order by c1\", false}, (optimizer/infobinder_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/651",
+    "https://github.com/pingcap/tidb/pull/651.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/651.patch",
+  "changed_files": [
+    "ast/ast.go",
+    "ast/cloner.go",
+    "ast/expressions.go",
+    "ast/functions.go",
+    "ddl/ddl_test.go",
+    "executor/adapter.go",
+    "executor/builder.go",
+    "executor/compiler.go",
+    "executor/converter/convert_expr.go",
+    "executor/converter/convert_stmt.go",
+    "executor/converter/converter.go",
+    "executor/executor.go",
+    "expression/helper.go",
+    "expression/helper_test.go",
+    "optimizer/aggregator.go",
+    "optimizer/evaluator.go",
+    "optimizer/evaluator/evaluator.go",
+    "optimizer/evaluator/evaluator_binop.go",
+    "optimizer/evaluator/evaluator_like.go",
+    "optimizer/evaluator/evaluator_test.go",
+    "optimizer/infobinder.go",
+    "optimizer/infobinder_test.go",
+    "optimizer/optimizer.go",
+    "optimizer/plan/alternatives.go",
+    "optimizer/plan/cost.go",
+    "optimizer/plan/explainer.go",
+    "optimizer/plan/plan.go",
+    "optimizer/plan/plan_test.go",
+    "optimizer/plan/planbuilder.go",
+    "optimizer/plan/plans.go",
+    "optimizer/plan/range.go",
+    "optimizer/plan/refiner.go",
+    "optimizer/resolver.go",
+    "optimizer/resolver_test.go",
+    "optimizer/typecomputer.go",
+    "optimizer/typeinferer.go",
+    "optimizer/validator.go",
+    "parser/parser.y",
+    "rset/rset.go",
+    "rset/rsets/join_test.go",
+    "stmt/stmts/select_test.go",
+    "terror/terror.go",
+    "tidb.go",
+    "util/charset/encoding_table.go",
+    "util/types/convert.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: {\"select c1, c2 as c1 from t1 order by c1\", false}, (optimizer/infobinder_test.go)",
+      "files: ast/ast.go, ast/cloner.go, ast/expressions.go, ast/functions.go, ddl/ddl_test.go, executor/adapter.go, executor/builder.go, executor/compiler.go, executor/converter/convert_expr.go, executor/converter/convert_stmt.go, executor/converter/converter.go, executor/evaluator.go, executor/evaluator_binop.go, executor/evaluator_like.go, executor/executor.go, expression/helper.go, expression/helper_test.go, optimizer/alternatives.go, optimizer/compiler.go, optimizer/condition_normalizer.go, optimizer/evaluator.go, optimizer/evaluator/evaluator.go, optimizer/evaluator/evaluator_binop.go, optimizer/evaluator/evaluator_like.go, optimizer/evaluator/evaluator_test.go, optimizer/indexpicker.go, optimizer/infobinder.go, optimizer/infobinder_test.go, optimizer/optimizer.go, optimizer/plan/alternatives.go, optimizer/plan/cost.go, optimizer/plan/explainer.go, optimizer/plan/plan.go, optimizer/plan/plan_test.go, optimizer/plan/planbuilder.go, optimizer/plan/plans.go, optimizer/plan/range.go, optimizer/plan/refiner.go, optimizer/planbuilder.go, optimizer/range.go, optimizer/range_test.go, optimizer/refiner.go, optimizer/resolver.go, optimizer/resolver_test.go, optimizer/typecomputer.go, optimizer/typeinferer.go, optimizer/validator.go, parser/parser.y, rset/rset.go, rset/rsets/join_test.go, stmt/stmts/select_test.go, terror/terror.go, tidb.go, util/charset/encoding_table.go, util/types/convert.go"
+    ]
+  },
+  "analysis": "PR title: optimizer, executor: Use new plan for simple select statement.\nPR url: https://github.com/pingcap/tidb/pull/651\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: {\"select c1, c2 as c1 from t1 order by c1\", false}, (optimizer/infobinder_test.go)\nChanged files (45): ast/ast.go, ast/cloner.go, ast/expressions.go, ast/functions.go, ddl/ddl_test.go, executor/adapter.go, executor/builder.go, executor/compiler.go, executor/converter/convert_expr.go, executor/converter/convert_stmt.go, executor/converter/converter.go, executor/executor.go, expression/helper.go, expression/helper_test.go, optimizer/aggregator.go, optimizer/evaluator.go, optimizer/evaluator/evaluator.go, optimizer/evaluator/evaluator_binop.go, optimizer/evaluator/evaluator_like.go, optimizer/evaluator/evaluator_test.go, optimizer/infobinder.go, optimizer/infobinder_test.go, optimizer/optimizer.go, optimizer/plan/alternatives.go, optimizer/plan/cost.go, optimizer/plan/explainer.go, optimizer/plan/plan.go, optimizer/plan/plan_test.go, optimizer/plan/planbuilder.go, optimizer/plan/plans.go, optimizer/plan/range.go, optimizer/plan/refiner.go, optimizer/resolver.go, optimizer/resolver_test.go, optimizer/typecomputer.go, optimizer/typeinferer.go, optimizer/validator.go, parser/parser.y, rset/rset.go, rset/rsets/join_test.go, stmt/stmts/select_test.go, terror/terror.go, tidb.go, util/charset/encoding_table.go, util/types/convert.go\nPatch url: https://github.com/pingcap/tidb/pull/651.patch\nPicked test: type=unit path=optimizer/infobinder_test.go name=infobinder_test"
+}

@@ -1,0 +1,58 @@
+{
+  "id": "pr-146",
+  "source_pr": {
+    "number": 146,
+    "url": "https://github.com/pingcap/tidb/pull/146",
+    "title": "fix issue 108",
+    "body": "Fix issue: https://github.com/pingcap/tidb/issues/108\nRefactor update.go and support multiple-table syntax.\n\nI change update syntax according to https://dev.mysql.com/doc/refman/5.7/en/update.html. There should be a \"SET\" in update statement. So some of tidb_test should be changed.\n"
+  },
+  "pr_merged_at": "2015-09-15T17:55:18+08:00",
+  "test": {
+    "type": "unit",
+    "path": "parser/parser_test.go",
+    "name": "parser_test"
+  },
+  "symptoms": [
+    "{\"UPDATE t SET id = id + 1 ORDER BY id DESC;\", true}, (parser/parser_test.go)"
+  ],
+  "failure_signature": "{\"UPDATE t SET id = id + 1 ORDER BY id DESC;\", true}, (parser/parser_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/146",
+    "https://github.com/pingcap/tidb/pull/146.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/146.patch",
+  "changed_files": [
+    "expression/expressions/assign.go",
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "plan/plans/fields.go",
+    "plan/plans/groupby.go",
+    "plan/plans/having.go",
+    "plan/plans/index.go",
+    "plan/plans/join.go",
+    "plan/plans/orderby.go",
+    "plan/plans/plans.go",
+    "plan/plans/where.go",
+    "stmt/stmts/insert.go",
+    "stmt/stmts/update.go",
+    "stmt/stmts/update_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: {\"UPDATE t SET id = id + 1 ORDER BY id DESC;\", true}, (parser/parser_test.go)",
+      "files: Makefile, expression/expressions/assign.go, expression/expressions/ident.go, parser/parser.y, parser/parser_test.go, plan/plans/index.go, plan/plans/join.go, stmt/stmts/create_test.go, stmt/stmts/insert.go, stmt/stmts/update.go, stmt/stmts/update_test.go"
+    ]
+  },
+  "analysis": "PR title: fix issue 108\nPR url: https://github.com/pingcap/tidb/pull/146\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: {\"UPDATE t SET id = id + 1 ORDER BY id DESC;\", true}, (parser/parser_test.go)\nChanged files (14): expression/expressions/assign.go, parser/parser.y, parser/parser_test.go, plan/plans/fields.go, plan/plans/groupby.go, plan/plans/having.go, plan/plans/index.go, plan/plans/join.go, plan/plans/orderby.go, plan/plans/plans.go, plan/plans/where.go, stmt/stmts/insert.go, stmt/stmts/update.go, stmt/stmts/update_test.go\nPatch url: https://github.com/pingcap/tidb/pull/146.patch\nPicked test: type=unit path=parser/parser_test.go name=parser_test"
+}

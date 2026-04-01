@@ -1,0 +1,72 @@
+{
+  "id": "pr-491",
+  "source_pr": {
+    "number": 491,
+    "url": "https://github.com/pingcap/tidb/pull/491",
+    "title": "ast,optimizer: switch to use new parser, and convert ast.Node to old statements.",
+    "body": ""
+  },
+  "pr_merged_at": "2015-11-05T15:38:31+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ast/parser/parser_test.go",
+    "name": "parser_test"
+  },
+  "symptoms": [
+    "{\"UPDATE t SET id = id + 1 ORDER BY id DESC;\", true}, (ast/parser/parser_test.go)"
+  ],
+  "failure_signature": "{\"UPDATE t SET id = id + 1 ORDER BY id DESC;\", true}, (ast/parser/parser_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/491",
+    "https://github.com/pingcap/tidb/pull/491.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/491.patch",
+  "changed_files": [
+    "ast/ast.go",
+    "ast/base.go",
+    "ast/cloner.go",
+    "ast/cloner_test.go",
+    "ast/ddl.go",
+    "ast/dml.go",
+    "ast/expressions.go",
+    "ast/functions.go",
+    "ast/misc.go",
+    "ast/parser/parser.y",
+    "ast/parser/parser_test.go",
+    "ast/parser/scanner.l",
+    "ast/parser/yy_parser.go",
+    "ddl/ddl_test.go",
+    "optimizer/aggregator.go",
+    "optimizer/compiler.go",
+    "optimizer/convert_expr.go",
+    "optimizer/convert_stmt.go",
+    "optimizer/evaluator.go",
+    "optimizer/evaluator_binop.go",
+    "optimizer/infobinder.go",
+    "optimizer/infobinder_test.go",
+    "optimizer/typecomputer.go",
+    "optimizer/validator.go",
+    "stmt/stmts/drop_test.go",
+    "stmt/stmts/show_test.go",
+    "tidb.go",
+    "tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: {\"UPDATE t SET id = id + 1 ORDER BY id DESC;\", true}, (ast/parser/parser_test.go)",
+      "files: ast/ast.go, ast/base.go, ast/cloner.go, ast/cloner_test.go, ast/ddl.go, ast/dml.go, ast/expressions.go, ast/functions.go, ast/misc.go, ast/parser/parser.y, ast/parser/parser_test.go, ast/parser/scanner.l, ast/parser/yy_parser.go, ddl/ddl_test.go, optimizer/aggregator.go, optimizer/compiler.go, optimizer/convert_expr.go, optimizer/convert_stmt.go, optimizer/evaluator.go, optimizer/evaluator_binop.go, optimizer/infobinder.go, optimizer/infobinder_test.go, optimizer/optimizer.go, optimizer/typecomputer.go, optimizer/validator.go, stmt/stmts/drop_test.go, stmt/stmts/show_test.go, tidb.go, tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: ast,optimizer: switch to use new parser, and convert ast.Node to old statements.\nPR url: https://github.com/pingcap/tidb/pull/491\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: {\"UPDATE t SET id = id + 1 ORDER BY id DESC;\", true}, (ast/parser/parser_test.go)\nChanged files (28): ast/ast.go, ast/base.go, ast/cloner.go, ast/cloner_test.go, ast/ddl.go, ast/dml.go, ast/expressions.go, ast/functions.go, ast/misc.go, ast/parser/parser.y, ast/parser/parser_test.go, ast/parser/scanner.l, ast/parser/yy_parser.go, ddl/ddl_test.go, optimizer/aggregator.go, optimizer/compiler.go, optimizer/convert_expr.go, optimizer/convert_stmt.go, optimizer/evaluator.go, optimizer/evaluator_binop.go, optimizer/infobinder.go, optimizer/infobinder_test.go, optimizer/typecomputer.go, optimizer/validator.go, stmt/stmts/drop_test.go, stmt/stmts/show_test.go, tidb.go, tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/491.patch\nPicked test: type=unit path=ast/parser/parser_test.go name=parser_test"
+}

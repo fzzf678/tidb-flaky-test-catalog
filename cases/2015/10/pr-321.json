@@ -1,0 +1,52 @@
+{
+  "id": "pr-321",
+  "source_pr": {
+    "number": 321,
+    "url": "https://github.com/pingcap/tidb/pull/321",
+    "title": "dev union",
+    "body": "- support order by and limit in union \n- subselect support union\n- handle different all/distinct union option\n"
+  },
+  "pr_merged_at": "2015-10-08T15:26:04+08:00",
+  "test": {
+    "type": "unit",
+    "path": "parser/parser_test.go",
+    "name": "parser_test"
+  },
+  "symptoms": [
+    "{\"select c1 from t1 union (select c2 from t2) order by c1\", true}, (parser/parser_test.go)"
+  ],
+  "failure_signature": "{\"select c1 from t1 union (select c2 from t2) order by c1\", true}, (parser/parser_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/321",
+    "https://github.com/pingcap/tidb/pull/321.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/321.patch",
+  "changed_files": [
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "plan/plans/union.go",
+    "plan/plans/union_test.go",
+    "stmt/stmts/insert.go",
+    "stmt/stmts/insert_test.go",
+    "stmt/stmts/union.go",
+    "stmt/stmts/union_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: {\"select c1 from t1 union (select c2 from t2) order by c1\", true}, (parser/parser_test.go)",
+      "files: parser/parser.y, parser/parser_test.go, plan/plans/union.go, plan/plans/union_test.go, stmt/stmts/insert.go, stmt/stmts/insert_test.go, stmt/stmts/union.go, stmt/stmts/union_test.go"
+    ]
+  },
+  "analysis": "PR title: dev union\nPR url: https://github.com/pingcap/tidb/pull/321\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: {\"select c1 from t1 union (select c2 from t2) order by c1\", true}, (parser/parser_test.go)\nChanged files (8): parser/parser.y, parser/parser_test.go, plan/plans/union.go, plan/plans/union_test.go, stmt/stmts/insert.go, stmt/stmts/insert_test.go, stmt/stmts/union.go, stmt/stmts/union_test.go\nPatch url: https://github.com/pingcap/tidb/pull/321.patch\nPicked test: type=unit path=parser/parser_test.go name=parser_test"
+}

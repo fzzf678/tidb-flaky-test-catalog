@@ -1,0 +1,76 @@
+{
+  "id": "pr-409",
+  "source_pr": {
+    "number": 409,
+    "url": "https://github.com/pingcap/tidb/pull/409",
+    "title": "refactor ident",
+    "body": "origin identifier checking and getting is complicated, slow and hard to know.\nMySQL has many rules to check identifier validation like whether is ambiguous or unknown in different clauses like from, where, group by, having, select field, and order by, and we don't fully know this before and have no enough comments/docs to say why we should do this or do that. \nThe origin GetIdent\\* functions will travel result fields every time for same identifier name, which deducts performance too.\nWe have use many flags to check where an identifier is, which is very complicated and hard to maintain. \n\nHow to improve this?\n- Add refer scope and refer index field for identifier, every identifier, can only reference in select field, in from table or outer query, we can know an identifier's scope and index in Plan. so later, we can use index and scope to retrieve the value for this identifier directly. \n- Use visitor to fix identifier scope and index in rsets group by, order by, having, etc... so we don't need any other extra checking and getting when plan executing. \n- Learn MySQL rules again, and write detailed comments to let other people know what we don't to support. \n\nTODO later:\n- Check refer index validation when evaluation to prevent panic. \n- Support referencing outer query after we can support visiting statement, and expression together. \n- Remove unnecessary flag and function in field package for result field. \n- Add more tests for group by, order by, having, etc...\n"
+  },
+  "pr_merged_at": "2015-10-19T16:03:23+08:00",
+  "test": {
+    "type": "unit",
+    "path": "tidb_test.go",
+    "name": "tidb_test"
+  },
+  "symptoms": [
+    "mustExecMatch(c, se, \"select c1 as c2 from t order by c2 + 1\", [][]interface{}{{2}, {1}}) (tidb_test.go)"
+  ],
+  "failure_signature": "mustExecMatch(c, se, \"select c1 as c2 from t order by c2 + 1\", [][]interface{}{{2}, {1}}) (tidb_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/409",
+    "https://github.com/pingcap/tidb/pull/409.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/409.patch",
+  "changed_files": [
+    "expression/binop_test.go",
+    "expression/helper.go",
+    "expression/helper_test.go",
+    "expression/ident.go",
+    "expression/ident_test.go",
+    "plan/plans/fields.go",
+    "plan/plans/groupby.go",
+    "plan/plans/groupby_test.go",
+    "plan/plans/having.go",
+    "plan/plans/having_test.go",
+    "plan/plans/join.go",
+    "plan/plans/orderby.go",
+    "plan/plans/orderby_test.go",
+    "plan/plans/row_stack.go",
+    "plan/plans/select_list.go",
+    "plan/plans/select_list_test.go",
+    "plan/plans/where.go",
+    "plan/plans/where_test.go",
+    "rset/rsets/fields.go",
+    "rset/rsets/fields_test.go",
+    "rset/rsets/groupby.go",
+    "rset/rsets/groupby_test.go",
+    "rset/rsets/having.go",
+    "rset/rsets/having_test.go",
+    "rset/rsets/helper.go",
+    "rset/rsets/join.go",
+    "rset/rsets/orderby.go",
+    "rset/rsets/orderby_test.go",
+    "rset/rsets/where.go",
+    "stmt/stmts/select.go",
+    "stmt/stmts/union.go",
+    "tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: mustExecMatch(c, se, \"select c1 as c2 from t order by c2 + 1\", [][]interface{}{{2}, {1}}) (tidb_test.go)",
+      "files: expression/binop_test.go, expression/helper.go, expression/helper_test.go, expression/ident.go, expression/ident_test.go, plan/plans/fields.go, plan/plans/groupby.go, plan/plans/groupby_test.go, plan/plans/having.go, plan/plans/having_test.go, plan/plans/join.go, plan/plans/orderby.go, plan/plans/orderby_test.go, plan/plans/row_stack.go, plan/plans/select_list.go, plan/plans/select_list_test.go, plan/plans/where.go, plan/plans/where_test.go, rset/rsets/fields.go, rset/rsets/fields_test.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, rset/rsets/having.go, rset/rsets/having_test.go, rset/rsets/helper.go, rset/rsets/join.go, rset/rsets/orderby.go, rset/rsets/orderby_test.go, rset/rsets/where.go, stmt/stmts/select.go, stmt/stmts/union.go, tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: refactor ident\nPR url: https://github.com/pingcap/tidb/pull/409\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: mustExecMatch(c, se, \"select c1 as c2 from t order by c2 + 1\", [][]interface{}{{2}, {1}}) (tidb_test.go)\nChanged files (32): expression/binop_test.go, expression/helper.go, expression/helper_test.go, expression/ident.go, expression/ident_test.go, plan/plans/fields.go, plan/plans/groupby.go, plan/plans/groupby_test.go, plan/plans/having.go, plan/plans/having_test.go, plan/plans/join.go, plan/plans/orderby.go, plan/plans/orderby_test.go, plan/plans/row_stack.go, plan/plans/select_list.go, plan/plans/select_list_test.go, plan/plans/where.go, plan/plans/where_test.go, rset/rsets/fields.go, rset/rsets/fields_test.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, rset/rsets/having.go, rset/rsets/having_test.go, rset/rsets/helper.go, rset/rsets/join.go, rset/rsets/orderby.go, rset/rsets/orderby_test.go, rset/rsets/where.go, stmt/stmts/select.go, stmt/stmts/union.go, tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/409.patch\nPicked test: type=unit path=tidb_test.go name=tidb_test"
+}

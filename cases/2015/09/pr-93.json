@@ -1,0 +1,52 @@
+{
+  "id": "pr-93",
+  "source_pr": {
+    "number": 93,
+    "url": "https://github.com/pingcap/tidb/pull/93",
+    "title": "select check one column",
+    "body": "row construct is not allowed using directly in select fields, group by, order by, and having. \n"
+  },
+  "pr_merged_at": "2015-09-10T14:37:44+08:00",
+  "test": {
+    "type": "unit",
+    "path": "rset/rsets/orderby_test.go",
+    "name": "orderby_test"
+  },
+  "symptoms": [
+    "// `select id from t order by row(1, 1)` (rset/rsets/orderby_test.go)"
+  ],
+  "failure_signature": "// `select id from t order by row(1, 1)` (rset/rsets/orderby_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/93",
+    "https://github.com/pingcap/tidb/pull/93.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/93.patch",
+  "changed_files": [
+    "plan/plans/select_list.go",
+    "rset/rsets/groupby.go",
+    "rset/rsets/groupby_test.go",
+    "rset/rsets/having.go",
+    "rset/rsets/having_test.go",
+    "rset/rsets/orderby.go",
+    "rset/rsets/orderby_test.go",
+    "stmt/stmts/select_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: // `select id from t order by row(1, 1)` (rset/rsets/orderby_test.go)",
+      "files: plan/plans/select_list.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, rset/rsets/having.go, rset/rsets/having_test.go, rset/rsets/orderby.go, rset/rsets/orderby_test.go, stmt/stmts/select_test.go"
+    ]
+  },
+  "analysis": "PR title: select check one column\nPR url: https://github.com/pingcap/tidb/pull/93\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // `select id from t order by row(1, 1)` (rset/rsets/orderby_test.go)\nChanged files (8): plan/plans/select_list.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, rset/rsets/having.go, rset/rsets/having_test.go, rset/rsets/orderby.go, rset/rsets/orderby_test.go, stmt/stmts/select_test.go\nPatch url: https://github.com/pingcap/tidb/pull/93.patch\nPicked test: type=unit path=rset/rsets/orderby_test.go name=orderby_test"
+}
