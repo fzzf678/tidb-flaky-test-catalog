@@ -1,0 +1,73 @@
+{
+  "id": "pr-1294",
+  "source_pr": {
+    "number": 1294,
+    "url": "https://github.com/pingcap/tidb/pull/1294",
+    "title": "rewrite executor.",
+    "body": "Replace \"result field\" with schema. Evaluate expression with indices of rows during execution.\n"
+  },
+  "pr_merged_at": "2016-06-07T20:32:15+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select max(c) from t group by d having sum(c) > 3 order by avg(c) desc\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select max(c) from t group by d having sum(c) > 3 order by avg(c) desc\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1294",
+    "https://github.com/pingcap/tidb/pull/1294.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1294.patch",
+  "changed_files": [
+    "evaluator/builtin.go",
+    "evaluator/builtin_other.go",
+    "executor/adapter.go",
+    "executor/aggregate_test.go",
+    "executor/aggregate_xapi.go",
+    "executor/builder.go",
+    "executor/executor.go",
+    "executor/executor_ddl.go",
+    "executor/executor_simple.go",
+    "executor/executor_test.go",
+    "executor/executor_write.go",
+    "executor/executor_xapi.go",
+    "executor/explain.go",
+    "executor/grant.go",
+    "executor/new_builder.go",
+    "executor/new_executor.go",
+    "executor/prepared.go",
+    "executor/show.go",
+    "executor/union_scan.go",
+    "expression/aggregation.go",
+    "expression/expression.go",
+    "optimizer/new_plan_test.go",
+    "optimizer/optimizer.go",
+    "optimizer/plan/column_pruning.go",
+    "optimizer/plan/new_plans.go",
+    "optimizer/plan/newplanbuilder.go",
+    "optimizer/plan/planbuilder.go",
+    "optimizer/plan/predicate_push_down.go",
+    "optimizer/plan/refiner.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select max(c) from t group by d having sum(c) > 3 order by avg(c) desc\") (executor/executor_test.go)",
+      "files: ast/functions.go, evaluator/builtin.go, evaluator/builtin_other.go, executor/adapter.go, executor/aggregate_test.go, executor/builder.go, executor/executor.go, executor/executor_ddl.go, executor/executor_simple.go, executor/executor_test.go, executor/executor_write.go, executor/executor_xapi.go, executor/explain.go, executor/grant.go, executor/new_builder.go, executor/new_executor.go, executor/prepared.go, executor/show.go, executor/union_scan.go, expression/aggregation.go, expression/expression.go, optimizer/new_plan_test.go, optimizer/optimizer.go, optimizer/plan/column_pruning.go, optimizer/plan/new_plans.go, optimizer/plan/newplanbuilder.go, optimizer/plan/planbuilder.go, optimizer/plan/predicate_push_down.go, optimizer/plan/refiner.go"
+    ]
+  },
+  "analysis": "PR title: rewrite executor.\nPR url: https://github.com/pingcap/tidb/pull/1294\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select max(c) from t group by d having sum(c) > 3 order by avg(c) desc\") (executor/executor_test.go)\nChanged files (29): evaluator/builtin.go, evaluator/builtin_other.go, executor/adapter.go, executor/aggregate_test.go, executor/aggregate_xapi.go, executor/builder.go, executor/executor.go, executor/executor_ddl.go, executor/executor_simple.go, executor/executor_test.go, executor/executor_write.go, executor/executor_xapi.go, executor/explain.go, executor/grant.go, executor/new_builder.go, executor/new_executor.go, executor/prepared.go, executor/show.go, executor/union_scan.go, expression/aggregation.go, expression/expression.go, optimizer/new_plan_test.go, optimizer/optimizer.go, optimizer/plan/column_pruning.go, optimizer/plan/new_plans.go, optimizer/plan/newplanbuilder.go, optimizer/plan/planbuilder.go, optimizer/plan/predicate_push_down.go, optimizer/plan/refiner.go\nPatch url: https://github.com/pingcap/tidb/pull/1294.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

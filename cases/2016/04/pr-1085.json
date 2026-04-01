@@ -1,0 +1,46 @@
+{
+  "id": "pr-1085",
+  "source_pr": {
+    "number": 1085,
+    "url": "https://github.com/pingcap/tidb/pull/1085",
+    "title": "executor: fix bug when the limit value is less than SortBufferSize.",
+    "body": "pass gorm_test\n"
+  },
+  "pr_merged_at": "2016-04-12T19:37:11+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "r = tk.MustQuery(\"select * from select_order_test order by name, id limit 1 offset 0;\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "r = tk.MustQuery(\"select * from select_order_test order by name, id limit 1 offset 0;\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1085",
+    "https://github.com/pingcap/tidb/pull/1085.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1085.patch",
+  "changed_files": [
+    "executor/executor.go",
+    "executor/executor_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: r = tk.MustQuery(\"select * from select_order_test order by name, id limit 1 offset 0;\") (executor/executor_test.go)",
+      "files: executor/executor.go, executor/executor_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix bug when the limit value is less than SortBufferSize.\nPR url: https://github.com/pingcap/tidb/pull/1085\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: r = tk.MustQuery(\"select * from select_order_test order by name, id limit 1 offset 0;\") (executor/executor_test.go)\nChanged files (2): executor/executor.go, executor/executor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/1085.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

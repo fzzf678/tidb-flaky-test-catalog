@@ -1,0 +1,48 @@
+{
+  "id": "pr-1850",
+  "source_pr": {
+    "number": 1850,
+    "url": "https://github.com/pingcap/tidb/pull/1850",
+    "title": "ddl: write DDL binlog when DDL is done.",
+    "body": "Previous implementation write DDL binlog as early as when job is added to the queue,\nbut DDL job may be canceled, we should not sync the ddl at that time, there would be a long\n time waiting for the DDL to be done.\n\nAfter this commit, DDL binlog is written right before the DDL job is done, so we don't need to wait.\n\nAlso expose a 'GetAllHistoryJobs' method in meta which will be used later.\n"
+  },
+  "pr_merged_at": "2016-10-20T14:03:33+08:00",
+  "test": {
+    "type": "unit",
+    "path": "meta/meta_test.go",
+    "name": "meta_test"
+  },
+  "symptoms": [
+    "// SetRowCount sets the number of rows. Make sure it can pass `make race`."
+  ],
+  "failure_signature": "// SetRowCount sets the number of rows. Make sure it can pass `make race`.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: write DDL binlog when DDL is done.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1850",
+    "https://github.com/pingcap/tidb/pull/1850.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1850.patch",
+  "changed_files": [
+    "ddl/ddl_worker.go",
+    "meta/meta.go",
+    "meta/meta_test.go",
+    "model/ddl.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: // SetRowCount sets the number of rows. Make sure it can pass `make race`.",
+      "files: ddl/ddl_worker.go, meta/meta.go, meta/meta_test.go, model/ddl.go"
+    ]
+  },
+  "analysis": "PR title: ddl: write DDL binlog when DDL is done.\nPR url: https://github.com/pingcap/tidb/pull/1850\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // SetRowCount sets the number of rows. Make sure it can pass `make race`.\nChanged files (4): ddl/ddl_worker.go, meta/meta.go, meta/meta_test.go, model/ddl.go\nPatch url: https://github.com/pingcap/tidb/pull/1850.patch\nPicked test: type=unit path=meta/meta_test.go name=meta_test"
+}

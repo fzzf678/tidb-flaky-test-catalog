@@ -1,0 +1,57 @@
+{
+  "id": "pr-1886",
+  "source_pr": {
+    "number": 1886,
+    "url": "https://github.com/pingcap/tidb/pull/1886",
+    "title": "plan: support aggregation push down.",
+    "body": "Like select sum(a.id) from t a, t b where a.id = b.id can be optimized as\nselect sum(agg) from (select sum(a.id) as agg, id from t group by id) a, t b where a.id = b.id.\n\n@shenli @coocood @zimulala @XuHuaiyu @tiancaiamao PTAL\n\nIf you want more details, please refer to https://www.overleaf.com/read/rzgxhpbbfgjq\nI am keeping to complete it.\n"
+  },
+  "pr_merged_at": "2016-10-31T01:17:21+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select count(*), a.c from t a , t b, t c where a.c = b.d and b.d = c.d group by c.d order by a.c\") (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select count(*), a.c from t a , t b, t c where a.c = b.d and b.d = c.d group by c.d order by a.c\") (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1886",
+    "https://github.com/pingcap/tidb/pull/1886.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1886.patch",
+  "changed_files": [
+    "executor/aggregate_test.go",
+    "executor/builder.go",
+    "expression/aggregation.go",
+    "expression/expression.go",
+    "plan/aggregation_push_down.go",
+    "plan/column_pruning.go",
+    "plan/expression_rewriter.go",
+    "plan/join_reorder.go",
+    "plan/logical_plan_builder.go",
+    "plan/optimizer.go",
+    "plan/physical_plan_builder.go",
+    "plan/plan_test.go",
+    "plan/predicate_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select count(*), a.c from t a , t b, t c where a.c = b.d and b.d = c.d group by c.d order by a.c\") (executor/aggregate_test.go)",
+      "files: executor/aggregate_test.go, executor/builder.go, expression/aggregation.go, expression/expression.go, plan/aggregation_push_down.go, plan/column_pruning.go, plan/expression_rewriter.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/plan_test.go, plan/predicate_push_down.go"
+    ]
+  },
+  "analysis": "PR title: plan: support aggregation push down.\nPR url: https://github.com/pingcap/tidb/pull/1886\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select count(*), a.c from t a , t b, t c where a.c = b.d and b.d = c.d group by c.d order by a.c\") (executor/aggregate_test.go)\nChanged files (13): executor/aggregate_test.go, executor/builder.go, expression/aggregation.go, expression/expression.go, plan/aggregation_push_down.go, plan/column_pruning.go, plan/expression_rewriter.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/plan_test.go, plan/predicate_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/1886.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

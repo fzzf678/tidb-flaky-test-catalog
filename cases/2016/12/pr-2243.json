@@ -1,0 +1,48 @@
+{
+  "id": "pr-2243",
+  "source_pr": {
+    "number": 2243,
+    "url": "https://github.com/pingcap/tidb/pull/2243",
+    "title": "plan: eliminate tablescan's cost more precisely.",
+    "body": "We forget to consider cpu cost when the table scan has a condition.\r\n@shenli @coocood @zimulala PTAL"
+  },
+  "pr_merged_at": "2016-12-13T22:32:32+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/physical_plan_test.go",
+    "name": "physical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t where t.c = 1 and t.e = 1 order by t.a limit 1\", (plan/physical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t where t.c = 1 and t.e = 1 order by t.a limit 1\", (plan/physical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/2243",
+    "https://github.com/pingcap/tidb/pull/2243.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/2243.patch",
+  "changed_files": [
+    "plan/match_property.go",
+    "plan/physical_plan_builder.go",
+    "plan/physical_plan_test.go",
+    "plan/physical_plans.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t where t.c = 1 and t.e = 1 order by t.a limit 1\", (plan/physical_plan_test.go)",
+      "files: plan/match_property.go, plan/physical_plan_builder.go, plan/physical_plan_test.go, plan/physical_plans.go"
+    ]
+  },
+  "analysis": "PR title: plan: eliminate tablescan's cost more precisely.\nPR url: https://github.com/pingcap/tidb/pull/2243\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t where t.c = 1 and t.e = 1 order by t.a limit 1\", (plan/physical_plan_test.go)\nChanged files (4): plan/match_property.go, plan/physical_plan_builder.go, plan/physical_plan_test.go, plan/physical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/2243.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
+}

@@ -1,0 +1,66 @@
+{
+  "id": "pr-1735",
+  "source_pr": {
+    "number": 1735,
+    "url": "https://github.com/pingcap/tidb/pull/1735",
+    "title": "*: Support stream aggregation.",
+    "body": "@coocood @shenli @zimulala @tiancaiamao PTAL\n"
+  },
+  "pr_merged_at": "2016-09-20T17:14:31+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/plan_test.go",
+    "name": "plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t t1, t t2 right join t t3 on t2.a = t3.b order by t1.a, t1.b, t2.a, t2.b, t3.a, t3.b\", (plan/plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t t1, t t2 right join t t3 on t2.a = t3.b order by t1.a, t1.b, t2.a, t2.b, t3.a, t3.b\", (plan/plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1735",
+    "https://github.com/pingcap/tidb/pull/1735.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1735.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/executor.go",
+    "executor/executor_test.go",
+    "executor/union_scan.go",
+    "expression/aggregation.go",
+    "expression/expression.go",
+    "plan/column_pruning.go",
+    "plan/expression_rewriter.go",
+    "plan/join_reorder.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plans.go",
+    "plan/match_property.go",
+    "plan/optimizer.go",
+    "plan/physical_plan_builder.go",
+    "plan/physical_plans.go",
+    "plan/plan.go",
+    "plan/plan_test.go",
+    "plan/planbuilder.go",
+    "plan/plans.go",
+    "plan/predicate_push_down.go",
+    "plan/push_limit.go",
+    "plan/stringer.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t t1, t t2 right join t t3 on t2.a = t3.b order by t1.a, t1.b, t2.a, t2.b, t3.a, t3.b\", (plan/plan_test.go)",
+      "files: executor/builder.go, executor/executor.go, executor/executor_test.go, executor/union_scan.go, expression/aggregation.go, expression/expression.go, plan/column_pruning.go, plan/expression_rewriter.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/match_property.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/plan_test.go, plan/planbuilder.go, plan/plans.go, plan/predicate_push_down.go, plan/push_limit.go, plan/stringer.go"
+    ]
+  },
+  "analysis": "PR title: *: Support stream aggregation.\nPR url: https://github.com/pingcap/tidb/pull/1735\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t t1, t t2 right join t t3 on t2.a = t3.b order by t1.a, t1.b, t2.a, t2.b, t3.a, t3.b\", (plan/plan_test.go)\nChanged files (22): executor/builder.go, executor/executor.go, executor/executor_test.go, executor/union_scan.go, expression/aggregation.go, expression/expression.go, plan/column_pruning.go, plan/expression_rewriter.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/match_property.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/plan_test.go, plan/planbuilder.go, plan/plans.go, plan/predicate_push_down.go, plan/push_limit.go, plan/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/1735.patch\nPicked test: type=unit path=plan/plan_test.go name=plan_test"
+}

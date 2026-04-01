@@ -1,0 +1,46 @@
+{
+  "id": "pr-858",
+  "source_pr": {
+    "number": 858,
+    "url": "https://github.com/pingcap/tidb/pull/858",
+    "title": "util/types: fix order by binary",
+    "body": "In Orderby Clause, as using BINARY operator to cast the following operand to a binary string, here meet an error. Improved IsOrderedType() to handle it.\n"
+  },
+  "pr_merged_at": "2016-01-19T20:35:29+08:00",
+  "test": {
+    "type": "unit",
+    "path": "session_test.go",
+    "name": "session_test"
+  },
+  "symptoms": [
+    "mustExecMatch(c, se, \"select * from t order by 1\", [][]interface{}{{1, 2, []byte(\"abc\")}, {2, 1, []byte(\"bcd\")}}) (session_test.go)"
+  ],
+  "failure_signature": "mustExecMatch(c, se, \"select * from t order by 1\", [][]interface{}{{1, 2, []byte(\"abc\")}, {2, 1, []byte(\"bcd\")}}) (session_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/858",
+    "https://github.com/pingcap/tidb/pull/858.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/858.patch",
+  "changed_files": [
+    "session_test.go",
+    "util/types/etc.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: mustExecMatch(c, se, \"select * from t order by 1\", [][]interface{}{{1, 2, []byte(\"abc\")}, {2, 1, []byte(\"bcd\")}}) (session_test.go)",
+      "files: session_test.go, util/types/etc.go"
+    ]
+  },
+  "analysis": "PR title: util/types: fix order by binary\nPR url: https://github.com/pingcap/tidb/pull/858\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: mustExecMatch(c, se, \"select * from t order by 1\", [][]interface{}{{1, 2, []byte(\"abc\")}, {2, 1, []byte(\"bcd\")}}) (session_test.go)\nChanged files (2): session_test.go, util/types/etc.go\nPatch url: https://github.com/pingcap/tidb/pull/858.patch\nPicked test: type=unit path=session_test.go name=session_test"
+}

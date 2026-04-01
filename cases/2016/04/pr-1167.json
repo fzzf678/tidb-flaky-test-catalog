@@ -1,0 +1,48 @@
+{
+  "id": "pr-1167",
+  "source_pr": {
+    "number": 1167,
+    "url": "https://github.com/pingcap/tidb/pull/1167",
+    "title": "fix bug #1164",
+    "body": "fix bug #1164 \n"
+  },
+  "pr_merged_at": "2016-04-27T16:55:38+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select * from t1 left join t2 on t1.c1 = t2.c1 right join t3 on t2.c1 = t3.c1 order by t1.c1, t1.c2, t2.c1, t2.c2, t3.c1, t3.c2;\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select * from t1 left join t2 on t1.c1 = t2.c1 right join t3 on t2.c1 = t3.c1 order by t1.c1, t1.c2, t2.c1, t2.c2, t3.c1, t3.c2;\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1167",
+    "https://github.com/pingcap/tidb/pull/1167.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1167.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "optimizer/plan/plan_test.go",
+    "optimizer/plan/planbuilder_join.go",
+    "optimizer/plan/stringer.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select * from t1 left join t2 on t1.c1 = t2.c1 right join t3 on t2.c1 = t3.c1 order by t1.c1, t1.c2, t2.c1, t2.c2, t3.c1, t3.c2;\") (executor/executor_test.go)",
+      "files: executor/executor_test.go, optimizer/plan/plan_test.go, optimizer/plan/planbuilder_join.go, optimizer/plan/stringer.go"
+    ]
+  },
+  "analysis": "PR title: fix bug #1164\nPR url: https://github.com/pingcap/tidb/pull/1167\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select * from t1 left join t2 on t1.c1 = t2.c1 right join t3 on t2.c1 = t3.c1 order by t1.c1, t1.c2, t2.c1, t2.c2, t3.c1, t3.c2;\") (executor/executor_test.go)\nChanged files (4): executor/executor_test.go, optimizer/plan/plan_test.go, optimizer/plan/planbuilder_join.go, optimizer/plan/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/1167.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

@@ -1,0 +1,54 @@
+{
+  "id": "pr-935",
+  "source_pr": {
+    "number": 935,
+    "url": "https://github.com/pingcap/tidb/pull/935",
+    "title": "*: Move statement tests to executor package",
+    "body": ""
+  },
+  "pr_merged_at": "2016-03-02T10:08:25+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "r := tk.MustQuery(\"select * from select_order_test where id = 1 order by id limit 1 offset 0;\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "r := tk.MustQuery(\"select * from select_order_test where id = 1 order by id limit 1 offset 0;\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/935",
+    "https://github.com/pingcap/tidb/pull/935.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/935.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "parser/parser_test.go",
+    "stmt/stmts/create_test.go",
+    "stmt/stmts/delete_test.go",
+    "stmt/stmts/insert_test.go",
+    "stmt/stmts/replace_test.go",
+    "stmt/stmts/select_test.go",
+    "stmt/stmts/union_test.go",
+    "stmt/stmts/update_test.go",
+    "util/testkit/testkit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: r := tk.MustQuery(\"select * from select_order_test where id = 1 order by id limit 1 offset 0;\") (executor/executor_test.go)",
+      "files: executor/executor_test.go, parser/parser_test.go, stmt/stmts/create_test.go, stmt/stmts/delete_test.go, stmt/stmts/insert_test.go, stmt/stmts/replace_test.go, stmt/stmts/select_test.go, stmt/stmts/union_test.go, stmt/stmts/update_test.go, util/testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: *: Move statement tests to executor package\nPR url: https://github.com/pingcap/tidb/pull/935\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: r := tk.MustQuery(\"select * from select_order_test where id = 1 order by id limit 1 offset 0;\") (executor/executor_test.go)\nChanged files (10): executor/executor_test.go, parser/parser_test.go, stmt/stmts/create_test.go, stmt/stmts/delete_test.go, stmt/stmts/insert_test.go, stmt/stmts/replace_test.go, stmt/stmts/select_test.go, stmt/stmts/union_test.go, stmt/stmts/update_test.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/935.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}
