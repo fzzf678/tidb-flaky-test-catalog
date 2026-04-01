@@ -1,0 +1,50 @@
+{
+  "id": "pr-3861",
+  "source_pr": {
+    "number": 3861,
+    "url": "https://github.com/pingcap/tidb/pull/3861",
+    "title": "*: support natural join.",
+    "body": "TiDB doesn't support natural join now, and treat it as cross join.\r\nThis PR and #3372 are similar."
+  },
+  "pr_merged_at": "2017-08-01T13:56:29+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t1 natural left join t2 order by a\").Check(testkit.Rows(\"1 2 3\", \"10 20 <nil>\")) (executor/join_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t1 natural left join t2 order by a\").Check(testkit.Rows(\"1 2 3\", \"10 20 <nil>\")) (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3861",
+    "https://github.com/pingcap/tidb/pull/3861.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3861.patch",
+  "changed_files": [
+    "ast/dml.go",
+    "executor/join_test.go",
+    "parser/misc.go",
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "plan/logical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t1 natural left join t2 order by a\").Check(testkit.Rows(\"1 2 3\", \"10 20 <nil>\")) (executor/join_test.go)",
+      "files: ast/dml.go, executor/join_test.go, parser/misc.go, parser/parser.y, parser/parser_test.go, plan/logical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: *: support natural join.\nPR url: https://github.com/pingcap/tidb/pull/3861\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t1 natural left join t2 order by a\").Check(testkit.Rows(\"1 2 3\", \"10 20 <nil>\")) (executor/join_test.go)\nChanged files (6): ast/dml.go, executor/join_test.go, parser/misc.go, parser/parser.y, parser/parser_test.go, plan/logical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/3861.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

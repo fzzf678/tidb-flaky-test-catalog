@@ -1,0 +1,48 @@
+{
+  "id": "pr-4651",
+  "source_pr": {
+    "number": 4651,
+    "url": "https://github.com/pingcap/tidb/pull/4651",
+    "title": "*: move tests",
+    "body": "move order by and having tests. Some negative cases can't be migrated, because we use resolver to report error and sometimes get wrong error codes. I will fix resolver in next pr."
+  },
+  "pr_merged_at": "2017-09-27T14:38:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select c1 as a, c1 as b from t order by c1\").Check(testkit.Rows(\"1 1\", \"2 2\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select c1 as a, c1 as b from t order by c1\").Check(testkit.Rows(\"1 1\", \"2 2\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4651",
+    "https://github.com/pingcap/tidb/pull/4651.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4651.patch",
+  "changed_files": [
+    "executor/aggregate_test.go",
+    "executor/executor_test.go",
+    "plan/logical_plan_test.go",
+    "session_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select c1 as a, c1 as b from t order by c1\").Check(testkit.Rows(\"1 1\", \"2 2\")) (executor/executor_test.go)",
+      "files: executor/aggregate_test.go, executor/executor_test.go, plan/logical_plan_test.go, session_test.go"
+    ]
+  },
+  "analysis": "PR title: *: move tests\nPR url: https://github.com/pingcap/tidb/pull/4651\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select c1 as a, c1 as b from t order by c1\").Check(testkit.Rows(\"1 1\", \"2 2\")) (executor/executor_test.go)\nChanged files (4): executor/aggregate_test.go, executor/executor_test.go, plan/logical_plan_test.go, session_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4651.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

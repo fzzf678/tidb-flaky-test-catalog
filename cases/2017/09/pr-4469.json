@@ -1,0 +1,57 @@
+{
+  "id": "pr-4469",
+  "source_pr": {
+    "number": 4469,
+    "url": "https://github.com/pingcap/tidb/pull/4469",
+    "title": "store/tikv: abort an unsafe transaction subject to gc command",
+    "body": "Whenever a transaction fetches some data, we check whether the cached safepoint is fresh. If it is out-of-date, we abort the transaction. If the start timestamp of the transaction falls behind the cached safepoint, we also abort the transaction."
+  },
+  "pr_merged_at": "2017-09-21T14:03:09+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/2pc_test.go",
+    "name": "2pc_test"
+  },
+  "symptoms": [
+    "+ wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race."
+  ],
+  "failure_signature": "+ wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "store/tikv: abort an unsafe transaction subject to gc command",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4469",
+    "https://github.com/pingcap/tidb/pull/4469.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4469.patch",
+  "changed_files": [
+    "distsql/distsql.go",
+    "kv/kv.go",
+    "store/tikv/2pc_test.go",
+    "store/tikv/coprocessor.go",
+    "store/tikv/error.go",
+    "store/tikv/gc_worker.go",
+    "store/tikv/gc_worker_test.go",
+    "store/tikv/kv.go",
+    "store/tikv/lock_resolver.go",
+    "store/tikv/safepoint_test.go",
+    "store/tikv/scan.go",
+    "store/tikv/snapshot.go",
+    "store/tikv/txn.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: + wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
+      "files: _vendor/src/vendor, distsql/distsql.go, kv/kv.go, store/tikv/2pc.go, store/tikv/2pc_test.go, store/tikv/coprocessor.go, store/tikv/error.go, store/tikv/gc_worker.go, store/tikv/gc_worker_test.go, store/tikv/isolation_test.go, store/tikv/kv.go, store/tikv/lock_resolver.go, store/tikv/safepoint_test.go, store/tikv/scan.go, store/tikv/snapshot.go, store/tikv/txn.go, vendor"
+    ]
+  },
+  "analysis": "PR title: store/tikv: abort an unsafe transaction subject to gc command\nPR url: https://github.com/pingcap/tidb/pull/4469\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.\nChanged files (13): distsql/distsql.go, kv/kv.go, store/tikv/2pc_test.go, store/tikv/coprocessor.go, store/tikv/error.go, store/tikv/gc_worker.go, store/tikv/gc_worker_test.go, store/tikv/kv.go, store/tikv/lock_resolver.go, store/tikv/safepoint_test.go, store/tikv/scan.go, store/tikv/snapshot.go, store/tikv/txn.go\nPatch url: https://github.com/pingcap/tidb/pull/4469.patch\nPicked test: type=unit path=store/tikv/2pc_test.go name=2pc_test"
+}

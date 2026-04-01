@@ -1,0 +1,50 @@
+{
+  "id": "pr-3953",
+  "source_pr": {
+    "number": 3953,
+    "url": "https://github.com/pingcap/tidb/pull/3953",
+    "title": "plan, executor: implement ExplainInfo() interface for data source operators",
+    "body": "to https://github.com/pingcap/tidb/issues/3805"
+  },
+  "pr_merged_at": "2017-08-01T13:08:24+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/explain_test.go",
+    "name": "explain_test"
+  },
+  "symptoms": [
+    "// \"select * from t1 where c2 in (select s.c3 from t1 s) order by t1.c3\", (executor/explain_test.go)"
+  ],
+  "failure_signature": "// \"select * from t1 where c2 in (select s.c3 from t1 s) order by t1.c3\", (executor/explain_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3953",
+    "https://github.com/pingcap/tidb/pull/3953.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3953.patch",
+  "changed_files": [
+    "ast/dml.go",
+    "executor/analyze_test.go",
+    "executor/explain_test.go",
+    "expression/explain.go",
+    "plan/explain.go",
+    "plan/physical_plans.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: // \"select * from t1 where c2 in (select s.c3 from t1 s) order by t1.c3\", (executor/explain_test.go)",
+      "files: ast/dml.go, executor/analyze_test.go, executor/explain_test.go, expression/explain.go, plan/explain.go, plan/physical_plans.go"
+    ]
+  },
+  "analysis": "PR title: plan, executor: implement ExplainInfo() interface for data source operators\nPR url: https://github.com/pingcap/tidb/pull/3953\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // \"select * from t1 where c2 in (select s.c3 from t1 s) order by t1.c3\", (executor/explain_test.go)\nChanged files (6): ast/dml.go, executor/analyze_test.go, executor/explain_test.go, expression/explain.go, plan/explain.go, plan/physical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/3953.patch\nPicked test: type=unit path=executor/explain_test.go name=explain_test"
+}

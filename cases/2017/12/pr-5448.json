@@ -1,0 +1,45 @@
+{
+  "id": "pr-5448",
+  "source_pr": {
+    "number": 5448,
+    "url": "https://github.com/pingcap/tidb/pull/5448",
+    "title": "plan: benchmark optimize function",
+    "body": "go test -test.bench=BenchmarkOptimize -test.run=^XXX\r\n\r\n```\r\npkg: github.com/pingcap/tidb/plan\r\nBenchmarkOptimize/select_count(*)_from_t_group_by_e-4         \t   30000\t     39279 ns/op\t   27376 B/op\t     370 allocs/op\r\nBenchmarkOptimize/select_count(*)_from_t_where_e_<=_10_group_by_e-4         \t   10000\t    100107 ns/op\t   67394 B/op\t     855 allocs/op\r\nBenchmarkOptimize/select_count(*)_from_t_where_e_<=_50-4                    \t   10000\t    102730 ns/op\t   68466 B/op\t     861 allocs/op\r\nBenchmarkOptimize/select_count(*)_from_t_where_c_>_'1'_group_by_b-4         \t   10000\t    113519 ns/op\t   78067 B/op\t    1079 allocs/op\r\nBenchmarkOptimize/select_count(*)_from_t_where_e_=_1_group_by_b-4           \t   10000\t    116716 ns/op\t   78898 B/op\t    1036 allocs/op\r\nBenchmarkOptimize/select_count(*)_from_t_where_e_>_1_group_by_b-4           \t   10000\t    113030 ns/op\t   81554 B/op\t    1052 allocs/op\r\nBenchmarkOptimize/select_count(e)_from_t_where_t.b_<=_20-4                  \t   10000\t    125467 ns/op\t   84153 B/op\t    1064 allocs/op\r\nBenchmarkOptimize/select_count(e)_from_t_where_t.b_<=_30-4                  \t   10000\t    138241 ns/op\t   84155 B/op\t    1065 allocs/op\r\nBenchmarkOptimize/select_count(e)_from_t_where_t.b_<=_40-4                  \t   10000\t    134946 ns/op\t   84155 B/op\t    1065 allocs/op\r\nBenchmarkOptimize/select_count(e)_from_t_where_t.b_<=_50-4                  \t   10000\t    122163 ns/op\t   84154 B/op\t    1065 allocs/op\r\nBenchmarkOptimize/select_*_from_t_where_t.b_<=_40-4                         \t   30000\t     55954 ns/op\t   41520 B/op\t     502 allocs/op\r\nBenchmarkOptimize/select_*_from_t_where_t.b_<=_50-4                         \t   30000\t     59545 ns/op\t   41520 B/op\t     502 allocs/op\r\nBenchmarkOptimize/select_*_from_t_where_1_and_t.b_<=_50-4                   \t   30000\t     55696 ns/op\t   41824 B/op\t     508 allocs/op\r\nBenchmarkOptimize/select_*_from_t_where_t.b_<=_100_order_by_t.a_limit_1-4   \t   10000\t    210889 ns/op\t  156849 B/op\t    1841 allocs/op\r\nBenchmarkOptimize/select_*_from_t_where_t.b_<=_1_order_by_t.a_limit_10-4    \t   10000\t    213800 ns/op\t  155407 B/op\t    1804 allocs/op\r\nBenchmarkOptimize/select_*_from_t_use_index(b)_where_b_=_1_order_by_a-4     \t   50000\t     38628 ns/op\t   28159 B/op\t     371 allocs/op\r\nBenchmarkOptimize/select_*_from_t_where_d_<_cast('1991-09-05'_as_datetime)-4         \t   20000\t     64924 ns/op\t   41585 B/op\t     529 allocs/op\r\nBenchmarkOptimize/select_*_from_t_where_ts_<_'1991-09-05'-4                          \t   20000\t     73385 ns/op\t   41682 B/op\t     533 allocs/op\r\n```"
+  },
+  "pr_merged_at": "2017-12-20T18:47:55+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/cbo_test.go",
+    "name": "cbo_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t where t.b <= 100 order by t.a limit 1\", (plan/cbo_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t where t.b <= 100 order by t.a limit 1\", (plan/cbo_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5448",
+    "https://github.com/pingcap/tidb/pull/5448.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5448.patch",
+  "changed_files": [
+    "plan/cbo_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t where t.b <= 100 order by t.a limit 1\", (plan/cbo_test.go)",
+      "files: plan/cbo_test.go"
+    ]
+  },
+  "analysis": "PR title: plan: benchmark optimize function\nPR url: https://github.com/pingcap/tidb/pull/5448\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t where t.b <= 100 order by t.a limit 1\", (plan/cbo_test.go)\nChanged files (1): plan/cbo_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5448.patch\nPicked test: type=unit path=plan/cbo_test.go name=cbo_test"
+}

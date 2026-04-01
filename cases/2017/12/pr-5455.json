@@ -1,0 +1,46 @@
+{
+  "id": "pr-5455",
+  "source_pr": {
+    "number": 5455,
+    "url": "https://github.com/pingcap/tidb/pull/5455",
+    "title": "executor: fix a bug of NewIndexLookUpJoin's Next().",
+    "body": "In row.GetDatum: `d.SetBytes(r.GetBytes(colIdx))`\r\nIn row.GetBytes: `return col.data[start:end]`\r\nIn datum.SetBytes: `d.b = b`\r\nNo new space allocated so the Next()'s return value may share the same space. Causing wrong result. In added test, current master will return \r\n```\r\n+------+\r\n| a    |\r\n+------+\r\n| 3    |\r\n| 3    |\r\n| 3    |\r\n+------+\r\n```\r\n\r\nPTAL @hanfei1991 @shenli @coocood "
+  },
+  "pr_merged_at": "2017-12-20T20:57:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "result.Sort().Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/join_test.go)"
+  ],
+  "failure_signature": "result.Sort().Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5455",
+    "https://github.com/pingcap/tidb/pull/5455.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5455.patch",
+  "changed_files": [
+    "executor/join_test.go",
+    "executor/new_index_lookup_join.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result.Sort().Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/join_test.go)",
+      "files: executor/join_test.go, executor/new_index_lookup_join.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix a bug of NewIndexLookUpJoin's Next().\nPR url: https://github.com/pingcap/tidb/pull/5455\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result.Sort().Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/join_test.go)\nChanged files (2): executor/join_test.go, executor/new_index_lookup_join.go\nPatch url: https://github.com/pingcap/tidb/pull/5455.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

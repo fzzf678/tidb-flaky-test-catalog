@@ -1,0 +1,69 @@
+{
+  "id": "pr-4988",
+  "source_pr": {
+    "number": 4988,
+    "url": "https://github.com/pingcap/tidb/pull/4988",
+    "title": "*: remove resolver.go",
+    "body": "refer to #4787 \r\nshould be merged with https://github.com/pingcap/tidb-test/pull/398 \r\nThis commit removes resolver.go completely.\r\nNow TiDB resolves table name in preprocessor.go, and resolves column names when building logical plan.\r\n\r\nResolving col name when building logical plan will raise a problem like:\r\n``` sql\r\ncreate table t(a int);\r\nprepare stmt from 'select b from t'; // This sql should have caused an error, I'll fix it in next PR.\r\n```\r\n"
+  },
+  "pr_merged_at": "2017-11-10T14:42:10+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "{\"select c, a as c from t order by c+1\", true, true, \"\"}, (plan/logical_plan_test.go)"
+  ],
+  "failure_signature": "{\"select c, a as c from t order by c+1\", true, true, \"\"}, (plan/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4988",
+    "https://github.com/pingcap/tidb/pull/4988.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4988.patch",
+  "changed_files": [
+    "ast/ast.go",
+    "ast/base.go",
+    "ast/dml.go",
+    "ast/expressions.go",
+    "executor/aggregate_test.go",
+    "executor/compiler.go",
+    "executor/executor_test.go",
+    "executor/metrics_test.go",
+    "executor/prepared.go",
+    "executor/prepared_test.go",
+    "new_session_test.go",
+    "plan/cbo_test.go",
+    "plan/dag_plan_test.go",
+    "plan/expression_rewriter.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plan_test.go",
+    "plan/optimizer.go",
+    "plan/planbuilder.go",
+    "plan/plans.go",
+    "plan/preprocess.go",
+    "plan/resolver.go",
+    "plan/resolver_test.go",
+    "plan/typeinfer_test.go",
+    "statistics/selectivity_test.go",
+    "util/ranger/ranger_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: {\"select c, a as c from t order by c+1\", true, true, \"\"}, (plan/logical_plan_test.go)",
+      "files: ast/ast.go, ast/base.go, ast/dml.go, ast/expressions.go, executor/aggregate_test.go, executor/compiler.go, executor/executor_test.go, executor/metrics_test.go, executor/prepared.go, executor/prepared_test.go, new_session_test.go, plan/cbo_test.go, plan/dag_plan_test.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/physical_plan_test.go, plan/planbuilder.go, plan/plans.go, plan/preprocess.go, plan/resolver.go, plan/resolver_test.go, plan/typeinfer_test.go, statistics/selectivity_test.go, util/ranger/range_test.go"
+    ]
+  },
+  "analysis": "PR title: *: remove resolver.go\nPR url: https://github.com/pingcap/tidb/pull/4988\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: {\"select c, a as c from t order by c+1\", true, true, \"\"}, (plan/logical_plan_test.go)\nChanged files (25): ast/ast.go, ast/base.go, ast/dml.go, ast/expressions.go, executor/aggregate_test.go, executor/compiler.go, executor/executor_test.go, executor/metrics_test.go, executor/prepared.go, executor/prepared_test.go, new_session_test.go, plan/cbo_test.go, plan/dag_plan_test.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/planbuilder.go, plan/plans.go, plan/preprocess.go, plan/resolver.go, plan/resolver_test.go, plan/typeinfer_test.go, statistics/selectivity_test.go, util/ranger/ranger_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4988.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+}

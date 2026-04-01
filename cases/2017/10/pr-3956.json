@@ -1,0 +1,84 @@
+{
+  "id": "pr-3956",
+  "source_pr": {
+    "number": 3956,
+    "url": "https://github.com/pingcap/tidb/pull/3956",
+    "title": "tidb: support a plan cache for prepared statements",
+    "body": "Since prepared statements are compiled and optimized whenever they are executed, there is a room to reduce the execution time of the prepared statements.\r\n\r\nIn order to do that we can compile a prepared statement once and reuse the compiled plan by converting parameter expressions to deferred ones, which are evaluated as late as possible, and storing the plan to a cache.\r\n\r\nThe implentation has some limitations:\r\n- the prepared statements with limit expressions are not cached\r\n- the statistics related to the cache are not supported\r\n- on-demand methods for invalidating the cache are not supported"
+  },
+  "pr_merged_at": "2017-10-24T13:55:52+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "- mux sync.Mutex // fix data race in ddl test."
+  ],
+  "failure_signature": "- mux sync.Mutex // fix data race in ddl test.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tidb: support a plan cache for prepared statements",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3956",
+    "https://github.com/pingcap/tidb/pull/3956.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3956.patch",
+  "changed_files": [
+    "ast/expressions.go",
+    "ast/functions.go",
+    "config/config.go",
+    "config/config.toml.example",
+    "context/context.go",
+    "executor/builder.go",
+    "executor/prepared.go",
+    "executor/prepared_test.go",
+    "executor/set.go",
+    "expression/builtin.go",
+    "expression/builtin_cast_test.go",
+    "expression/builtin_compare.go",
+    "expression/builtin_other.go",
+    "expression/builtin_time.go",
+    "expression/constant.go",
+    "expression/constant_fold.go",
+    "expression/explain.go",
+    "expression/expr_to_pb.go",
+    "expression/expression.go",
+    "expression/function_traits.go",
+    "expression/util.go",
+    "plan/cache/config.go",
+    "plan/cache/key.go",
+    "plan/cache/value.go",
+    "plan/cacheable_checker.go",
+    "plan/cbo_test.go",
+    "plan/expression_rewriter.go",
+    "plan/physical_plans.go",
+    "session.go",
+    "sessionctx/variable/session.go",
+    "tidb-server/main.go",
+    "util/kvcache/sharded_lru.go",
+    "util/kvcache/simple_lru.go",
+    "util/kvcache/simple_lru_test.go",
+    "util/mock/context.go",
+    "util/ranger/range.go",
+    "util/ranger/refiner.go",
+    "util/types/etc.go",
+    "util/types/field_type.go",
+    "util/types/field_type_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: - mux sync.Mutex // fix data race in ddl test.",
+      "files: ast/expressions.go, ast/functions.go, config/config.go, config/config.toml.example, context/context.go, executor/builder.go, executor/executor_test.go, executor/prepared.go, executor/prepared_test.go, executor/set.go, expression/builtin.go, expression/builtin_cast.go, expression/builtin_cast_test.go, expression/builtin_compare.go, expression/builtin_control.go, expression/builtin_math.go, expression/builtin_miscellaneous.go, expression/builtin_op.go, expression/builtin_other.go, expression/builtin_string.go, expression/builtin_time.go, expression/constant.go, expression/constant_fold.go, expression/explain.go, expression/expr_to_pb.go, expression/expression.go, expression/function_traits.go, expression/scalar_function.go, expression/util.go, plan/cache/config.go, plan/cache/key.go, plan/cache/value.go, plan/cacheable_checker.go, plan/cbo_test.go, plan/expression_rewriter.go, plan/physical_plans.go, plan/validator.go, session.go, sessionctx/variable/session.go, tidb-server/main.go, tidb.go, util/kvcache/sharded_lru.go, util/kvcache/simple_lru.go, util/kvcache/simple_lru_test.go, util/mock/context.go, util/ranger/range.go, util/ranger/refiner.go, util/types/etc.go, util/types/eval_type.go, util/types/field_type.go, util/types/field_type_test.go"
+    ]
+  },
+  "analysis": "PR title: tidb: support a plan cache for prepared statements\nPR url: https://github.com/pingcap/tidb/pull/3956\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - mux sync.Mutex // fix data race in ddl test.\nChanged files (40): ast/expressions.go, ast/functions.go, config/config.go, config/config.toml.example, context/context.go, executor/builder.go, executor/prepared.go, executor/prepared_test.go, executor/set.go, expression/builtin.go, expression/builtin_cast_test.go, expression/builtin_compare.go, expression/builtin_other.go, expression/builtin_time.go, expression/constant.go, expression/constant_fold.go, expression/explain.go, expression/expr_to_pb.go, expression/expression.go, expression/function_traits.go, expression/util.go, plan/cache/config.go, plan/cache/key.go, plan/cache/value.go, plan/cacheable_checker.go, plan/cbo_test.go, plan/expression_rewriter.go, plan/physical_plans.go, session.go, sessionctx/variable/session.go, tidb-server/main.go, util/kvcache/sharded_lru.go, util/kvcache/simple_lru.go, util/kvcache/simple_lru_test.go, util/mock/context.go, util/ranger/range.go, util/ranger/refiner.go, util/types/etc.go, util/types/field_type.go, util/types/field_type_test.go\nPatch url: https://github.com/pingcap/tidb/pull/3956.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

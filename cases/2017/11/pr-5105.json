@@ -1,0 +1,50 @@
+{
+  "id": "pr-5105",
+  "source_pr": {
+    "number": 5105,
+    "url": "https://github.com/pingcap/tidb/pull/5105",
+    "title": "plan: covert max/min to Limit + Sort operators",
+    "body": "For SQL like `select max(c) from t;`, we could optimize it to `select c from t order by c desc limit 1;`.\r\nFor SQL like `select min(c) from t;`, we could optimize it to `select c from t order by c limit 1;`."
+  },
+  "pr_merged_at": "2017-11-16T15:53:36+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "// Min to Limit + Sort. (plan/logical_plan_test.go)"
+  ],
+  "failure_signature": "// Min to Limit + Sort. (plan/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5105",
+    "https://github.com/pingcap/tidb/pull/5105.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5105.patch",
+  "changed_files": [
+    "executor/index_lookup_join.go",
+    "executor/join.go",
+    "plan/aggregation_eliminate.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plan_test.go",
+    "plan/optimizer.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: // Min to Limit + Sort. (plan/logical_plan_test.go)",
+      "files: executor/index_lookup_join.go, executor/join.go, plan/aggregation_eliminate.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/physical_plans.go, plan/resolve_indices.go, plan/topn_push_down.go"
+    ]
+  },
+  "analysis": "PR title: plan: covert max/min to Limit + Sort operators\nPR url: https://github.com/pingcap/tidb/pull/5105\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Min to Limit + Sort. (plan/logical_plan_test.go)\nChanged files (6): executor/index_lookup_join.go, executor/join.go, plan/aggregation_eliminate.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go\nPatch url: https://github.com/pingcap/tidb/pull/5105.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+}

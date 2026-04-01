@@ -1,0 +1,47 @@
+{
+  "id": "pr-4065",
+  "source_pr": {
+    "number": 4065,
+    "url": "https://github.com/pingcap/tidb/pull/4065",
+    "title": "plan: fix bug about processing property of reader plan.",
+    "body": "Currently, we will construct wrong plan due to the wrong process for sort property columns of Reader plans.\r\nPTAL @shenli @hanfei1991 @lamxTyler "
+  },
+  "pr_merged_at": "2017-08-07T16:21:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/cbo_test.go",
+    "name": "cbo_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t use index(b) where b = 1 order by a\", (plan/cbo_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t use index(b) where b = 1 order by a\", (plan/cbo_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4065",
+    "https://github.com/pingcap/tidb/pull/4065.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4065.patch",
+  "changed_files": [
+    "plan/cbo_test.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/task.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t use index(b) where b = 1 order by a\", (plan/cbo_test.go)",
+      "files: plan/cbo_test.go, plan/new_physical_plan_builder.go, plan/task.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix bug about processing property of reader plan.\nPR url: https://github.com/pingcap/tidb/pull/4065\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t use index(b) where b = 1 order by a\", (plan/cbo_test.go)\nChanged files (3): plan/cbo_test.go, plan/new_physical_plan_builder.go, plan/task.go\nPatch url: https://github.com/pingcap/tidb/pull/4065.patch\nPicked test: type=unit path=plan/cbo_test.go name=cbo_test"
+}

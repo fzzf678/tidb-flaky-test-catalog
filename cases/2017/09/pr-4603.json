@@ -1,0 +1,55 @@
+{
+  "id": "pr-4603",
+  "source_pr": {
+    "number": 4603,
+    "url": "https://github.com/pingcap/tidb/pull/4603",
+    "title": "*: make insert with calculated value behave the same as MySQL.",
+    "body": "This PR try to fix most cases of #4488.\r\nNow `insert` can correctly handle calculated value based on other columns, \r\nsuch as `insert into t1 set b=a+1` and `insert into t1 (b) value (a)`.\r\nLast, as mentioned in issue, make the error message more readable."
+  },
+  "pr_merged_at": "2017-09-27T19:59:31+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/write_test.go",
+    "name": "write_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t1 order by a\").Check(testkit.Rows(\"0\", \"2\")) (executor/write_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t1 order by a\").Check(testkit.Rows(\"0\", \"2\")) (executor/write_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4603",
+    "https://github.com/pingcap/tidb/pull/4603.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4603.patch",
+  "changed_files": [
+    "ast/expressions.go",
+    "executor/builder.go",
+    "executor/write.go",
+    "executor/write_test.go",
+    "expression/expression.go",
+    "plan/expression_rewriter.go",
+    "plan/planbuilder.go",
+    "plan/plans.go",
+    "table/column.go",
+    "table/column_test.go",
+    "table/table.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t1 order by a\").Check(testkit.Rows(\"0\", \"2\")) (executor/write_test.go)",
+      "files: ast/expressions.go, executor/builder.go, executor/write.go, executor/write_test.go, expression/expression.go, plan/expression_rewriter.go, plan/planbuilder.go, plan/plans.go, table/column.go, table/column_test.go, table/table.go"
+    ]
+  },
+  "analysis": "PR title: *: make insert with calculated value behave the same as MySQL.\nPR url: https://github.com/pingcap/tidb/pull/4603\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t1 order by a\").Check(testkit.Rows(\"0\", \"2\")) (executor/write_test.go)\nChanged files (11): ast/expressions.go, executor/builder.go, executor/write.go, executor/write_test.go, expression/expression.go, plan/expression_rewriter.go, plan/planbuilder.go, plan/plans.go, table/column.go, table/column_test.go, table/table.go\nPatch url: https://github.com/pingcap/tidb/pull/4603.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
+}

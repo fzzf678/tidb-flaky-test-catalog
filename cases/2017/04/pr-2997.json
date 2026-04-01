@@ -1,0 +1,51 @@
+{
+  "id": "pr-2997",
+  "source_pr": {
+    "number": 2997,
+    "url": "https://github.com/pingcap/tidb/pull/2997",
+    "title": "plan: add push topn optimizing.",
+    "body": "we push topn firstly to remove the `limit` property from `required property`.\r\n@shenli @coocood @zimulala PTAL"
+  },
+  "pr_merged_at": "2017-04-07T18:19:05+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select a, count(b) from t group by b order by c limit 5\", (plan/logical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select a, count(b) from t group by b order by c limit 5\", (plan/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/2997",
+    "https://github.com/pingcap/tidb/pull/2997.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/2997.patch",
+  "changed_files": [
+    "plan/decorrelate.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plan_test.go",
+    "plan/optimizer.go",
+    "plan/physical_plan_test.go",
+    "plan/plan.go",
+    "plan/topn_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select a, count(b) from t group by b order by c limit 5\", (plan/logical_plan_test.go)",
+      "files: plan/decorrelate.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/physical_plan_test.go, plan/plan.go, plan/push_topn.go, plan/topn_push_down.go"
+    ]
+  },
+  "analysis": "PR title: plan: add push topn optimizing.\nPR url: https://github.com/pingcap/tidb/pull/2997\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select a, count(b) from t group by b order by c limit 5\", (plan/logical_plan_test.go)\nChanged files (7): plan/decorrelate.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/physical_plan_test.go, plan/plan.go, plan/topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/2997.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+}

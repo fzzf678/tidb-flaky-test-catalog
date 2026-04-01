@@ -1,0 +1,50 @@
+{
+  "id": "pr-5147",
+  "source_pr": {
+    "number": 5147,
+    "url": "https://github.com/pingcap/tidb/pull/5147",
+    "title": "ast, plan, expression: support builtin aggregation function 'bit_and'",
+    "body": "support builtin aggregation function 'bit_and'"
+  },
+  "pr_merged_at": "2017-11-24T09:58:41+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select a, bit_and(a) from t group by a order by a desc\") (expression/integration_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select a, bit_and(a) from t group by a order by a desc\") (expression/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5147",
+    "https://github.com/pingcap/tidb/pull/5147.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5147.patch",
+  "changed_files": [
+    "ast/functions.go",
+    "expression/aggregation/agg_to_pb.go",
+    "expression/aggregation/aggregation.go",
+    "expression/aggregation/bit_and.go",
+    "expression/integration_test.go",
+    "plan/physical_plans.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select a, bit_and(a) from t group by a order by a desc\") (expression/integration_test.go)",
+      "files: _vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go, ast/functions.go, expression/aggregation/agg_to_pb.go, expression/aggregation/aggregation.go, expression/aggregation/bit_and.go, expression/integration_test.go, plan/physical_plans.go, store/tikv/coprocessor.go"
+    ]
+  },
+  "analysis": "PR title: ast, plan, expression: support builtin aggregation function 'bit_and'\nPR url: https://github.com/pingcap/tidb/pull/5147\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select a, bit_and(a) from t group by a order by a desc\") (expression/integration_test.go)\nChanged files (6): ast/functions.go, expression/aggregation/agg_to_pb.go, expression/aggregation/aggregation.go, expression/aggregation/bit_and.go, expression/integration_test.go, plan/physical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/5147.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+}

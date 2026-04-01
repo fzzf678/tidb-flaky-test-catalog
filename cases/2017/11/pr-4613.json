@@ -1,0 +1,55 @@
+{
+  "id": "pr-4613",
+  "source_pr": {
+    "number": 4613,
+    "url": "https://github.com/pingcap/tidb/pull/4613",
+    "title": "Support SQLMode ONLY_FULL_GROUP_BY and fix a join panic bug",
+    "body": "Add ONLY_FULL_GROUP_BY to default sql_mode, and support this sql_mode.\r\n\r\nFix the bug that in buildJoin plan, if rightPlan is nil when buildResultSetNode of join.Right meets error, panic would occur."
+  },
+  "pr_merged_at": "2017-11-06T10:53:30+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "executor,sessionctx:fix data race for set IgnoreTruncate in Statement… | // test order by (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "executor,sessionctx:fix data race for set IgnoreTruncate in Statement… | // test order by (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4613",
+    "https://github.com/pingcap/tidb/pull/4613.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4613.patch",
+  "changed_files": [
+    "executor/aggregate_test.go",
+    "executor/join_test.go",
+    "executor/show_test.go",
+    "mysql/const.go",
+    "mysql/errcode.go",
+    "mysql/errname.go",
+    "mysql/state.go",
+    "plan/logical_plan_builder.go",
+    "plan/planbuilder.go",
+    "sessionctx/variable/sysvar.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: executor,sessionctx:fix data race for set IgnoreTruncate in Statement… | // test order by (executor/aggregate_test.go)",
+      "files: ast/dml.go, bootstrap.go, executor/aggregate_test.go, executor/builder.go, executor/executor.go, executor/executor_test.go, executor/join_test.go, executor/prepared.go, executor/show_test.go, executor/write.go, executor/write_test.go, expression/integration_test.go, mysql/const.go, mysql/errcode.go, mysql/errname.go, mysql/state.go, parser/parser.y, plan/cbo_test.go, plan/explain_test.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/planbuilder.go, plan/plans.go, session.go, session_test.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go"
+    ]
+  },
+  "analysis": "PR title: Support SQLMode ONLY_FULL_GROUP_BY and fix a join panic bug\nPR url: https://github.com/pingcap/tidb/pull/4613\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: executor,sessionctx:fix data race for set IgnoreTruncate in Statement… | // test order by (executor/aggregate_test.go)\nChanged files (10): executor/aggregate_test.go, executor/join_test.go, executor/show_test.go, mysql/const.go, mysql/errcode.go, mysql/errname.go, mysql/state.go, plan/logical_plan_builder.go, plan/planbuilder.go, sessionctx/variable/sysvar.go\nPatch url: https://github.com/pingcap/tidb/pull/4613.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

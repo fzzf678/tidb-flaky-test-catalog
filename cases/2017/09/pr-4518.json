@@ -1,0 +1,53 @@
+{
+  "id": "pr-4518",
+  "source_pr": {
+    "number": 4518,
+    "url": "https://github.com/pingcap/tidb/pull/4518",
+    "title": "vendor: update goleveldb to fix a data race",
+    "body": "```\r\nWARNING: DATA RACE\r\nWrite at 0x00c42226bb60 by goroutine 113:\r\n  runtime.closechan()\r\n      /usr/local/go/src/runtime/chan.go:320 +0x0\r\n  github.com/pingcap/goleveldb/leveldb.(*DB).mpoolDrain()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/_vendor/src/github.com/pingcap/goleveldb/leveldb/db_state.go:104 +0x1a2\r\n\r\nPrevious read at 0x00c42226bb60 by goroutine 27:\r\n  runtime.chansend()\r\n      /usr/local/go/src/runtime/chan.go:128 +0x0\r\n  github.com/pingcap/goleveldb/leveldb.(*DB).mpoolPut()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/_vendor/src/github.com/pingcap/goleveldb/leveldb/db_state.go:74 +0x8e\r\n  github.com/pingcap/goleveldb/leveldb.(*memDB).decref()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/_vendor/src/github.com/pingcap/goleveldb/leveldb/db_state.go:37 +0x26d\r\n  github.com/pingcap/goleveldb/leveldb.(*DB).memCompaction()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/_vendor/src/github.com/pingcap/goleveldb/leveldb/db_compaction.go:347 +0xb66\r\n  github.com/pingcap/goleveldb/leveldb.(*DB).mCompaction()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/_vendor/src/github.com/pingcap/goleveldb/leveldb/db_compaction.go:755 +0x1d7\r\n```\r\n\r\n`make update` removed many unrelated files, maybe somebody didn't update vendor in a proper way last time."
+  },
+  "pr_merged_at": "2017-09-14T14:31:01+08:00",
+  "test": {
+    "type": "unit",
+    "path": "new_session_test.go",
+    "name": "new_session_test"
+  },
+  "symptoms": [
+    "vendor: update goleveldb to fix a data race"
+  ],
+  "failure_signature": "vendor: update goleveldb to fix a data race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "vendor: update goleveldb to fix a data race",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4518",
+    "https://github.com/pingcap/tidb/pull/4518.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4518.patch",
+  "changed_files": [
+    "_vendor/src/github.com/ngaut/log/LICENSE",
+    "_vendor/src/github.com/ngaut/log/crash_unix.go",
+    "_vendor/src/github.com/ngaut/log/crash_win.go",
+    "_vendor/src/github.com/ngaut/log/log.go",
+    "_vendor/src/github.com/pingcap/goleveldb/leveldb/db_state.go",
+    "_vendor/src/github.com/pingcap/goleveldb/leveldb/table/reader.go",
+    "glide.lock",
+    "glide.yaml",
+    "new_session_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: vendor: update goleveldb to fix a data race",
+      "files: _vendor/src/github.com/BurntSushi/toml/COPYING, _vendor/src/github.com/BurntSushi/toml/decode.go, _vendor/src/github.com/BurntSushi/toml/decode_meta.go, _vendor/src/github.com/BurntSushi/toml/doc.go, _vendor/src/github.com/BurntSushi/toml/encode.go, _vendor/src/github.com/BurntSushi/toml/encoding_types.go, _vendor/src/github.com/BurntSushi/toml/encoding_types_1.1.go, _vendor/src/github.com/BurntSushi/toml/lex.go, _vendor/src/github.com/BurntSushi/toml/parse.go, _vendor/src/github.com/BurntSushi/toml/type_check.go, _vendor/src/github.com/BurntSushi/toml/type_fields.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/barrier.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/client.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/double_barrier.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/key.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/priority_queue.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/queue.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/rwmutex.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/watch.go, _vendor/src/github.com/ngaut/log/LICENSE, _vendor/src/github.com/ngaut/log/crash_unix.go, _vendor/src/github.com/ngaut/log/crash_win.go, _vendor/src/github.com/ngaut/log/log.go, _vendor/src/github.com/pingcap/goleveldb/leveldb/db_state.go, _vendor/src/github.com/pingcap/goleveldb/leveldb/table/reader.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Connection/mysqlx_connection.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Crud/mysqlx_crud.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Datatypes/mysqlx_datatypes.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Expect/mysqlx_expect.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Expr/mysqlx_expr.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Notice/mysqlx_notice.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Resultset/mysqlx_resultset.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Session/mysqlx_session.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Sql/mysqlx_sql.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/mysqlx.pb.go, glide.lock, glide.yaml, new_session_test.go"
+    ]
+  },
+  "analysis": "PR title: vendor: update goleveldb to fix a data race\nPR url: https://github.com/pingcap/tidb/pull/4518\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: vendor: update goleveldb to fix a data race\nChanged files (9): _vendor/src/github.com/ngaut/log/LICENSE, _vendor/src/github.com/ngaut/log/crash_unix.go, _vendor/src/github.com/ngaut/log/crash_win.go, _vendor/src/github.com/ngaut/log/log.go, _vendor/src/github.com/pingcap/goleveldb/leveldb/db_state.go, _vendor/src/github.com/pingcap/goleveldb/leveldb/table/reader.go, glide.lock, glide.yaml, new_session_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4518.patch\nPicked test: type=unit path=new_session_test.go name=new_session_test"
+}

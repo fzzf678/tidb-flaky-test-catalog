@@ -1,0 +1,50 @@
+{
+  "id": "pr-4167",
+  "source_pr": {
+    "number": 4167,
+    "url": "https://github.com/pingcap/tidb/pull/4167",
+    "title": "*: start GCWorker after bootstrap finish.",
+    "body": "GCWorker should not be start when newTikvStore, because\r\nthe system maybe not bootstrap yet. Move the logic to\r\nBootstrapSession.\r\n\r\n@disksing @zimulala "
+  },
+  "pr_merged_at": "2017-08-15T14:36:57+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/gc_worker_test.go",
+    "name": "gc_worker_test"
+  },
+  "symptoms": [
+    "+ wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race."
+  ],
+  "failure_signature": "+ wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: start GCWorker after bootstrap finish.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4167",
+    "https://github.com/pingcap/tidb/pull/4167.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4167.patch",
+  "changed_files": [
+    "domain/domain.go",
+    "session.go",
+    "store/tikv/gc_worker.go",
+    "store/tikv/gc_worker_test.go",
+    "store/tikv/kv.go",
+    "store/tikv/store_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: + wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
+      "files: domain/domain.go, session.go, store/tikv/gc_worker.go, store/tikv/gc_worker_test.go, store/tikv/kv.go, store/tikv/store_test.go"
+    ]
+  },
+  "analysis": "PR title: *: start GCWorker after bootstrap finish.\nPR url: https://github.com/pingcap/tidb/pull/4167\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.\nChanged files (6): domain/domain.go, session.go, store/tikv/gc_worker.go, store/tikv/gc_worker_test.go, store/tikv/kv.go, store/tikv/store_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4167.patch\nPicked test: type=unit path=store/tikv/gc_worker_test.go name=gc_worker_test"
+}

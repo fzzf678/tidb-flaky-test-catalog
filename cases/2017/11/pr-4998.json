@@ -1,0 +1,51 @@
+{
+  "id": "pr-4998",
+  "source_pr": {
+    "number": 4998,
+    "url": "https://github.com/pingcap/tidb/pull/4998",
+    "title": "store/tikv: move safepoint checker to tikvStore.",
+    "body": "The safePointChecker should always run no matter we start gc worker or not. So it's better to be started with tikvStore."
+  },
+  "pr_merged_at": "2017-11-03T09:58:05+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/gcworker/gc_worker_test.go",
+    "name": "gc_worker_test"
+  },
+  "symptoms": [
+    "- wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race."
+  ],
+  "failure_signature": "- wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "store/tikv: move safepoint checker to tikvStore.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4998",
+    "https://github.com/pingcap/tidb/pull/4998.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4998.patch",
+  "changed_files": [
+    "store/tikv/gcworker/gc_worker.go",
+    "store/tikv/gcworker/gc_worker_test.go",
+    "store/tikv/interface.go",
+    "store/tikv/kv.go",
+    "store/tikv/metrics.go",
+    "store/tikv/safepoint.go",
+    "store/tikv/safepoint_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: - wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
+      "files: store/tikv/gcworker/gc_worker.go, store/tikv/gcworker/gc_worker_test.go, store/tikv/interface.go, store/tikv/kv.go, store/tikv/metrics.go, store/tikv/safepoint.go, store/tikv/safepoint_test.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv: move safepoint checker to tikvStore.\nPR url: https://github.com/pingcap/tidb/pull/4998\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.\nChanged files (7): store/tikv/gcworker/gc_worker.go, store/tikv/gcworker/gc_worker_test.go, store/tikv/interface.go, store/tikv/kv.go, store/tikv/metrics.go, store/tikv/safepoint.go, store/tikv/safepoint_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4998.patch\nPicked test: type=unit path=store/tikv/gcworker/gc_worker_test.go name=gc_worker_test"
+}

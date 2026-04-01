@@ -1,0 +1,54 @@
+{
+  "id": "pr-5315",
+  "source_pr": {
+    "number": 5315,
+    "url": "https://github.com/pingcap/tidb/pull/5315",
+    "title": "plan: add hint to force to choose hash join.",
+    "body": "for #5282 \r\nPTAL @hanfei1991 @coocood @lamxTyler "
+  },
+  "pr_merged_at": "2017-12-08T20:02:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select /*+ TIDB_HASHJOIN(t1, t2) */ * from t t1 join t t2 on t1.b = t2.a order by t1.a limit 1\", (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select /*+ TIDB_HASHJOIN(t1, t2) */ * from t t1 join t t2 on t1.b = t2.a order by t1.a limit 1\", (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5315",
+    "https://github.com/pingcap/tidb/pull/5315.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5315.patch",
+  "changed_files": [
+    "executor/join_test.go",
+    "parser/misc.go",
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "plan/dag_plan_test.go",
+    "plan/gen_physical_plans.go",
+    "plan/join_reorder.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plans.go",
+    "plan/planbuilder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select /*+ TIDB_HASHJOIN(t1, t2) */ * from t t1 join t t2 on t1.b = t2.a order by t1.a limit 1\", (plan/dag_plan_test.go)",
+      "files: executor/join_test.go, parser/misc.go, parser/parser.y, parser/parser_test.go, plan/dag_plan_test.go, plan/gen_physical_plans.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/planbuilder.go"
+    ]
+  },
+  "analysis": "PR title: plan: add hint to force to choose hash join.\nPR url: https://github.com/pingcap/tidb/pull/5315\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select /*+ TIDB_HASHJOIN(t1, t2) */ * from t t1 join t t2 on t1.b = t2.a order by t1.a limit 1\", (plan/dag_plan_test.go)\nChanged files (10): executor/join_test.go, parser/misc.go, parser/parser.y, parser/parser_test.go, plan/dag_plan_test.go, plan/gen_physical_plans.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/planbuilder.go\nPatch url: https://github.com/pingcap/tidb/pull/5315.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

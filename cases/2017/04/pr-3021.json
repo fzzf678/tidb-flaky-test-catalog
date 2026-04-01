@@ -1,0 +1,46 @@
+{
+  "id": "pr-3021",
+  "source_pr": {
+    "number": 3021,
+    "url": "https://github.com/pingcap/tidb/pull/3021",
+    "title": "plan: fix bug of topn push down",
+    "body": "When Limit has Offset, the pushed down limit's count should be count + offset.\r\n@shenli @coocood @zimulala PTAL"
+  },
+  "pr_merged_at": "2017-04-10T11:13:41+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t left outer join t s on t.a = s.a order by t.a limit 5, 5\", (plan/logical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t left outer join t s on t.a = s.a order by t.a limit 5, 5\", (plan/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3021",
+    "https://github.com/pingcap/tidb/pull/3021.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3021.patch",
+  "changed_files": [
+    "plan/logical_plan_test.go",
+    "plan/topn_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t left outer join t s on t.a = s.a order by t.a limit 5, 5\", (plan/logical_plan_test.go)",
+      "files: plan/logical_plan_test.go, plan/topn_push_down.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix bug of topn push down\nPR url: https://github.com/pingcap/tidb/pull/3021\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t left outer join t s on t.a = s.a order by t.a limit 5, 5\", (plan/logical_plan_test.go)\nChanged files (2): plan/logical_plan_test.go, plan/topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/3021.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+}

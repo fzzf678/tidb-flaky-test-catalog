@@ -1,0 +1,46 @@
+{
+  "id": "pr-2767",
+  "source_pr": {
+    "number": 2767,
+    "url": "https://github.com/pingcap/tidb/pull/2767",
+    "title": "*: fix prepared statement panic",
+    "body": "`ast.SelectStmt.Fields` is changed during plan building,\r\nnewly created `ast.ColumnNameExpr` has nil Refer."
+  },
+  "pr_merged_at": "2017-03-01T18:52:00+08:00",
+  "test": {
+    "type": "unit",
+    "path": "session_test.go",
+    "name": "session_test"
+  },
+  "symptoms": [
+    "id, _, _, err = se.PrepareStmt(\"select a from multiexec where b = ? order by b\") (session_test.go)"
+  ],
+  "failure_signature": "id, _, _, err = se.PrepareStmt(\"select a from multiexec where b = ? order by b\") (session_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/2767",
+    "https://github.com/pingcap/tidb/pull/2767.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/2767.patch",
+  "changed_files": [
+    "plan/logical_plan_builder.go",
+    "session_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: id, _, _, err = se.PrepareStmt(\"select a from multiexec where b = ? order by b\") (session_test.go)",
+      "files: plan/logical_plan_builder.go, session_test.go"
+    ]
+  },
+  "analysis": "PR title: *: fix prepared statement panic\nPR url: https://github.com/pingcap/tidb/pull/2767\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: id, _, _, err = se.PrepareStmt(\"select a from multiexec where b = ? order by b\") (session_test.go)\nChanged files (2): plan/logical_plan_builder.go, session_test.go\nPatch url: https://github.com/pingcap/tidb/pull/2767.patch\nPicked test: type=unit path=session_test.go name=session_test"
+}

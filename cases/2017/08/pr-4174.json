@@ -1,0 +1,58 @@
+{
+  "id": "pr-4174",
+  "source_pr": {
+    "number": 4174,
+    "url": "https://github.com/pingcap/tidb/pull/4174",
+    "title": "*: rewrite builtin func in to DNF",
+    "body": "to #4080 \r\nrewrite `a in (b, c, d)` to\r\n`a = b or a = c or a = d`\r\n\r\nPTAL @zz-jason @hanfei1991 @breeswish "
+  },
+  "pr_merged_at": "2017-08-15T14:28:43+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/physical_plan_test.go",
+    "name": "physical_plan_test"
+  },
+  "symptoms": [
+    "// sql: \"select * from t a where a.c < 10000 and a.d in (1000, a.e) order by a.b limit 2\", (plan/physical_plan_test.go)"
+  ],
+  "failure_signature": "// sql: \"select * from t a where a.c < 10000 and a.d in (1000, a.e) order by a.b limit 2\", (plan/physical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4174",
+    "https://github.com/pingcap/tidb/pull/4174.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4174.patch",
+  "changed_files": [
+    "expression/builtin.go",
+    "expression/builtin_other.go",
+    "expression/builtin_other_test.go",
+    "expression/constant_test.go",
+    "expression/distsql_builtin_test.go",
+    "expression/expr_to_pb_test.go",
+    "expression/integration_test.go",
+    "plan/explain_test.go",
+    "plan/expression_rewriter.go",
+    "plan/logical_plan_test.go",
+    "plan/physical_plan_test.go",
+    "plan/typeinfer_test.go",
+    "session_test.go",
+    "util/ranger/range_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: // sql: \"select * from t a where a.c < 10000 and a.d in (1000, a.e) order by a.b limit 2\", (plan/physical_plan_test.go)",
+      "files: expression/builtin.go, expression/builtin_other.go, expression/builtin_other_test.go, expression/constant_test.go, expression/distsql_builtin_test.go, expression/expr_to_pb_test.go, expression/integration_test.go, plan/explain_test.go, plan/expression_rewriter.go, plan/logical_plan_test.go, plan/physical_plan_test.go, plan/typeinfer_test.go, session_test.go, util/ranger/range_test.go"
+    ]
+  },
+  "analysis": "PR title: *: rewrite builtin func in to DNF\nPR url: https://github.com/pingcap/tidb/pull/4174\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // sql: \"select * from t a where a.c < 10000 and a.d in (1000, a.e) order by a.b limit 2\", (plan/physical_plan_test.go)\nChanged files (14): expression/builtin.go, expression/builtin_other.go, expression/builtin_other_test.go, expression/constant_test.go, expression/distsql_builtin_test.go, expression/expr_to_pb_test.go, expression/integration_test.go, plan/explain_test.go, plan/expression_rewriter.go, plan/logical_plan_test.go, plan/physical_plan_test.go, plan/typeinfer_test.go, session_test.go, util/ranger/range_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4174.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
+}

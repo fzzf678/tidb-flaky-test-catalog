@@ -1,0 +1,47 @@
+{
+  "id": "pr-3126",
+  "source_pr": {
+    "number": 3126,
+    "url": "https://github.com/pingcap/tidb/pull/3126",
+    "title": "plan: new plan supports join.",
+    "body": "This PR let new plan support join. We only introduce hash join now, and in order to simplify problem, hash join will block any physical property.\r\n@shenli @coocood @winoros @lamxTyler PTAL"
+  },
+  "pr_merged_at": "2017-04-25T23:52:19+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t t1 join t t2 on t1.a = t2.a order by t1.a\", (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t t1 join t t2 on t1.a = t2.a order by t1.a\", (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3126",
+    "https://github.com/pingcap/tidb/pull/3126.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3126.patch",
+  "changed_files": [
+    "plan/dag_plan_test.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/task_profile.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t t1 join t t2 on t1.a = t2.a order by t1.a\", (plan/dag_plan_test.go)",
+      "files: plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/task_profile.go"
+    ]
+  },
+  "analysis": "PR title: plan: new plan supports join.\nPR url: https://github.com/pingcap/tidb/pull/3126\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t t1 join t t2 on t1.a = t2.a order by t1.a\", (plan/dag_plan_test.go)\nChanged files (3): plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/task_profile.go\nPatch url: https://github.com/pingcap/tidb/pull/3126.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

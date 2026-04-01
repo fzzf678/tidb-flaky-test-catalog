@@ -1,0 +1,48 @@
+{
+  "id": "pr-3784",
+  "source_pr": {
+    "number": 3784,
+    "url": "https://github.com/pingcap/tidb/pull/3784",
+    "title": "executor, util: fix bug when the join's keys have different types.",
+    "body": "After PR #3714 , the types of join keys are always same. But when one side is unsigned and another side is signed, we still get different encoded bytes. So we add a `HashValues` to get the hash code of datums. When two datums a, b hold a = b, they must have the same hash codes.\r\nThis PR fix problem #3694 "
+  },
+  "pr_merged_at": "2017-07-18T16:28:09+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "result.Sort().Check(testkit.Rows(\"0 0.00\", \"2 <nil>\")) (executor/join_test.go)"
+  ],
+  "failure_signature": "result.Sort().Check(testkit.Rows(\"0 0.00\", \"2 <nil>\")) (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3784",
+    "https://github.com/pingcap/tidb/pull/3784.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3784.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/join.go",
+    "executor/join_test.go",
+    "util/codec/codec.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result.Sort().Check(testkit.Rows(\"0 0.00\", \"2 <nil>\")) (executor/join_test.go)",
+      "files: executor/builder.go, executor/join.go, executor/join_test.go, util/codec/codec.go"
+    ]
+  },
+  "analysis": "PR title: executor, util: fix bug when the join's keys have different types.\nPR url: https://github.com/pingcap/tidb/pull/3784\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result.Sort().Check(testkit.Rows(\"0 0.00\", \"2 <nil>\")) (executor/join_test.go)\nChanged files (4): executor/builder.go, executor/join.go, executor/join_test.go, util/codec/codec.go\nPatch url: https://github.com/pingcap/tidb/pull/3784.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

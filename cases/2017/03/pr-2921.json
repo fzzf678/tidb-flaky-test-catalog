@@ -1,0 +1,46 @@
+{
+  "id": "pr-2921",
+  "source_pr": {
+    "number": 2921,
+    "url": "https://github.com/pingcap/tidb/pull/2921",
+    "title": "store/tikv: fix coprocessor iterator goroutine leak.",
+    "body": ""
+  },
+  "pr_merged_at": "2017-03-24T19:14:47+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/distsql_test.go",
+    "name": "distsql_test"
+  },
+  "symptoms": [
+    "rss, err = tk.Se.Execute(\"select * from copclient order by id\") (executor/distsql_test.go)"
+  ],
+  "failure_signature": "rss, err = tk.Se.Execute(\"select * from copclient order by id\") (executor/distsql_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/2921",
+    "https://github.com/pingcap/tidb/pull/2921.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/2921.patch",
+  "changed_files": [
+    "executor/distsql_test.go",
+    "store/tikv/coprocessor.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rss, err = tk.Se.Execute(\"select * from copclient order by id\") (executor/distsql_test.go)",
+      "files: executor/distsql_test.go, store/tikv/coprocessor.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv: fix coprocessor iterator goroutine leak.\nPR url: https://github.com/pingcap/tidb/pull/2921\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rss, err = tk.Se.Execute(\"select * from copclient order by id\") (executor/distsql_test.go)\nChanged files (2): executor/distsql_test.go, store/tikv/coprocessor.go\nPatch url: https://github.com/pingcap/tidb/pull/2921.patch\nPicked test: type=unit path=executor/distsql_test.go name=distsql_test"
+}

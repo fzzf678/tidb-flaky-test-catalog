@@ -1,0 +1,52 @@
+{
+  "id": "pr-3372",
+  "source_pr": {
+    "number": 3372,
+    "url": "https://github.com/pingcap/tidb/pull/3372",
+    "title": "*: support using clause in join statement.",
+    "body": "Try to support `using` in `join`."
+  },
+  "pr_merged_at": "2017-06-12T17:14:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t1 right join t2 using (a) order by a\").Check(testkit.Rows(\"2 5 4\", \"3 6 <nil>\")) (executor/join_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t1 right join t2 using (a) order by a\").Check(testkit.Rows(\"2 5 4\", \"3 6 <nil>\")) (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3372",
+    "https://github.com/pingcap/tidb/pull/3372.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3372.patch",
+  "changed_files": [
+    "ast/dml.go",
+    "executor/join_test.go",
+    "expression/schema.go",
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "plan/expression_rewriter.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plans.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t1 right join t2 using (a) order by a\").Check(testkit.Rows(\"2 5 4\", \"3 6 <nil>\")) (executor/join_test.go)",
+      "files: ast/dml.go, executor/join_test.go, expression/schema.go, parser/parser.y, parser/parser_test.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plans.go"
+    ]
+  },
+  "analysis": "PR title: *: support using clause in join statement.\nPR url: https://github.com/pingcap/tidb/pull/3372\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t1 right join t2 using (a) order by a\").Check(testkit.Rows(\"2 5 4\", \"3 6 <nil>\")) (executor/join_test.go)\nChanged files (8): ast/dml.go, executor/join_test.go, expression/schema.go, parser/parser.y, parser/parser_test.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/3372.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

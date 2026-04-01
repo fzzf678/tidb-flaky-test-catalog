@@ -1,0 +1,49 @@
+{
+  "id": "pr-3414",
+  "source_pr": {
+    "number": 3414,
+    "url": "https://github.com/pingcap/tidb/pull/3414",
+    "title": "util/testleak: make it work right",
+    "body": "Fix a bug of testleak.\r\n\r\nAfter this change, testleak found many `tidb.asyncGetTSWorker` leaks, \r\nbut it's hard to fix them now because too many test cases are involved.\r\n\r\nMany  sessions are not closed in test code, even those are fixed,\r\n`sysSessionPool` still makes a big trouble.\r\n\r\nMaybe with GetTSAsync API in https://github.com/pingcap/pd/pull/653, I can refactor\r\n`asyncGetTSWorker` and get rid of the the problem.\r\n\r\n@zimulala @coocood @shenli "
+  },
+  "pr_merged_at": "2017-06-07T20:39:45+08:00",
+  "test": {
+    "type": "unit",
+    "path": "bootstrap_test.go",
+    "name": "bootstrap_test"
+  },
+  "symptoms": [
+    "@@ -121,6 +121,16 @@ race: parserlib"
+  ],
+  "failure_signature": "@@ -121,6 +121,16 @@ race: parserlib",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "util/testleak: make it work right",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3414",
+    "https://github.com/pingcap/tidb/pull/3414.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3414.patch",
+  "changed_files": [
+    "Makefile",
+    "bootstrap_test.go",
+    "tidb_test.go",
+    "util/testleak/fake.go",
+    "util/testleak/leaktest.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: @@ -121,6 +121,16 @@ race: parserlib",
+      "files: Makefile, bootstrap_test.go, tidb_test.go, util/testleak/fake.go, util/testleak/leaktest.go"
+    ]
+  },
+  "analysis": "PR title: util/testleak: make it work right\nPR url: https://github.com/pingcap/tidb/pull/3414\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: @@ -121,6 +121,16 @@ race: parserlib\nChanged files (5): Makefile, bootstrap_test.go, tidb_test.go, util/testleak/fake.go, util/testleak/leaktest.go\nPatch url: https://github.com/pingcap/tidb/pull/3414.patch\nPicked test: type=unit path=bootstrap_test.go name=bootstrap_test"
+}

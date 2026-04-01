@@ -1,0 +1,52 @@
+{
+  "id": "pr-3159",
+  "source_pr": {
+    "number": 3159,
+    "url": "https://github.com/pingcap/tidb/pull/3159",
+    "title": "*: fix data race in join.",
+    "body": "After pr #2605 , we can't find data race in join. Indeed there exists some races.\r\n\r\n1. MVMap's Get is not thread safe.\r\n2. BigFilter and OtherFilter in join context should be copied. this is caused by #3139 "
+  },
+  "pr_merged_at": "2017-04-27T23:26:15+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "*: fix data race in join. | result = tk.MustQuery(\"select a.c1 from t a , t1 b where a.c1 = b.c1 and a.c1 + b.c1 > 5 order by b.c1\") (executor/join_test.go)"
+  ],
+  "failure_signature": "*: fix data race in join. | result = tk.MustQuery(\"select a.c1 from t a , t1 b where a.c1 = b.c1 and a.c1 + b.c1 > 5 order by b.c1\") (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3159",
+    "https://github.com/pingcap/tidb/pull/3159.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3159.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/join.go",
+    "executor/join_test.go",
+    "expression/expression.go",
+    "util/mvmap/fnv.go",
+    "util/mvmap/mvmap.go",
+    "util/mvmap/mvmap_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: *: fix data race in join. | result = tk.MustQuery(\"select a.c1 from t a , t1 b where a.c1 = b.c1 and a.c1 + b.c1 > 5 order by b.c1\") (executor/join_test.go)",
+      "files: executor/builder.go, executor/join.go, executor/join_test.go, expression/expression.go, util/mvmap/fnv.go, util/mvmap/mvmap.go, util/mvmap/mvmap_test.go"
+    ]
+  },
+  "analysis": "PR title: *: fix data race in join.\nPR url: https://github.com/pingcap/tidb/pull/3159\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: *: fix data race in join. | result = tk.MustQuery(\"select a.c1 from t a , t1 b where a.c1 = b.c1 and a.c1 + b.c1 > 5 order by b.c1\") (executor/join_test.go)\nChanged files (7): executor/builder.go, executor/join.go, executor/join_test.go, expression/expression.go, util/mvmap/fnv.go, util/mvmap/mvmap.go, util/mvmap/mvmap_test.go\nPatch url: https://github.com/pingcap/tidb/pull/3159.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

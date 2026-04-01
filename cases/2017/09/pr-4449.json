@@ -1,0 +1,47 @@
+{
+  "id": "pr-4449",
+  "source_pr": {
+    "number": 4449,
+    "url": "https://github.com/pingcap/tidb/pull/4449",
+    "title": "plan: fix a but about limit pushdown",
+    "body": "When the read way is double read and the data is scanned by order, limit shouldn't be pushed to table side.\r\n"
+  },
+  "pr_merged_at": "2017-09-06T15:29:05+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t where b = 1 and c = 1 order by c limit 1\", (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t where b = 1 and c = 1 order by c limit 1\", (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4449",
+    "https://github.com/pingcap/tidb/pull/4449.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4449.patch",
+  "changed_files": [
+    "plan/dag_plan_test.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/task.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t where b = 1 and c = 1 order by c limit 1\", (plan/dag_plan_test.go)",
+      "files: plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/task.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix a but about limit pushdown\nPR url: https://github.com/pingcap/tidb/pull/4449\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t where b = 1 and c = 1 order by c limit 1\", (plan/dag_plan_test.go)\nChanged files (3): plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/task.go\nPatch url: https://github.com/pingcap/tidb/pull/4449.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

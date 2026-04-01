@@ -1,0 +1,47 @@
+{
+  "id": "pr-4552",
+  "source_pr": {
+    "number": 4552,
+    "url": "https://github.com/pingcap/tidb/pull/4552",
+    "title": "plan: fix bug of merge join/ stream agg + order by.",
+    "body": "when check whether the order properties can be pushed, we should check the prefix."
+  },
+  "pr_merged_at": "2017-09-19T11:19:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select /*+ TIDB_SMJ(t1,t2,t3)*/ * from t t1, t t2, t t3 where t1.c = t2.c and t1.d = t2.d and t3.c = t1.c and t3.d = t1.d order by t1.c\", (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select /*+ TIDB_SMJ(t1,t2,t3)*/ * from t t1, t t2, t t3 where t1.c = t2.c and t1.d = t2.d and t3.c = t1.c and t3.d = t1.d order by t1.c\", (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4552",
+    "https://github.com/pingcap/tidb/pull/4552.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4552.patch",
+  "changed_files": [
+    "plan/dag_plan_test.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/plan.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select /*+ TIDB_SMJ(t1,t2,t3)*/ * from t t1, t t2, t t3 where t1.c = t2.c and t1.d = t2.d and t3.c = t1.c and t3.d = t1.d order by t1.c\", (plan/dag_plan_test.go)",
+      "files: plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/plan.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix bug of merge join/ stream agg + order by.\nPR url: https://github.com/pingcap/tidb/pull/4552\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select /*+ TIDB_SMJ(t1,t2,t3)*/ * from t t1, t t2, t t3 where t1.c = t2.c and t1.d = t2.d and t3.c = t1.c and t3.d = t1.d order by t1.c\", (plan/dag_plan_test.go)\nChanged files (3): plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/plan.go\nPatch url: https://github.com/pingcap/tidb/pull/4552.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

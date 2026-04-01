@@ -1,0 +1,57 @@
+{
+  "id": "pr-3177",
+  "source_pr": {
+    "number": 3177,
+    "url": "https://github.com/pingcap/tidb/pull/3177",
+    "title": "util/testkit: refine testkit",
+    "body": "Now we don't need to convert a string to a byte slice to check results.\r\nAlso supports Sort, to make unordered test result stable."
+  },
+  "pr_merged_at": "2017-04-29T23:20:49+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "result.Sort().Check(testkit.Rows(\"1 2 1 0\", \"2 3 2 0\")) (executor/join_test.go)"
+  ],
+  "failure_signature": "result.Sort().Check(testkit.Rows(\"1 2 1 0\", \"2 3 2 0\")) (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3177",
+    "https://github.com/pingcap/tidb/pull/3177.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3177.patch",
+  "changed_files": [
+    "circle.yml",
+    "ddl/ddl_db_test.go",
+    "executor/aggregate_test.go",
+    "executor/ddl_test.go",
+    "executor/executor_test.go",
+    "executor/grant_test.go",
+    "executor/join_test.go",
+    "executor/prepared_test.go",
+    "executor/show_test.go",
+    "executor/simple_test.go",
+    "executor/statement_context_test.go",
+    "executor/write_test.go",
+    "util/testkit/testkit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result.Sort().Check(testkit.Rows(\"1 2 1 0\", \"2 3 2 0\")) (executor/join_test.go)",
+      "files: circle.yml, ddl/ddl_db_test.go, executor/aggregate_test.go, executor/ddl_test.go, executor/executor_test.go, executor/grant_test.go, executor/join_test.go, executor/prepared_test.go, executor/show_test.go, executor/simple_test.go, executor/statement_context_test.go, executor/write_test.go, util/testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: util/testkit: refine testkit\nPR url: https://github.com/pingcap/tidb/pull/3177\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result.Sort().Check(testkit.Rows(\"1 2 1 0\", \"2 3 2 0\")) (executor/join_test.go)\nChanged files (13): circle.yml, ddl/ddl_db_test.go, executor/aggregate_test.go, executor/ddl_test.go, executor/executor_test.go, executor/grant_test.go, executor/join_test.go, executor/prepared_test.go, executor/show_test.go, executor/simple_test.go, executor/statement_context_test.go, executor/write_test.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/3177.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

@@ -1,0 +1,64 @@
+{
+  "id": "pr-5485",
+  "source_pr": {
+    "number": 5485,
+    "url": "https://github.com/pingcap/tidb/pull/5485",
+    "title": "*: merge ranger.IndexRange and ranger.ColumnRange.",
+    "body": "Currently `IntColumnRange` doesn't support calculate range if it exceed int64. Modify `IntColumnRange` to fit this is no better than use `ColumnRange` directly.\r\nAnd we can merge `ColumnRange` and `IndexRange` at the same time. So there's only one type of range。\r\nPTAL @coocood @hanfei1991 @lamxTyler "
+  },
+  "pr_merged_at": "2017-12-26T16:08:37+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_pkg_test.go",
+    "name": "executor_pkg_test"
+  },
+  "symptoms": [
+    "// Since multiple inner workers run concurrently, we should copy join's indexRanges for every worker to avoid data race."
+  ],
+  "failure_signature": "// Since multiple inner workers run concurrently, we should copy join's indexRanges for every worker to avoid data race.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: merge ranger.IndexRange and ranger.ColumnRange.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5485",
+    "https://github.com/pingcap/tidb/pull/5485.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5485.patch",
+  "changed_files": [
+    "executor/analyze.go",
+    "executor/builder.go",
+    "executor/distsql.go",
+    "executor/executor_pkg_test.go",
+    "executor/index_lookup_join.go",
+    "executor/new_index_lookup_join.go",
+    "plan/gen_physical_plans.go",
+    "plan/physical_plan_builder.go",
+    "plan/physical_plans.go",
+    "plan/plan_to_pb.go",
+    "plan/plans.go",
+    "statistics/histogram.go",
+    "statistics/selectivity.go",
+    "statistics/statistics_test.go",
+    "statistics/table.go",
+    "statistics/update.go",
+    "util/ranger/points.go",
+    "util/ranger/ranger.go",
+    "util/ranger/types.go",
+    "util/ranger/types_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: // Since multiple inner workers run concurrently, we should copy join's indexRanges for every worker to avoid data race.",
+      "files: executor/analyze.go, executor/builder.go, executor/distsql.go, executor/executor_pkg_test.go, executor/index_lookup_join.go, executor/new_index_lookup_join.go, plan/gen_physical_plans.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan_to_pb.go, plan/plans.go, statistics/histogram.go, statistics/selectivity.go, statistics/statistics_test.go, statistics/table.go, statistics/update.go, util/ranger/points.go, util/ranger/ranger.go, util/ranger/types.go, util/ranger/types_test.go"
+    ]
+  },
+  "analysis": "PR title: *: merge ranger.IndexRange and ranger.ColumnRange.\nPR url: https://github.com/pingcap/tidb/pull/5485\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // Since multiple inner workers run concurrently, we should copy join's indexRanges for every worker to avoid data race.\nChanged files (20): executor/analyze.go, executor/builder.go, executor/distsql.go, executor/executor_pkg_test.go, executor/index_lookup_join.go, executor/new_index_lookup_join.go, plan/gen_physical_plans.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan_to_pb.go, plan/plans.go, statistics/histogram.go, statistics/selectivity.go, statistics/statistics_test.go, statistics/table.go, statistics/update.go, util/ranger/points.go, util/ranger/ranger.go, util/ranger/types.go, util/ranger/types_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5485.patch\nPicked test: type=unit path=executor/executor_pkg_test.go name=executor_pkg_test"
+}

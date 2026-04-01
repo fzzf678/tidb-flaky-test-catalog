@@ -1,0 +1,61 @@
+{
+  "id": "pr-2850",
+  "source_pr": {
+    "number": 2850,
+    "url": "https://github.com/pingcap/tidb/pull/2850",
+    "title": "Sort Merge Join",
+    "body": "Added syntax like select /*+ TIDB_SMJ(t1, t2) */ ... which indicates within this select block, t1,t2 will be joining with merge join; if needed, a sort will be appended in case of no order provided by child operators. The hint matching only matches table name and alias like in MySQL.\r\n\r\nIt will try to generate different plans according to join keys. Say a = b and c = d it will try both merge on a/b (ASC or DESC), c/d (ASC or DESC) and pick a plan with lowest cost along side other operator cost evaluation.\r\nThe merge join operator itself do a streamline iteration caching same key rows for both sides for look-back cross product. If a single key count is larger than memory size, it then will OOM. \r\n\r\nOn presence of merge hint, join reorder will be turned off."
+  },
+  "pr_merged_at": "2017-03-22T21:42:16+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ast/misc_test.go",
+    "name": "misc_test"
+  },
+  "symptoms": [
+    "(select a from t1 where a=10 and b=1) union (select /*! TIDB_SMJ(t2) */ a from t2 where a=11 and b=2) order by a limit 10; (ast/misc_test.go)"
+  ],
+  "failure_signature": "(select a from t1 where a=10 and b=1) union (select /*! TIDB_SMJ(t2) */ a from t2 where a=11 and b=2) order by a limit 10; (ast/misc_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/2850",
+    "https://github.com/pingcap/tidb/pull/2850.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/2850.patch",
+  "changed_files": [
+    "ast/dml.go",
+    "ast/misc.go",
+    "ast/misc_test.go",
+    "executor/builder.go",
+    "executor/executor.go",
+    "executor/merge_join.go",
+    "executor/merge_join_test.go",
+    "parser/misc.go",
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "plan/join_reorder.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plans.go",
+    "plan/match_property.go",
+    "plan/physical_plan_builder.go",
+    "plan/physical_plans.go",
+    "plan/planbuilder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: (select a from t1 where a=10 and b=1) union (select /*! TIDB_SMJ(t2) */ a from t2 where a=11 and b=2) order by a limit 10; (ast/misc_test.go)",
+      "files: ast/dml.go, ast/misc.go, ast/misc_test.go, executor/builder.go, executor/executor.go, executor/join_test.go, executor/merge_join.go, executor/merge_join_test.go, parser/lexer.go, parser/lexer_test.go, parser/misc.go, parser/parser.y, parser/parser_test.go, parser/yy_parser.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/match_property.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/planbuilder.go"
+    ]
+  },
+  "analysis": "PR title: Sort Merge Join\nPR url: https://github.com/pingcap/tidb/pull/2850\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: (select a from t1 where a=10 and b=1) union (select /*! TIDB_SMJ(t2) */ a from t2 where a=11 and b=2) order by a limit 10; (ast/misc_test.go)\nChanged files (17): ast/dml.go, ast/misc.go, ast/misc_test.go, executor/builder.go, executor/executor.go, executor/merge_join.go, executor/merge_join_test.go, parser/misc.go, parser/parser.y, parser/parser_test.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/match_property.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/planbuilder.go\nPatch url: https://github.com/pingcap/tidb/pull/2850.patch\nPicked test: type=unit path=ast/misc_test.go name=misc_test"
+}

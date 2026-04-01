@@ -1,0 +1,46 @@
+{
+  "id": "pr-3314",
+  "source_pr": {
+    "number": 3314,
+    "url": "https://github.com/pingcap/tidb/pull/3314",
+    "title": "fix: time add parameter",
+    "body": "https://github.com/pingcap/tidb/pull/3304#issuecomment-302989928\r\n\r\nI think it's better to change\r\nfunc (t *Time) Add(d *Duration) Duration\r\nto\r\nfunc (t *Time) Add(d Duration) Duration\r\n\r\nAs you see, Duration is used everywhere.\r\nThe return value of Add is Duration,\r\nMethod is defined on Duration rather than *Duration\r\nDatum in datum.go also use Duration ...\r\n\r\nfunc (t *Time) Add(d *Duration) Duration must be a mistake!\r\n\r\n@tiancaiamao "
+  },
+  "pr_merged_at": "2017-05-23T14:29:10+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "// Test Index Join + Order by. (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "// Test Index Join + Order by. (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3314",
+    "https://github.com/pingcap/tidb/pull/3314.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3314.patch",
+  "changed_files": [
+    "expression/builtin_time.go",
+    "util/types/time.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: // Test Index Join + Order by. (plan/dag_plan_test.go)",
+      "files: _vendor/src/github.com/pingcap/kvproto/pkg/mvccpb/mvccpb.pb.go, _vendor/src/github.com/pingcap/kvproto/pkg/util/codec_test.go, _vendor/src/github.com/pingcap/tipb/go-binlog/binlog.pb.go, _vendor/src/github.com/pingcap/tipb/go-binlog/cistern.pb.go, _vendor/src/github.com/pingcap/tipb/go-binlog/pump.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/executor.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/schema.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/select.pb.go, ast/ast.go, bootstrap.go, ddl/bg_worker_test.go, ddl/column_change_test.go, ddl/column_test.go, ddl/ddl.go, ddl/ddl_worker_test.go, ddl/foreign_key_test.go, ddl/index_change_test.go, ddl/owner.go, ddl/owner_test.go, ddl/reorg_test.go, ddl/schema_test.go, ddl/stat_test.go, ddl/table_test.go, domain/domain.go, domain/domain_test.go, domain/schema_validator.go, executor/adapter.go, expression/builtin_time.go, glide.lock, glide.yaml, parser/parser.y, parser/parser_test.go, plan/dag_plan_test.go, plan/initialize.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/physical_plans.go, plan/stringer.go, plan/task_profile.go, server/driver_tidb.go, session.go, session_test.go, statistics/ddl.go, statistics/histogram.go, statistics/update_test.go, store/tikv/kv.go, store/tikv/mock-tikv/mock_tikv_test.go, store/tikv/mock-tikv/mvcc.go, tidb.go, tidb_test.go, util/types/time.go, util/types/time_test.go"
+    ]
+  },
+  "analysis": "PR title: fix: time add parameter\nPR url: https://github.com/pingcap/tidb/pull/3314\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Test Index Join + Order by. (plan/dag_plan_test.go)\nChanged files (2): expression/builtin_time.go, util/types/time.go\nPatch url: https://github.com/pingcap/tidb/pull/3314.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

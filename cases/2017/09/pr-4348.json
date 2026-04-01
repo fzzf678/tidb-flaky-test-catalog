@@ -1,0 +1,58 @@
+{
+  "id": "pr-4348",
+  "source_pr": {
+    "number": 4348,
+    "url": "https://github.com/pingcap/tidb/pull/4348",
+    "title": "*: change the way transfer handle.",
+    "body": "Don't transfer handle if we don't need it, so remove rowMeta in selectResponse.\r\nImplement it first on mock-tikv.\r\nPTAL @hanfei1991 @shenli @zimulala "
+  },
+  "pr_merged_at": "2017-09-27T16:47:08+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "r := tk.MustQuery(\"select * from select_order_test where id = 1 order by id limit 1 offset 0;\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "r := tk.MustQuery(\"select * from select_order_test where id = 1 order by id limit 1 offset 0;\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4348",
+    "https://github.com/pingcap/tidb/pull/4348.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4348.patch",
+  "changed_files": [
+    "distsql/distsql.go",
+    "distsql/new_distsql.go",
+    "executor/builder.go",
+    "executor/distsql.go",
+    "executor/executor_test.go",
+    "executor/new_distsql.go",
+    "plan/column_pruning.go",
+    "plan/explain_test.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/plan_to_pb.go",
+    "store/tikv/mock-tikv/analyze.go",
+    "store/tikv/mock-tikv/cop_handler_dag.go",
+    "store/tikv/mock-tikv/executor.go",
+    "store/tikv/mock-tikv/topn.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: r := tk.MustQuery(\"select * from select_order_test where id = 1 order by id limit 1 offset 0;\") (executor/executor_test.go)",
+      "files: distsql/distsql.go, distsql/new_distsql.go, executor/builder.go, executor/distsql.go, executor/executor_test.go, executor/new_distsql.go, kv/kv.go, plan/column_pruning.go, plan/explain_test.go, plan/new_physical_plan_builder.go, plan/plan_to_pb.go, store/tikv/coprocessor.go, store/tikv/mock-tikv/analyze.go, store/tikv/mock-tikv/cop_handler.go, store/tikv/mock-tikv/cop_handler_dag.go, store/tikv/mock-tikv/executor.go, store/tikv/mock-tikv/topn.go"
+    ]
+  },
+  "analysis": "PR title: *: change the way transfer handle.\nPR url: https://github.com/pingcap/tidb/pull/4348\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: r := tk.MustQuery(\"select * from select_order_test where id = 1 order by id limit 1 offset 0;\") (executor/executor_test.go)\nChanged files (14): distsql/distsql.go, distsql/new_distsql.go, executor/builder.go, executor/distsql.go, executor/executor_test.go, executor/new_distsql.go, plan/column_pruning.go, plan/explain_test.go, plan/new_physical_plan_builder.go, plan/plan_to_pb.go, store/tikv/mock-tikv/analyze.go, store/tikv/mock-tikv/cop_handler_dag.go, store/tikv/mock-tikv/executor.go, store/tikv/mock-tikv/topn.go\nPatch url: https://github.com/pingcap/tidb/pull/4348.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

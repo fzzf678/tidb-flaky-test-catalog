@@ -1,0 +1,46 @@
+{
+  "id": "pr-2892",
+  "source_pr": {
+    "number": 2892,
+    "url": "https://github.com/pingcap/tidb/pull/2892",
+    "title": "plan: fix a panic bug when aggregation push across union.",
+    "body": "When pushing aggregation past union, we should extract all columns from groupby.\r\n@shenli @coocood @zimulala @winoros @lamxTyler PTAL"
+  },
+  "pr_merged_at": "2017-03-20T16:56:50+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select sum(c1) k from (select * from t1 union all select * from t2)t group by c1 * 2 order by k\") (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select sum(c1) k from (select * from t1 union all select * from t2)t group by c1 * 2 order by k\") (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/2892",
+    "https://github.com/pingcap/tidb/pull/2892.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/2892.patch",
+  "changed_files": [
+    "executor/aggregate_test.go",
+    "plan/aggregation_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select sum(c1) k from (select * from t1 union all select * from t2)t group by c1 * 2 order by k\") (executor/aggregate_test.go)",
+      "files: executor/aggregate_test.go, plan/aggregation_push_down.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix a panic bug when aggregation push across union.\nPR url: https://github.com/pingcap/tidb/pull/2892\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select sum(c1) k from (select * from t1 union all select * from t2)t group by c1 * 2 order by k\") (executor/aggregate_test.go)\nChanged files (2): executor/aggregate_test.go, plan/aggregation_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/2892.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

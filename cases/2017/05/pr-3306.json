@@ -1,0 +1,54 @@
+{
+  "id": "pr-3306",
+  "source_pr": {
+    "number": 3306,
+    "url": "https://github.com/pingcap/tidb/pull/3306",
+    "title": "executor, plan: support batch index look up join.",
+    "body": "Implement the batch index look up join and the batch size is controlled by index look up size. Some performance bench result will be done in the future.\r\n\r\n@shenli @zimulala @winoros @XuHuaiyu PTAL"
+  },
+  "pr_merged_at": "2017-05-23T23:12:20+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "// Test Index Join + Order by. (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "// Test Index Join + Order by. (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3306",
+    "https://github.com/pingcap/tidb/pull/3306.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3306.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/distsql.go",
+    "executor/join_test.go",
+    "executor/new_distsql.go",
+    "executor/new_join.go",
+    "plan/dag_plan_test.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/physical_plans.go",
+    "plan/resolve_indices.go",
+    "plan/stringer.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: // Test Index Join + Order by. (plan/dag_plan_test.go)",
+      "files: executor/builder.go, executor/distsql.go, executor/join_test.go, executor/new_distsql.go, executor/new_join.go, plan/dag_plan_test.go, plan/initialize.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/resolve_indices.go, plan/stringer.go, plan/task_profile.go"
+    ]
+  },
+  "analysis": "PR title: executor, plan: support batch index look up join.\nPR url: https://github.com/pingcap/tidb/pull/3306\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Test Index Join + Order by. (plan/dag_plan_test.go)\nChanged files (10): executor/builder.go, executor/distsql.go, executor/join_test.go, executor/new_distsql.go, executor/new_join.go, plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/physical_plans.go, plan/resolve_indices.go, plan/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/3306.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

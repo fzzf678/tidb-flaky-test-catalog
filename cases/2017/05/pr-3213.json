@@ -1,0 +1,46 @@
+{
+  "id": "pr-3213",
+  "source_pr": {
+    "number": 3213,
+    "url": "https://github.com/pingcap/tidb/pull/3213",
+    "title": "expression: refine builtin-func RAND (fix issue3211)",
+    "body": "This commit fixes #3211 through recording the state of RAND built-in function.\r\n\r\n``` sql\r\ncreate table t (a int);\r\ninsert into t values(1),(2),(3),(4);\r\nselect rand(20160101) from t;\r\n```\r\n\r\nBefore this commit, the query above gets 4 same results,\r\nbecause rand(20160101) executes \r\n``` go\r\nrand.Seed(seed)\r\nrand.Float64() \r\n```\r\nrepeatedly.\r\n\r\n@shenli @coocood PTAL"
+  },
+  "pr_merged_at": "2017-05-05T19:51:12+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/builtin_math_test.go",
+    "name": "builtin_math_test"
+  },
+  "symptoms": [
+    "rand.Seed(20160101) (expression/builtin_math_test.go)"
+  ],
+  "failure_signature": "rand.Seed(20160101) (expression/builtin_math_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3213",
+    "https://github.com/pingcap/tidb/pull/3213.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3213.patch",
+  "changed_files": [
+    "expression/builtin_math.go",
+    "expression/builtin_math_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rand.Seed(20160101) (expression/builtin_math_test.go)",
+      "files: expression/builtin_math.go, expression/builtin_math_test.go, expression/constant_fold.go"
+    ]
+  },
+  "analysis": "PR title: expression: refine builtin-func RAND (fix issue3211)\nPR url: https://github.com/pingcap/tidb/pull/3213\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(20160101) (expression/builtin_math_test.go)\nChanged files (2): expression/builtin_math.go, expression/builtin_math_test.go\nPatch url: https://github.com/pingcap/tidb/pull/3213.patch\nPicked test: type=unit path=expression/builtin_math_test.go name=builtin_math_test"
+}

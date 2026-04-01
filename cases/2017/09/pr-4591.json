@@ -1,0 +1,52 @@
+{
+  "id": "pr-4591",
+  "source_pr": {
+    "number": 4591,
+    "url": "https://github.com/pingcap/tidb/pull/4591",
+    "title": "plan,statistics: don't forget to close domain in testing",
+    "body": "Domain have many background goroutines bind to it.\r\nIf we forget to close it:\r\n1. make leak may fail\r\n2. make race may fail, because the background goroutines may still visiting store after store is closed."
+  },
+  "pr_merged_at": "2017-09-20T21:42:26+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/cbo_test.go",
+    "name": "cbo_test"
+  },
+  "symptoms": [
+    "2. make race may fail, because the background goroutines may still visiting store after store is closed."
+  ],
+  "failure_signature": "2. make race may fail, because the background goroutines may still visiting store after store is closed.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "plan,statistics: don't forget to close domain in testing",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4591",
+    "https://github.com/pingcap/tidb/pull/4591.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4591.patch",
+  "changed_files": [
+    "plan/cbo_test.go",
+    "plan/dag_plan_test.go",
+    "plan/explain_test.go",
+    "plan/resolver_test.go",
+    "plan/typeinfer_test.go",
+    "plan/validator_test.go",
+    "statistics/selectivity_test.go",
+    "util/testleak/leaktest.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: 2. make race may fail, because the background goroutines may still visiting store after store is closed.",
+      "files: plan/cbo_test.go, plan/dag_plan_test.go, plan/explain_test.go, plan/resolver_test.go, plan/typeinfer_test.go, plan/validator_test.go, statistics/selectivity_test.go, util/testleak/leaktest.go"
+    ]
+  },
+  "analysis": "PR title: plan,statistics: don't forget to close domain in testing\nPR url: https://github.com/pingcap/tidb/pull/4591\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: 2. make race may fail, because the background goroutines may still visiting store after store is closed.\nChanged files (8): plan/cbo_test.go, plan/dag_plan_test.go, plan/explain_test.go, plan/resolver_test.go, plan/typeinfer_test.go, plan/validator_test.go, statistics/selectivity_test.go, util/testleak/leaktest.go\nPatch url: https://github.com/pingcap/tidb/pull/4591.patch\nPicked test: type=unit path=plan/cbo_test.go name=cbo_test"
+}

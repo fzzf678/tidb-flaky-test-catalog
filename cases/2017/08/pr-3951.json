@@ -1,0 +1,61 @@
+{
+  "id": "pr-3951",
+  "source_pr": {
+    "number": 3951,
+    "url": "https://github.com/pingcap/tidb/pull/3951",
+    "title": "plan,executor: calculate generated columns in CRUD.",
+    "body": "Now we support:\r\n- [x] Fetch back stored/virtual generated columns from table in TableScan/DoubleReader;\r\n- [x] Insert/Load/Update stored/virtual generated columns if need in Update;"
+  },
+  "pr_merged_at": "2017-08-23T14:52:44+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "result := tk.MustQuery(`SELECT * FROM test_gc_read ORDER BY a`) (executor/executor_test.go)"
+  ],
+  "failure_signature": "result := tk.MustQuery(`SELECT * FROM test_gc_read ORDER BY a`) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3951",
+    "https://github.com/pingcap/tidb/pull/3951.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3951.patch",
+  "changed_files": [
+    "ddl/ddl_api.go",
+    "ddl/generated_column.go",
+    "executor/builder.go",
+    "executor/executor_test.go",
+    "executor/show.go",
+    "executor/write.go",
+    "expression/schema.go",
+    "model/model.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plans.go",
+    "plan/planbuilder.go",
+    "plan/plans.go",
+    "plan/resolve_indices.go",
+    "sessionctx/variable/session.go",
+    "table/column.go",
+    "table/tables/gen_expr.go",
+    "table/tables/tables.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result := tk.MustQuery(`SELECT * FROM test_gc_read ORDER BY a`) (executor/executor_test.go)",
+      "files: _vendor/src/github.com/mohae/deepcopy/LICENSE, _vendor/src/github.com/mohae/deepcopy/deepcopy.go, ddl/ddl_api.go, ddl/generated_column.go, executor/builder.go, executor/distsql.go, executor/executor_test.go, executor/new_distsql.go, executor/show.go, executor/write.go, executor/write_test.go, expression/builtin_cast.go, expression/integration_test.go, expression/schema.go, glide.lock, glide.yaml, model/model.go, plan/aggregation_push_down.go, plan/column_pruning.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/planbuilder.go, plan/plans.go, plan/predicate_push_down.go, plan/resolve_indices.go, sessionctx/variable/session.go, table/column.go, table/tables/gen_expr.go, table/tables/tables.go, util/types/datum.go"
+    ]
+  },
+  "analysis": "PR title: plan,executor: calculate generated columns in CRUD.\nPR url: https://github.com/pingcap/tidb/pull/3951\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result := tk.MustQuery(`SELECT * FROM test_gc_read ORDER BY a`) (executor/executor_test.go)\nChanged files (17): ddl/ddl_api.go, ddl/generated_column.go, executor/builder.go, executor/executor_test.go, executor/show.go, executor/write.go, expression/schema.go, model/model.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/planbuilder.go, plan/plans.go, plan/resolve_indices.go, sessionctx/variable/session.go, table/column.go, table/tables/gen_expr.go, table/tables/tables.go\nPatch url: https://github.com/pingcap/tidb/pull/3951.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}
