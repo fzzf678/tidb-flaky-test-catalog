@@ -1,0 +1,47 @@
+{
+  "id": "pr-7643",
+  "source_pr": {
+    "number": 7643,
+    "url": "https://github.com/pingcap/tidb/pull/7643",
+    "title": "expression: a constraint propagate framework mainly for partition pruning",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nFor partition pruning, we will have the partition expression such as `to_days(x)`,\r\nwe have the constant range like:\r\n\r\n```\r\np0 < date '2018-03-05' \r\np1 < date '2018-03-01'\r\n......\r\n```\r\n\r\nWhen the user send a query, such as   `... where x > 632`\r\n\r\nThe final partition pruning conditions could be:\r\n\r\n```\r\np0:  to_days(x) < date '2018-03-05'   && x > 632\r\np1:  to_days(x) < date  '2018-03-01'  && x > 632 \r\n...\r\n```\r\n\r\nIf some conditions eval to constant false, that partition should be prune.\r\n\r\nSo, in-equal conditions and some simple function should be handled in the partition pruning process.\r\n\r\n```\r\n\"a > 3\" && \"a > 5\" => \"a > 5\"\r\n\"a > 5\" && \"a < 3\" => false\r\nto_days(t) > date '2018-03-05' && to_days(t) < '2018-03-01' => false\r\n```\r\n\r\nRef https://github.com/pingcap/tidb/issues/7516\r\n\r\n**I need a constraint propagate framework to solve that problem for table partition.**\r\n\r\n\r\n### What is changed and how it works?\r\n\r\nThe comment in the code describes an algorithm in detail.\r\n\r\nPartition pruning will use the output of current constant propagate result, and continue to propagate more constraints to see whether a partition could be pruned.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nSide effects\r\n\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/7643)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2018-11-28T21:44:18+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/constant_test.go",
+    "name": "constant_test"
+  },
+  "symptoms": [
+    "sort.Strings(result) (expression/constant_test.go)"
+  ],
+  "failure_signature": "sort.Strings(result) (expression/constant_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7643",
+    "https://github.com/pingcap/tidb/pull/7643.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7643.patch",
+  "changed_files": [
+    "expression/constant_propagation.go",
+    "expression/constant_test.go",
+    "expression/constraint_propagation.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Strings(result) (expression/constant_test.go)",
+      "files: expression/constant_propagation.go, expression/constant_test.go, expression/constraint_propagation.go, expression/new_constant_propagation.go"
+    ]
+  },
+  "analysis": "PR title: expression: a constraint propagate framework mainly for partition pruning\nPR url: https://github.com/pingcap/tidb/pull/7643\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Strings(result) (expression/constant_test.go)\nChanged files (3): expression/constant_propagation.go, expression/constant_test.go, expression/constraint_propagation.go\nPatch url: https://github.com/pingcap/tidb/pull/7643.patch\nPicked test: type=unit path=expression/constant_test.go name=constant_test"
+}

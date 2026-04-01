@@ -1,0 +1,48 @@
+{
+  "id": "pr-6215",
+  "source_pr": {
+    "number": 6215,
+    "url": "https://github.com/pingcap/tidb/pull/6215",
+    "title": "kv: merge batch get results to fix insert ignore in a transaction block",
+    "body": "Merge the batch get results with buffer store to fix insert ignore bug when it is in a transaction block.\r\nPTAL @coocood "
+  },
+  "pr_merged_at": "2018-04-04T13:35:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/write_test.go",
+    "name": "write_test"
+  },
+  "symptoms": [
+    "testSQL = `select * from test order by i;` (executor/write_test.go)"
+  ],
+  "failure_signature": "testSQL = `select * from test order by i;` (executor/write_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6215",
+    "https://github.com/pingcap/tidb/pull/6215.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6215.patch",
+  "changed_files": [
+    "executor/admin.go",
+    "executor/write.go",
+    "executor/write_test.go",
+    "kv/txn.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: testSQL = `select * from test order by i;` (executor/write_test.go)",
+      "files: executor/admin.go, executor/write.go, executor/write_test.go, kv/mock.go, kv/txn.go"
+    ]
+  },
+  "analysis": "PR title: kv: merge batch get results to fix insert ignore in a transaction block\nPR url: https://github.com/pingcap/tidb/pull/6215\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: testSQL = `select * from test order by i;` (executor/write_test.go)\nChanged files (4): executor/admin.go, executor/write.go, executor/write_test.go, kv/txn.go\nPatch url: https://github.com/pingcap/tidb/pull/6215.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
+}

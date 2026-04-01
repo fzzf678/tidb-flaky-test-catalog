@@ -1,0 +1,47 @@
+{
+  "id": "pr-5761",
+  "source_pr": {
+    "number": 5761,
+    "url": "https://github.com/pingcap/tidb/pull/5761",
+    "title": "server: fix sub query error in prepare statement",
+    "body": "When prepare a statement with sub queries by api, TiDB will throw \"transaction future is not set\". This pr fix it. PTAL @tiancaiamao @coocood "
+  },
+  "pr_merged_at": "2018-02-06T20:49:38+08:00",
+  "test": {
+    "type": "unit",
+    "path": "new_session_test.go",
+    "name": "new_session_test"
+  },
+  "symptoms": [
+    "\"select a from multiexec where b = ? order by b\") (new_session_test.go)"
+  ],
+  "failure_signature": "\"select a from multiexec where b = ? order by b\") (new_session_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5761",
+    "https://github.com/pingcap/tidb/pull/5761.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5761.patch",
+  "changed_files": [
+    "executor/prepared_test.go",
+    "session.go",
+    "util/testkit/testkit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: \"select a from multiexec where b = ? order by b\") (new_session_test.go)",
+      "files: executor/prepared_test.go, new_session_test.go, server/conn.go, server/conn_stmt.go, server/driver.go, server/driver_tidb.go, session.go, tidb_test.go, util/kvencoder/kv_encoder.go, util/testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: server: fix sub query error in prepare statement\nPR url: https://github.com/pingcap/tidb/pull/5761\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"select a from multiexec where b = ? order by b\") (new_session_test.go)\nChanged files (3): executor/prepared_test.go, session.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/5761.patch\nPicked test: type=unit path=new_session_test.go name=new_session_test"
+}

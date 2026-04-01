@@ -1,0 +1,47 @@
+{
+  "id": "pr-6106",
+  "source_pr": {
+    "number": 6106,
+    "url": "https://github.com/pingcap/tidb/pull/6106",
+    "title": "stats: fix estimation for pseudo equal row count",
+    "body": "The equal row count for primary key should be at most 1.\r\nPTAL @coocood @winoros "
+  },
+  "pr_merged_at": "2018-03-22T11:04:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/physical_plan_test.go",
+    "name": "physical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t where t.c = 1 and t.a > 1 order by t.d limit 1\", (plan/physical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t where t.c = 1 and t.a > 1 order by t.d limit 1\", (plan/physical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6106",
+    "https://github.com/pingcap/tidb/pull/6106.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6106.patch",
+  "changed_files": [
+    "plan/physical_plan_test.go",
+    "statistics/statistics_test.go",
+    "statistics/table.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t where t.c = 1 and t.a > 1 order by t.d limit 1\", (plan/physical_plan_test.go)",
+      "files: plan/physical_plan_test.go, statistics/statistics_test.go, statistics/table.go"
+    ]
+  },
+  "analysis": "PR title: stats: fix estimation for pseudo equal row count\nPR url: https://github.com/pingcap/tidb/pull/6106\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t where t.c = 1 and t.a > 1 order by t.d limit 1\", (plan/physical_plan_test.go)\nChanged files (3): plan/physical_plan_test.go, statistics/statistics_test.go, statistics/table.go\nPatch url: https://github.com/pingcap/tidb/pull/6106.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
+}

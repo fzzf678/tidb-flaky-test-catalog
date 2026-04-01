@@ -1,0 +1,46 @@
+{
+  "id": "pr-6140",
+  "source_pr": {
+    "number": 6140,
+    "url": "https://github.com/pingcap/tidb/pull/6140",
+    "title": "store/tikv: fix a potential goroutine leak problem in copIterator",
+    "body": "copIterator.Close() closes finished channel and wait for worker goroutines to\r\nexit, worker goroutine send response to channel but nobody receive from the\r\nchannel (copIterator already closed), so those goroutine leak and Close() function\r\nhang forever.\r\n\r\nChange the worker goroutine to check both response channel and finished channel.\r\n\r\n@zz-jason @coocood @shenli "
+  },
+  "pr_merged_at": "2018-03-26T15:48:30+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "rss, err1 := tk.Se.Execute(ctx, \"select * from earlyclose order by id\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "rss, err1 := tk.Se.Execute(ctx, \"select * from earlyclose order by id\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6140",
+    "https://github.com/pingcap/tidb/pull/6140.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6140.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "store/tikv/coprocessor.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rss, err1 := tk.Se.Execute(ctx, \"select * from earlyclose order by id\") (executor/executor_test.go)",
+      "files: executor/executor_test.go, store/tikv/coprocessor.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv: fix a potential goroutine leak problem in copIterator\nPR url: https://github.com/pingcap/tidb/pull/6140\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rss, err1 := tk.Se.Execute(ctx, \"select * from earlyclose order by id\") (executor/executor_test.go)\nChanged files (2): executor/executor_test.go, store/tikv/coprocessor.go\nPatch url: https://github.com/pingcap/tidb/pull/6140.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

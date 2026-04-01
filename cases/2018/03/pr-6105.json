@@ -1,0 +1,54 @@
+{
+  "id": "pr-6105",
+  "source_pr": {
+    "number": 6105,
+    "url": "https://github.com/pingcap/tidb/pull/6105",
+    "title": "*: fix in-compatible behavior when modify value from Navicat GUI",
+    "body": "This commit fix 2 things which will affect modify values from Navicat GUI,\r\nand remove comparison of FieldType.Flag when mergeFiledType for Union. :\r\n\r\n1. add syntax support for `Group_concat( order by) `\r\nBefore this commit:\r\n``` sql\r\ntidb(127.0.0.1)> SELECT student_name, GROUP_CONCAT(DISTINCT test_score ORDER BY test_score DESC SEPARATOR ' ') FROM\r\n student GROUP BY student_name;\r\nERROR 1105 (HY000): line 1 column 59 near \" BY test_score DESC SEPARATOR ' ') FROM student GROUP BY student_name\" (\r\ntotal length 128)\r\n```\r\n2. fix the type infer of `numeric type` columns\r\nBefore this commit:\r\n``` sql\r\ncreate table t1(a int, b decimal(15,2));\r\nselect * from t1;\r\n```\r\n``` sql\r\nMySQL:\r\n\r\nField   1:  `a`\r\nCatalog:    `def`\r\nDatabase:   `test`\r\nTable:      `t1`\r\nOrg_table:  `t1`\r\nType:       LONG\r\nCollation:  binary (63)\r\nLength:     11\r\nMax_length: 0\r\nDecimals:   0\r\nFlags:      NUM       <== No BinaryFlag\r\n\r\nField   2:  `b`\r\nCatalog:    `def`\r\nDatabase:   `test`\r\nTable:      `t1`\r\nOrg_table:  `t1`\r\nType:       NEWDECIMAL\r\nCollation:  binary (63)\r\nLength:     17\r\nMax_length: 0\r\nDecimals:   2\r\nFlags:      NUM       <== No BinaryFlag\r\n```\r\n```\r\nTiDB:\r\n\r\nField   1:  `a`\r\nCatalog:    `def`\r\nDatabase:   `test`\r\nTable:      `t1`\r\nOrg_table:  `t1`\r\nType:       LONG\r\nCollation:  binary (63)\r\nLength:     44\r\nMax_length: 0\r\nDecimals:   0\r\nFlags:      BINARY NUM     \r\n\r\nField   2:  `b`\r\nCatalog:    `def`\r\nDatabase:   `test`\r\nTable:      `t1`\r\nOrg_table:  `t1`\r\nType:       NEWDECIMAL\r\nCollation:  binary (63)\r\nLength:     17\r\nMax_length: 0\r\nDecimals:   2\r\nFlags:      BINARY NUM      \r\n```"
+  },
+  "pr_merged_at": "2018-03-22T15:38:28+08:00",
+  "test": {
+    "type": "unit",
+    "path": "parser/parser_test.go",
+    "name": "parser_test"
+  },
+  "symptoms": [
+    "{`SELECT student_name, GROUP_CONCAT(DISTINCT test_score ORDER BY test_score DESC SEPARATOR ' ') FROM student GROUP BY student_name;`, true}, (parser/parser_test.go)"
+  ],
+  "failure_signature": "{`SELECT student_name, GROUP_CONCAT(DISTINCT test_score ORDER BY test_score DESC SEPARATOR ' ') FROM student GROUP BY student_name;`, true}, (parser/parser_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6105",
+    "https://github.com/pingcap/tidb/pull/6105.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6105.patch",
+  "changed_files": [
+    "ddl/ddl_api.go",
+    "expression/builtin_control.go",
+    "expression/builtin_miscellaneous.go",
+    "expression/builtin_string.go",
+    "expression/typeinfer_test.go",
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "plan/logical_plan_test.go",
+    "plan/physical_plan_test.go",
+    "types/field_type.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: {`SELECT student_name, GROUP_CONCAT(DISTINCT test_score ORDER BY test_score DESC SEPARATOR ' ') FROM student GROUP BY student_name;`, true}, (parser/parser_test.go)",
+      "files: ddl/ddl_api.go, expression/builtin_control.go, expression/builtin_miscellaneous.go, expression/builtin_string.go, expression/typeinfer_test.go, parser/parser.y, parser/parser_test.go, plan/logical_plan_test.go, plan/physical_plan_test.go, types/field_type.go"
+    ]
+  },
+  "analysis": "PR title: *: fix in-compatible behavior when modify value from Navicat GUI\nPR url: https://github.com/pingcap/tidb/pull/6105\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: {`SELECT student_name, GROUP_CONCAT(DISTINCT test_score ORDER BY test_score DESC SEPARATOR ' ') FROM student GROUP BY student_name;`, true}, (parser/parser_test.go)\nChanged files (10): ddl/ddl_api.go, expression/builtin_control.go, expression/builtin_miscellaneous.go, expression/builtin_string.go, expression/typeinfer_test.go, parser/parser.y, parser/parser_test.go, plan/logical_plan_test.go, plan/physical_plan_test.go, types/field_type.go\nPatch url: https://github.com/pingcap/tidb/pull/6105.patch\nPicked test: type=unit path=parser/parser_test.go name=parser_test"
+}

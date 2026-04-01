@@ -1,0 +1,46 @@
+{
+  "id": "pr-7206",
+  "source_pr": {
+    "number": 7206,
+    "url": "https://github.com/pingcap/tidb/pull/7206",
+    "title": "executor: fix firstrow/max/min(bit col) error",
+    "body": "## What have you changed? (mandatory)\r\nBefore this PR:\r\n``` sql\r\nCREATE TABLE `t` (\r\n  `a` bit(1) NOT NULL,\r\n  PRIMARY KEY (`a`)\r\n);\r\ninsert into t value(1);\r\nselect max(a) from t group by a;\r\n```\r\nwe'll get panic\r\n```\r\nlastCmd select max( a) from t group by\r\na, runtime error: index out of range\r\n```\r\n\r\nAfter this PR:\r\n``` sql\r\ntidb> select max(a) from t group by a;\r\n+---+\r\n| a |\r\n+---+\r\n|  |\r\n+---+\r\n1 row in set (0.00 sec)\r\n```\r\n\r\n\r\n## What is the type of the changes? (mandatory)\r\n\r\n- Bug fix (non-breaking change which fixes an issue)\r\n\r\n## How has this PR been tested? (mandatory)\r\nintegration test\r\n\r\n## Does this PR affect documentation (docs/docs-cn) update? (mandatory)\r\nno\r\n\r\n## Does this PR affect tidb-ansible update? (mandatory)\r\nno\r\n\r\n## Does this PR need to be added to the release notes? (mandatory)\r\nno\r\n\r\n## Refer to a related PR or issue link (optional)\r\n#6952 \r\n## Benchmark result if necessary (optional)\r\n\r\n## Add a few positive/negative examples (optional)\r\n\r\n"
+  },
+  "pr_merged_at": "2018-08-01T12:59:41+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select cast(a as signed) as idx, cast(max(a) as signed), cast(min(a) as signed) from t group by 1 order by idx\") (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select cast(a as signed) as idx, cast(max(a) as signed), cast(min(a) as signed) from t group by 1 order by idx\") (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7206",
+    "https://github.com/pingcap/tidb/pull/7206.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7206.patch",
+  "changed_files": [
+    "executor/aggfuncs/builder.go",
+    "executor/aggregate_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select cast(a as signed) as idx, cast(max(a) as signed), cast(min(a) as signed) from t group by 1 order by idx\") (executor/aggregate_test.go)",
+      "files: executor/aggfuncs/builder.go, executor/aggregate_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix firstrow/max/min(bit col) error\nPR url: https://github.com/pingcap/tidb/pull/7206\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select cast(a as signed) as idx, cast(max(a) as signed), cast(min(a) as signed) from t group by 1 order by idx\") (executor/aggregate_test.go)\nChanged files (2): executor/aggfuncs/builder.go, executor/aggregate_test.go\nPatch url: https://github.com/pingcap/tidb/pull/7206.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

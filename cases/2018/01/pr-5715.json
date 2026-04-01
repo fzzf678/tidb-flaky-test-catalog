@@ -1,0 +1,57 @@
+{
+  "id": "pr-5715",
+  "source_pr": {
+    "number": 5715,
+    "url": "https://github.com/pingcap/tidb/pull/5715",
+    "title": "*: refine join result generator to return MaxChunkSize chunk",
+    "body": "Refine join result generator to return at most MaxChunkSize chunk every time.\r\n<img width=\"2249\" alt=\"2018-01-31 19 09 44\" src=\"https://user-images.githubusercontent.com/9039012/35620536-5bda59a0-06bc-11e8-968c-15aa363b7b71.png\">\r\nAs the diagram shows,\r\nthis commit only cost 1/4 memory usage when execute a  Cartesian sql(as the 18:26~18:38 part shows),\r\nand save almost 47% memory usage on my machine when run tpch5.\r\n\r\n\r\n\r\nPTAL @zz-jason @coocood "
+  },
+  "pr_merged_at": "2018-01-31T20:01:00+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "result.Sort().Check(testkit.Rows(\"0\", \"1\", \"1\")) (executor/join_test.go)"
+  ],
+  "failure_signature": "result.Sort().Check(testkit.Rows(\"0\", \"1\", \"1\")) (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5715",
+    "https://github.com/pingcap/tidb/pull/5715.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5715.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/index_lookup_join.go",
+    "executor/join.go",
+    "executor/join_result_generators.go",
+    "executor/join_test.go",
+    "executor/merge_join.go",
+    "executor/show_test.go",
+    "expression/integration_test.go",
+    "mysql/const_test.go",
+    "tidb.go",
+    "util/chunk/iterator.go",
+    "util/chunk/iterator_test.go",
+    "util/testkit/testkit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result.Sort().Check(testkit.Rows(\"0\", \"1\", \"1\")) (executor/join_test.go)",
+      "files: executor/builder.go, executor/index_lookup_join.go, executor/join.go, executor/join_result_generators.go, executor/join_test.go, executor/merge_join.go, executor/show_test.go, expression/integration_test.go, mysql/const_test.go, tidb.go, util/chunk/iterator.go, util/chunk/iterator_test.go, util/testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: *: refine join result generator to return MaxChunkSize chunk\nPR url: https://github.com/pingcap/tidb/pull/5715\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result.Sort().Check(testkit.Rows(\"0\", \"1\", \"1\")) (executor/join_test.go)\nChanged files (13): executor/builder.go, executor/index_lookup_join.go, executor/join.go, executor/join_result_generators.go, executor/join_test.go, executor/merge_join.go, executor/show_test.go, expression/integration_test.go, mysql/const_test.go, tidb.go, util/chunk/iterator.go, util/chunk/iterator_test.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/5715.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

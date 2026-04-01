@@ -1,0 +1,57 @@
+{
+  "id": "pr-5831",
+  "source_pr": {
+    "number": 5831,
+    "url": "https://github.com/pingcap/tidb/pull/5831",
+    "title": "expression, plan: extract the same part from DNF's leaves.",
+    "body": "e.g.\r\n`select * from t1, t2 where (t1.a=t2.a and ...) or (t1.a=t2.a and ...) or (t1.a=t2.a and ...)`\r\nWe should extract the `t1.a=t2.a` out of the DNF, so it can be used as the join's join key condition.\r\nAnd this let tidb push more predicates across the join.\r\n\r\n~~I'll add enough tests in next commit.~~\r\n~~Unit test is not easy to see what predicates join holds, add explain tests in integration test is a better choice i think.~~\r\nUnit test added.\r\n\r\nPTAL @hanfei1991 @lamxTyler @zz-jason "
+  },
+  "pr_merged_at": "2018-02-26T16:03:06+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "sort.Slice(afterFunc, func(i, j int) bool { (expression/integration_test.go)"
+  ],
+  "failure_signature": "sort.Slice(afterFunc, func(i, j int) bool { (expression/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5831",
+    "https://github.com/pingcap/tidb/pull/5831.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5831.patch",
+  "changed_files": [
+    "expression/column.go",
+    "expression/column_test.go",
+    "expression/constant.go",
+    "expression/constant_propagation.go",
+    "expression/expression.go",
+    "expression/expression_test.go",
+    "expression/integration_test.go",
+    "expression/scalar_function.go",
+    "expression/scalar_function_test.go",
+    "expression/util.go",
+    "plan/eliminate_projection.go",
+    "plan/plan.go",
+    "plan/predicate_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Slice(afterFunc, func(i, j int) bool { (expression/integration_test.go)",
+      "files: expression/column.go, expression/column_test.go, expression/constant.go, expression/constant_propagation.go, expression/expression.go, expression/expression_test.go, expression/integration_test.go, expression/scalar_function.go, expression/scalar_function_test.go, expression/util.go, plan/eliminate_projection.go, plan/logical_plan_builder.go, plan/plan.go, plan/predicate_push_down.go"
+    ]
+  },
+  "analysis": "PR title: expression, plan: extract the same part from DNF's leaves.\nPR url: https://github.com/pingcap/tidb/pull/5831\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Slice(afterFunc, func(i, j int) bool { (expression/integration_test.go)\nChanged files (13): expression/column.go, expression/column_test.go, expression/constant.go, expression/constant_propagation.go, expression/expression.go, expression/expression_test.go, expression/integration_test.go, expression/scalar_function.go, expression/scalar_function_test.go, expression/util.go, plan/eliminate_projection.go, plan/plan.go, plan/predicate_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/5831.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+}

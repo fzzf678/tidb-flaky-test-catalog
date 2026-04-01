@@ -1,0 +1,47 @@
+{
+  "id": "pr-8412",
+  "source_pr": {
+    "number": 8412,
+    "url": "https://github.com/pingcap/tidb/pull/8412",
+    "title": "planner/core, expression: don't pushdown filters contains set or get var",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nFor filters contain `SetVar` or `GetVar`, donot push it down. Make it possible to use user variables to simulate the window function.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\n\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\n\n<!-- Reviewable:start -->\n---\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8412)\n<!-- Reviewable:end -->\n"
+  },
+  "pr_merged_at": "2018-11-26T16:31:18+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "FROM (select * from t where a in (1, 2, 3) ORDER BY a, c) t1 (expression/integration_test.go)"
+  ],
+  "failure_signature": "FROM (select * from t where a in (1, 2, 3) ORDER BY a, c) t1 (expression/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8412",
+    "https://github.com/pingcap/tidb/pull/8412.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8412.patch",
+  "changed_files": [
+    "expression/chunk_executor.go",
+    "expression/integration_test.go",
+    "planner/core/rule_predicate_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: FROM (select * from t where a in (1, 2, 3) ORDER BY a, c) t1 (expression/integration_test.go)",
+      "files: expression/chunk_executor.go, expression/integration_test.go, planner/core/rule_predicate_push_down.go"
+    ]
+  },
+  "analysis": "PR title: planner/core, expression: don't pushdown filters contains set or get var\nPR url: https://github.com/pingcap/tidb/pull/8412\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: FROM (select * from t where a in (1, 2, 3) ORDER BY a, c) t1 (expression/integration_test.go)\nChanged files (3): expression/chunk_executor.go, expression/integration_test.go, planner/core/rule_predicate_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/8412.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+}

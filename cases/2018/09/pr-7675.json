@@ -1,0 +1,48 @@
+{
+  "id": "pr-7675",
+  "source_pr": {
+    "number": 7675,
+    "url": "https://github.com/pingcap/tidb/pull/7675",
+    "title": "executor: Fix a bug in 'INSERT ... ON DUPLICATE KEY UPDATE'",
+    "body": "### What problem does this PR solve?\r\nFix a bug in 'INSERT ... ON DUPLICATE KEY UPDATE' when unique key are updated, for example:\r\n\r\n```\r\nmysql> select * from t1;\r\n+------+------+------+\r\n| id   | a    | b    |\r\n+------+------+------+\r\n|    1 |    1 |    1 |\r\n|    2 |    1 |    2 |\r\n|    3 |    3 |    1 |\r\n+------+------+------+\r\n3 rows in set (0.00 sec)\r\n\r\nmysql> create table t2(a int key, b int, unique(b));\r\nQuery OK, 0 rows affected (0.08 sec)\r\n\r\nmysql> insert into t2 select a, b from t1 order by id on duplicate key update a=t1.a, b=t1.b;\r\nQuery OK, 6 rows affected (0.01 sec)\r\n\r\nmysql> select * from t2;\r\n+---+------+\r\n| a | b    |\r\n+---+------+\r\n| 3 |    1 |\r\n+---+------+\r\n1 row in set (0.00 sec)\r\n``` \r\n, which is incorrect. We should expect the following result instead:\r\n```\r\nmysql> select * from t2;\r\n+---+------+\r\n| a | b    |\r\n+---+------+\r\n| 1 |    2 |\r\n| 3 |    1 |\r\n+---+------+\r\n2 rows in set (0.00 sec)\r\n```\r\n\r\nAfter this PR, it will be fixed.\r\n\r\n### What is changed and how it works?\r\nIn `InsertExec`'s `updateDupKeyValues` function, `dupKVs`(a `map` that holds existing primary keys and unique keys for duplication detection) is updated by removing keys from the _inserting row_ first, then adding keys from the _updated row_. But we should remove keys from the _old row_ instead, because _old row_ is the one that to be replaced.\r\n\r\n### Check List\r\n\r\nTests\r\n - Integration test\r\n\r\nCode changes\r\n - Has exported function/method change\r\n\r\nSide effects\r\n - No side effect\r\n\r\nRelated changes\r\n - Nothing else\r\n"
+  },
+  "pr_merged_at": "2018-09-14T22:49:18+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/insert_test.go",
+    "name": "insert_test"
+  },
+  "symptoms": [
+    "tk.MustExec(`insert into t2 select a, b from t1 order by id on duplicate key update a=t1.a, b=t1.b;`) (executor/insert_test.go)"
+  ],
+  "failure_signature": "tk.MustExec(`insert into t2 select a, b from t1 order by id on duplicate key update a=t1.a, b=t1.b;`) (executor/insert_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7675",
+    "https://github.com/pingcap/tidb/pull/7675.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7675.patch",
+  "changed_files": [
+    "executor/batch_checker.go",
+    "executor/insert.go",
+    "executor/insert_test.go",
+    "executor/replace.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustExec(`insert into t2 select a, b from t1 order by id on duplicate key update a=t1.a, b=t1.b;`) (executor/insert_test.go)",
+      "files: executor/batch_checker.go, executor/insert.go, executor/insert_test.go, executor/replace.go"
+    ]
+  },
+  "analysis": "PR title: executor: Fix a bug in 'INSERT ... ON DUPLICATE KEY UPDATE'\nPR url: https://github.com/pingcap/tidb/pull/7675\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustExec(`insert into t2 select a, b from t1 order by id on duplicate key update a=t1.a, b=t1.b;`) (executor/insert_test.go)\nChanged files (4): executor/batch_checker.go, executor/insert.go, executor/insert_test.go, executor/replace.go\nPatch url: https://github.com/pingcap/tidb/pull/7675.patch\nPicked test: type=unit path=executor/insert_test.go name=insert_test"
+}

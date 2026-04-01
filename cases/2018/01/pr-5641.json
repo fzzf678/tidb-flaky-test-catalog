@@ -1,0 +1,53 @@
+{
+  "id": "pr-5641",
+  "source_pr": {
+    "number": 5641,
+    "url": "https://github.com/pingcap/tidb/pull/5641",
+    "title": "executor: correct the unsigned pk's behavior.",
+    "body": "Currently for unsigned pk, (MaxInt64, MaxUint64] is stored before [0, MaxInt64].\r\nSo the result will be wrong such as `select * from t order by pk`.\r\nThis pr is to fix the behavior.\r\nPTAL @coocood @hanfei1991 @lamxTyler "
+  },
+  "pr_merged_at": "2018-01-16T18:21:11+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t order by id\").Check(testkit.Rows(\"1\", \"2\", \"9223372036854775810\", \"9223372036854775812\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t order by id\").Check(testkit.Rows(\"1\", \"2\", \"9223372036854775810\", \"9223372036854775812\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5641",
+    "https://github.com/pingcap/tidb/pull/5641.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5641.patch",
+  "changed_files": [
+    "executor/analyze.go",
+    "executor/builder.go",
+    "executor/distsql.go",
+    "executor/executor_test.go",
+    "plan/common_plans.go",
+    "plan/gen_physical_plans.go",
+    "plan/physical_plan_builder.go",
+    "util/ranger/points.go",
+    "util/ranger/ranger.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t order by id\").Check(testkit.Rows(\"1\", \"2\", \"9223372036854775810\", \"9223372036854775812\")) (executor/executor_test.go)",
+      "files: executor/analyze.go, executor/builder.go, executor/distsql.go, executor/executor_test.go, plan/common_plans.go, plan/gen_physical_plans.go, plan/physical_plan_builder.go, plan/plans.go, util/ranger/points.go, util/ranger/ranger.go"
+    ]
+  },
+  "analysis": "PR title: executor: correct the unsigned pk's behavior.\nPR url: https://github.com/pingcap/tidb/pull/5641\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t order by id\").Check(testkit.Rows(\"1\", \"2\", \"9223372036854775810\", \"9223372036854775812\")) (executor/executor_test.go)\nChanged files (9): executor/analyze.go, executor/builder.go, executor/distsql.go, executor/executor_test.go, plan/common_plans.go, plan/gen_physical_plans.go, plan/physical_plan_builder.go, util/ranger/points.go, util/ranger/ranger.go\nPatch url: https://github.com/pingcap/tidb/pull/5641.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

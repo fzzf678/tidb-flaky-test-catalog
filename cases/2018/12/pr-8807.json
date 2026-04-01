@@ -1,0 +1,48 @@
+{
+  "id": "pr-8807",
+  "source_pr": {
+    "number": 8807,
+    "url": "https://github.com/pingcap/tidb/pull/8807",
+    "title": "executor/test: fix data race of executor unit tests",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\n```\r\nWARNING: DATA RACE\r\nWrite at 0x000003136ab0 by goroutine 133:\r\n  github.com/pingcap/tidb/executor_test.(*testSuite1).TestCoprocessorPriority()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/executor_test.go:2516 +0x5a6\r\n\r\nPrevious read at 0x000003136ab0 by goroutine 124:\r\n  github.com/pingcap/tidb/executor.isPhysicalPlanExpensive()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/compiler.go:106 +0x3e\r\n  github.com/pingcap/tidb/executor.isExpensiveQuery()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/compiler.go:91 +0x326\r\n  github.com/pingcap/tidb/executor.logExpensiveQuery()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/compiler.go:69 +0x5d\r\n  github.com/pingcap/tidb/executor.(*Compiler).Compile()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/compiler.go:55 +0x305\r\n  github.com/pingcap/tidb/session.(*session).execute()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:907 +0x9f7\r\n  github.com/pingcap/tidb/session.(*session).Execute()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:869 +0xd4\r\n  github.com/pingcap/tidb/ddl/util.CompleteDeleteRange()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/util/util.go:106 +0x18e\r\n  github.com/pingcap/tidb/ddl.(*delRange).doTask()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/delete_range.go:187 +0x443\r\n\r\nWARNING: DATA RACE\r\nWrite at 0x000002e8c346 by goroutine 231:\r\n  github.com/pingcap/tidb/executor_test.(*testSuite1).TestMergeJoin()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/merge_join_test.go:305 +0xec0\r\n\r\nPrevious read at 0x000002e8c346 by goroutine 178:\r\n  github.com/pingcap/tidb/planner/core.DoOptimize()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/planner/core/optimizer.go:101 +0x87\r\n  github.com/pingcap/tidb/planner.Optimize()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/planner/optimize.go:68 +0x462\r\n  github.com/pingcap/tidb/executor.(*Compiler).Compile()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/compiler.go:49 +0x22c\r\n  github.com/pingcap/tidb/session.(*session).execute()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:907 +0x9f7\r\n  github.com/pingcap/tidb/session.(*session).Execute()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:869 +0xd4\r\n  github.com/pingcap/tidb/session.execRestrictedSQL()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:659 +0xaf\r\n  github.com/pingcap/tidb/session.(*session).ExecRestrictedSQL()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:618 +0x199\r\n  github.com/pingcap/tidb/session.(*session).loadCommonGlobalVariablesIfNeeded()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:1452 +0x7ec\r\n  github.com/pingcap/tidb/session.(*session).execute()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:879 +0xe0\r\n  github.com/pingcap/tidb/session.(*session).Execute()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:869 +0xd4\r\n  github.com/pingcap/tidb/util/testkit.(*TestKit).Exec()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/util/testkit/testkit.go:137 +0xff\r\n  github.com/pingcap/tidb/util/testkit.(*TestKit).MustExec()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/util/testkit/testkit.go:171 +0x94\r\n  github.com/pingcap/tidb/executor_test.(*testSuite).TearDownTest()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/executor_test.go:132 +0xdd\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\nSome global variables would be modified in unit test, for example, `TestCoprocessorPriority` would modify global variable `ExpensiveThreshold`, so making these tests being executed sequentially can avoid data race between test suites running in parallel, but data race still exists between current running test and background `delRange` goroutine like the above stack, to solve this issue completely, we should make all these global variables atomic, but currently, these values are only written during bootstrap from configuration file, so the data race can only happen in unit test environment.\r\n\r\nConsidered that we merely met these data races before when unit tests are run sequentially, I prefer just making these tests being executed sequentially, because IMO atomic type is too expensive if it is just for unit test.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\nN/A\r\n\r\nSide effects\r\nN/A\r\n\r\nRelated changes\r\nN/A\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8807)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2018-12-27T11:28:56+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "executor/test: fix data race of executor unit tests"
+  ],
+  "failure_signature": "executor/test: fix data race of executor unit tests",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "executor/test: fix data race of executor unit tests",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8807",
+    "https://github.com/pingcap/tidb/pull/8807.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8807.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "executor/join_test.go",
+    "executor/merge_join_test.go",
+    "executor/seqtest/seq_executor_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: executor/test: fix data race of executor unit tests",
+      "files: executor/executor_test.go, executor/join_test.go, executor/merge_join_test.go, executor/seqtest/seq_executor_test.go"
+    ]
+  },
+  "analysis": "PR title: executor/test: fix data race of executor unit tests\nPR url: https://github.com/pingcap/tidb/pull/8807\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: executor/test: fix data race of executor unit tests\nChanged files (4): executor/executor_test.go, executor/join_test.go, executor/merge_join_test.go, executor/seqtest/seq_executor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8807.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

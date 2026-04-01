@@ -1,0 +1,48 @@
+{
+  "id": "pr-7916",
+  "source_pr": {
+    "number": 7916,
+    "url": "https://github.com/pingcap/tidb/pull/7916",
+    "title": "util: add PreAlloc4Row and Insert for Chunk and List",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nThis is a preparation work for parallel partition. \r\nAdd two new member function for \\*chunk.Chunk and \\*chunk.List.\r\n- PreAlloc4Row(row Row): pre-allocate the needed memory space for `row` but **does not** write the data. \r\n*Note: nullBitMap info will be written in this function, since Chunk.nullBitMap can not be accessed parallely.*\r\n- Insert(rowIdx int, row Row): insert the data of `row` at the position speficied by `rowIdx`.\r\n*Note: Insert can only be called after PreAlloc4Row, or it will cause unexpected errors.*\r\n\r\n### What is changed and how it works?\r\nN/A\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has interface methods change\r\n\r\n\r\nSide effects\r\n\r\nN/A\r\n\r\nRelated changes\r\n\r\nN/A"
+  },
+  "pr_merged_at": "2018-10-18T20:38:49+08:00",
+  "test": {
+    "type": "unit",
+    "path": "util/chunk/chunk_test.go",
+    "name": "chunk_test"
+  },
+  "symptoms": [
+    "+// when the Insert() function is called parallelly, the data race on a byte"
+  ],
+  "failure_signature": "+// when the Insert() function is called parallelly, the data race on a byte",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "util: add PreAlloc4Row and Insert for Chunk and List",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7916",
+    "https://github.com/pingcap/tidb/pull/7916.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7916.patch",
+  "changed_files": [
+    "util/chunk/chunk.go",
+    "util/chunk/chunk_test.go",
+    "util/chunk/list.go",
+    "util/chunk/list_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: +// when the Insert() function is called parallelly, the data race on a byte",
+      "files: util/chunk/chunk.go, util/chunk/chunk_test.go, util/chunk/list.go, util/chunk/list_test.go"
+    ]
+  },
+  "analysis": "PR title: util: add PreAlloc4Row and Insert for Chunk and List\nPR url: https://github.com/pingcap/tidb/pull/7916\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: +// when the Insert() function is called parallelly, the data race on a byte\nChanged files (4): util/chunk/chunk.go, util/chunk/chunk_test.go, util/chunk/list.go, util/chunk/list_test.go\nPatch url: https://github.com/pingcap/tidb/pull/7916.patch\nPicked test: type=unit path=util/chunk/chunk_test.go name=chunk_test"
+}

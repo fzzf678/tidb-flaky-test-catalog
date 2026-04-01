@@ -1,0 +1,57 @@
+{
+  "id": "pr-5705",
+  "source_pr": {
+    "number": 5705,
+    "url": "https://github.com/pingcap/tidb/pull/5705",
+    "title": "*: avoid the generation of mysql.TypeNewDate",
+    "body": "According to https://lists.mysql.com/internals/37677\r\n\r\n`MYSQL_TYPE_NEWDATE` is an internal type of MySQL.\r\nMySQL can handle both `MYSQL_TYPE_NEWDATE` and `MYSQL_TYPE_DATE`,\r\nThe only difference is that `MYSQL_TYPE_DATE` takes 4 bytes while\r\n`MYSQL_TYPE_NEWDATE` takes 3 bytes to store. \r\n\r\nIn TiDB, we only consider mysql.TypeDate,\r\nso we should avoid the generation of mysql.TypeNewDate.\r\n\r\nfix #5703 \r\n\r\nPTAL @coocood @zz-jason "
+  },
+  "pr_merged_at": "2018-01-23T21:41:03+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "r = tk.MustQuery(\"(select a from t where a < 0) union (select a from t where a > 0) order by a\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "r = tk.MustQuery(\"(select a from t where a < 0) union (select a from t where a > 0) order by a\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5705",
+    "https://github.com/pingcap/tidb/pull/5705.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5705.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "expression/builtin_cast.go",
+    "expression/builtin_compare_test.go",
+    "expression/builtin_time.go",
+    "expression/expr_to_pb_test.go",
+    "server/conn_stmt.go",
+    "server/util.go",
+    "table/column.go",
+    "types/convert_test.go",
+    "types/datum.go",
+    "types/etc.go",
+    "types/field_type.go",
+    "types/field_type_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: r = tk.MustQuery(\"(select a from t where a < 0) union (select a from t where a > 0) order by a\") (executor/executor_test.go)",
+      "files: executor/executor_test.go, expression/builtin_cast.go, expression/builtin_compare_test.go, expression/builtin_time.go, expression/expr_to_pb_test.go, server/conn_stmt.go, server/util.go, table/column.go, types/convert_test.go, types/datum.go, types/etc.go, types/field_type.go, types/field_type_test.go"
+    ]
+  },
+  "analysis": "PR title: *: avoid the generation of mysql.TypeNewDate\nPR url: https://github.com/pingcap/tidb/pull/5705\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: r = tk.MustQuery(\"(select a from t where a < 0) union (select a from t where a > 0) order by a\") (executor/executor_test.go)\nChanged files (13): executor/executor_test.go, expression/builtin_cast.go, expression/builtin_compare_test.go, expression/builtin_time.go, expression/expr_to_pb_test.go, server/conn_stmt.go, server/util.go, table/column.go, types/convert_test.go, types/datum.go, types/etc.go, types/field_type.go, types/field_type_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5705.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

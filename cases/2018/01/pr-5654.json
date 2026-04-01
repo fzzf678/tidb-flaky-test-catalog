@@ -1,0 +1,46 @@
+{
+  "id": "pr-5654",
+  "source_pr": {
+    "number": 5654,
+    "url": "https://github.com/pingcap/tidb/pull/5654",
+    "title": "store/tikv: call Next() after copIterator closed lead to goroutine leak (#5624)",
+    "body": "After Close(), worker groutine receive from copIterator.finished and\r\nexit directly, without writing any thing to taskCh.\r\nNext() receives from taskCh and may hang forever, cause the caller goroutine\r\nleak.\r\n\r\n\r\nCherry pick from release 1.0\r\n@shenli @coocood "
+  },
+  "pr_merged_at": "2018-01-16T15:32:59+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "rss, err := tk.Se.Execute(\"select * from earlyclose order by id\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "rss, err := tk.Se.Execute(\"select * from earlyclose order by id\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5654",
+    "https://github.com/pingcap/tidb/pull/5654.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5654.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "store/tikv/coprocessor.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rss, err := tk.Se.Execute(\"select * from earlyclose order by id\") (executor/executor_test.go)",
+      "files: executor/executor_test.go, store/tikv/coprocessor.go, util/arena/arena.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv: call Next() after copIterator closed lead to goroutine leak (#5624)\nPR url: https://github.com/pingcap/tidb/pull/5654\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rss, err := tk.Se.Execute(\"select * from earlyclose order by id\") (executor/executor_test.go)\nChanged files (2): executor/executor_test.go, store/tikv/coprocessor.go\nPatch url: https://github.com/pingcap/tidb/pull/5654.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

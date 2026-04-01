@@ -1,0 +1,49 @@
+{
+  "id": "pr-6078",
+  "source_pr": {
+    "number": 6078,
+    "url": "https://github.com/pingcap/tidb/pull/6078",
+    "title": "executor: refactor merge join",
+    "body": "1. split `readerIterator` to `mergeJoinInnerTable` and `mergeJoinOuterTable`, use `mergeJoinInnerTable` to returns all the inner rows within the same join group, use `mergeJoinOuterTable` to return a Chunk of outer rows and iterate on it when we do the merge join process.\r\n`(rather than buffer all the outer rows with the same join key, which can also reduce the memory usage during merge join)`\r\n\r\n2. fix a potential bug caused by always appending the unmatched outer row to the very beginning output Chunk. `(caused by readerIterator.nextSelectedRow() )`,\r\nthis can also promise the result order according to the output rows."
+  },
+  "pr_merged_at": "2018-03-20T12:37:40+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"explain select /*+ TIDB_SMJ(t2) */ * from t1 left outer join t2 on t1.a=t2.a and t1.a!=3 order by t1.a;\").Check(testkit.Rows( (executor/join_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"explain select /*+ TIDB_SMJ(t2) */ * from t1 left outer join t2 on t1.a=t2.a and t1.a!=3 order by t1.a;\").Check(testkit.Rows( (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6078",
+    "https://github.com/pingcap/tidb/pull/6078.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6078.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/executor.go",
+    "executor/join_test.go",
+    "executor/merge_join.go",
+    "executor/sort.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"explain select /*+ TIDB_SMJ(t2) */ * from t1 left outer join t2 on t1.a=t2.a and t1.a!=3 order by t1.a;\").Check(testkit.Rows( (executor/join_test.go)",
+      "files: executor/builder.go, executor/executor.go, executor/join_test.go, executor/merge_join.go, executor/sort.go"
+    ]
+  },
+  "analysis": "PR title: executor: refactor merge join\nPR url: https://github.com/pingcap/tidb/pull/6078\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"explain select /*+ TIDB_SMJ(t2) */ * from t1 left outer join t2 on t1.a=t2.a and t1.a!=3 order by t1.a;\").Check(testkit.Rows( (executor/join_test.go)\nChanged files (5): executor/builder.go, executor/executor.go, executor/join_test.go, executor/merge_join.go, executor/sort.go\nPatch url: https://github.com/pingcap/tidb/pull/6078.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

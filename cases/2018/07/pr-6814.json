@@ -1,0 +1,53 @@
+{
+  "id": "pr-6814",
+  "source_pr": {
+    "number": 6814,
+    "url": "https://github.com/pingcap/tidb/pull/6814",
+    "title": "ddl: implement reorganize for table partition when adding index",
+    "body": "## What have you changed? (mandatory)\r\n\r\n- Handle DDL reorganize for table partitions one by one\r\n- Reorganize meta key changed from `handle` to `startHandle, endHandle, partitionID`\r\n\r\nPlease **NOTE** that:\r\n\r\nThis PR changes the DDL reorganize meta key, reviewer should be careful with the rolling update!\r\n\r\n## What are the type of the changes (mandatory)?\r\n\r\n- New feature (non-breaking change which adds functionality)\r\n\r\n## How has this PR been tested (mandatory)?\r\n\r\nunit test\r\n\r\n## Add a few positive/negative examples (optional)\r\n\r\n"
+  },
+  "pr_merged_at": "2018-07-27T17:49:22+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_test.go",
+    "name": "db_test"
+  },
+  "symptoms": [
+    "rows := s.mustQuery(c, fmt.Sprintf(\"select c1 from test_add_index where c3 >= %d order by c1\", start)) (ddl/db_test.go)"
+  ],
+  "failure_signature": "rows := s.mustQuery(c, fmt.Sprintf(\"select c1 from test_add_index where c3 >= %d order by c1\", start)) (ddl/db_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6814",
+    "https://github.com/pingcap/tidb/pull/6814.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6814.patch",
+  "changed_files": [
+    "ddl/db_test.go",
+    "ddl/ddl.go",
+    "ddl/index.go",
+    "ddl/reorg.go",
+    "ddl/reorg_test.go",
+    "meta/meta.go",
+    "meta/meta_test.go",
+    "model/ddl.go",
+    "util/admin/admin.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rows := s.mustQuery(c, fmt.Sprintf(\"select c1 from test_add_index where c3 >= %d order by c1\", start)) (ddl/db_test.go)",
+      "files: ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_db_test.go, ddl/index.go, ddl/reorg.go, ddl/reorg_test.go, meta/meta.go, meta/meta_test.go, model/ddl.go, plan/rule_partition_processor.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, table/tables/tables.go, table/tables/tables_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl: implement reorganize for table partition when adding index\nPR url: https://github.com/pingcap/tidb/pull/6814\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rows := s.mustQuery(c, fmt.Sprintf(\"select c1 from test_add_index where c3 >= %d order by c1\", start)) (ddl/db_test.go)\nChanged files (9): ddl/db_test.go, ddl/ddl.go, ddl/index.go, ddl/reorg.go, ddl/reorg_test.go, meta/meta.go, meta/meta_test.go, model/ddl.go, util/admin/admin.go\nPatch url: https://github.com/pingcap/tidb/pull/6814.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+}

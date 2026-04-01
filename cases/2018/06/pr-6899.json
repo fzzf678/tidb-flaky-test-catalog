@@ -1,0 +1,46 @@
+{
+  "id": "pr-6899",
+  "source_pr": {
+    "number": 6899,
+    "url": "https://github.com/pingcap/tidb/pull/6899",
+    "title": "plan: fix a bug in `topn_push_down` rule.",
+    "body": "## What have you changed? (mandatory)\r\n\r\n`ColumnIndices` will return `nil` if not all column in the schema.\r\nSo here will perform wrong action if the by item contains column from both sides.\r\n\r\n## What are the type of the changes (mandatory)?\r\n\r\nThe currently defined types are listed below, please pick one of the types for this PR by removing the others:\r\n\r\n- Bug fix\r\n\r\n## How has this PR been tested (mandatory)?\r\n\r\nunit test.\r\n\r\n## Refer to a related PR or issue link (optional)\r\n\r\nfix #6864 \r\n\r\n"
+  },
+  "pr_merged_at": "2018-06-25T19:08:00+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select ifnull(t1.b, t2.a) from t t1 left join t t2 on t1.e=t2.e order by ifnull(t1.b, t2.a) limit 5\", (plan/logical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select ifnull(t1.b, t2.a) from t t1 left join t t2 on t1.e=t2.e order by ifnull(t1.b, t2.a) limit 5\", (plan/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6899",
+    "https://github.com/pingcap/tidb/pull/6899.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6899.patch",
+  "changed_files": [
+    "plan/logical_plan_test.go",
+    "plan/rule_topn_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select ifnull(t1.b, t2.a) from t t1 left join t t2 on t1.e=t2.e order by ifnull(t1.b, t2.a) limit 5\", (plan/logical_plan_test.go)",
+      "files: plan/logical_plan_test.go, plan/rule_topn_push_down.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix a bug in `topn_push_down` rule.\nPR url: https://github.com/pingcap/tidb/pull/6899\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select ifnull(t1.b, t2.a) from t t1 left join t t2 on t1.e=t2.e order by ifnull(t1.b, t2.a) limit 5\", (plan/logical_plan_test.go)\nChanged files (2): plan/logical_plan_test.go, plan/rule_topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/6899.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+}

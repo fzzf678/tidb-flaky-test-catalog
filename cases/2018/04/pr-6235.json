@@ -1,0 +1,46 @@
+{
+  "id": "pr-6235",
+  "source_pr": {
+    "number": 6235,
+    "url": "https://github.com/pingcap/tidb/pull/6235",
+    "title": "executor: fix insert on duplicate update",
+    "body": "Do insert when check duplicate and update. It is not the same logic as `insert ignore`, because `insert ignore` only skip the duplicate rows, without doing anything.\r\nPTAL @coocood "
+  },
+  "pr_merged_at": "2018-04-09T00:13:39+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/write_test.go",
+    "name": "write_test"
+  },
+  "symptoms": [
+    "testSQL = `select * from test order by i;` (executor/write_test.go)"
+  ],
+  "failure_signature": "testSQL = `select * from test order by i;` (executor/write_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6235",
+    "https://github.com/pingcap/tidb/pull/6235.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6235.patch",
+  "changed_files": [
+    "executor/write.go",
+    "executor/write_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: testSQL = `select * from test order by i;` (executor/write_test.go)",
+      "files: executor/write.go, executor/write_test.go, server/conn.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix insert on duplicate update\nPR url: https://github.com/pingcap/tidb/pull/6235\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: testSQL = `select * from test order by i;` (executor/write_test.go)\nChanged files (2): executor/write.go, executor/write_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6235.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
+}

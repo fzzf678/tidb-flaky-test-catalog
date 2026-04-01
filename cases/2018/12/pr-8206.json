@@ -1,0 +1,55 @@
+{
+  "id": "pr-8206",
+  "source_pr": {
+    "number": 8206,
+    "url": "https://github.com/pingcap/tidb/pull/8206",
+    "title": "plan: support `?` in Order By / Group By / Limit Offset clauses",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nFix #8153 \r\n\r\n### What is changed and how it works?\r\n * Modify ``parser.ByItem`` to support ``ast.ParamMarkerExpr``\r\n * The prepared statements having parameters in ``OrderByClause`` or ``GroupByClause`` aren't cached\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n - Has persistent data change (i.e., ``parser``)\r\n\r\nSide effects\r\n\r\n - No\r\n\r\nRelated changes\r\n\r\n - Need to update the ``parser`` repository (i.e., the parser PR [#27](https://github.com/pingcap/parser/pull/27))\n\n<!-- Reviewable:start -->\n---\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8206)\n<!-- Reviewable:end -->\n"
+  },
+  "pr_merged_at": "2018-12-03T21:48:55+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/prepared_test.go",
+    "name": "prepared_test"
+  },
+  "symptoms": [
+    "fix a potential sporadic CI error due to the PR #8339 | tk.MustExec(`prepare stmt from 'select * from t order by ? asc'`) (executor/prepared_test.go)"
+  ],
+  "failure_signature": "fix a potential sporadic CI error due to the PR #8339 | tk.MustExec(`prepare stmt from 'select * from t order by ? asc'`) (executor/prepared_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8206",
+    "https://github.com/pingcap/tidb/pull/8206.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8206.patch",
+  "changed_files": [
+    "executor/prepared.go",
+    "executor/prepared_test.go",
+    "expression/simple_rewriter.go",
+    "expression/util.go",
+    "planner/core/cacheable_checker.go",
+    "planner/core/cacheable_checker_test.go",
+    "planner/core/errors.go",
+    "planner/core/expression_rewriter.go",
+    "planner/core/logical_plan_builder.go",
+    "planner/core/point_get_plan.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: fix a potential sporadic CI error due to the PR #8339 | tk.MustExec(`prepare stmt from 'select * from t order by ? asc'`) (executor/prepared_test.go)",
+      "files: executor/executor.go, executor/prepared.go, executor/prepared_test.go, expression/simple_rewriter.go, expression/util.go, planner/core/cacheable_checker.go, planner/core/cacheable_checker_test.go, planner/core/errors.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, planner/core/point_get_plan.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session.go"
+    ]
+  },
+  "analysis": "PR title: plan: support `?` in Order By / Group By / Limit Offset clauses\nPR url: https://github.com/pingcap/tidb/pull/8206\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix a potential sporadic CI error due to the PR #8339 | tk.MustExec(`prepare stmt from 'select * from t order by ? asc'`) (executor/prepared_test.go)\nChanged files (10): executor/prepared.go, executor/prepared_test.go, expression/simple_rewriter.go, expression/util.go, planner/core/cacheable_checker.go, planner/core/cacheable_checker_test.go, planner/core/errors.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, planner/core/point_get_plan.go\nPatch url: https://github.com/pingcap/tidb/pull/8206.patch\nPicked test: type=unit path=executor/prepared_test.go name=prepared_test"
+}

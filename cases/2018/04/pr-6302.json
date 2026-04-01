@@ -1,0 +1,48 @@
+{
+  "id": "pr-6302",
+  "source_pr": {
+    "number": 6302,
+    "url": "https://github.com/pingcap/tidb/pull/6302",
+    "title": "stats: fix pseudo selectivity for primary key",
+    "body": "When estimating the pseudo selectivity for primary key equal conditions, it should not exceed `1/row count`.\r\nPTAL @coocood @winoros @zz-jason  "
+  },
+  "pr_merged_at": "2018-04-18T10:10:03+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/physical_plan_test.go",
+    "name": "physical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select c from t where t.c = 1 and t.a > 1 order by t.d limit 1\", (plan/physical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select c from t where t.c = 1 and t.a > 1 order by t.d limit 1\", (plan/physical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6302",
+    "https://github.com/pingcap/tidb/pull/6302.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6302.patch",
+  "changed_files": [
+    "plan/physical_plan_test.go",
+    "statistics/selectivity.go",
+    "statistics/selectivity_test.go",
+    "statistics/table.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select c from t where t.c = 1 and t.a > 1 order by t.d limit 1\", (plan/physical_plan_test.go)",
+      "files: plan/physical_plan_test.go, statistics/selectivity.go, statistics/selectivity_test.go, statistics/table.go"
+    ]
+  },
+  "analysis": "PR title: stats: fix pseudo selectivity for primary key\nPR url: https://github.com/pingcap/tidb/pull/6302\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select c from t where t.c = 1 and t.a > 1 order by t.d limit 1\", (plan/physical_plan_test.go)\nChanged files (4): plan/physical_plan_test.go, statistics/selectivity.go, statistics/selectivity_test.go, statistics/table.go\nPatch url: https://github.com/pingcap/tidb/pull/6302.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
+}

@@ -1,0 +1,48 @@
+{
+  "id": "pr-6548",
+  "source_pr": {
+    "number": 6548,
+    "url": "https://github.com/pingcap/tidb/pull/6548",
+    "title": "binloginfo: fix a data race on global.Config() in the unit test",
+    "body": "```\r\nWARNING: DATA RACE\r\nRead at 0x000002591538 by goroutine 20:\r\n  github.com/pingcap/tidb/sessionctx/binloginfo.(*BinlogInfo).WriteBinlog()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/sessionctx/binloginfo/binloginfo.go:118 +0x667\r\n  github.com/pingcap/tidb/store/tikv.(*twoPhaseCommitter).writeFinishBinlog.func1()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/store/tikv/2pc.go:683 +0x6b\r\n\r\nPrevious write at 0x000002591538 by goroutine 53:\r\n  github.com/pingcap/tidb/sessionctx/binloginfo_test.(*testBinlogSuite).TestIgnoreError()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/sessionctx/binloginfo/binloginfo_test.go:395 +0x499\r\n  github.com/pingcap/tidb/util/testkit.(*TestKit).Exec()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/util/testkit/testkit.go:130 +0x133\r\n  github.com/pingcap/tidb/util/testkit.(*TestKit).MustExec()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/util/testkit/testkit.go:159 +0x91\r\n  github.com/pingcap/tidb/sessionctx/binloginfo_test.(*testBinlogSuite).TestIgnoreError()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/sessionctx/binloginfo/binloginfo_test.go:378 +0x275\r\n  github.com/pingcap/tidb/sessionctx/binloginfo_test.(*testBinlogSuite).TestIgnoreError()\r\n```\r\n\r\nI should make a atomic variable, rather than operate on config.Binlog directly.\r\n\r\n```\r\ngoroutine1:\r\n       \tcfg := config.GetGlobalConfig()\r\n\tif cfg.Binlog.IgnoreError {\r\n\r\ngoroutine2 (in test code):\r\n\r\n\tcfg := config.GetGlobalConfig()\r\n\tcfg.Binlog.IgnoreError = true\r\n```\r\n\r\nI'll update https://github.com/pingcap/tidb/pull/6546 when this is merged.\r\n\r\n@coocood @shenli "
+  },
+  "pr_merged_at": "2018-05-15T11:19:12+08:00",
+  "test": {
+    "type": "unit",
+    "path": "sessionctx/binloginfo/binloginfo_test.go",
+    "name": "binloginfo_test"
+  },
+  "symptoms": [
+    "binloginfo: fix a data race on global.Config() in the unit test"
+  ],
+  "failure_signature": "binloginfo: fix a data race on global.Config() in the unit test",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "binloginfo: fix a data race on global.Config() in the unit test",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6548",
+    "https://github.com/pingcap/tidb/pull/6548.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6548.patch",
+  "changed_files": [
+    "server/http_handler.go",
+    "sessionctx/binloginfo/binloginfo.go",
+    "sessionctx/binloginfo/binloginfo_test.go",
+    "tidb-server/main.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: binloginfo: fix a data race on global.Config() in the unit test",
+      "files: server/http_handler.go, sessionctx/binloginfo/binloginfo.go, sessionctx/binloginfo/binloginfo_test.go, tidb-server/main.go"
+    ]
+  },
+  "analysis": "PR title: binloginfo: fix a data race on global.Config() in the unit test\nPR url: https://github.com/pingcap/tidb/pull/6548\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: binloginfo: fix a data race on global.Config() in the unit test\nChanged files (4): server/http_handler.go, sessionctx/binloginfo/binloginfo.go, sessionctx/binloginfo/binloginfo_test.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/6548.patch\nPicked test: type=unit path=sessionctx/binloginfo/binloginfo_test.go name=binloginfo_test"
+}

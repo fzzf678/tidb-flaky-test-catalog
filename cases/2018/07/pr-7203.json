@@ -1,0 +1,46 @@
+{
+  "id": "pr-7203",
+  "source_pr": {
+    "number": 7203,
+    "url": "https://github.com/pingcap/tidb/pull/7203",
+    "title": "ddl: fix data race in schema_test",
+    "body": "## What have you changed? (mandatory)\r\nFix data race in schema_test.\r\n```\r\nWARNING: DATA RACE\r\nRead at 0x00c420af55f0 by goroutine 29:\r\n  github.com/pingcap/tidb/ddl.(*ddl).asyncNotifyWorker()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl.go:457 +0xf6\r\n  github.com/pingcap/tidb/ddl.(*ddl).doDDLJob()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl.go:475 +0x174\r\n  github.com/pingcap/tidb/ddl.testRunInterruptedJob.func1()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/schema_test.go:221 +0x5c\r\n\r\nPrevious write at 0x00c420af55f0 by goroutine 124:\r\n  github.com/pingcap/tidb/ddl.(*ddl).start()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl.go:359 +0x28a\r\n  github.com/pingcap/tidb/ddl.testRunInterruptedJob()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/schema_test.go:232 +0x20d\r\n 2018/07/31 10:47:04.655 ddl_worker.go:109: [info] [ddl] start DDL worker 0, tp general\r\n  github.com/pingcap/tidb/ddl.(*testTableSuite).TestTableResume()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/table_test.go:267 +0x4d1\r\n```\r\n```\r\nWARNING: DATA RACE\r\nRead at 0x00c420c50720 by goroutine 29:\r\n  runtime.mapaccess1()\r\n      /usr/local/go/src/runtime/hashmap.go:343 +0x0\r\n  github.com/pingcap/tidb/ddl.(*ddl).asyncNotifyWorker()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl.go:457 +0x120\r\n  github.com/pingcap/tidb/ddl.(*ddl).doDDLJob()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl.go:475 +0x174\r\n  github.com/pingcap/tidb/ddl.testRunInterruptedJob.func1()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/schema_test.go:221 +0x5c\r\n\r\nPrevious write at 0x00c420c50720 by goroutine 124:\r\n  runtime.mapassign()\r\n      /usr/local/go/src/runtime/hashmap.go:505 +0x0\r\n  github.com/pingcap/tidb/ddl.(*ddl).start()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl.go:360 +0x355\r\n  github.com/pingcap/tidb/ddl.testRunInterruptedJob()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/schema_test.go:232 +0x20d\r\n  github.com/pingcap/tidb/ddl.(*testTableSuite).TestTableResume()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/table_test.go:267 +0x4d1\r\n```\r\n\r\n## What is the type of the changes? (mandatory)\r\n\r\n- Improvement (non-breaking change which is an improvement to an existing feature)\r\n\r\n## How has this PR been tested? (mandatory)\r\nYes.\r\n\r\n## Does this PR affect documentation (docs/docs-cn) update? (mandatory)\r\nNo.\r\n## Does this PR affect tidb-ansible update? (mandatory)\r\nNo.\r\n## Does this PR need to be added to the release notes? (mandatory)\r\nNo.\r\n\r\n\r\n## Refer to a related PR or issue link (optional)\r\n\r\n## Benchmark result if necessary (optional)\r\n\r\n## Add a few positive/negative examples (optional)\r\n\r\n"
+  },
+  "pr_merged_at": "2018-07-31T21:43:16+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/ddl_test.go",
+    "name": "ddl_test"
+  },
+  "symptoms": [
+    "ddl: fix data race in schema_test"
+  ],
+  "failure_signature": "ddl: fix data race in schema_test",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: fix data race in schema_test",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7203",
+    "https://github.com/pingcap/tidb/pull/7203.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7203.patch",
+  "changed_files": [
+    "ddl/ddl_test.go",
+    "ddl/schema_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: ddl: fix data race in schema_test",
+      "files: ddl/ddl_test.go, ddl/schema_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl: fix data race in schema_test\nPR url: https://github.com/pingcap/tidb/pull/7203\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix data race in schema_test\nChanged files (2): ddl/ddl_test.go, ddl/schema_test.go\nPatch url: https://github.com/pingcap/tidb/pull/7203.patch\nPicked test: type=unit path=ddl/ddl_test.go name=ddl_test"
+}

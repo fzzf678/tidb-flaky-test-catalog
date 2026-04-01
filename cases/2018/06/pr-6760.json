@@ -1,0 +1,49 @@
+{
+  "id": "pr-6760",
+  "source_pr": {
+    "number": 6760,
+    "url": "https://github.com/pingcap/tidb/pull/6760",
+    "title": "executor: improve performance for insert ignore on duplicate key update statement",
+    "body": "## What have you changed?\r\n\r\n* Split the batch-check functions into a single file.\r\n* Refactor batch-check keys info structure to one record key and some index keys.\r\n* Refactor insert executor to speed up `insert ignore on duplicate key update` statement.\r\n\r\n## What are the type of the changes?\r\n\r\n- Improvement\r\n\r\n## How has this PR been tested?\r\n\r\nunit tests\r\n\r\n## Benchmark result\r\n\r\nWhen insert 27 rows in one statement,\r\n\r\n* Best case:\r\n\r\n| master | this pr |\r\n|-|-|\r\n| 19.3s | 0.9s |\r\n\r\n* Worst case:\r\n\r\n| master | this pr |\r\n|-|-|\r\n| 28.7s | 11.6s |\r\n\r\nPTAL @coocood @XuHuaiyu "
+  },
+  "pr_merged_at": "2018-06-19T20:28:07+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/write_test.go",
+    "name": "write_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(`SELECT * FROM t1 order by f1;`).Check(testkit.Rows(\"1 1\", \"2 2\")) (executor/write_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(`SELECT * FROM t1 order by f1;`).Check(testkit.Rows(\"1 1\", \"2 2\")) (executor/write_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6760",
+    "https://github.com/pingcap/tidb/pull/6760.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6760.patch",
+  "changed_files": [
+    "executor/batch_checker.go",
+    "executor/insert.go",
+    "executor/insert_common.go",
+    "executor/load_data.go",
+    "executor/write_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(`SELECT * FROM t1 order by f1;`).Check(testkit.Rows(\"1 1\", \"2 2\")) (executor/write_test.go)",
+      "files: executor/batch_checker.go, executor/insert.go, executor/insert_common.go, executor/load_data.go, executor/write_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: improve performance for insert ignore on duplicate key update statement\nPR url: https://github.com/pingcap/tidb/pull/6760\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(`SELECT * FROM t1 order by f1;`).Check(testkit.Rows(\"1 1\", \"2 2\")) (executor/write_test.go)\nChanged files (5): executor/batch_checker.go, executor/insert.go, executor/insert_common.go, executor/load_data.go, executor/write_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6760.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
+}

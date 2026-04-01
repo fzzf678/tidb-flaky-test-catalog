@@ -1,0 +1,50 @@
+{
+  "id": "pr-5516",
+  "source_pr": {
+    "number": 5516,
+    "url": "https://github.com/pingcap/tidb/pull/5516",
+    "title": "plan: covert max/min to topN.",
+    "body": "To make #5105 correct, we need to hold the aggregation operator. And add a `is not null` filter.\r\nSince if there's no data, we should return `NULL` instead of empty.\r\nIf there's both not NULL data and NULLs, we should ignore the NULLs.\r\nfix #1638 "
+  },
+  "pr_merged_at": "2018-01-02T22:30:18+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "// Min to Limit + Sort. (plan/logical_plan_test.go)"
+  ],
+  "failure_signature": "// Min to Limit + Sort. (plan/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5516",
+    "https://github.com/pingcap/tidb/pull/5516.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5516.patch",
+  "changed_files": [
+    "executor/aggregate_test.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plan_test.go",
+    "plan/max_min_eliminate.go",
+    "plan/optimizer.go",
+    "plan/physical_plan_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: // Min to Limit + Sort. (plan/logical_plan_test.go)",
+      "files: executor/aggregate_test.go, plan/aggregation_eliminate.go, plan/dag_plan_test.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/max_min_eliminate.go, plan/optimizer.go, plan/physical_plan_test.go, plan/task.go"
+    ]
+  },
+  "analysis": "PR title: plan: covert max/min to topN.\nPR url: https://github.com/pingcap/tidb/pull/5516\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Min to Limit + Sort. (plan/logical_plan_test.go)\nChanged files (6): executor/aggregate_test.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/max_min_eliminate.go, plan/optimizer.go, plan/physical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5516.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+}

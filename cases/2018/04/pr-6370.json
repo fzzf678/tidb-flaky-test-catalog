@@ -1,0 +1,47 @@
+{
+  "id": "pr-6370",
+  "source_pr": {
+    "number": 6370,
+    "url": "https://github.com/pingcap/tidb/pull/6370",
+    "title": "plan :fix the compatibility problem of  UNION statement",
+    "body": "In MySQL, `LIMIT`, `ORDER BY` is not allowed in the first few `SelectStmts`. For example:\r\n```sql\r\nmysql> CREATE TABLE IF NOT EXISTS `t` (\r\n    ->   `id` int(6) unsigned NOT NULL,\r\n    ->   `tn` int(3) unsigned NOT NULL,\r\n    ->   `type` varchar(200) NOT NULL,\r\n    ->   PRIMARY KEY (`id`,`tn`)\r\n    -> ) DEFAULT CHARSET=utf8;\r\nQuery OK, 0 rows affected (0.05 sec)\r\n\r\nmysql> INSERT INTO `t` (`id`, `tn`, `type`) VALUES\r\n    ->   ('1', '5', 'cat'),\r\n    ->   ('2', '6', 'dog'),\r\n    ->   ('3', '7', 'duck'),\r\n    ->   ('4', '8', 'chicken');\r\nQuery OK, 4 rows affected (0.02 sec)\r\nRecords: 4  Duplicates: 0  Warnings: 0\r\nmysql> select * from t limit 1 offset 2 union select 1,2,3 from dual;\r\nERROR 1221 (HY000): Incorrect usage of UNION and LIMIT\r\nmysql> select * from t order by id  union select 1,2,3 from dual;\r\nERROR 1221 (HY000): Incorrect usage of UNION and ORDER BY\r\n````\r\n"
+  },
+  "pr_merged_at": "2018-04-25T14:29:16+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "_, err = tk.Exec(\"select 1 from (select a from t order by a union all select a from t limit 1) tmp\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "_, err = tk.Exec(\"select 1 from (select a from t order by a union all select a from t limit 1) tmp\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6370",
+    "https://github.com/pingcap/tidb/pull/6370.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6370.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "plan/errors.go",
+    "plan/preprocess.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: _, err = tk.Exec(\"select 1 from (select a from t order by a union all select a from t limit 1) tmp\") (executor/executor_test.go)",
+      "files: executor/executor_test.go, plan/errors.go, plan/preprocess.go"
+    ]
+  },
+  "analysis": "PR title: plan :fix the compatibility problem of  UNION statement\nPR url: https://github.com/pingcap/tidb/pull/6370\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: _, err = tk.Exec(\"select 1 from (select a from t order by a union all select a from t limit 1) tmp\") (executor/executor_test.go)\nChanged files (3): executor/executor_test.go, plan/errors.go, plan/preprocess.go\nPatch url: https://github.com/pingcap/tidb/pull/6370.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

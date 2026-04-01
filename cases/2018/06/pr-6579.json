@@ -1,0 +1,46 @@
+{
+  "id": "pr-6579",
+  "source_pr": {
+    "number": 6579,
+    "url": "https://github.com/pingcap/tidb/pull/6579",
+    "title": "*: Fix select lock option for union statement",
+    "body": "In \"A union B for update\", \"for update\" belongs to union statement, so both A\r\nand B should use it.\r\n\r\nUpdate this one https://github.com/pingcap/tidb/pull/6335\r\n\r\n@coocood @zz-jason @shenli "
+  },
+  "pr_merged_at": "2018-06-06T22:17:10+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "// 'For update' would be ignored if 'order by' or 'limit' exists. (executor/executor_test.go)"
+  ],
+  "failure_signature": "// 'For update' would be ignored if 'order by' or 'limit' exists. (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6579",
+    "https://github.com/pingcap/tidb/pull/6579.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6579.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "parser/parser.y"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: // 'For update' would be ignored if 'order by' or 'limit' exists. (executor/executor_test.go)",
+      "files: ast/dml.go, executor/executor_test.go, parser/parser.y"
+    ]
+  },
+  "analysis": "PR title: *: Fix select lock option for union statement\nPR url: https://github.com/pingcap/tidb/pull/6579\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // 'For update' would be ignored if 'order by' or 'limit' exists. (executor/executor_test.go)\nChanged files (2): executor/executor_test.go, parser/parser.y\nPatch url: https://github.com/pingcap/tidb/pull/6579.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}
