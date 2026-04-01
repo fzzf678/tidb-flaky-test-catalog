@@ -1,0 +1,55 @@
+{
+  "id": "pr-22382",
+  "source_pr": {
+    "number": 22382,
+    "url": "https://github.com/pingcap/tidb/pull/22382",
+    "title": "*: add infoschema client errors",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/14433\r\n\r\nRevives PR: https://github.com/pingcap/tidb/pull/20785\r\n\r\nProblem Summary:\r\n\r\nIn the PR https://github.com/pingcap/tidb/pull/22351 , it is proposed that multiStmt be permitted as a warning, and later changed to a default. This provides an upgrade path for users.\r\n\r\nThe problem is, errors sent to the client were previously not captured by the server. So it is difficult to tell if a user is depending on the buggy behavior of multiStmt, and if the defaults change will cause them problems.\r\n\r\nThus, the proposal is to cherry-pick to 4.0 and 5.0 to provide a viable way to get past the multiStmt vulnerability.\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\n\r\nThis PR introduces a method to observe errors and warnings sent to clients. For example, using multiStmt as an example:\r\n```sql\r\nmysql> select * from CLIENT_ERRORS_SUMMARY_by_user;\r\n+------+--------------+---------------------------------------------------------------------------------------------------------------------------------------+-------------+---------------+---------------------+---------------------+\r\n| USER | ERROR_NUMBER | ERROR_MESSAGE                                                                                                                         | ERROR_COUNT | WARNING_COUNT | FIRST_SEEN          | LAST_SEEN           |\r\n+------+--------------+---------------------------------------------------------------------------------------------------------------------------------------+-------------+---------------+---------------------+---------------------+\r\n| root |         1054 | Unknown column '%-.192s' in '%-.192s'                                                                                                 |           4 |             0 | 2021-01-13 13:14:06 | 2021-01-13 13:14:06 |\r\n| root |         1105 | Unknown error                                                                                                                         |           1 |             0 | 2021-01-13 13:14:25 | 2021-01-13 13:14:25 |\r\n| root |         1146 | Table '%-.192s.%-.192s' doesn't exist                                                                                                 |          12 |             0 | 2021-01-13 13:06:29 | 2021-01-13 13:12:56 |\r\n| root |         8130 | client has multi-statement capability disabled. Run SET GLOBAL tidb_allow_multi_statement='ON' after you understand the security risk |           1 |             1 | 2021-01-13 13:06:53 | 2021-01-13 13:14:25 |\r\n| root |         1365 | Division by 0                                                                                                                         |           0 |             1 | 2021-01-13 13:07:18 | 2021-01-13 13:07:18 |\r\n+------+--------------+---------------------------------------------------------------------------------------------------------------------------------------+-------------+---------------+---------------------+---------------------+\r\n5 rows in set (0.00 sec)\r\n```\r\n(The warning is the default, when set to `OFF`, it generated an error).\r\n\r\nIn total, three new information schema tables have been introduced:\r\n- client_errors_summary_global\r\n- client_errors_summary_by_host\r\n- client_errors_summary_by_user\r\n\r\nThe design is modeled loosely based on what MySQL 8.0 has in performance_schema. But there are the following differences to be aware of:\r\n\r\n- In MySQL 8.0, reseting the stats is done with a `TRUNCATE TABLE` command. But since these are in infoschema in TiDB, a command `FLUSH CLIENT_ERRORS_SUMMARY` is added.\r\n- In MySQL there is always a row for each error code (regardless if any errors or warnings have been generated). I thought could be misleading, since if it showed all errors in the `errno` package - some are known not to be generated. Also, it creates a very large table if there are a lot of users or hosts.\r\n- In TiDB it shows the `ERROR_MESSAGE (in sprintf format), not the `ERROR_NAME`. This is a current limitation based on what is stored in the `errno` package. I think it's fine.\r\n- There is no `ERROR_RAISED` / `ERROR_HANDLED` counts, and the columns are just renamed to `ERROR_COUNT`. TiDB does not have stored procs, and thus no error handling.\r\n\r\nHow it Works:\r\n\r\nThe errors and warnings could be generated anywhere in code. I capture them not at generate time, but as they are sent to the client. This means that internal sql execution that triggers warnings etc. is not logged.\r\n\r\nThere is no persistence of the statistics, and no cluster-wide view.\r\n\r\n### Related changes\r\n\r\n- Parser PR https://github.com/pingcap/parser/pull/1154\r\n- Need to cherry-pick to the release branch\r\n- Docs PR https://github.com/pingcap/docs/pull/5062\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\nSide effects\r\n\r\n- Should be minimal performance impact since it only needs to acquire the mutex briefly when there is a statement that has caused an error or warning. I checked with tiup tpcc bench to see how many client errors are generated, and it is only 1 during prepare.\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- A set of client_errors_summary tables has been added to Information Schema. This helps keep track of which errors have been sent to clients."
+  },
+  "pr_merged_at": "2021-03-11T19:06:55+08:00",
+  "test": {
+    "type": "unit",
+    "path": "errno/infoschema_test.go",
+    "name": "infoschema_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"SELECT error_number, error_count, warning_count FROM information_schema.client_errors_summary_by_user ORDER BY error_number\").Check(testkit.Rows(\"1365 1 0\")) (infoschema/tables_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"SELECT error_number, error_count, warning_count FROM information_schema.client_errors_summary_by_user ORDER BY error_number\").Check(testkit.Rows(\"1365 1 0\")) (infoschema/tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"SELECT error_number, error_count, warning_count FROM information_schema.client_errors_summary_by_user ORDER BY error_number\").Check(testkit.Rows(\"1365 1 0\")) (infoschema/tables_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22382",
+    "https://github.com/pingcap/tidb/pull/22382.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22382.patch",
+  "changed_files": [
+    "errno/infoschema.go",
+    "errno/infoschema_test.go",
+    "executor/builder.go",
+    "executor/infoschema_reader.go",
+    "executor/simple.go",
+    "infoschema/tables.go",
+    "infoschema/tables_test.go",
+    "server/conn.go",
+    "server/driver_tidb.go",
+    "server/server_test.go",
+    "server/tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"SELECT error_number, error_count, warning_count FROM information_schema.client_errors_summary_by_user ORDER BY error_number\").Check(testkit.Rows(\"1365 1 0\")) (infoschema/tables_test.go)",
+      "files: errno/infoschema.go, errno/infoschema_test.go, executor/builder.go, executor/infoschema_reader.go, executor/simple.go, go.mod, go.sum, infoschema/tables.go, infoschema/tables_test.go, server/conn.go, server/driver_tidb.go, server/server_test.go, server/tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: *: add infoschema client errors\nPR url: https://github.com/pingcap/tidb/pull/22382\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"SELECT error_number, error_count, warning_count FROM information_schema.client_errors_summary_by_user ORDER BY error_number\").Check(testkit.Rows(\"1365 1 0\")) (infoschema/tables_test.go)\nChanged files (11): errno/infoschema.go, errno/infoschema_test.go, executor/builder.go, executor/infoschema_reader.go, executor/simple.go, infoschema/tables.go, infoschema/tables_test.go, server/conn.go, server/driver_tidb.go, server/server_test.go, server/tidb_test.go\nPatch series analyzed; see patch_url."
+}

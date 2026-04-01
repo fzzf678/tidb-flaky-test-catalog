@@ -1,0 +1,50 @@
+{
+  "id": "pr-24089",
+  "source_pr": {
+    "number": 24089,
+    "url": "https://github.com/pingcap/tidb/pull/24089",
+    "title": "statistics: introduce the weighted reservoir sampling",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: sub-task of #24182\r\n\r\nIntroduce the [weighted reservoir sampling](https://en.wikipedia.org/wiki/Reservoir_sampling#Algorithm_A-Res) to collect the sampling stats.\r\n\r\n\r\n### What is changed and how it works?\r\n\r\n\r\nWhat's Changed:\r\n\r\nImplement a new sampling and use it in unistore\r\n\r\nHow it Works:\r\n\r\nWe assigned a random weight to each row. And then select the top n weighted rows as the sampling result.\r\nSince the weights are assigned randomly. Merge them will not lose the randomness of the sampling.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note <!-- Please write a release note here to describe the change you made when it is released to the users of TiDB. If your PR doesn't involve any change to TiDB(like test enhancements, RFC proposals...), you can write `No release note`. -->\r\n"
+  },
+  "pr_merged_at": "2021-04-22T16:43:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "statistics/sample_test.go",
+    "name": "sample_test"
+  },
+  "symptoms": [
+    "Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)"
+  ],
+  "failure_signature": "Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/24089",
+    "https://github.com/pingcap/tidb/pull/24089.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/24089.patch",
+  "changed_files": [
+    "go.mod",
+    "go.sum",
+    "statistics/fmsketch.go",
+    "statistics/row_sampler.go",
+    "statistics/sample_test.go",
+    "store/mockstore/unistore/cophandler/analyze.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)",
+      "files: go.mod, go.sum, statistics/fmsketch.go, statistics/row_sampler.go, statistics/sample_test.go, store/mockstore/unistore/cophandler/analyze.go"
+    ]
+  },
+  "analysis": "PR title: statistics: introduce the weighted reservoir sampling\nPR url: https://github.com/pingcap/tidb/pull/24089\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)\nChanged files (6): go.mod, go.sum, statistics/fmsketch.go, statistics/row_sampler.go, statistics/sample_test.go, store/mockstore/unistore/cophandler/analyze.go\nPatch series analyzed; see patch_url."
+}

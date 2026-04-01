@@ -1,0 +1,52 @@
+{
+  "id": "pr-26304",
+  "source_pr": {
+    "number": 26304,
+    "url": "https://github.com/pingcap/tidb/pull/26304",
+    "title": "planner: add heuristic rules for index selection",
+    "body": "### What problem does this PR solve?\r\n\r\nclose #26319\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed & How it Works:\r\n\r\nIn `(*DataSource).DeriveStats`, we try heuristic rules to select the path from possible access paths. Once some path matches heuristics, we remove other paths from `ds.possibleAccessPaths`, let the selected path remain and add a NOTE level warning to indicate the path matches heuristics.\r\n1. If the query ranges of a unique index are all points and it only needs a single scan, then just use the unique index.\r\n2. If the query ranges of a unique index are all points but it needs a double scan, we collect it into `uniqueIdxsWithDoubleScan`. For the one in `uniqueIdxsWithDoubleScan` with the minimal number of ranges, we record it as `uniqueBest`.\r\n3. If the query ranges of an index are not all points but it only needs a single scan, we collect it into `singleScanIdxs`. For each index in `singleScanIdxs`, if it is better than some index in `uniqueIdxsWithDoubleScan`(there is a subset relation between two `accessCondsColSet`), we call it a refined index. We select the refined index with the minimal number of ranges as `refinedBest`.\r\n4. We compare `uniqueBest` and `refinedBest` and choose the better one.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [x] Performance regression: Consumes more CPU\r\n- [x] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n```\r\nadd heuristic rules for index selection\r\n```\r\n<!-- Please write a release note here to describe the change you made when it is released to the users of TiDB. If your PR doesn't involve any change to TiDB(like test enhancements, RFC proposals...), you can write `No release note`. -->\r\n"
+  },
+  "pr_merged_at": "2021-08-04T20:09:08+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t where e_str = 'hi' order by c\", (planner/core/logical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t where e_str = 'hi' order by c\", (planner/core/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "sql: \"select * from t where e_str = 'hi' order by c\", (planner/core/logical_plan_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/26304",
+    "https://github.com/pingcap/tidb/pull/26304.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/26304.patch",
+  "changed_files": [
+    "planner/core/exhaust_physical_plans.go",
+    "planner/core/find_best_task.go",
+    "planner/core/integration_test.go",
+    "planner/core/logical_plans.go",
+    "planner/core/stats.go",
+    "planner/core/testdata/integration_suite_in.json",
+    "planner/core/testdata/integration_suite_out.json",
+    "planner/util/path.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t where e_str = 'hi' order by c\", (planner/core/logical_plan_test.go)",
+      "files: planner/core/exhaust_physical_plans.go, planner/core/find_best_task.go, planner/core/integration_test.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/mock.go, planner/core/stats.go, planner/core/testdata/integration_suite_in.json, planner/core/testdata/integration_suite_out.json, planner/util/path.go, util/ranger/detacher.go"
+    ]
+  },
+  "analysis": "PR title: planner: add heuristic rules for index selection\nPR url: https://github.com/pingcap/tidb/pull/26304\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t where e_str = 'hi' order by c\", (planner/core/logical_plan_test.go)\nChanged files (8): planner/core/exhaust_physical_plans.go, planner/core/find_best_task.go, planner/core/integration_test.go, planner/core/logical_plans.go, planner/core/stats.go, planner/core/testdata/integration_suite_in.json, planner/core/testdata/integration_suite_out.json, planner/util/path.go\nPatch series analyzed; see patch_url."
+}

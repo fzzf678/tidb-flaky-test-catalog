@@ -1,0 +1,49 @@
+{
+  "id": "pr-22652",
+  "source_pr": {
+    "number": 22652,
+    "url": "https://github.com/pingcap/tidb/pull/22652",
+    "title": "session, util: update session to use new APIs",
+    "body": "\r\n### What problem does this PR solve?\r\n\r\nPart of https://github.com/pingcap/tidb-test/issues/1152\r\n\r\nProblem Summary:\r\n\r\nThis fixes the session package to use the new APIs. It is expected to be backward compatible and covered by existing tests.\r\n\r\nThe bootstrap tasks between versions were not updated, as I'm not sure they will be accurately covered by unit tests to detect regressions.\r\n\r\n### What is changed and how it works?\r\n\r\nNew API usage.\r\n\r\n### Related changes\r\n\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\nSide effects\r\n\r\n- None\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note"
+  },
+  "pr_merged_at": "2021-02-19T13:10:30+08:00",
+  "test": {
+    "type": "unit",
+    "path": "session/bench_test.go",
+    "name": "bench_test"
+  },
+  "symptoms": [
+    "try to fix the data race | rs, err := se.ExecuteInternal(ctx, \"select * from t order by col limit 50\") (session/bench_test.go)"
+  ],
+  "failure_signature": "try to fix the data race | rs, err := se.ExecuteInternal(ctx, \"select * from t order by col limit 50\") (session/bench_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "try to fix the data race | rs, err := se.ExecuteInternal(ctx, \"select * from t order by col limit 50\") (session/bench_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22652",
+    "https://github.com/pingcap/tidb/pull/22652.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22652.patch",
+  "changed_files": [
+    "session/bootstrap.go",
+    "session/session.go",
+    "statistics/handle/handle.go",
+    "util/testkit/testkit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: try to fix the data race | rs, err := se.ExecuteInternal(ctx, \"select * from t order by col limit 50\") (session/bench_test.go)",
+      "files: session/bench_test.go, session/bootstrap.go, session/bootstrap_test.go, session/session.go, session/session_fail_test.go, session/session_test.go, session/tidb_test.go, statistics/handle/handle.go, util/testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: session, util: update session to use new APIs\nPR url: https://github.com/pingcap/tidb/pull/22652\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: try to fix the data race | rs, err := se.ExecuteInternal(ctx, \"select * from t order by col limit 50\") (session/bench_test.go)\nChanged files (4): session/bootstrap.go, session/session.go, statistics/handle/handle.go, util/testkit/testkit.go\nPatch series analyzed; see patch_url."
+}

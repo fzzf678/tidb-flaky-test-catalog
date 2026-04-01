@@ -1,0 +1,48 @@
+{
+  "id": "pr-24102",
+  "source_pr": {
+    "number": 24102,
+    "url": "https://github.com/pingcap/tidb/pull/24102",
+    "title": "planner: Fix Join reorder occurs \"index out of range\" error",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #24095 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\n\r\n```\r\nfor i, col := range p.Schema().Columns {\r\n  if !col.Equal(nil, originalSchema.Columns[i]) {\r\n\t  schemaChanged = true\r\n\t  break\r\n  }\r\n}\r\n```\r\nPanic when `len(p.Schema().Columns) != len(originalSchema.Columns)`\r\n\r\n### What is changed and how it works?\r\n\r\n\r\n### Related changes\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n- Fix Join reorder occurs \"index out of range\" error"
+  },
+  "pr_merged_at": "2021-04-21T20:19:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "tk.MustExec(\"desc format = 'brief' select count(*) from t join (select t.id, t.value v1 from t join t t1 on t.id = t1.id order by t.value limit 1) v on v.id = t.id and v.v1 = t.value;\") (planner/core/integration_test.go)"
+  ],
+  "failure_signature": "tk.MustExec(\"desc format = 'brief' select count(*) from t join (select t.id, t.value v1 from t join t t1 on t.id = t1.id order by t.value limit 1) v on v.id = t.id and v.v1 = t.value;\") (planner/core/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustExec(\"desc format = 'brief' select count(*) from t join (select t.id, t.value v1 from t join t t1 on t.id = t1.id order by t.value limit 1) v on v.id = t.id and v.v1 = t.value;\") (planner/core/integration_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/24102",
+    "https://github.com/pingcap/tidb/pull/24102.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/24102.patch",
+  "changed_files": [
+    "planner/core/integration_test.go",
+    "planner/core/rule_join_reorder.go",
+    "planner/core/testdata/integration_suite_in.json",
+    "planner/core/testdata/integration_suite_out.json"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustExec(\"desc format = 'brief' select count(*) from t join (select t.id, t.value v1 from t join t t1 on t.id = t1.id order by t.value limit 1) v on v.id = t.id and v.v1 = t.value;\") (planner/core/integration_test.go)",
+      "files: planner/core/integration_test.go, planner/core/rule_join_reorder.go, planner/core/rule_join_reorder_test.go, planner/core/testdata/integration_suite_in.json, planner/core/testdata/integration_suite_out.json"
+    ]
+  },
+  "analysis": "PR title: planner: Fix Join reorder occurs \"index out of range\" error\nPR url: https://github.com/pingcap/tidb/pull/24102\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustExec(\"desc format = 'brief' select count(*) from t join (select t.id, t.value v1 from t join t t1 on t.id = t1.id order by t.value limit 1) v on v.id = t.id and v.v1 = t.value;\") (planner/core/integration_test.go)\nChanged files (4): planner/core/integration_test.go, planner/core/rule_join_reorder.go, planner/core/testdata/integration_suite_in.json, planner/core/testdata/integration_suite_out.json\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,56 @@
+{
+  "id": "pr-30816",
+  "source_pr": {
+    "number": 30816,
+    "url": "https://github.com/pingcap/tidb/pull/30816",
+    "title": "*: implement analyze predicate columns",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #31102\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n#### What is changed?\r\n1. Implement `analyze table t predicate columns`. When there is no predicate column for `t`, it gives a warning and falls back to analyze all columns.\r\n2. Introduce global variable `tidb_enable_column_tracking`, which controls whether to collect predicate columns from SQL and dump to disk. When `set global tidb_enable_column_tracking = 0`, all the predicate columns collected before are invalidated.\r\n\r\n#### How it works?\r\n1. `analyze table t predicate columns` finds out predicate columns for `t` by reading from `mysql.column_stats_usage`. After figuring out which columns' stats need to be collected, the following thing is just the same as `analyze table t columns c1, ..., cn`.\r\n2. When `set global tidb_enable_column_tracking = 0`, we don't physically update `mysql.column_stats_usage` to invalidate predicate columns. Instead, we record the time of the setting operation in `tidb_disable_column_tracking_time`, which is a variable in the system variable `mysql.tidb`. When we want to get predicate columns, we read from `mysql.column_stats_usage` and filter out the columns whose `last_used_at` is null. Then we compare `last_used_at` with `tidb_disable_column_tracking_time`. `last_used_at <= tidb_disable_column_tracking_time ` means that the predicate columns is invalidated. So we only regard the columns whose `last_used_at > tidb_disable_column_tracking_time` as predicate columns.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-12-30T15:45:50+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/analyze_test.go",
+    "name": "analyze_test"
+  },
+  "symptoms": [
+    "sort.Strings(cols) (planner/core/collect_column_stats_usage_test.go)"
+  ],
+  "failure_signature": "sort.Strings(cols) (planner/core/collect_column_stats_usage_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "sort.Strings(cols) (planner/core/collect_column_stats_usage_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/30816",
+    "https://github.com/pingcap/tidb/pull/30816.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/30816.patch",
+  "changed_files": [
+    "domain/sysvar_cache.go",
+    "executor/analyze_test.go",
+    "executor/set_test.go",
+    "planner/core/optimizer.go",
+    "planner/core/planbuilder.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "statistics/handle/handle.go",
+    "statistics/handle/handle_test.go",
+    "statistics/handle/update.go",
+    "statistics/handle/update_test.go",
+    "types/time.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Strings(cols) (planner/core/collect_column_stats_usage_test.go)",
+      "files: domain/domain.go, domain/sysvar_cache.go, executor/analyze_test.go, executor/set_test.go, executor/show_stats.go, planner/core/collect_column_stats_usage.go, planner/core/collect_column_stats_usage_test.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/optimizer.go, planner/core/planbuilder.go, planner/core/rule_predicate_push_down.go, session/session.go, sessionctx/context.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, statistics/handle/handle.go, statistics/handle/handle_test.go, statistics/handle/update.go, statistics/handle/update_test.go, types/time.go, util/mock/context.go"
+    ]
+  },
+  "analysis": "PR title: *: implement analyze predicate columns\nPR url: https://github.com/pingcap/tidb/pull/30816\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Strings(cols) (planner/core/collect_column_stats_usage_test.go)\nChanged files (12): domain/sysvar_cache.go, executor/analyze_test.go, executor/set_test.go, planner/core/optimizer.go, planner/core/planbuilder.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, statistics/handle/handle.go, statistics/handle/handle_test.go, statistics/handle/update.go, statistics/handle/update_test.go, types/time.go\nPatch series analyzed; see patch_url."
+}

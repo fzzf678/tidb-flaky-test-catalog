@@ -1,0 +1,46 @@
+{
+  "id": "pr-24899",
+  "source_pr": {
+    "number": 24899,
+    "url": "https://github.com/pingcap/tidb/pull/24899",
+    "title": "executor: open childExec during execution for UnionExec",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #21441 <!-- REMOVE this line if no issue to close -->\r\n\r\nre-revert https://github.com/pingcap/tidb/pull/21561\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: [xxx](url) <!-- REMOVE this line if not applicable -->\r\n\r\nWhat's Changed:\r\nBefore this commit, `Union` opens all the child executors during the `Open` phase.\r\nThis increases the overhead of `buildRequest` and the risk of OOM.\r\n\r\nAfter this commit, the `Open` of childExec in `Union` is moved to the `Next` phase. The childExec be opened simultaneously is limited to `tidb_executor_concurrency` atmost.\r\n\r\nHow it Works:\r\n\r\n### Related changes\r\n\r\nN/A\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Integration test\r\n- Manual test\r\nSuppose we have a table `t`, it contains 100 partitions, each partition contains 10,000,000 tuples.\r\nThe result of `select * from t;`\r\nBefore:\r\n![image](https://user-images.githubusercontent.com/9039012/119595037-7c0dd400-be0f-11eb-82bb-106ca8cdf229.png)\r\nAfter:\r\nThe query works fine.\r\n\r\nSide effects\r\n\r\n- The speed of UnionExec may decrease if the child of Union is larger than `tidb_executor_concurrency`.\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- Refine the execution mechanism `UnionExec` to reduce the overhead of `UnionExec`."
+  },
+  "pr_merged_at": "2021-06-10T16:02:30+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select a from (\" + sql + \") t order by a limit 4\").Check(testkit.Rows(\"1\", \"1\", \"1\", \"1\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select a from (\" + sql + \") t order by a limit 4\").Check(testkit.Rows(\"1\", \"1\", \"1\", \"1\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select a from (\" + sql + \") t order by a limit 4\").Check(testkit.Rows(\"1\", \"1\", \"1\", \"1\")) (executor/executor_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/24899",
+    "https://github.com/pingcap/tidb/pull/24899.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/24899.patch",
+  "changed_files": [
+    "executor/executor.go",
+    "executor/executor_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select a from (\" + sql + \") t order by a limit 4\").Check(testkit.Rows(\"1\", \"1\", \"1\", \"1\")) (executor/executor_test.go)",
+      "files: executor/executor.go, executor/executor_test.go, store/tikv/snapshot.go"
+    ]
+  },
+  "analysis": "PR title: executor: open childExec during execution for UnionExec\nPR url: https://github.com/pingcap/tidb/pull/24899\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select a from (\" + sql + \") t order by a limit 4\").Check(testkit.Rows(\"1\", \"1\", \"1\", \"1\")) (executor/executor_test.go)\nChanged files (2): executor/executor.go, executor/executor_test.go\nPatch series analyzed; see patch_url."
+}

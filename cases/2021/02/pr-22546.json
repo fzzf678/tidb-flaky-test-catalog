@@ -1,0 +1,51 @@
+{
+  "id": "pr-22546",
+  "source_pr": {
+    "number": 22546,
+    "url": "https://github.com/pingcap/tidb/pull/22546",
+    "title": "*: refactor ExecuteInternal to return single resultset",
+    "body": "### What problem does this PR solve?\r\n\r\nProblem Summary:\r\n\r\nBoth `Execute` and `ExecuteInternal` no longer permit multi-statement, but the return type was maintained the same for backward compatibility.\r\n\r\nThis changes `ExecuteInternal` to return a single result-set.\r\n\r\n**Update:** I've removed `Execute` from this PR, we can handle it in followup PRs.\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\n\r\nThis changes the return type of `ExecuteInternal` to be a non-array value. ~All uses of `Execute` are changed to use `ExecuteInternal`~ (for future PRs - it does not need to be handled all at once).\r\n\r\n### Related changes\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Covered by existing unit test\r\n\r\nSide effects\r\n\r\n- More difficult cherry-picks of code\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note"
+  },
+  "pr_merged_at": "2021-02-01T14:05:27+08:00",
+  "test": {
+    "type": "unit",
+    "path": "cmd/ddltest/column_test.go",
+    "name": "column_test"
+  },
+  "symptoms": [
+    "rs, err1 := tk.Se.Execute(ctx, \"select * from earlyclose order by id\") (executor/seqtest/seq_executor_test.go)"
+  ],
+  "failure_signature": "rs, err1 := tk.Se.Execute(ctx, \"select * from earlyclose order by id\") (executor/seqtest/seq_executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "rs, err1 := tk.Se.Execute(ctx, \"select * from earlyclose order by id\") (executor/seqtest/seq_executor_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22546",
+    "https://github.com/pingcap/tidb/pull/22546.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22546.patch",
+  "changed_files": [
+    "bindinfo/handle.go",
+    "executor/analyze.go",
+    "session/bootstrap.go",
+    "session/session.go",
+    "store/tikv/gcworker/gc_worker.go",
+    "util/mock/context.go",
+    "util/sqlexec/restricted_sql_executor.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rs, err1 := tk.Se.Execute(ctx, \"select * from earlyclose order by id\") (executor/seqtest/seq_executor_test.go)",
+      "files: bindinfo/handle.go, cmd/benchdb/main.go, cmd/ddltest/column_test.go, cmd/ddltest/ddl_test.go, ddl/db_change_test.go, ddl/db_integration_test.go, ddl/db_partition_test.go, ddl/db_test.go, ddl/ddl_worker_test.go, ddl/delete_range.go, ddl/failtest/fail_db_test.go, ddl/testutil/testutil.go, ddl/util/util.go, domain/db_test.go, executor/analyze.go, executor/brie.go, executor/executor_test.go, executor/grant.go, executor/inspection_result_test.go, executor/inspection_summary_test.go, executor/memory_test.go, executor/memtable_reader_test.go, executor/revoke.go, executor/seqtest/seq_executor_test.go, executor/simple.go, executor/simple_test.go, executor/trace.go, planner/core/physical_plan_test.go, planner/core/prepare_test.go, planner/core/preprocess_test.go, privilege/privileges/cache.go, privilege/privileges/privileges_test.go, server/conn.go, server/conn_test.go, server/sql_info_fetcher.go, server/tidb_test.go, session/bench_test.go, session/bootstrap.go, session/session.go, session/session_fail_test.go, session/session_test.go, session/tidb_test.go, statistics/handle/bootstrap.go, statistics/handle/ddl.go, statistics/handle/gc.go, statistics/handle/handle.go, statistics/handle/update.go, store/sql_fail_test.go, store/tikv/gcworker/gc_worker.go, store/tikv/gcworker/gc_worker_test.go, store/tikv/sql_fail_test.go, table/tables/partition_test.go, table/tables/tables_test.go, telemetry/telemetry_test.go, util/mock/context.go, util/sqlexec/restricted_sql_executor.go, util/testkit/ctestkit.go, util/testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: *: refactor ExecuteInternal to return single resultset\nPR url: https://github.com/pingcap/tidb/pull/22546\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rs, err1 := tk.Se.Execute(ctx, \"select * from earlyclose order by id\") (executor/seqtest/seq_executor_test.go)\nChanged files (7): bindinfo/handle.go, executor/analyze.go, session/bootstrap.go, session/session.go, store/tikv/gcworker/gc_worker.go, util/mock/context.go, util/sqlexec/restricted_sql_executor.go\nPatch series analyzed; see patch_url."
+}

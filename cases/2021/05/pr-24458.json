@@ -1,0 +1,58 @@
+{
+  "id": "pr-24458",
+  "source_pr": {
+    "number": 24458,
+    "url": "https://github.com/pingcap/tidb/pull/24458",
+    "title": "planner, executor, statistics: support correlation calc for new sampling method",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: sub-task of https://github.com/pingcap/tidb/issues/24182\r\n\r\n\r\n### What is changed and how it works?\r\n\r\nadd correlation (and extended stats) calculation for the new sampling method\r\n\r\n1. Add the `Handle` field in `RowSampleItem`.\r\n2. Calculate `RowSampleItem.Handle` (to support this, we need to add _tidb_rowid to the analyze task if exists).\r\n3. Sort `RowSampleItem` by the handle and assign `Ordinal` to the sample items.\r\n4. Calculate the correlation and extended stats using existed functions.\r\n5. Merge `BuildColumnHistAndTopN` and `BuildHistAndTopNOnRowSample`.\r\n6. Make other codes treat analyze version 3 the same as analyze version 2 (`ver == 2` changed to `ver >= 2`).\r\n\r\nNote: There is a small change that correlation of pk column is also calculated, and of course, that's always 1. The correlation of pk column is useless so there isn't any actual influence, but some test result is changed from 0 to 1.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n- Integration test\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- no release note.\r\n"
+  },
+  "pr_merged_at": "2021-05-25T23:57:34+08:00",
+  "test": {
+    "type": "unit",
+    "path": "statistics/handle/handle_test.go",
+    "name": "handle_test"
+  },
+  "symptoms": [
+    "Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)"
+  ],
+  "failure_signature": "Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/24458",
+    "https://github.com/pingcap/tidb/pull/24458.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/24458.patch",
+  "changed_files": [
+    "executor/analyze.go",
+    "executor/builder.go",
+    "planner/core/planbuilder.go",
+    "statistics/builder.go",
+    "statistics/handle/bootstrap.go",
+    "statistics/handle/handle.go",
+    "statistics/handle/handle_test.go",
+    "statistics/handle/update.go",
+    "statistics/histogram.go",
+    "statistics/row_sampler.go",
+    "statistics/sample_test.go",
+    "statistics/statistics_test.go",
+    "store/mockstore/unistore/cophandler/analyze.go",
+    "util/sqlexec/restricted_sql_executor.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)",
+      "files: executor/analyze.go, executor/builder.go, go.mod, go.sum, planner/core/common_plans.go, planner/core/plan.go, planner/core/planbuilder.go, sessionctx/variable/sysvar.go, statistics/builder.go, statistics/cmsketch.go, statistics/fmsketch.go, statistics/handle/bootstrap.go, statistics/handle/handle.go, statistics/handle/handle_test.go, statistics/handle/update.go, statistics/histogram.go, statistics/integration_test.go, statistics/row_sampler.go, statistics/sample_test.go, statistics/statistics_test.go, statistics/table.go, statistics/testdata/integration_suite_out.json, statistics/testdata/stats_suite_out.json, store/mockstore/unistore/cophandler/analyze.go, util/sqlexec/restricted_sql_executor.go"
+    ]
+  },
+  "analysis": "PR title: planner, executor, statistics: support correlation calc for new sampling method\nPR url: https://github.com/pingcap/tidb/pull/24458\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)\nChanged files (14): executor/analyze.go, executor/builder.go, planner/core/planbuilder.go, statistics/builder.go, statistics/handle/bootstrap.go, statistics/handle/handle.go, statistics/handle/handle_test.go, statistics/handle/update.go, statistics/histogram.go, statistics/row_sampler.go, statistics/sample_test.go, statistics/statistics_test.go, store/mockstore/unistore/cophandler/analyze.go, util/sqlexec/restricted_sql_executor.go\nPatch series analyzed; see patch_url."
+}

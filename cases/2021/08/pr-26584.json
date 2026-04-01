@@ -1,0 +1,50 @@
+{
+  "id": "pr-26584",
+  "source_pr": {
+    "number": 26584,
+    "url": "https://github.com/pingcap/tidb/pull/26584",
+    "title": "*: insert of invalid timestamp succeeded",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #25999 \r\n\r\nProblem Summary:\r\nInsert succeeded with values out-of-range for Timestamp\r\n\r\n### What is changed and how it works?\r\nNever accept timestamp values out-of-range\r\n\r\nWhat's Changed:\r\nCheck for values out-of-range\r\n\r\nHow it Works:\r\nNow truncates and returns a warning or returns an error depending on sql_mode.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [X] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n```release-note\r\nTimestamp values out-of-range can no longer be inserted.\r\n```"
+  },
+  "pr_merged_at": "2021-08-05T18:03:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/column_type_change_test.go",
+    "name": "column_type_change_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(`SELECT * FROM ts ORDER BY id`).Check(testkit.Rows(`1 0000-00-00 00:00:00`)) (executor/insert_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(`SELECT * FROM ts ORDER BY id`).Check(testkit.Rows(`1 0000-00-00 00:00:00`)) (executor/insert_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(`SELECT * FROM ts ORDER BY id`).Check(testkit.Rows(`1 0000-00-00 00:00:00`)) (executor/insert_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/26584",
+    "https://github.com/pingcap/tidb/pull/26584.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/26584.patch",
+  "changed_files": [
+    "ddl/column_type_change_test.go",
+    "executor/index_lookup_join.go",
+    "executor/insert_test.go",
+    "sessionctx/stmtctx/stmtctx.go",
+    "table/column.go",
+    "types/datum.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(`SELECT * FROM ts ORDER BY id`).Check(testkit.Rows(`1 0000-00-00 00:00:00`)) (executor/insert_test.go)",
+      "files: Makefile.common, ddl/column_type_change_test.go, executor/index_lookup_join.go, executor/insert_test.go, sessionctx/stmtctx/stmtctx.go, table/column.go, types/datum.go"
+    ]
+  },
+  "analysis": "PR title: *: insert of invalid timestamp succeeded\nPR url: https://github.com/pingcap/tidb/pull/26584\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(`SELECT * FROM ts ORDER BY id`).Check(testkit.Rows(`1 0000-00-00 00:00:00`)) (executor/insert_test.go)\nChanged files (6): ddl/column_type_change_test.go, executor/index_lookup_join.go, executor/insert_test.go, sessionctx/stmtctx/stmtctx.go, table/column.go, types/datum.go\nPatch series analyzed; see patch_url."
+}

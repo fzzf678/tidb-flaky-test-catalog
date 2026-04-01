@@ -1,0 +1,46 @@
+{
+  "id": "pr-30299",
+  "source_pr": {
+    "number": 30299,
+    "url": "https://github.com/pingcap/tidb/pull/30299",
+    "title": "ddltest: refactor logutil.InitLogger in ddltest to avoid data race",
+    "body": "Signed-off-by: Weizhen Wang <wangweizhen@pingcap.com>\r\n\r\n<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #xxx\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nremove logutil.InitLogger to ```main_test``` for avoiding data race.\r\n\r\n```logutil.InitLogger``` will change ```grpclogger``` in global.\r\n\r\n```\r\n WARNING: DATA RACE\r\nWrite at 0x0000078adb70 by goroutine 46:\r\n  google.golang.org/grpc/grpclog.SetLoggerV2()\r\n      /home/prow/go/pkg/mod/google.golang.org/grpc@v1.29.1/grpclog/loggerv2.go:70 +0x224\r\n  github.com/grpc-ecosystem/go-grpc-middleware/logging/zap.ReplaceGrpcLoggerV2WithVerbosity()\r\n      /home/prow/go/pkg/mod/github.com/grpc-ecosystem/go-grpc-middleware@v1.1.0/logging/zap/grpclogger.go:60 +0x1f6\r\n  github.com/grpc-ecosystem/go-grpc-middleware/logging/zap.ReplaceGrpcLoggerV2()\r\n      /home/prow/go/pkg/mod/github.com/grpc-ecosystem/go-grpc-middleware@v1.1.0/logging/zap/grpclogger.go:51 +0x2d6\r\n  github.com/pingcap/tidb/util/logutil.initGRPCLogger()\r\n      /go/tidb/util/logutil/log.go:141 +0x2cf\r\n  github.com/pingcap/tidb/util/logutil.InitLogger()\r\n      /go/tidb/util/logutil/log.go:114 +0x14b\r\n  github.com/pingcap/tidb/cmd/ddltest.createDDLSuite()\r\n      /go/tidb/cmd/ddltest/ddl_serial_test.go:96 +0x136\r\n  github.com/pingcap/tidb/cmd/ddltest.TestIndex()\r\n      /go/tidb/cmd/ddltest/index_serial_test.go:135 +0x4a\r\n  testing.tRunner()\r\n      /usr/local/go/src/testing/testing.go:1259 +0x22f\r\n  testing.(*T).Run·dwrap·21()\r\n      /usr/local/go/src/testing/testing.go:1306 +0x47\r\nPrevious read at 0x0000078adb70 by goroutine 37:\r\n  google.golang.org/grpc/internal/grpclog.InfoDepth()\r\n      /home/prow/go/pkg/mod/google.golang.org/grpc@v1.29.1/internal/grpclog/grpclog.go:33 +0x93\r\n  google.golang.org/grpc/internal/channelz.Infof()\r\n      /home/prow/go/pkg/mod/google.golang.org/grpc@v1.29.1/internal/channelz/logging.go:48 +0x164\r\n  google.golang.org/grpc.(*connectivityStateManager).updateState()\r\n      /home/prow/go/pkg/mod/google.golang.org/grpc@v1.29.1/clientconn.go:417 +0x184\r\n  google.golang.org/grpc.(*ccBalancerWrapper).UpdateState()\r\n      /home/prow/go/pkg/mod/google.golang.org/grpc@v1.29.1/balancer_conn_wrappers.go:203 +0x17a\r\n  google.golang.org/grpc.(*pickfirstBalancer).UpdateSubConnState()\r\n      /home/prow/go/pkg/mod/google.golang.org/grpc@v1.29.1/pickfirst.go:138 +0x644\r\n  google.golang.org/grpc.(*ccBalancerWrapper).watcher()\r\n      /home/prow/go/pkg/mod/google.golang.org/grpc@v1.29.1/balancer_conn_wrappers.go:78 +0x2d2\r\n  google.golang.org/grpc.newCCBalancerWrapper·dwrap·6()\r\n      /home/prow/go/pkg/mod/google.golang.org/grpc@v1.29.1/balancer_conn_wrappers.go:60 +0x39 \r\n```\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-12-01T16:13:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "cmd/ddltest/ddl_serial_test.go",
+    "name": "TestIndex"
+  },
+  "symptoms": [
+    "ddltest: refactor logutil.InitLogger in ddltest to avoid data race"
+  ],
+  "failure_signature": "ddltest: refactor logutil.InitLogger in ddltest to avoid data race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddltest: refactor logutil.InitLogger in ddltest to avoid data race",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/30299",
+    "https://github.com/pingcap/tidb/pull/30299.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/30299.patch",
+  "changed_files": [
+    "cmd/ddltest/ddl_serial_test.go",
+    "cmd/ddltest/main_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: ddltest: refactor logutil.InitLogger in ddltest to avoid data race",
+      "files: cmd/ddltest/ddl_serial_test.go, cmd/ddltest/main_test.go"
+    ]
+  },
+  "analysis": "PR title: ddltest: refactor logutil.InitLogger in ddltest to avoid data race\nPR url: https://github.com/pingcap/tidb/pull/30299\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddltest: refactor logutil.InitLogger in ddltest to avoid data race\nChanged files (2): cmd/ddltest/ddl_serial_test.go, cmd/ddltest/main_test.go\nPatch series analyzed; see patch_url."
+}

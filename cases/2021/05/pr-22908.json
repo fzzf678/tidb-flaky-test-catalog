@@ -1,0 +1,65 @@
+{
+  "id": "pr-22908",
+  "source_pr": {
+    "number": 22908,
+    "url": "https://github.com/pingcap/tidb/pull/22908",
+    "title": "txn: Add txn state's view",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nProblem Summary:\r\n\r\nCurrently, there're no way to view the state of a transaction with SQL, which sometimes makes diagnosing related problems hard.\r\n\r\n/cc #24199\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: [TiDB Transaction related views](https://docs.google.com/document/d/1WktXEUYO7LgDfJsgbCPbi6vMb5XYbiSW7gG6hRfk-no/edit#)\r\n\r\nWhat's Changed:\r\n\r\nAdd a `(CLUSTER_)TIDB_TRX` to view the transaction state.\r\n\r\nHow it Works:\r\n\r\nJust create a `memTable`, and query the data from all session's `TxnState` on query.\r\n\r\n### Use Example\r\n\r\n```sql\r\nuse test; create table t(id int, a varchar(128)); \r\ninsert into t(id, a) values (1, 'abcd'); \r\nBEGIN; \r\nselect * from t for update; \r\nselect * from information_schema.CLUSTER_TIDB_TRX;\r\n```\r\n\r\nWill show:\r\n\r\n```sh\r\n+-----------------+--------------------+---------------------+------------------------------------------------------------------+--------+--------------------+------+------+------------+------+------+\r\n| INSTANCE        | ID                 | START_TIME          | DIGEST                                                           | STATE  | WAITING_START_TIME | LEN  | SIZE | SESSION_ID | USER | DB   |\r\n+-----------------+--------------------+---------------------+------------------------------------------------------------------+--------+--------------------+------+------+------------+------+------+\r\n| 127.0.0.1:10080 | 424768545227014155 | 2021-05-07 12:56:48 | a200e35b257452d27bbad7f5cb67435a0f5804848baafbc6674212c917816245 | Normal | NULL               |    1 |   19 |          7 | root | test |\r\n+-----------------+--------------------+---------------------+------------------------------------------------------------------+--------+--------------------+------+------+------------+------+------+\r\n1 row in set (0.00 sec)\r\n```\r\n\r\n### Related changes\r\n\r\n- PR to update `pingcap/docs`/`pingcap/docs-cn` (Will update after this pr is ready for merge.)\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\nSide effects\r\n\r\n- Performance regression\r\n    - Consumes more CPU\r\n    - Consumes more MEM\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- Add a `(CLUSTER_)TIDB_TRX` to view the transaction state.\r\n"
+  },
+  "pr_merged_at": "2021-05-12T19:25:40+08:00",
+  "test": {
+    "type": "unit",
+    "path": "bindinfo/bind_test.go",
+    "name": "bind_test"
+  },
+  "symptoms": [
+    "move EntriesCount and Size LazyTxn to prevent race"
+  ],
+  "failure_signature": "move EntriesCount and Size LazyTxn to prevent race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "move EntriesCount and Size LazyTxn to prevent race",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22908",
+    "https://github.com/pingcap/tidb/pull/22908.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22908.patch",
+  "changed_files": [
+    "bindinfo/bind_test.go",
+    "domain/domain_test.go",
+    "executor/adapter.go",
+    "executor/builder.go",
+    "executor/executor_pkg_test.go",
+    "executor/explainfor_test.go",
+    "executor/infoschema_reader.go",
+    "executor/infoschema_reader_test.go",
+    "executor/prepared_test.go",
+    "executor/seqtest/prepared_test.go",
+    "infoschema/cluster.go",
+    "infoschema/infoschema_test.go",
+    "infoschema/tables.go",
+    "infoschema/tables_test.go",
+    "kv/kv.go",
+    "server/server.go",
+    "session/session.go",
+    "session/session_test.go",
+    "session/txn.go",
+    "session/txninfo/txn_info.go",
+    "util/processinfo.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: move EntriesCount and Size LazyTxn to prevent race",
+      "files: bindinfo/bind_test.go, domain/domain_test.go, executor/adapter.go, executor/builder.go, executor/executor_pkg_test.go, executor/explainfor_test.go, executor/infoschema_reader.go, executor/infoschema_reader_test.go, executor/prepared_test.go, executor/seqtest/prepared_test.go, go.mod, go.sum, infoschema/cluster.go, infoschema/infoschema_test.go, infoschema/tables.go, infoschema/tables_test.go, kv/kv.go, server/server.go, session/session.go, session/session_test.go, session/txn.go, session/txnInfo/txnInfo.go, session/txninfo/txn_info.go, store/tikv/unionstore/memdb.go, store/tikv/unionstore/memdb_arena.go, store/tikv/unionstore/memdb_test.go, util/chunk/column.go, util/processinfo.go, util/txnstateRecorder/txnstate_recorder.go, util/txnstateRecorder/txnstate_recorder_test.go"
+    ]
+  },
+  "analysis": "PR title: txn: Add txn state's view\nPR url: https://github.com/pingcap/tidb/pull/22908\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: move EntriesCount and Size LazyTxn to prevent race\nChanged files (21): bindinfo/bind_test.go, domain/domain_test.go, executor/adapter.go, executor/builder.go, executor/executor_pkg_test.go, executor/explainfor_test.go, executor/infoschema_reader.go, executor/infoschema_reader_test.go, executor/prepared_test.go, executor/seqtest/prepared_test.go, infoschema/cluster.go, infoschema/infoschema_test.go, infoschema/tables.go, infoschema/tables_test.go, kv/kv.go, server/server.go, session/session.go, session/session_test.go, session/txn.go, session/txninfo/txn_info.go, util/processinfo.go\nPatch series analyzed; see patch_url."
+}

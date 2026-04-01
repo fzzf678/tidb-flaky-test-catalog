@@ -1,0 +1,49 @@
+{
+  "id": "pr-22307",
+  "source_pr": {
+    "number": 22307,
+    "url": "https://github.com/pingcap/tidb/pull/22307",
+    "title": "ddl: fix update can see columns not public",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/15567\r\n\r\n### What is changed and how it works?\r\n\r\nthe client should only see the columns in public, but `update` stmt can see the `writeable` columns which may lead the columns in `writeOnly` state can be used in `where` and `order by` clause. for more detail please refer to the issue.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- fix a bug that `update` stmt can use non-public state columns in `where` or `order by` clause<!-- Please write a release note here to describe the change you made when it is released to the users of TiDB. If your PR doesn't involve any change to TiDB(like test enhancements, RFC proposals...), you can write `No release note`. -->\r\n"
+  },
+  "pr_merged_at": "2021-04-07T13:00:32+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_change_test.go",
+    "name": "db_change_test"
+  },
+  "symptoms": [
+    "_, checkErr = tk.Exec(\"update t set a = 3 order by b;\") (ddl/db_test.go)"
+  ],
+  "failure_signature": "_, checkErr = tk.Exec(\"update t set a = 3 order by b;\") (ddl/db_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "_, checkErr = tk.Exec(\"update t set a = 3 order by b;\") (ddl/db_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22307",
+    "https://github.com/pingcap/tidb/pull/22307.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22307.patch",
+  "changed_files": [
+    "ddl/db_change_test.go",
+    "ddl/db_test.go",
+    "expression/simple_rewriter.go",
+    "planner/core/logical_plan_builder.go",
+    "types/field_name.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: _, checkErr = tk.Exec(\"update t set a = 3 order by b;\") (ddl/db_test.go)",
+      "files: ddl/db_change_test.go, ddl/db_test.go, expression/simple_rewriter.go, planner/core/logical_plan_builder.go, store/tikv/region_cache.go, types/field_name.go"
+    ]
+  },
+  "analysis": "PR title: ddl: fix update can see columns not public\nPR url: https://github.com/pingcap/tidb/pull/22307\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: _, checkErr = tk.Exec(\"update t set a = 3 order by b;\") (ddl/db_test.go)\nChanged files (5): ddl/db_change_test.go, ddl/db_test.go, expression/simple_rewriter.go, planner/core/logical_plan_builder.go, types/field_name.go\nPatch series analyzed; see patch_url."
+}

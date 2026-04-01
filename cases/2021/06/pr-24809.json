@@ -1,0 +1,56 @@
+{
+  "id": "pr-24809",
+  "source_pr": {
+    "number": 24809,
+    "url": "https://github.com/pingcap/tidb/pull/24809",
+    "title": "executor: add CTEExec and CTETableReaderExec",
+    "body": "Signed-off-by: guo-shaoge <shaoge1994@163.com>\r\n\r\n<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #24808 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary: This PR implements **CTEExec** and **CTETableReaderExec**. \r\n\r\nThe implementation can be divided into three parts:\r\n1. executor/builder.go: construct CTEExec and CTETableReaderExec from physical plans.\r\n2. executor/cte.go: implements CTEExec. \r\n3. executor/cte_table_reader.go: implements CTETableReaderExec.\r\n\r\n**NOTICE**: Because this PR relies on other PR, so I rebased my commit. Please just review this commit.\r\n`Files changed -> choose changes from commits only make by guo-shaoge`\r\n\r\nProposal: [CTE proposal](https://github.com/pingcap/tidb/pull/24147) <!-- REMOVE this line if not applicable -->\r\n\r\nHow it works:\r\n**executorBuilder**\r\n1. Since multiple CTEs can share a temporary storage, a map is recorded in StmtCtx. CTEs with the same StorageID will use the same cteuilt.Storage.\r\n\r\n**CTEExec**\r\n1. Compute seed part and store results into `e.iterInTbl`, which will be read by CTETableReaderExec.\r\n2. Compute recursive part and store results into `e.iterOutTbl`.\r\n3. Swap data in `e.iterInTbl` and `e.iterOutTbl`. So the previous iteration's output will be next iteration's input. And the next iteration starts.\r\n\r\n**CTETableReaderExec**\r\n1. Just read data in `e.iterInTbl` and output chunk. \r\n\r\n### Related changes\r\n\r\n- PR to update `pingcap/docs`/`pingcap/docs-cn`:\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n\r\n- Integration test: cte_test.go\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- executor: add CTEExec and CTETableReaderExec\r\n"
+  },
+  "pr_merged_at": "2021-06-01T11:59:37+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/cte_test.go",
+    "name": "cte_test"
+  },
+  "symptoms": [
+    "\"select c1 from cte1 order by c1;\") (executor/cte_test.go)"
+  ],
+  "failure_signature": "\"select c1 from cte1 order by c1;\") (executor/cte_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "\"select c1 from cte1 order by c1;\") (executor/cte_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/24809",
+    "https://github.com/pingcap/tidb/pull/24809.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/24809.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/cte.go",
+    "executor/cte_table_reader.go",
+    "executor/cte_test.go",
+    "executor/executor.go",
+    "session/session.go",
+    "sessionctx/stmtctx/stmtctx.go",
+    "util/chunk/chunk.go",
+    "util/chunk/disk.go",
+    "util/cteutil/storage.go",
+    "util/cteutil/storage_test.go",
+    "util/memory/tracker.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: \"select c1 from cte1 order by c1;\") (executor/cte_test.go)",
+      "files: executor/builder.go, executor/cte.go, executor/cte_table_reader.go, executor/cte_test.go, executor/executor.go, session/session.go, sessionctx/stmtctx/stmtctx.go, util/chunk/chunk.go, util/chunk/disk.go, util/cteutil/storage.go, util/cteutil/storage_test.go, util/memory/tracker.go"
+    ]
+  },
+  "analysis": "PR title: executor: add CTEExec and CTETableReaderExec\nPR url: https://github.com/pingcap/tidb/pull/24809\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"select c1 from cte1 order by c1;\") (executor/cte_test.go)\nChanged files (12): executor/builder.go, executor/cte.go, executor/cte_table_reader.go, executor/cte_test.go, executor/executor.go, session/session.go, sessionctx/stmtctx/stmtctx.go, util/chunk/chunk.go, util/chunk/disk.go, util/cteutil/storage.go, util/cteutil/storage_test.go, util/memory/tracker.go\nPatch series analyzed; see patch_url."
+}

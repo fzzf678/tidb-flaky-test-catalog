@@ -1,0 +1,55 @@
+{
+  "id": "pr-19957",
+  "source_pr": {
+    "number": 19957,
+    "url": "https://github.com/pingcap/tidb/pull/19957",
+    "title": "executor: add builtin aggregate function `json_arrayagg`",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\n* closes #7623\r\n* closes #19795\r\n\r\n### What is changed and how it works?\r\n\r\nadd an json_arrayagg function\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\n* Make sure the replace instruction is changed back to the required instruction and the version is the latest.\r\n\r\n### Tests <!-- At least one of them must be included. -->\r\n\r\n``` golang\r\n\ttk.MustExec(`CREATE TABLE t (\r\n\t\ta int(11),\r\n\t\tb varchar(100),\r\n\t\tc decimal(3,2),\r\n\t\td json,\r\n\t\te date,\r\n\t\tf time,\r\n\t\tg datetime DEFAULT '2012-01-01',\r\n\t\th timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\r\n\t\ti char(36),\r\n\t\tj text(50));`)\r\n\r\n\ttk.MustExec(`insert into t values(1, 'ab', 5.5, '{\"id\": 1}', '2020-01-10', '11:12:13', '2020-01-11', '0000-00-00 00:00:00', 'first', 'json_arrayagg_test');`)\r\n\r\n\tresult := tk.MustQuery(\"select a, json_arrayagg(b) from t group by a order by a;\")\r\n\tresult.Check(testkit.Rows(`1 [\"ab\"]`))\r\n\tresult = tk.MustQuery(\"select b, json_arrayagg(c) from t group by b order by b;\")\r\n\tresult.Check(testkit.Rows(`ab [5.5]`))\r\n\tresult = tk.MustQuery(\"select e, json_arrayagg(f) from t group by e order by e;\")\r\n\tresult.Check(testkit.Rows(`2020-01-10 [\"11:12:13\"]`))\r\n\tresult = tk.MustQuery(\"select f, json_arrayagg(g) from t group by f order by f;\")\r\n\tresult.Check(testkit.Rows(`11:12:13 [\"2020-01-11 00:00:00\"]`))\r\n\tresult = tk.MustQuery(\"select g, json_arrayagg(h) from t group by g order by g;\")\r\n\tresult.Check(testkit.Rows(`2020-01-11 00:00:00 [\"0000-00-00 00:00:00\"]`))\r\n\tresult = tk.MustQuery(\"select h, json_arrayagg(i) from t group by h order by h;\")\r\n\tresult.Check(testkit.Rows(`0000-00-00 00:00:00 [\"first\"]`))\r\n\tresult = tk.MustQuery(\"select i, json_arrayagg(j) from t group by i order by i;\")\r\n\tresult.Check(testkit.Rows(`first [\"json_arrayagg_test\"]`))\r\n\tresult = tk.MustQuery(\"select json_arrayagg(23) from t group by a order by a;\")\r\n\tresult.Check(testkit.Rows(`[23]`))\r\n\tresult = tk.MustQuery(\"select json_arrayagg(null) from t group by a order by a;\")\r\n\tresult.Check(testkit.Rows(`[null]`))\r\n```\r\n\r\n### Code changes\r\n\r\n- Add executor/aggfuncs/func_json_arrayagg.go\r\n- Add executor/aggfuncs/func_json_arrayagg_test.go\r\n- Delete all `srcChk.AppendDatum(0, &types.Datum{})` and the end of Chunk\r\n\r\n### Related changes\r\n\r\n - Need to add the definition of json_objectagg in pingcap/parser \r\n\r\n### Release Note\r\n\r\n```release-note\r\nAdd builtin aggregate function `json_arrayagg`\r\n```"
+  },
+  "pr_merged_at": "2021-08-04T16:15:07+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggfuncs/aggfunc_test.go",
+    "name": "aggfunc_test"
+  },
+  "symptoms": [
+    "result := tk.MustQuery(\"select a, json_arrayagg(b) from t group by a order by a;\") (expression/integration_test.go)"
+  ],
+  "failure_signature": "result := tk.MustQuery(\"select a, json_arrayagg(b) from t group by a order by a;\") (expression/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "result := tk.MustQuery(\"select a, json_arrayagg(b) from t group by a order by a;\") (expression/integration_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/19957",
+    "https://github.com/pingcap/tidb/pull/19957.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/19957.patch",
+  "changed_files": [
+    "executor/aggfuncs/aggfunc_test.go",
+    "executor/aggfuncs/aggfuncs.go",
+    "executor/aggfuncs/builder.go",
+    "executor/aggfuncs/func_json_arrayagg.go",
+    "executor/aggfuncs/func_json_arrayagg_test.go",
+    "expression/aggregation/agg_to_pb.go",
+    "expression/aggregation/base_func.go",
+    "expression/aggregation/descriptor.go",
+    "expression/integration_test.go",
+    "planner/core/rule_aggregation_push_down.go",
+    "types/json/constants.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result := tk.MustQuery(\"select a, json_arrayagg(b) from t group by a order by a;\") (expression/integration_test.go)",
+      "files: executor/aggfuncs/aggfunc_test.go, executor/aggfuncs/aggfuncs.go, executor/aggfuncs/builder.go, executor/aggfuncs/func_json_arrayagg.go, executor/aggfuncs/func_json_arrayagg_test.go, expression/aggregation/agg_to_pb.go, expression/aggregation/base_func.go, expression/aggregation/descriptor.go, expression/integration_test.go, planner/core/rule_aggregation_push_down.go, types/json/constants.go"
+    ]
+  },
+  "analysis": "PR title: executor: add builtin aggregate function `json_arrayagg`\nPR url: https://github.com/pingcap/tidb/pull/19957\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result := tk.MustQuery(\"select a, json_arrayagg(b) from t group by a order by a;\") (expression/integration_test.go)\nChanged files (11): executor/aggfuncs/aggfunc_test.go, executor/aggfuncs/aggfuncs.go, executor/aggfuncs/builder.go, executor/aggfuncs/func_json_arrayagg.go, executor/aggfuncs/func_json_arrayagg_test.go, expression/aggregation/agg_to_pb.go, expression/aggregation/base_func.go, expression/aggregation/descriptor.go, expression/integration_test.go, planner/core/rule_aggregation_push_down.go, types/json/constants.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,58 @@
+{
+  "id": "pr-29276",
+  "source_pr": {
+    "number": 29276,
+    "url": "https://github.com/pingcap/tidb/pull/29276",
+    "title": "expression: migrate tests to testify",
+    "body": "... also use a thread safe rng for stable test\r\n\r\nThis closes #29132 .\r\nThis closes #29134 .\r\nThis closes #29142 .\r\n\r\nThis closes #29283 . Move `TestCIWeightString` to serial test.\r\n\r\nThis closes #29164 . Replace `rand.Source` with `lockedSource`.\r\n\r\nSigned-off-by: tison <wander4096@gmail.com>\r\n\r\n### Release note\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-11-02T23:16:52+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/bench_test.go",
+    "name": "TestCIWeightString"
+  },
+  "symptoms": [
+    "- c.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\") | return &defaultRandGen{rand.New(&lockedSource{src:rand.NewSource(int64(rand.Uint64()))})} (expression/bench_test.go)"
+  ],
+  "failure_signature": "- c.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\") | return &defaultRandGen{rand.New(&lockedSource{src:rand.NewSource(int64(rand.Uint64()))})} (expression/bench_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "- c.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\") | return &defaultRandGen{rand.New(&lockedSource{src:rand.NewSource(int64(rand.Uint64()))})} (expression/bench_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/29276",
+    "https://github.com/pingcap/tidb/pull/29276.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/29276.patch",
+  "changed_files": [
+    "expression/bench_test.go",
+    "expression/builtin_other_serial_test.go",
+    "expression/builtin_other_test.go",
+    "expression/builtin_string_serial_test.go",
+    "expression/builtin_string_test.go",
+    "expression/collation_serial_test.go",
+    "expression/collation_test.go",
+    "expression/distsql_builtin_serial_test.go",
+    "expression/distsql_builtin_test.go",
+    "expression/evaluator_test.go",
+    "expression/expr_to_pb_serial_test.go",
+    "expression/expr_to_pb_test.go",
+    "expression/schema_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: - c.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\") | return &defaultRandGen{rand.New(&lockedSource{src:rand.NewSource(int64(rand.Uint64()))})} (expression/bench_test.go)",
+      "files: expression/bench_test.go, expression/builtin_other_serial_test.go, expression/builtin_other_test.go, expression/builtin_string_serial_test.go, expression/builtin_string_test.go, expression/collation_serial_test.go, expression/collation_test.go, expression/distsql_builtin_serial_test.go, expression/distsql_builtin_test.go, expression/evaluator_test.go, expression/expr_to_pb_serial_test.go, expression/expr_to_pb_test.go, expression/schema_test.go"
+    ]
+  },
+  "analysis": "PR title: expression: migrate tests to testify\nPR url: https://github.com/pingcap/tidb/pull/29276\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: - c.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\") | return &defaultRandGen{rand.New(&lockedSource{src:rand.NewSource(int64(rand.Uint64()))})} (expression/bench_test.go)\nChanged files (13): expression/bench_test.go, expression/builtin_other_serial_test.go, expression/builtin_other_test.go, expression/builtin_string_serial_test.go, expression/builtin_string_test.go, expression/collation_serial_test.go, expression/collation_test.go, expression/distsql_builtin_serial_test.go, expression/distsql_builtin_test.go, expression/evaluator_test.go, expression/expr_to_pb_serial_test.go, expression/expr_to_pb_test.go, expression/schema_test.go\nPatch series analyzed; see patch_url."
+}

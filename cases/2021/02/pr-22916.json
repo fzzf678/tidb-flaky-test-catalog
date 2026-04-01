@@ -1,0 +1,47 @@
+{
+  "id": "pr-22916",
+  "source_pr": {
+    "number": 22916,
+    "url": "https://github.com/pingcap/tidb/pull/22916",
+    "title": "store/tikv: fix unstable tests in snapshot_fail_test.go",
+    "body": "### What problem does this PR solve?\r\n\r\nFailures like https://internal.pingcap.net/idc-jenkins/blue/organizations/jenkins/tidb_ghpr_unit_test/detail/tidb_ghpr_unit_test/65623/pipeline\r\n\r\nThe `k4` written by `TestRetryPointGetWithTS` may affect other tests.\r\n\r\nAnd it's also important to remove `asyncCommitDoNothing` failpoint a bit later **after the point get assertion**. Otherwise, the transaction might not be affected by the failpoint if it didn't run to the failpoint before the failpoint is removed.\r\n\r\n### What is changed and how it works?\r\n\r\nDelete `k4` after running `TestRetryPointGetWithTS`. \r\n\r\n### Related changes\r\n\r\n- PR to update `pingcap/docs`/`pingcap/docs-cn`:\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n- Integration test\r\n- Manual test (add detailed scripts or steps below)\r\n- No code\r\n\r\nSide effects\r\n\r\n- Performance regression\r\n    - Consumes more CPU\r\n    - Consumes more MEM\r\n- Breaking backward compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note."
+  },
+  "pr_merged_at": "2021-02-24T21:04:03+08:00",
+  "test": {
+    "type": "unit",
+    "path": "session/session_fail_test.go",
+    "name": "TestRetryPointGetWithTS"
+  },
+  "symptoms": [
+    "store/tikv: fix unstable tests in snapshot_fail_test.go"
+  ],
+  "failure_signature": "store/tikv: fix unstable tests in snapshot_fail_test.go",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "store/tikv: fix unstable tests in snapshot_fail_test.go",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22916",
+    "https://github.com/pingcap/tidb/pull/22916.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22916.patch",
+  "changed_files": [
+    "session/session_fail_test.go",
+    "store/gcworker/gc_worker_test.go",
+    "store/tikv/snapshot_fail_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: store/tikv: fix unstable tests in snapshot_fail_test.go",
+      "files: session/session_fail_test.go, store/gcworker/gc_worker_test.go, store/tikv/snapshot_fail_test.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv: fix unstable tests in snapshot_fail_test.go\nPR url: https://github.com/pingcap/tidb/pull/22916\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: store/tikv: fix unstable tests in snapshot_fail_test.go\nChanged files (3): session/session_fail_test.go, store/gcworker/gc_worker_test.go, store/tikv/snapshot_fail_test.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,61 @@
+{
+  "id": "pr-24988",
+  "source_pr": {
+    "number": 24988,
+    "url": "https://github.com/pingcap/tidb/pull/24988",
+    "title": "util: add top sql collector",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nThis PR add the collector implementation in #24892 to store Top SQL records persistently.\r\n\r\n### What is changed and how it works?\r\n\r\nThe collector will maintain an in-memory map from sql/plan digest to sql/plan text, and send out to an gRPC endpoint in stream every minute.\r\nIn order to protect tidb-server from OOM, there's an upper bound of stored records in the map, which will evict the least total CPU time ones to make room for new records.\r\nThe `Collect()` API is supposed to be called every second.\r\n\r\n### Related changes\r\n\r\n- https://github.com/pingcap/tipb/pull/225/\r\n- https://github.com/pingcap/kvproto/pull/773\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n- Integration test\r\n\r\nSide effects\r\n\r\n- Performance regression\r\n    - Consumes more CPU\r\n    - Consumes more MEM\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note\r\n"
+  },
+  "pr_merged_at": "2021-06-04T22:56:29+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/set_test.go",
+    "name": "set_test"
+  },
+  "symptoms": [
+    "fix race test and ci lint"
+  ],
+  "failure_signature": "fix race test and ci lint",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "fix race test and ci lint",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/24988",
+    "https://github.com/pingcap/tidb/pull/24988.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/24988.patch",
+  "changed_files": [
+    "executor/set_test.go",
+    "go.mod",
+    "go.sum",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "store/mockstore/unistore/tikv/server.go",
+    "store/tikv/region_request_test.go",
+    "tidb-server/main.go",
+    "util/topsql/collector/collector.go",
+    "util/topsql/reporter/client.go",
+    "util/topsql/reporter/mock/server.go",
+    "util/topsql/reporter/reporter.go",
+    "util/topsql/reporter/reporter_test.go",
+    "util/topsql/topsql.go",
+    "util/topsql/topsql_test.go",
+    "util/topsql/tracecpu/mock/mock.go",
+    "util/topsql/tracecpu/profile.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix race test and ci lint",
+      "files: executor/set_test.go, go.mod, go.sum, server/tidb_test.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, store/mockstore/unistore/tikv/server.go, store/tikv/region_request_test.go, tidb-server/main.go, util/topsql/collector/collector.go, util/topsql/collector/collector_test.go, util/topsql/reporter/client.go, util/topsql/reporter/mock/server.go, util/topsql/reporter/reporter.go, util/topsql/reporter/reporter_test.go, util/topsql/topsql.go, util/topsql/topsql_test.go, util/topsql/tracecpu/mock/mock.go, util/topsql/tracecpu/profile.go, util/topsql/tracecpu_test.go, util/tracecpu/collector.go, util/tracecpu/collector_test.go"
+    ]
+  },
+  "analysis": "PR title: util: add top sql collector\nPR url: https://github.com/pingcap/tidb/pull/24988\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix race test and ci lint\nChanged files (17): executor/set_test.go, go.mod, go.sum, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, store/mockstore/unistore/tikv/server.go, store/tikv/region_request_test.go, tidb-server/main.go, util/topsql/collector/collector.go, util/topsql/reporter/client.go, util/topsql/reporter/mock/server.go, util/topsql/reporter/reporter.go, util/topsql/reporter/reporter_test.go, util/topsql/topsql.go, util/topsql/topsql_test.go, util/topsql/tracecpu/mock/mock.go, util/topsql/tracecpu/profile.go\nPatch series analyzed; see patch_url."
+}

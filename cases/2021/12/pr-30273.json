@@ -1,0 +1,49 @@
+{
+  "id": "pr-30273",
+  "source_pr": {
+    "number": 30273,
+    "url": "https://github.com/pingcap/tidb/pull/30273",
+    "title": "*: replace compareDatum by compare and fix wrong optimize order by",
+    "body": "Signed-off-by: wjhuang2016 <huangwenjun1997@gmail.com>\r\n\r\n<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #30271.  Related to #29867.\r\n\r\nProblem Summary:\r\n1. replace compareDatum by compare\r\n2. isSameValue may use wrong collation\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nfix a bug when reducing order by clause for the index which leads to the wrong result.\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-12-01T19:01:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t where (a>'a' and b='a') or (b = 'A' and a < 'd') order by a,c;\").Check(testkit.Rows(\"'b' 'a' '1'\", \"'b', 'A', '2'\", \"'c', 'a', '3'\")) (planner/core/integration_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t where (a>'a' and b='a') or (b = 'A' and a < 'd') order by a,c;\").Check(testkit.Rows(\"'b' 'a' '1'\", \"'b', 'A', '2'\", \"'c', 'a', '3'\")) (planner/core/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select * from t where (a>'a' and b='a') or (b = 'A' and a < 'd') order by a,c;\").Check(testkit.Rows(\"'b' 'a' '1'\", \"'b', 'A', '2'\", \"'c', 'a', '3'\")) (planner/core/integration_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/30273",
+    "https://github.com/pingcap/tidb/pull/30273.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/30273.patch",
+  "changed_files": [
+    "planner/core/integration_test.go",
+    "types/datum.go",
+    "types/datum_test.go",
+    "util/ranger/detacher.go",
+    "util/rowDecoder/decoder_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t where (a>'a' and b='a') or (b = 'A' and a < 'd') order by a,c;\").Check(testkit.Rows(\"'b' 'a' '1'\", \"'b', 'A', '2'\", \"'c', 'a', '3'\")) (planner/core/integration_test.go)",
+      "files: planner/core/integration_test.go, types/datum.go, types/datum_test.go, util/ranger/detacher.go, util/rowDecoder/decoder_test.go"
+    ]
+  },
+  "analysis": "PR title: *: replace compareDatum by compare and fix wrong optimize order by\nPR url: https://github.com/pingcap/tidb/pull/30273\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t where (a>'a' and b='a') or (b = 'A' and a < 'd') order by a,c;\").Check(testkit.Rows(\"'b' 'a' '1'\", \"'b', 'A', '2'\", \"'c', 'a', '3'\")) (planner/core/integration_test.go)\nChanged files (5): planner/core/integration_test.go, types/datum.go, types/datum_test.go, util/ranger/detacher.go, util/rowDecoder/decoder_test.go\nPatch series analyzed; see patch_url."
+}

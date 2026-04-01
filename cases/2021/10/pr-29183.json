@@ -1,0 +1,46 @@
+{
+  "id": "pr-29183",
+  "source_pr": {
+    "number": 29183,
+    "url": "https://github.com/pingcap/tidb/pull/29183",
+    "title": "statistics: add GC for mysql.column_stats_usage",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #29182\r\n\r\n### What is changed and how it works?\r\n\r\nImplement GC for `mysql.column_stats_usage`.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-10-29T13:24:49+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/analyze_test.go",
+    "name": "analyze_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(fmt.Sprintf(\"select is_index, hist_id, stats_ver from mysql.stats_histograms where table_id = %d and stats_ver > 0 order by is_index, hist_id\", t1.Meta().ID)).Check( (executor/analyze_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(fmt.Sprintf(\"select is_index, hist_id, stats_ver from mysql.stats_histograms where table_id = %d and stats_ver > 0 order by is_index, hist_id\", t1.Meta().ID)).Check( (executor/analyze_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(fmt.Sprintf(\"select is_index, hist_id, stats_ver from mysql.stats_histograms where table_id = %d and stats_ver > 0 order by is_index, hist_id\", t1.Meta().ID)).Check( (executor/analyze_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/29183",
+    "https://github.com/pingcap/tidb/pull/29183.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/29183.patch",
+  "changed_files": [
+    "statistics/handle/gc.go",
+    "statistics/handle/gc_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(fmt.Sprintf(\"select is_index, hist_id, stats_ver from mysql.stats_histograms where table_id = %d and stats_ver > 0 order by is_index, hist_id\", t1.Meta().ID)).Check( (executor/analyze_test.go)",
+      "files: errno/errcode.go, errno/errname.go, errors.toml, executor/analyze.go, executor/analyze_test.go, executor/builder.go, planner/core/errors.go, planner/core/errors_test.go, planner/core/planbuilder.go, statistics/handle/ddl.go, statistics/handle/gc.go, statistics/handle/gc_test.go, statistics/handle/handle.go, statistics/handle/handle_test.go"
+    ]
+  },
+  "analysis": "PR title: statistics: add GC for mysql.column_stats_usage\nPR url: https://github.com/pingcap/tidb/pull/29183\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(fmt.Sprintf(\"select is_index, hist_id, stats_ver from mysql.stats_histograms where table_id = %d and stats_ver > 0 order by is_index, hist_id\", t1.Meta().ID)).Check( (executor/analyze_test.go)\nChanged files (2): statistics/handle/gc.go, statistics/handle/gc_test.go\nPatch series analyzed; see patch_url."
+}

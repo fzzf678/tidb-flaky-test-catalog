@@ -1,0 +1,50 @@
+{
+  "id": "pr-23610",
+  "source_pr": {
+    "number": 23610,
+    "url": "https://github.com/pingcap/tidb/pull/23610",
+    "title": "plugin, tests, tools, tidb: unify go modules",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\n\r\n- Unified the go modules because:\r\n\r\n1. Previously it had 4 modules:\r\n```\r\n$ find . -iname \"go.mod\"\r\n./go.mod\r\n./tools/check/go.mod\r\n./tests/globalkilltest/go.mod\r\n./tests/graceshutdown/go.mod\r\n```\r\n\r\nSo after checking if they could be unified, I didn't find anything conflicting and it seems totally fine to keep one go.{mod,sum} for the project.\r\n\r\nAlso, `go.mod` didn't have consistent module paths. Example:\r\n```\r\n$ cat tests/graceshutdown/go.mod | head -1\r\n\r\nmodule graceshutdown\r\n```\r\n\r\n```\r\n$ cat tests/globalkilltest/go.mod | head -1\r\n\r\nmodule github.com/pingcap/tests/globalkilltest\r\n```\r\nAlso, do notice that `tidb` is missing from `github.com/pingcap/tests/globalkilltest`. It should be actually `github.com/pingcap/tidb/tests/globalkilltest`\r\n\r\n2. Only one problem was there in `tests/graceshutdown/graceshutdown_test.go` that was not letting me create a single module because there was a usage of `log.Warnf`:\r\n```go\r\nlog.Warnf(\"close db failed, retry count %d err %v\", i, err)\r\n```\r\nwhich I'm assuming is the only reason it did have an independent `go.mod` file because it was using an older version of the package `github.com/pingcap/log`:\r\n```\r\ngithub.com/pingcap/log v0.0.0-20191012051959-b742a5d432e9 // used by tests/graceshutdown\r\n```\r\nwhich had the `log.Warnf` method. But in the newer version, it was removed and it's currently used by `github.com/pingcap/tidb`. Although, it not a good practice to have such breaking changes without upgrading the major version of the package (maybe I'll create an issue for `github.com/pingcap/log`).\r\n\r\nSo, to eliminate the usage of the older package, the line could be replace by:\r\n```\r\n- log.Warnf(\"close db failed, retry count %d err %v\", i, err)\r\n+ log.Warn(\"close db failed,\", zap.Int(\"retry count\", i), zap.Error(err))\r\n```\r\nwhich is the same and lets us use the new log package used by `tidb`.\r\n\r\n3. Based on Go's official doc a **package** is defined as:\r\n> At least one file with the .go extension must be present in a directory for it to be considered a package. (Ref: https://golang.org/ref/mod#resolve-pkg-mod)\r\n\r\nBut tools/check didn't have any *.go files and hence no need to create a separate module for that.\r\n\r\nSo, having a single go.mod for the project is totally fine based on the above-mentioned points. \r\n\r\n- Rename test package\r\n\r\nAny package with the name `package main` requires the package to have a `main` function (`func main()`) but `github.com/pingcap/tidb/plugin/conn_ip_example` didn't have it. So renamed the package to `test`. A very minor change.\r\n\r\n\r\n### Related changes\r\n\r\n- PR to update `pingcap/docs`/`pingcap/docs-cn`:\r\n- Need to cherry-pick to the release branch\r\n\r\nTests\r\n- No code\r\n\r\n### Release note\r\n- Unify Go modules for github.com/pingcap/tidb"
+  },
+  "pr_merged_at": "2021-04-15T16:17:55+08:00",
+  "test": {
+    "type": "unit",
+    "path": "owner/fail_test.go",
+    "name": "fail_test"
+  },
+  "symptoms": [
+    "gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA="
+  ],
+  "failure_signature": "gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/23610",
+    "https://github.com/pingcap/tidb/pull/23610.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/23610.patch",
+  "changed_files": [
+    "go.mod",
+    "go.sum",
+    "owner/fail_test.go",
+    "tests/globalkilltest/go.sum",
+    "tools/check/go.mod",
+    "tools/check/go.sum"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=",
+      "files: go.mod, go.sum, owner/fail_test.go, plugin/conn_ip_example/conn_ip_example.go, plugin/conn_ip_example/conn_ip_example_test.go, tests/globalkilltest/go.sum, tools/check/go.mod, tools/check/go.sum"
+    ]
+  },
+  "analysis": "PR title: plugin, tests, tools, tidb: unify go modules\nPR url: https://github.com/pingcap/tidb/pull/23610\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=\nChanged files (6): go.mod, go.sum, owner/fail_test.go, tests/globalkilltest/go.sum, tools/check/go.mod, tools/check/go.sum\nPatch series analyzed; see patch_url."
+}

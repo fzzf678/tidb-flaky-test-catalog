@@ -1,0 +1,45 @@
+{
+  "id": "pr-29836",
+  "source_pr": {
+    "number": 29836,
+    "url": "https://github.com/pingcap/tidb/pull/29836",
+    "title": "br: fix DATA RACE in the TestRunServer",
+    "body": "Signed-off-by: Weizhen Wang <wangweizhen@pingcap.com>\r\n\r\n### What problem does this PR solve?\r\n\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nfix DATA RACE in the TestRunServer\r\n\r\n```\r\nWARNING: DATA RACE\r\nRead at 0x00c0005d9090 by goroutine 76:\r\n  github.com/pingcap/tidb/br/pkg/lightning.(*Lightning).handlePostTask()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning.go:467 +0x19c\r\n  github.com/pingcap/tidb/br/pkg/lightning.(*Lightning).handleTask()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning.go:403 +0x59c\r\n  github.com/pingcap/tidb/br/pkg/lightning.(*Lightning).handleTask-fm()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning.go:384 +0x68\r\n  net/http.HandlerFunc.ServeHTTP()\r\n      /usr/local/go/src/net/http/server.go:2069 +0x51\r\n  net/http.StripPrefix.func1()\r\n      /usr/local/go/src/net/http/server.go:2112 +0x535\r\n  net/http.HandlerFunc.ServeHTTP()\r\n      /usr/local/go/src/net/http/server.go:2069 +0x51\r\n  net/http.(*ServeMux).ServeHTTP()\r\n      /usr/local/go/src/net/http/server.go:2448 +0xaf\r\n  net/http.serverHandler.ServeHTTP()\r\n      /usr/local/go/src/net/http/server.go:2887 +0xca\r\n  net/http.(*conn).serve()\r\n      /usr/local/go/src/net/http/server.go:1952 +0x87d\r\n\r\nPrevious write at 0x00c0005d9090 by goroutine 73:\r\n  github.com/pingcap/tidb/br/pkg/lightning.(*Lightning).RunServer()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning.go:205 +0x1e5\r\n  github.com/pingcap/tidb/br/pkg/lightning.TestRunServer.func1()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning_server_serial_test.go:86 +0x4b\r\n\r\nGoroutine 76 (running) created at:\r\n  net/http.(*Server).Serve()\r\n      /usr/local/go/src/net/http/server.go:3013 +0x644\r\n  github.com/pingcap/tidb/br/pkg/lightning.(*Lightning).goServe.func2()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning.go:179 +0x8d\r\n\r\nGoroutine 73 (running) created at:\r\n  github.com/pingcap/tidb/br/pkg/lightning.TestRunServer()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning_server_serial_test.go:85 +0x68b\r\n  testing.tRunner()\r\n      /usr/local/go/src/testing/testing.go:1193 +0x202\r\n==================\r\n==================\r\nWARNING: DATA RACE\r\nRead at 0x00c0001423c0 by goroutine 76:\r\n  github.com/pingcap/tidb/br/pkg/lightning/config.(*List).Push()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/config/configlist.go:51 +0xcc\r\n  github.com/pingcap/tidb/br/pkg/lightning.(*Lightning).handlePostTask()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning.go:499 +0x5fc\r\n  github.com/pingcap/tidb/br/pkg/lightning.(*Lightning).handleTask()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning.go:403 +0x59c\r\n  github.com/pingcap/tidb/br/pkg/lightning.(*Lightning).handleTask-fm()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning.go:384 +0x68\r\n  net/http.HandlerFunc.ServeHTTP()\r\n      /usr/local/go/src/net/http/server.go:2069 +0x51\r\n  net/http.StripPrefix.func1()\r\n      /usr/local/go/src/net/http/server.go:2112 +0x535\r\n  net/http.HandlerFunc.ServeHTTP()\r\n      /usr/local/go/src/net/http/server.go:2069 +0x51\r\n  net/http.(*ServeMux).ServeHTTP()\r\n      /usr/local/go/src/net/http/server.go:2448 +0xaf\r\n  net/http.serverHandler.ServeHTTP()\r\n      /usr/local/go/src/net/http/server.go:2887 +0xca\r\n  net/http.(*conn).serve()\r\n      /usr/local/go/src/net/http/server.go:1952 +0x87d\r\n  net/http.(*ServeMux).ServeHTTP()\r\n      /usr/local/go/src/net/http/server.go:2448 +0xaf\r\n  net/http.serverHandler.ServeHTTP()\r\n      /usr/local/go/src/net/http/server.go:2887 +0xca\r\n  net/http.(*conn).serve()\r\n      /usr/local/go/src/net/http/server.go:1952 +0x87d\r\n\r\nPrevious write at 0x00c0001423c0 by goroutine 73:\r\n  github.com/pingcap/tidb/br/pkg/lightning/config.NewConfigList()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/config/configlist.go:41 +0x144\r\n  github.com/pingcap/tidb/br/pkg/lightning.(*Lightning).RunServer()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning.go:205 +0x1c7\r\n  github.com/pingcap/tidb/br/pkg/lightning.TestRunServer.func1()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning_server_serial_test.go:86 +0x4b\r\n\r\nGoroutine 76 (running) created at:\r\n  net/http.(*Server).Serve()\r\n      /usr/local/go/src/net/http/server.go:3013 +0x644\r\n  github.com/pingcap/tidb/br/pkg/lightning.(*Lightning).goServe.func2()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning.go:179 +0x8d\r\n\r\nGoroutine 73 (running) created at:\r\n  github.com/pingcap/tidb/br/pkg/lightning.TestRunServer()\r\n      /home/jenkins/agent/workspace/atom-ut/tidb/br/pkg/lightning/lightning_server_serial_test.go:85 +0x68b\r\n  testing.tRunner()\r\n      /usr/local/go/src/testing/testing.go:1193 +0x202\r\n```\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-11-16T17:33:08+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/lightning/lightning.go",
+    "name": "TestRunServer"
+  },
+  "symptoms": [
+    "br: fix DATA RACE in the TestRunServer"
+  ],
+  "failure_signature": "br: fix DATA RACE in the TestRunServer",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "br: fix DATA RACE in the TestRunServer",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/29836",
+    "https://github.com/pingcap/tidb/pull/29836.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/29836.patch",
+  "changed_files": [
+    "br/pkg/lightning/lightning.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: br: fix DATA RACE in the TestRunServer",
+      "files: br/pkg/lightning/lightning.go"
+    ]
+  },
+  "analysis": "PR title: br: fix DATA RACE in the TestRunServer\nPR url: https://github.com/pingcap/tidb/pull/29836\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: br: fix DATA RACE in the TestRunServer\nChanged files (1): br/pkg/lightning/lightning.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,46 @@
+{
+  "id": "pr-24935",
+  "source_pr": {
+    "number": 24935,
+    "url": "https://github.com/pingcap/tidb/pull/24935",
+    "title": "executor: make the ParallelApply be safe to be called again after returning empty results",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #24930 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary: executor: make the ParallelApply be safe to be called again after returning empty results\r\n\r\n### What is changed and how it works?\r\n\r\nWhen ParallelApply is under TopN, it may be called again after returning empty results and then it will hang forever.\r\nThis PR make the ParallelApply be safe to be called again after returning empty results\r\n\r\nPlease see #24930 for more details.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- executor: make the ParallelApply be safe to be called again after returning empty results\r\n"
+  },
+  "pr_merged_at": "2021-06-01T11:05:37+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/parallel_apply_test.go",
+    "name": "parallel_apply_test"
+  },
+  "symptoms": [
+    "from t1 where t1.a=1 order by a limit 1`).Check(testkit.Rows()) // can return an empty result instead of hanging forever (executor/parallel_apply_test.go)"
+  ],
+  "failure_signature": "from t1 where t1.a=1 order by a limit 1`).Check(testkit.Rows()) // can return an empty result instead of hanging forever (executor/parallel_apply_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "from t1 where t1.a=1 order by a limit 1`).Check(testkit.Rows()) // can return an empty result instead of hanging forever (executor/parallel_apply_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/24935",
+    "https://github.com/pingcap/tidb/pull/24935.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/24935.patch",
+  "changed_files": [
+    "executor/parallel_apply.go",
+    "executor/parallel_apply_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: from t1 where t1.a=1 order by a limit 1`).Check(testkit.Rows()) // can return an empty result instead of hanging forever (executor/parallel_apply_test.go)",
+      "files: executor/parallel_apply.go, executor/parallel_apply_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: make the ParallelApply be safe to be called again after returning empty results\nPR url: https://github.com/pingcap/tidb/pull/24935\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: from t1 where t1.a=1 order by a limit 1`).Check(testkit.Rows()) // can return an empty result instead of hanging forever (executor/parallel_apply_test.go)\nChanged files (2): executor/parallel_apply.go, executor/parallel_apply_test.go\nPatch series analyzed; see patch_url."
+}

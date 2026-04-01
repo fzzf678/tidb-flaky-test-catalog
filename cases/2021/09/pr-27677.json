@@ -1,0 +1,52 @@
+{
+  "id": "pr-27677",
+  "source_pr": {
+    "number": 27677,
+    "url": "https://github.com/pingcap/tidb/pull/27677",
+    "title": "expression: fix some problems related to flen",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nFix some flen problems.\r\n\r\n### What is changed and how it works?\r\n\r\n1. Introduce DecimalLength2Precision() and Precision2LengthNoTruncation() to fix flen for the precision of `div`. \r\n2. Fix wrong calculation for concatWS.\r\n3. Fix flen  for sysDate().\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n```release-note\r\n 'None'\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-09-15T14:18:43+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "TestFastAnalyze"
+  },
+  "symptoms": [
+    "+SKIP: analyze_test.go:399: testFastAnalyze.TestFastAnalyze (Skip this unstable test(#25782) and bring it back before 2021-07-29.) | rs, err := Execute(ctx, qctx, `SELECT id + int_test as res FROM test GROUP BY res ORDER BY res;`) (server/tidb_test.go)"
+  ],
+  "failure_signature": "+SKIP: analyze_test.go:399: testFastAnalyze.TestFastAnalyze (Skip this unstable test(#25782) and bring it back before 2021-07-29.) | rs, err := Execute(ctx, qctx, `SELECT id + int_test as res FROM test GROUP BY res ORDER BY res;`) (server/tidb_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "+SKIP: analyze_test.go:399: testFastAnalyze.TestFastAnalyze (Skip this unstable test(#25782) and bring it back before 2021-07-29.) | rs, err := Execute(ctx, qctx, `SELECT id + int_test as res FROM test GROUP BY res ORDER BY res;`) (server/tidb_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/27677",
+    "https://github.com/pingcap/tidb/pull/27677.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/27677.patch",
+  "changed_files": [
+    "expression/builtin_arithmetic.go",
+    "expression/builtin_string.go",
+    "expression/builtin_time.go",
+    "expression/typeinfer_test.go",
+    "types/field_type.go",
+    "types/field_type_test.go",
+    "types/helper.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: +SKIP: analyze_test.go:399: testFastAnalyze.TestFastAnalyze (Skip this unstable test(#25782) and bring it back before 2021-07-29.) | rs, err := Execute(ctx, qctx, `SELECT id + int_test as res FROM test GROUP BY res ORDER BY res;`) (server/tidb_test.go)",
+      "files: a, cmd/explaintest/s/with_cluster_index_tbl_0.json, cmd/explaintest/s/with_cluster_index_tbl_1.json, cmd/explaintest/s/with_cluster_index_tbl_2.json, cmd/explaintest/s/with_cluster_index_tbl_3.json, cmd/explaintest/s/with_cluster_index_tbl_4.json, cmd/explaintest/s/wout_cluster_index_tbl_0.json, cmd/explaintest/s/wout_cluster_index_tbl_1.json, cmd/explaintest/s/wout_cluster_index_tbl_2.json, cmd/explaintest/s/wout_cluster_index_tbl_3.json, cmd/explaintest/s/wout_cluster_index_tbl_4.json, config/config.toml, expression/builtin_arithmetic.go, expression/builtin_cast.go, expression/builtin_control.go, expression/builtin_string.go, expression/builtin_time.go, expression/constant.go, expression/integration_test.go, expression/simple_rewriter.go, expression/typeinfer_test.go, planner/core/physical_plans.go, server/column.go, server/tidb_test.go, tests/globalkilltest/go.sum, types/field_type.go, types/field_type_test.go, types/helper.go"
+    ]
+  },
+  "analysis": "PR title: expression: fix some problems related to flen\nPR url: https://github.com/pingcap/tidb/pull/27677\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: +SKIP: analyze_test.go:399: testFastAnalyze.TestFastAnalyze (Skip this unstable test(#25782) and bring it back before 2021-07-29.) | rs, err := Execute(ctx, qctx, `SELECT id + int_test as res FROM test GROUP BY res ORDER BY res;`) (server/tidb_test.go)\nChanged files (7): expression/builtin_arithmetic.go, expression/builtin_string.go, expression/builtin_time.go, expression/typeinfer_test.go, types/field_type.go, types/field_type_test.go, types/helper.go\nPatch series analyzed; see patch_url."
+}

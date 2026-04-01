@@ -1,0 +1,51 @@
+{
+  "id": "pr-22682",
+  "source_pr": {
+    "number": 22682,
+    "url": "https://github.com/pingcap/tidb/pull/22682",
+    "title": "statistics: introduce new estimation logic when index histogram fails to estimate",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: related to #22589 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\n\r\nImprove the multi-column estimation when the index histogram fails.\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: [xxx](url) <!-- REMOVE this line if not applicable -->\r\n\r\nWhat's Changed:\r\n\r\nThis is a default behavior after SQLServer 2014 for multi-column estimation.\r\nThe calculator of it called `CSelCalcCombineFilters_ExponentialBackoff`.\r\nIt chooses the first 4 most selective selectivities sel_1, sel_2, sel_3, sel_4 where i < j => sel_i < sel_j.\r\nThe final result would be `sel_1 * sel_2^{1/2} * sel_3^{1/4} * sel_4^{1/8}`.\r\n\r\n### Related changes\r\n\r\n- PR to update `pingcap/docs`/`pingcap/docs-cn`:\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test(Adding)\r\n- Manual test (add detailed scripts or steps below)\r\n\r\nThere's some test like the following one:\r\n\r\nOverEstimation Statistics\r\n\r\n| Instance | Total | P50 | P90 | P99 | Max |\r\n| ---- | ---- | ---- | ---- | ---- | ---- |\r\n| analyze-version-2 | 209616 | 0.692 | 2.874 | 8.717 | 993.575 |\r\n| release-4.0.8 | 41877 | 0.032 | 0.372 | 1.623 | 181.630 |\r\n\r\nUnderEstimation Statistics\r\n\r\n| Instance | Total | P50 | P90 | P99 | Max |\r\n| ---- | ---- | ---- | ---- | ---- | ---- |\r\n| analyze-version-2 | 38 | -7.219 | -90.667 | -224.000 | -224.000 |\r\n| release-4.0.8 | 167777 | -0.047 | -0.163 | -0.862 | -5199.000 |\r\n\r\nA simple way to read the result is that the one closer to 0 is better.\r\n\r\nYou can see that the new one is better than the old one though the old one is based on full count-min sketch.\r\n\r\nSide effects\r\n\r\n- Performance regression\r\n    - Consumes more CPU\r\n    - Consumes more MEM\r\n- Breaking backward compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- `No release note` <!-- Please write a release note here to describe the change you made when it is released to the users of TiDB. If your PR doesn't involve any change to TiDB(like test enhancements, RFC proposals...), you can write `No release note`. -->\r\n\r\nThe release note is included in analyze version 2."
+  },
+  "pr_merged_at": "2021-02-24T16:30:03+08:00",
+  "test": {
+    "type": "unit",
+    "path": "statistics/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "- // Add the hook here to avoid data race."
+  ],
+  "failure_signature": "- // Add the hook here to avoid data race.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "- // Add the hook here to avoid data race.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22682",
+    "https://github.com/pingcap/tidb/pull/22682.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22682.patch",
+  "changed_files": [
+    "statistics/handle/update.go",
+    "statistics/histogram.go",
+    "statistics/integration_test.go",
+    "statistics/table.go",
+    "statistics/testdata/integration_suite_in.json",
+    "statistics/testdata/integration_suite_out.json",
+    "statistics/testdata/stats_suite_out.json"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: - // Add the hook here to avoid data race.",
+      "files: statistics/handle/update.go, statistics/histogram.go, statistics/integration_test.go, statistics/table.go, statistics/testdata/integration_suite_in.json, statistics/testdata/integration_suite_out.json, statistics/testdata/stats_suite_out.json"
+    ]
+  },
+  "analysis": "PR title: statistics: introduce new estimation logic when index histogram fails to estimate\nPR url: https://github.com/pingcap/tidb/pull/22682\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - // Add the hook here to avoid data race.\nChanged files (7): statistics/handle/update.go, statistics/histogram.go, statistics/integration_test.go, statistics/table.go, statistics/testdata/integration_suite_in.json, statistics/testdata/integration_suite_out.json, statistics/testdata/stats_suite_out.json\nPatch series analyzed; see patch_url."
+}

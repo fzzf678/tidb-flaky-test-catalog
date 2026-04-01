@@ -1,0 +1,49 @@
+{
+  "id": "pr-26920",
+  "source_pr": {
+    "number": 26920,
+    "url": "https://github.com/pingcap/tidb/pull/26920",
+    "title": "ddl: speed up add index with split tables",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/26683 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\nThe `SHARD_ROW_ID_BITS` value or `AUTO_RANDOM` is set and a large amount of data is inserted into the table. Later, adding an index to the table, in a few cases, cause the backfill index to be slower than the write speed of the data in the table.\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: [xxx](url) <!-- REMOVE this line if not applicable -->\r\n\r\nHow it Works:\r\nIn the original method, each worker originally adds indexes to the region range [startHandle, endHandle] by batch. In the new method, we get the range of actual data in each region to add indexes on a batch basis.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\nStart cluster with `tiup playground --tiflash 0` in local.\r\n\r\n### case 1\r\n```\r\ncreate table tbl(a bigint, b bigint, b bigint) SHARD_ROW_ID_BITS = 4 pre_split_regions = 4;\r\n```\r\nAdd 2 million rows to this table.\r\nThen connect1 inserts 20 million rows(50 goroutines * 400 k), connect2 executes alter table tbl add index idx(a);.\r\n\r\nBefore this PR(**connect1 finished insert operation, 14 min 33 sec**):\r\n```\r\ntidb> alter table tbl add index idx(c1);\r\nQuery OK, 0 rows affected (22 min 58.35 sec)\r\n```\r\n\r\nAfter this PR(**add index backfill 6 million rows**):\r\n```\r\ntidb> alter table tbl add index idx(c1);\r\nQuery OK, 0 rows affected (12 min 52.16 sec)\r\n```\r\n### case 2\r\n```\r\nCREATE TABLE tbl(a bigint PRIMARY KEY AUTO_RANDOM(4), b varchar(255), c bigint);\r\nSPLIT TABLE tbl BETWEEN (-9223372036854775808) AND (9223372036854775807) REGIONS 16;\r\n```\r\nAdd 2 million rows to this table.\r\nThen connect1 inserts 5 million rows(50 goroutines * 100 k), connect2 executes alter table tbl add index idx(a);.\r\n\r\nBefore this PR(**connect1 finished insert operation, 4 min 20 sec**):\r\n```\r\ntidb> alter table tbl add index idx(c1);\r\nQuery OK, 0 rows affected (4 min 54.72 sec)\r\n```\r\n\r\nAfter this PR(**connect1 finished insert operation, 3 min 21 sec**):\r\n```\r\ntidb> alter table tbl add index idx(c1);\r\nQuery OK, 0 rows affected (6 min 40.69 sec)\r\n```\r\nIn theory, this PR doesn't speed up the case particularly well, not as well as the previous case.\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n```release-note\r\nOptimize ”Add Index” for an explicit split region table \r\n```\r\n"
+  },
+  "pr_merged_at": "2021-08-08T12:09:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_test.go",
+    "name": "db_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from test_get order by a\").Check(testkit.Rows(\"-9223372036854775808 -9223372036854775808\", (ddl/serial_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from test_get order by a\").Check(testkit.Rows(\"-9223372036854775808 -9223372036854775808\", (ddl/serial_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select * from test_get order by a\").Check(testkit.Rows(\"-9223372036854775808 -9223372036854775808\", (ddl/serial_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/26920",
+    "https://github.com/pingcap/tidb/pull/26920.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/26920.patch",
+  "changed_files": [
+    "ddl/backfilling.go",
+    "ddl/db_test.go",
+    "ddl/ddl_test.go",
+    "ddl/serial_test.go",
+    "tools/check/check-timeout.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from test_get order by a\").Check(testkit.Rows(\"-9223372036854775808 -9223372036854775808\", (ddl/serial_test.go)",
+      "files: ddl/backfilling.go, ddl/db_test.go, ddl/ddl_test.go, ddl/serial_test.go, tools/check/check-timeout.go"
+    ]
+  },
+  "analysis": "PR title: ddl: speed up add index with split tables\nPR url: https://github.com/pingcap/tidb/pull/26920\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from test_get order by a\").Check(testkit.Rows(\"-9223372036854775808 -9223372036854775808\", (ddl/serial_test.go)\nChanged files (5): ddl/backfilling.go, ddl/db_test.go, ddl/ddl_test.go, ddl/serial_test.go, tools/check/check-timeout.go\nPatch series analyzed; see patch_url."
+}

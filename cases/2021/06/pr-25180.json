@@ -1,0 +1,45 @@
+{
+  "id": "pr-25180",
+  "source_pr": {
+    "number": 25180,
+    "url": "https://github.com/pingcap/tidb/pull/25180",
+    "title": "executor: skip unstable test case TestApplyGoroutinePanic",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: related to https://github.com/pingcap/tidb/issues/25157\r\n\r\nProblem Summary:\r\n\r\nWhat's Changed: the unstable test cases are skipped temporarily.\r\n\r\nHow it Works:\r\n\r\n### Related changes\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- NA\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note\r\n\r\n### More information\r\n\r\nThe following 'race detected' stack has been noticed:\r\n```\r\n[2021-06-04T06:29:08.837Z] Write at 0x00c0577d25b0 by goroutine 770:\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/tidb/executor.(*TableReaderExecutor).Close()\r\n[2021-06-04T06:29:08.837Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/table_reader.go:332 +0x28f\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/tidb/executor.(*ParallelNestedLoopApplyExec).Close()\r\n[2021-06-04T06:29:08.837Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/parallel_apply.go:162 +0xa8\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/tidb/executor.(*baseExecutor).Close()\r\n[2021-06-04T06:29:08.837Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/executor.go:172 +0xad\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/tidb/executor.(*ProjectionExec).Close()\r\n[2021-06-04T06:29:08.837Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/projection.go:320 +0x255\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/tidb/executor.(*recordSet).Close()\r\n[2021-06-04T06:29:08.837Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/adapter.go:166 +0x59\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/tidb/session.(*execStmtResult).Close()\r\n[2021-06-04T06:29:08.837Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:1577 +0x7b\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/tidb/util/testkit.(*TestKit).QueryToErr()\r\n[2021-06-04T06:29:08.837Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/util/testkit/testkit.go:306 +0x56a\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/tidb/executor_test.(*testSuite).TestApplyGoroutinePanic()\r\n[2021-06-04T06:29:08.837Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/parallel_apply_test.go:588 +0x546\r\n[2021-06-04T06:29:08.837Z]   runtime.call32()\r\n[2021-06-04T06:29:08.837Z]       /usr/local/go/src/runtime/asm_amd64.s:539 +0x3a\r\n[2021-06-04T06:29:08.837Z]   reflect.Value.Call()\r\n[2021-06-04T06:29:08.837Z]       /usr/local/go/src/reflect/value.go:321 +0xd3\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/check.(*suiteRunner).forkTest.func1()\r\n[2021-06-04T06:29:08.837Z]       /go/pkg/mod/github.com/pingcap/check@v0.0.0-20200212061837-5e12011dc712/check.go:850 +0x9aa\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/check.(*suiteRunner).forkCall.func1()\r\n[2021-06-04T06:29:08.837Z]       /go/pkg/mod/github.com/pingcap/check@v0.0.0-20200212061837-5e12011dc712/check.go:739 +0x113\r\n[2021-06-04T06:29:08.837Z] \r\n[2021-06-04T06:29:08.837Z] Previous read at 0x00c0577d25b0 by goroutine 177:\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/tidb/executor.(*tableResultHandler).nextChunk()\r\n[2021-06-04T06:29:08.837Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/table_reader.go:309 +0x69\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/tidb/executor.(*TableReaderExecutor).Next()\r\n[2021-06-04T06:29:08.837Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/table_reader.go:186 +0x21e\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/tidb/executor.Next()\r\n[2021-06-04T06:29:08.837Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/executor.go:277 +0x27d\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/tidb/executor.(*ParallelNestedLoopApplyExec).outerWorker()\r\n[2021-06-04T06:29:08.837Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/parallel_apply.go:202 +0x5a9\r\n[2021-06-04T06:29:08.837Z] \r\n[2021-06-04T06:29:08.837Z] Goroutine 770 (running) created at:\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/check.(*suiteRunner).forkCall()\r\n[2021-06-04T06:29:08.837Z]       /go/pkg/mod/github.com/pingcap/check@v0.0.0-20200212061837-5e12011dc712/check.go:734 +0x4a3\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/check.(*suiteRunner).forkTest()\r\n[2021-06-04T06:29:08.837Z]       /go/pkg/mod/github.com/pingcap/check@v0.0.0-20200212061837-5e12011dc712/check.go:832 +0x1b9\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/check.(*suiteRunner).doRun()\r\n[2021-06-04T06:29:08.837Z]       /go/pkg/mod/github.com/pingcap/check@v0.0.0-20200212061837-5e12011dc712/check.go:666 +0x13a\r\n[2021-06-04T06:29:08.837Z]   github.com/pingcap/check.(*suiteRunner).asyncRun.func1()\r\n[2021-06-04T06:29:08.837Z]       /go/pkg/mod/github.com/pingcap/check@v0.0.0-20200212061837-5e12011dc712/check.go:650 +0xf7\r\n...\r\n```"
+  },
+  "pr_merged_at": "2021-06-07T20:14:28+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/parallel_apply_test.go",
+    "name": "TestApplyGoroutinePanic"
+  },
+  "symptoms": [
+    "executor: skip unstable test case TestApplyGoroutinePanic"
+  ],
+  "failure_signature": "executor: skip unstable test case TestApplyGoroutinePanic",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "executor: skip unstable test case TestApplyGoroutinePanic",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/25180",
+    "https://github.com/pingcap/tidb/pull/25180.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/25180.patch",
+  "changed_files": [
+    "executor/parallel_apply_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: executor: skip unstable test case TestApplyGoroutinePanic",
+      "files: executor/parallel_apply_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: skip unstable test case TestApplyGoroutinePanic\nPR url: https://github.com/pingcap/tidb/pull/25180\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: executor: skip unstable test case TestApplyGoroutinePanic\nChanged files (1): executor/parallel_apply_test.go\nPatch series analyzed; see patch_url."
+}

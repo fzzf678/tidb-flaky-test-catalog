@@ -1,0 +1,47 @@
+{
+  "id": "pr-22984",
+  "source_pr": {
+    "number": 22984,
+    "url": "https://github.com/pingcap/tidb/pull/22984",
+    "title": "executor: fix logging format of prepared statements (#16062)",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #16062\r\n\r\nProblem Summary: With a slow prepared statement, the slow query log records it in the form of `exec ...` rather than the underlying SQL with placeholders. \r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed: Records original queries of prepared statements.\r\n\r\nHow it Works:\r\n\r\nOn master branch (53a68b56da072c6b9863ce38b4488ede618cfd49)\r\n\r\n```\r\nmysql> PREPARE mystmt FROM 'SELECT SLEEP(?)';\r\nQuery OK, 0 rows affected (0.00 sec)\r\n\r\nmysql> SET @num = 1;\r\nQuery OK, 0 rows affected (0.00 sec)\r\n\r\nmysql> EXECUTE mystmt USING @num;\r\n+----------+\r\n| SLEEP(?) |\r\n+----------+\r\n|        0 |\r\n+----------+\r\n1 row in set (1.00 sec)\r\n\r\nmysql> SELECT Query FROM information_schema.SLOW_QUERY LIMIT 1;\r\n+-------------------------------------------+\r\n| Query                                     |\r\n+-------------------------------------------+\r\n| EXECUTE mystmt USING @num [arguments: 1]; |\r\n+-------------------------------------------+\r\n1 row in set (0.00 sec)\r\n```\r\n\r\nOn PR branch\r\n\r\n```\r\nmysql> PREPARE mystmt FROM 'SELECT SLEEP(?)';\r\nQuery OK, 0 rows affected (0.00 sec)\r\n\r\nmysql> SET @num = 1;\r\nQuery OK, 0 rows affected (0.00 sec)\r\n\r\nmysql> EXECUTE mystmt USING @num;\r\n+----------+\r\n| SLEEP(?) |\r\n+----------+\r\n|        0 |\r\n+----------+\r\n1 row in set (1.00 sec)\r\n\r\nmysql> SELECT Query FROM information_schema.SLOW_QUERY LIMIT 1;\r\n+---------------------------------+\r\n| Query                           |\r\n+---------------------------------+\r\n| SELECT SLEEP(?) [arguments: 1]; |\r\n+---------------------------------+\r\n1 row in set (0.00 sec)\r\n```\r\n\r\n### Related changes\r\n\r\nN/A\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Integration test\r\n\r\nSide effects\r\n\r\n- Breaking backward compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- Slow query log records original queries with placeholders for prepared statements.\r\n"
+  },
+  "pr_merged_at": "2021-04-14T16:59:52+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "TestSlowQueryLog"
+  },
+  "symptoms": [
+    "\"where query like '%/* TestSlowQueryLog: prepared */%' order by time desc limit 1\"). (executor/executor_test.go)"
+  ],
+  "failure_signature": "\"where query like '%/* TestSlowQueryLog: prepared */%' order by time desc limit 1\"). (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "\"where query like '%/* TestSlowQueryLog: prepared */%' order by time desc limit 1\"). (executor/executor_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22984",
+    "https://github.com/pingcap/tidb/pull/22984.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22984.patch",
+  "changed_files": [
+    "executor/adapter.go",
+    "executor/executor_test.go",
+    "session/session_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: \"where query like '%/* TestSlowQueryLog: prepared */%' order by time desc limit 1\"). (executor/executor_test.go)",
+      "files: executor/adapter.go, executor/executor_test.go, session/session_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix logging format of prepared statements (#16062)\nPR url: https://github.com/pingcap/tidb/pull/22984\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"where query like '%/* TestSlowQueryLog: prepared */%' order by time desc limit 1\"). (executor/executor_test.go)\nChanged files (3): executor/adapter.go, executor/executor_test.go, session/session_test.go\nPatch series analyzed; see patch_url."
+}

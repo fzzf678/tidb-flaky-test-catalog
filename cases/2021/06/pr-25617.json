@@ -1,0 +1,45 @@
+{
+  "id": "pr-25617",
+  "source_pr": {
+    "number": 25617,
+    "url": "https://github.com/pingcap/tidb/pull/25617",
+    "title": "test: make test TestIssue25506 stable",
+    "body": "Signed-off-by: crazycs <crazycs520@gmail.com>\r\n\r\n<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nAs the title said.\r\n\r\n```go\r\n[2021-06-21T13:13:11.256Z] ----------------------------------------------------------------------\r\n[2021-06-21T13:13:11.256Z] FAIL: executor_test.go:8659: testSuite.TestIssue25506\r\n[2021-06-21T13:13:11.256Z] \r\n[2021-06-21T13:13:11.256Z] executor_test.go:8668:\r\n[2021-06-21T13:13:11.256Z]     tk.MustQuery(\"(select col_15 from tbl_23) union all (select col_15 from tbl_3 for update)\").Check(testkit.Rows(\"\\x00\\x00\\x0F\", \"\\x00\\xFF\\xFF\", \"\\x00\\x00\\xFF\"))\r\n[2021-06-21T13:13:11.256Z] /home/jenkins/agent/workspace/tidb_ghpr_check_2/go/src/github.com/pingcap/tidb/util/testkit/testkit.go:63:\r\n[2021-06-21T13:13:11.256Z]     res.c.Assert(resBuff.String(), check.Equals, needBuff.String(), res.comment)\r\n[2021-06-21T13:13:11.256Z] ... obtained string = \"\" +\r\n[2021-06-21T13:13:11.256Z] ...     \"[\\x00\\xff\\xff]\\n\" +\r\n[2021-06-21T13:13:11.256Z] ...     \"[\\x00\\x00\\xff]\\n\" +\r\n[2021-06-21T13:13:11.256Z] ...     \"[\\x00\\x00\\x0f]\\n\"\r\n[2021-06-21T13:13:11.256Z] ... expected string = \"\" +\r\n[2021-06-21T13:13:11.256Z] ...     \"[\\x00\\x00\\x0f]\\n\" +\r\n[2021-06-21T13:13:11.256Z] ...     \"[\\x00\\xff\\xff]\\n\" +\r\n[2021-06-21T13:13:11.256Z] ...     \"[\\x00\\x00\\xff]\\n\"\r\n[2021-06-21T13:13:11.256Z] ... sql:(select col_15 from tbl_23) union all (select col_15 from tbl_3 for update), args:[]\r\n```\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n\r\n- No code\r\n\r\nSide effects\r\n\r\n- N/A\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note."
+  },
+  "pr_merged_at": "2021-06-21T21:56:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "TestIssue25506"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"(select col_15 from tbl_23) union all (select col_15 from tbl_3 for update) order by col_15\").Check(testkit.Rows(\"\\x00\\x00\\x0F\", \"\\x00\\x00\\xFF\", \"\\x00\\xFF\\xFF\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"(select col_15 from tbl_23) union all (select col_15 from tbl_3 for update) order by col_15\").Check(testkit.Rows(\"\\x00\\x00\\x0F\", \"\\x00\\x00\\xFF\", \"\\x00\\xFF\\xFF\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"(select col_15 from tbl_23) union all (select col_15 from tbl_3 for update) order by col_15\").Check(testkit.Rows(\"\\x00\\x00\\x0F\", \"\\x00\\x00\\xFF\", \"\\x00\\xFF\\xFF\")) (executor/executor_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/25617",
+    "https://github.com/pingcap/tidb/pull/25617.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/25617.patch",
+  "changed_files": [
+    "executor/executor_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"(select col_15 from tbl_23) union all (select col_15 from tbl_3 for update) order by col_15\").Check(testkit.Rows(\"\\x00\\x00\\x0F\", \"\\x00\\x00\\xFF\", \"\\x00\\xFF\\xFF\")) (executor/executor_test.go)",
+      "files: executor/executor_test.go"
+    ]
+  },
+  "analysis": "PR title: test: make test TestIssue25506 stable\nPR url: https://github.com/pingcap/tidb/pull/25617\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"(select col_15 from tbl_23) union all (select col_15 from tbl_3 for update) order by col_15\").Check(testkit.Rows(\"\\x00\\x00\\x0F\", \"\\x00\\x00\\xFF\", \"\\x00\\xFF\\xFF\")) (executor/executor_test.go)\nChanged files (1): executor/executor_test.go\nPatch series analyzed; see patch_url."
+}

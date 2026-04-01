@@ -1,0 +1,73 @@
+{
+  "id": "pr-30277",
+  "source_pr": {
+    "number": 30277,
+    "url": "https://github.com/pingcap/tidb/pull/30277",
+    "title": "topsql: introduce stmtstats and sql execution count",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What is changed and how it works?\r\n\r\n- Introduce package `topsql/stmtstats` for count various indicators of statement execution.\r\n- Implement SQL Execution Count based on `topsql/stmtstats`.\r\n\r\nNote:\r\n- This PR only includes the **collection** and **aggregation** of stmtstats, the code related to the **report** will be proposed as a separate PR when #29020 merged.\r\n\r\n### Related PR\r\n\r\n- https://github.com/tikv/client-go/pull/389\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [x] Performance regression: Consumes more CPU\r\n- [x] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-12-21T15:43:47+08:00",
+  "test": {
+    "type": "unit",
+    "path": "distsql/distsql_test.go",
+    "name": "distsql_test"
+  },
+  "symptoms": [
+    "Eliminate race"
+  ],
+  "failure_signature": "Eliminate race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Eliminate race",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/30277",
+    "https://github.com/pingcap/tidb/pull/30277.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/30277.patch",
+  "changed_files": [
+    "distsql/distsql.go",
+    "distsql/distsql_test.go",
+    "executor/adapter.go",
+    "executor/analyze.go",
+    "executor/batch_point_get.go",
+    "executor/checksum.go",
+    "executor/executor.go",
+    "executor/insert.go",
+    "executor/point_get.go",
+    "executor/replace.go",
+    "executor/update.go",
+    "go.mod",
+    "go.sum",
+    "kv/option.go",
+    "session/session.go",
+    "sessionctx/stmtctx/stmtctx.go",
+    "sessionctx/variable/session.go",
+    "store/driver/txn/snapshot.go",
+    "store/driver/txn/txn_driver.go",
+    "util/topsql/stmtstats/aggregator.go",
+    "util/topsql/stmtstats/aggregator_test.go",
+    "util/topsql/stmtstats/kv_exec_count.go",
+    "util/topsql/stmtstats/kv_exec_count_test.go",
+    "util/topsql/stmtstats/main_test.go",
+    "util/topsql/stmtstats/stmtstats.go",
+    "util/topsql/stmtstats/stmtstats_test.go",
+    "util/topsql/stmtstats/stmtstatstest/main_test.go",
+    "util/topsql/stmtstats/stmtstatstest/stmtstats_test.go",
+    "util/topsql/topsql.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: Eliminate race",
+      "files: distsql/distsql.go, distsql/distsql_test.go, executor/adapter.go, executor/analyze.go, executor/batch_point_get.go, executor/checksum.go, executor/executor.go, executor/insert.go, executor/point_get.go, executor/prepared.go, executor/replace.go, executor/update.go, go.mod, go.sum, kv/option.go, session/session.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session.go, store/driver/txn/snapshot.go, store/driver/txn/txn_driver.go, util/topsql/exec_count.go, util/topsql/exec_count_test.go, util/topsql/execcount/exec_count.go, util/topsql/execcount/exec_count_test.go, util/topsql/execcount/execcount.go, util/topsql/execcount/execcount_test.go, util/topsql/execcount/kv_exec_count.go, util/topsql/execcount/kv_exec_count_test.go, util/topsql/execcount/main_test.go, util/topsql/kv_exec_count.go, util/topsql/kv_exec_count_test.go, util/topsql/stmtstats/aggregator.go, util/topsql/stmtstats/aggregator_test.go, util/topsql/stmtstats/collector.go, util/topsql/stmtstats/collector_test.go, util/topsql/stmtstats/kv_exec_count.go, util/topsql/stmtstats/kv_exec_count_test.go, util/topsql/stmtstats/kvexeccount.go, util/topsql/stmtstats/kvexeccount_test.go, util/topsql/stmtstats/main_test.go, util/topsql/stmtstats/manager.go, util/topsql/stmtstats/manager_test.go, util/topsql/stmtstats/stmtstats.go, util/topsql/stmtstats/stmtstats_test.go, util/topsql/stmtstats/stmtstatstest/main_test.go, util/topsql/stmtstats/stmtstatstest/stmtstats_test.go, util/topsql/topsql.go"
+    ]
+  },
+  "analysis": "PR title: topsql: introduce stmtstats and sql execution count\nPR url: https://github.com/pingcap/tidb/pull/30277\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Eliminate race\nChanged files (29): distsql/distsql.go, distsql/distsql_test.go, executor/adapter.go, executor/analyze.go, executor/batch_point_get.go, executor/checksum.go, executor/executor.go, executor/insert.go, executor/point_get.go, executor/replace.go, executor/update.go, go.mod, go.sum, kv/option.go, session/session.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session.go, store/driver/txn/snapshot.go, store/driver/txn/txn_driver.go, util/topsql/stmtstats/aggregator.go, util/topsql/stmtstats/aggregator_test.go, util/topsql/stmtstats/kv_exec_count.go, util/topsql/stmtstats/kv_exec_count_test.go, util/topsql/stmtstats/main_test.go, util/topsql/stmtstats/stmtstats.go, util/topsql/stmtstats/stmtstats_test.go, util/topsql/stmtstats/stmtstatstest/main_test.go, util/topsql/stmtstats/stmtstatstest/stmtstats_test.go, util/topsql/topsql.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,55 @@
+{
+  "id": "pr-26909",
+  "source_pr": {
+    "number": 26909,
+    "url": "https://github.com/pingcap/tidb/pull/26909",
+    "title": "*: fix many leaks of the test case",
+    "body": "\r\n\r\n### What problem does this PR solve?\r\n\r\nProblem Summary:\r\n\r\nWhen I tried to figure out the DATA RACE in https://github.com/pingcap/tidb/pull/26241, I found those problems.\r\n\r\nThe PR #26241 does not introduce the DATA RACE itself, but as it reuse statement context, if some goroutine still reference the old statement context, then the DATA RACE happen.\r\nIt help us find those leaks, typically such case:\r\n\r\n```\r\n_, err : = tk.Exec(\"select xx ...\")\r\n// the record set is not closed and ignored... leak!\r\n// so the background executor goroutine is still using the statement context\r\n\r\ntk.MustExec(\"another sql ...\")  \r\n// DATA RACE, the reuse of the statement context conflicts with the previous executor goroutine\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\n\r\nFix some leak places.\r\n\r\nHow it Works:\r\n\r\nRelease resource to avoid leak\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [X] No code\r\n\r\nMost of the change is the test code.\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-08-06T13:55:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_change_test.go",
+    "name": "db_change_test"
+  },
+  "symptoms": [
+    "When I tried to figure out the DATA RACE in https://github.com/pingcap/tidb/pull/26241, I found those problems."
+  ],
+  "failure_signature": "When I tried to figure out the DATA RACE in https://github.com/pingcap/tidb/pull/26241, I found those problems.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "When I tried to figure out the DATA RACE in https://github.com/pingcap/tidb/pull/26241, I found those problems.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/26909",
+    "https://github.com/pingcap/tidb/pull/26909.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/26909.patch",
+  "changed_files": [
+    "ddl/db_change_test.go",
+    "executor/adapter.go",
+    "executor/aggregate.go",
+    "executor/executor_pkg_test.go",
+    "executor/explain.go",
+    "executor/seqtest/prepared_test.go",
+    "executor/stale_txn_test.go",
+    "planner/core/integration_test.go",
+    "session/bootstrap.go",
+    "session/bootstrap_test.go",
+    "session/session_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: When I tried to figure out the DATA RACE in https://github.com/pingcap/tidb/pull/26241, I found those problems.",
+      "files: ddl/db_change_test.go, executor/adapter.go, executor/aggregate.go, executor/executor_pkg_test.go, executor/explain.go, executor/seqtest/prepared_test.go, executor/stale_txn_test.go, planner/core/integration_test.go, session/bootstrap.go, session/bootstrap_test.go, session/session_test.go"
+    ]
+  },
+  "analysis": "PR title: *: fix many leaks of the test case\nPR url: https://github.com/pingcap/tidb/pull/26909\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: When I tried to figure out the DATA RACE in https://github.com/pingcap/tidb/pull/26241, I found those problems.\nChanged files (11): ddl/db_change_test.go, executor/adapter.go, executor/aggregate.go, executor/executor_pkg_test.go, executor/explain.go, executor/seqtest/prepared_test.go, executor/stale_txn_test.go, planner/core/integration_test.go, session/bootstrap.go, session/bootstrap_test.go, session/session_test.go\nPatch series analyzed; see patch_url."
+}
