@@ -1,0 +1,64 @@
+{
+  "id": "pr-45315",
+  "source_pr": {
+    "number": 45315,
+    "url": "https://github.com/pingcap/tidb/pull/45315",
+    "title": "*: support `lowerBound` and `IterReserve` for unionScan",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #45314\r\n\r\nProblem Summary: support `lowerBound` and `IterReserve` for unionScan. Need https://github.com/tikv/client-go/pull/883\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\nTwice speed up `TableRead` performance.\r\n```\r\nLowerBound\r\nBenchmarkUnionScanIndexReadDescRead\r\n   10316\t    116779 ns/op\t   85377 B/op\t    1139 allocs/op\r\nBenchmarkUnionScanTableReadDescRead\r\n   17587\t     67679 ns/op\t   33275 B/op\t     493 allocs/op\r\nBenchmarkUnionScanIndexLookUpDescRead\r\n   12888\t     91659 ns/op\t   78332 B/op\t     909 allocs/op\r\n\r\nMaster\r\nBenchmarkUnionScanIndexReadDescRead\r\n   10032\t    115868 ns/op\t   85542 B/op\t    1141 allocs/op\r\nBenchmarkUnionScanTableReadDescRead\r\n    9450\t    120510 ns/op\t   84462 B/op\t    1013 allocs/op\r\nBenchmarkUnionScanIndexLookUpDescRead\r\n   11187\t     93701 ns/op\t   78350 B/op\t     909 allocs/op\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-07-18T15:48:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/union_scan_test.go",
+    "name": "union_scan_test"
+  },
+  "symptoms": [
+    "tk.HasPlan(\"select b from t use index(k) where b > 50 order by b desc\", \"IndexReader\") (executor/union_scan_test.go)"
+  ],
+  "failure_signature": "tk.HasPlan(\"select b from t use index(k) where b > 50 order by b desc\", \"IndexReader\") (executor/union_scan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.HasPlan(\"select b from t use index(k) where b > 50 order by b desc\", \"IndexReader\") (executor/union_scan_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/45315",
+    "https://github.com/pingcap/tidb/pull/45315.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/45315.patch",
+  "changed_files": [
+    "DEPS.bzl",
+    "ddl/backfilling.go",
+    "executor/mem_reader.go",
+    "executor/union_scan_test.go",
+    "go.mod",
+    "go.sum",
+    "kv/interface_mock_test.go",
+    "kv/kv.go",
+    "kv/mock_test.go",
+    "kv/utils_test.go",
+    "store/copr/batch_coprocessor.go",
+    "store/driver/snap_interceptor_test.go",
+    "store/driver/txn/snapshot.go",
+    "store/driver/txn/txn_driver.go",
+    "store/driver/txn/unionstore_driver.go",
+    "store/driver/txn_test.go",
+    "structure/hash.go",
+    "table/temptable/interceptor.go",
+    "table/temptable/interceptor_test.go",
+    "table/temptable/main_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.HasPlan(\"select b from t use index(k) where b > 50 order by b desc\", \"IndexReader\") (executor/union_scan_test.go)",
+      "files: DEPS.bzl, ddl/backfilling.go, executor/mem_reader.go, executor/union_scan_test.go, go.mod, go.sum, kv/interface_mock_test.go, kv/kv.go, kv/mock_test.go, kv/utils_test.go, store/copr/batch_coprocessor.go, store/driver/snap_interceptor_test.go, store/driver/txn/snapshot.go, store/driver/txn/txn_driver.go, store/driver/txn/unionstore_driver.go, store/driver/txn_test.go, structure/hash.go, table/temptable/interceptor.go, table/temptable/interceptor_test.go, table/temptable/main_test.go"
+    ]
+  },
+  "analysis": "PR title: *: support `lowerBound` and `IterReserve` for unionScan\nPR url: https://github.com/pingcap/tidb/pull/45315\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.HasPlan(\"select b from t use index(k) where b > 50 order by b desc\", \"IndexReader\") (executor/union_scan_test.go)\nChanged files (20): DEPS.bzl, ddl/backfilling.go, executor/mem_reader.go, executor/union_scan_test.go, go.mod, go.sum, kv/interface_mock_test.go, kv/kv.go, kv/mock_test.go, kv/utils_test.go, store/copr/batch_coprocessor.go, store/driver/snap_interceptor_test.go, store/driver/txn/snapshot.go, store/driver/txn/txn_driver.go, store/driver/txn/unionstore_driver.go, store/driver/txn_test.go, structure/hash.go, table/temptable/interceptor.go, table/temptable/interceptor_test.go, table/temptable/main_test.go\nPatch series analyzed; see patch_url."
+}

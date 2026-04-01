@@ -1,0 +1,58 @@
+{
+  "id": "pr-49401",
+  "source_pr": {
+    "number": 49401,
+    "url": "https://github.com/pingcap/tidb/pull/49401",
+    "title": "executor: support recovery mem limit error in disagg tiflash mode",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #49574\r\n\r\nProblem Summary: Support mpp error recovery. This pr only support recovery MemLimit error.\r\n\r\n### What changed and how does it work?\r\n1. TiDB hold mpp result for n*MaxChunkSize rows\r\n2. During holding result, if got mem limit error, will send recovery http request to AutoScaler(with ori CN cnt, and AutoScaler will check ori CN count to scale out new CN)\r\n3. For now, I didn't add sys var, instead use hard code value. Because for master, mpp recovery will not take effccts. It only works for Serverless Tier(or with AutoScaler). So no need to ask PM to add new sys var, and I will add sys var when cherry pick to Serverless Tier repo\r\n4. AutoScaler changes: https://github.com/tidbcloud/tiflash-autoscale/pull/33\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\n1. Create EKS cluster on AWS. Internal doc describe this.\r\n    1. Two c5.xlarge EC2 node(4c8g for each one)\r\n    5. Limit CN config 3G by setting `profiles.default.max_memory_usage and max_memory_usage_for_all_queries`\r\n    6. AutoScaler config: min-pod: 1, max-pod: 4\r\n2. Load tpch10 dataset\r\n7. Run workload: `tiup bench tpch run -U root -D tpch10 --queries q1 -T 5 --conn-params tidb_isolation_read_engines='tiflash'`\r\n\r\nBefore this pr: `tiup bench` will report error\r\n![img_v3_0269_9d921829-ac27-4d9f-896a-384a00b5ea5g](https://github.com/pingcap/tidb/assets/7493273/1a5d7bc4-dba1-4c2d-935a-7b56234b2a9b)\r\n\r\nAfter this pr: `tiup bench` run successfully\r\n![img_v3_0269_146fa439-9273-4243-addf-71cc5a030c8g](https://github.com/pingcap/tidb/assets/7493273/c2a81072-786b-442b-a9cf-e44918df2795)\r\n\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-12-29T14:07:58+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/executor/mppcoordmanager/mpp_coordinator_manager_test.go",
+    "name": "mpp_coordinator_manager_test"
+  },
+  "symptoms": [
+    "race = \"on\", | sql := \"select * from t order by 1, 2\" (pkg/executor/test/tiflashtest/tiflash_test.go)"
+  ],
+  "failure_signature": "race = \"on\", | sql := \"select * from t order by 1, 2\" (pkg/executor/test/tiflashtest/tiflash_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "1. TiDB hold mpp result for n*MaxChunkSize rows 2. During holding result, if got mem limit error, will send recovery http request to AutoScaler(with ori CN cnt, and AutoScaler will check ori CN count to scale out new CN) 3. For now, I didn't add sys var, instead use hard code value. Because for master, mpp recovery will not take effccts. It only works for Serverless Tier(or with AutoScaler). So no need to ask PM to add new sys var, and I will add sys var when cherry pick to Serverless Tier repo 4. AutoScaler changes: https://github.com/tidbcloud/tiflash-autoscale/pull/33",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/49401",
+    "https://github.com/pingcap/tidb/pull/49401.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/49401.patch",
+  "changed_files": [
+    "pkg/executor/BUILD.bazel",
+    "pkg/executor/internal/mpp/BUILD.bazel",
+    "pkg/executor/internal/mpp/local_mpp_coordinator.go",
+    "pkg/executor/mpp_gather.go",
+    "pkg/executor/mppcoordmanager/mpp_coordinator_manager_test.go",
+    "pkg/executor/mpperr/BUILD.bazel",
+    "pkg/executor/mpperr/mpp_err_recovery.go",
+    "pkg/executor/test/tiflashtest/BUILD.bazel",
+    "pkg/executor/test/tiflashtest/tiflash_test.go",
+    "pkg/kv/mpp.go",
+    "pkg/planner/core/fragment.go",
+    "pkg/store/copr/batch_coprocessor.go",
+    "pkg/util/tiflashcompute/topo_fetcher.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: race = \"on\", | sql := \"select * from t order by 1, 2\" (pkg/executor/test/tiflashtest/tiflash_test.go)",
+      "files: pkg/executor/BUILD.bazel, pkg/executor/internal/mpp/BUILD.bazel, pkg/executor/internal/mpp/local_mpp_coordinator.go, pkg/executor/mpp_gather.go, pkg/executor/mppcoordmanager/mpp_coordinator_manager_test.go, pkg/executor/mpperr/BUILD.bazel, pkg/executor/mpperr/mpp_err_recovery.go, pkg/executor/test/tiflashtest/BUILD.bazel, pkg/executor/test/tiflashtest/tiflash_test.go, pkg/kv/mpp.go, pkg/planner/core/fragment.go, pkg/store/copr/batch_coprocessor.go, pkg/util/tiflashcompute/topo_fetcher.go"
+    ]
+  },
+  "analysis": "PR title: executor: support recovery mem limit error in disagg tiflash mode\nPR url: https://github.com/pingcap/tidb/pull/49401\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: race = \"on\", | sql := \"select * from t order by 1, 2\" (pkg/executor/test/tiflashtest/tiflash_test.go)\nChanged files (13): pkg/executor/BUILD.bazel, pkg/executor/internal/mpp/BUILD.bazel, pkg/executor/internal/mpp/local_mpp_coordinator.go, pkg/executor/mpp_gather.go, pkg/executor/mppcoordmanager/mpp_coordinator_manager_test.go, pkg/executor/mpperr/BUILD.bazel, pkg/executor/mpperr/mpp_err_recovery.go, pkg/executor/test/tiflashtest/BUILD.bazel, pkg/executor/test/tiflashtest/tiflash_test.go, pkg/kv/mpp.go, pkg/planner/core/fragment.go, pkg/store/copr/batch_coprocessor.go, pkg/util/tiflashcompute/topo_fetcher.go\nPatch series analyzed; see patch_url."
+}

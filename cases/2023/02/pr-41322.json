@@ -1,0 +1,45 @@
+{
+  "id": "pr-41322",
+  "source_pr": {
+    "number": 41322,
+    "url": "https://github.com/pingcap/tidb/pull/41322",
+    "title": "br: increase the sleep time in the `waitForSend` function",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #41210 \r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\nWhen `Batcher.Len` reaches the threshold, it will call `asyncSend`, then call `Send` in `sendWorker`, and then call `RestoreBatch` to append `*ranges.RewriteRules` to `sender.rewriteRules`, the whole process may not be completed within 10ms, forming a flaky test(`require.True(t, sender.HasRewriteRuleOfKey(\"a\"))` should be true, but false), so we need to increase the sleep time in the `waitForSend` function.\r\nNote: `waitForSend` is only used for test.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-02-13T19:10:02+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/restore/batcher_test.go",
+    "name": "batcher_test"
+  },
+  "symptoms": [
+    "When `Batcher.Len` reaches the threshold, it will call `asyncSend`, then call `Send` in `sendWorker`, and then call `RestoreBatch` to append `*ranges.RewriteRules` to `sender.rewriteRules`, the whole process may not be completed within 10ms, forming a flaky test(`require.True(t, sender.HasRewriteRuleOfKey(\"a\"))` should be true, but false), so we need to i..."
+  ],
+  "failure_signature": "When `Batcher.Len` reaches the threshold, it will call `asyncSend`, then call `Send` in `sendWorker`, and then call `RestoreBatch` to append `*ranges.RewriteRules` to `sender.rewriteRules`, the whole process may not be completed within 10ms, forming a flaky test(`require.True(t, sender.HasRewriteRuleOfKey(\"a\"))` should be true, but false), so we need to i...",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "When `Batcher.Len` reaches the threshold, it will call `asyncSend`, then call `Send` in `sendWorker`, and then call `RestoreBatch` to append `*ranges.RewriteRules` to `sender.rewriteRules`, the whole process may not be completed within 10ms, forming a flaky test(`require.True(t, sender.HasRewriteRuleOfKey(\"a\"))` should be true, but false), so we need to i...",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/41322",
+    "https://github.com/pingcap/tidb/pull/41322.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/41322.patch",
+  "changed_files": [
+    "br/pkg/restore/batcher_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: When `Batcher.Len` reaches the threshold, it will call `asyncSend`, then call `Send` in `sendWorker`, and then call `RestoreBatch` to append `*ranges.RewriteRules` to `sender.rewriteRules`, the whole process may not be completed within 10ms, forming a flaky test(`require.True(t, sender.HasRewriteRuleOfKey(\"a\"))` should be true, but false), so we need to i...",
+      "files: br/pkg/restore/batcher_test.go"
+    ]
+  },
+  "analysis": "PR title: br: increase the sleep time in the `waitForSend` function\nPR url: https://github.com/pingcap/tidb/pull/41322\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: When `Batcher.Len` reaches the threshold, it will call `asyncSend`, then call `Send` in `sendWorker`, and then call `RestoreBatch` to append `*ranges.RewriteRules` to `sender.rewriteRules`, the whole process may not be completed within 10ms, forming a flaky test(`require.True(t, sender.HasRewriteRuleOfKey(\"a\"))` should be true, but false), so we need to i...\nChanged files (1): br/pkg/restore/batcher_test.go\nPatch series analyzed; see patch_url."
+}

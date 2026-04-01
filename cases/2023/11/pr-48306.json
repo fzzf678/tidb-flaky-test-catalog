@@ -1,0 +1,57 @@
+{
+  "id": "pr-48306",
+  "source_pr": {
+    "number": 48306,
+    "url": "https://github.com/pingcap/tidb/pull/48306",
+    "title": "disttask: subtasks rebalance during task execution",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #48795 close #47298\r\n\r\nProblem Summary:\r\nSee issue #47298 \r\n### What is changed and how it works?\r\n\r\nRebalanceSubtasks process flow:\r\n1.  find out nodes need to clean subtasks.\r\n2. get subtasks for each node before scaling out.\r\n3. group subtasks for each scheduler.\r\n4. prepare subtasks that need to rebalance to other nodes.\r\n5. rebalance subtasks to other nodes.\r\n6. rebalance rest subtasks evenly to liveNodes.\r\n7. update subtasks and do clean up logic.\r\n\r\nBehavior:\r\nsee ut in rebalance_test.go\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->  \r\n  \r\n1. first run on 1 tidb then scale out 1 tidb.\r\n  \r\n<img width=\"1550\" alt=\"image\" src=\"https://github.com/pingcap/tidb/assets/26179892/24957fd4-2853-41b4-bf6f-3c8f9eda5fdc\">\r\n\r\n2.  from 2 tidb to 1 tidb\r\n  \r\n<img width=\"1624\" alt=\"image\" src=\"https://github.com/pingcap/tidb/assets/26179892/bf74c3fb-22d6-4f3a-a99a-6317a03c4981\">\r\n<img width=\"1696\" alt=\"image\" src=\"https://github.com/pingcap/tidb/assets/26179892/bf40a39e-1ce1-4b8a-936a-c0aa613fd372\">\r\n\r\n3.  from 1 tidb to 3 tidb\r\n  \r\n<img width=\"1289\" alt=\"image\" src=\"https://github.com/pingcap/tidb/assets/26179892/79d9ac60-e557-4e58-8869-ee61a3cab4fb\">\r\n<img width=\"1309\" alt=\"image\" src=\"https://github.com/pingcap/tidb/assets/26179892/de92d8a9-ba8e-45ff-84ba-06487697cbe3\">\r\n\r\n\r\n4. from 3 tidb to 1 tidb\r\n<img width=\"1383\" alt=\"image\" src=\"https://github.com/pingcap/tidb/assets/26179892/a92d962a-3175-41b0-a19e-a790d23ed5fa\">\r\n<img width=\"1383\" alt=\"image\" src=\"https://github.com/pingcap/tidb/assets/26179892/542376f0-d44e-4c31-b0d0-18e888faa001\">\r\n\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-11-30T12:26:49+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "pkg/disttask/framework/dispatcher/dispatcher_test.go",
+    "name": "dispatcher_test"
+  },
+  "symptoms": [
+    "race = \"off\", | slices.SortFunc(dsp.TaskNodes, func(i, j string) int { (pkg/disttask/framework/dispatcher/dispatcher_test.go)"
+  ],
+  "failure_signature": "race = \"off\", | slices.SortFunc(dsp.TaskNodes, func(i, j string) int { (pkg/disttask/framework/dispatcher/dispatcher_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"off\", | slices.SortFunc(dsp.TaskNodes, func(i, j string) int { (pkg/disttask/framework/dispatcher/dispatcher_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/48306",
+    "https://github.com/pingcap/tidb/pull/48306.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/48306.patch",
+  "changed_files": [
+    "pkg/ddl/backfilling_dispatcher.go",
+    "pkg/disttask/framework/dispatcher/BUILD.bazel",
+    "pkg/disttask/framework/dispatcher/dispatcher.go",
+    "pkg/disttask/framework/dispatcher/interface.go",
+    "pkg/disttask/framework/dispatcher/rebalance_test.go",
+    "pkg/disttask/framework/mock/dispatcher_mock.go",
+    "pkg/disttask/framework/proto/task.go",
+    "pkg/disttask/framework/storage/table_test.go",
+    "pkg/disttask/framework/storage/task_table.go",
+    "pkg/disttask/framework/testutil/disttest_util.go",
+    "pkg/util/disttask/idservice.go",
+    "tests/realtikvtest/importintotest/import_into_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: race = \"off\", | slices.SortFunc(dsp.TaskNodes, func(i, j string) int { (pkg/disttask/framework/dispatcher/dispatcher_test.go)",
+      "files: pkg/ddl/backfilling_dispatcher.go, pkg/disttask/framework/dispatcher/BUILD.bazel, pkg/disttask/framework/dispatcher/dispatcher.go, pkg/disttask/framework/dispatcher/dispatcher_test.go, pkg/disttask/framework/dispatcher/interface.go, pkg/disttask/framework/dispatcher/rebalance_test.go, pkg/disttask/framework/framework_test.go, pkg/disttask/framework/mock/dispatcher_mock.go, pkg/disttask/framework/proto/task.go, pkg/disttask/framework/scheduler/scheduler.go, pkg/disttask/framework/storage/table_test.go, pkg/disttask/framework/storage/task_table.go, pkg/disttask/framework/testutil/disttest_util.go, pkg/util/disttask/idservice.go, tests/realtikvtest/importintotest/import_into_test.go"
+    ]
+  },
+  "analysis": "PR title: disttask: subtasks rebalance during task execution\nPR url: https://github.com/pingcap/tidb/pull/48306\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: race = \"off\", | slices.SortFunc(dsp.TaskNodes, func(i, j string) int { (pkg/disttask/framework/dispatcher/dispatcher_test.go)\nChanged files (12): pkg/ddl/backfilling_dispatcher.go, pkg/disttask/framework/dispatcher/BUILD.bazel, pkg/disttask/framework/dispatcher/dispatcher.go, pkg/disttask/framework/dispatcher/interface.go, pkg/disttask/framework/dispatcher/rebalance_test.go, pkg/disttask/framework/mock/dispatcher_mock.go, pkg/disttask/framework/proto/task.go, pkg/disttask/framework/storage/table_test.go, pkg/disttask/framework/storage/task_table.go, pkg/disttask/framework/testutil/disttest_util.go, pkg/util/disttask/idservice.go, tests/realtikvtest/importintotest/import_into_test.go\nPatch series analyzed; see patch_url."
+}

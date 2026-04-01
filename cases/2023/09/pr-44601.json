@@ -1,0 +1,52 @@
+{
+  "id": "pr-44601",
+  "source_pr": {
+    "number": 44601,
+    "url": "https://github.com/pingcap/tidb/pull/44601",
+    "title": "SQL digester: Modify sql digester logic for IN statement with single literal `IN (?) => IN (...)`",
+    "body": "### What problem does this PR solve?\r\nIssue Number: ref #44298 \r\n\r\nProblem Summary:\r\n* Currently, binding rule with in (1,2,3) is not applied to statements with only one literal (1)\r\n\r\n### What is changed and how it works?\r\nThe reason why the problem occurs is that the sql digester creates different normalized sql for (1,2,3) and (1).\r\nin (1,2,3) => in (...)\r\nin (1) => in (?)\r\nThus when the optimizer tries to find a matching binding rule, it fails.\r\n\r\nI add an additional rule in sql digester to translate statements like `in (1)` to `in (...)` instead. \r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [X] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\n1. Unit test\r\n* Run `bindinfo_test`\r\n```\r\ncd bindinfo\r\ngo test -run TestBindingInListWithSingleLiteral --tags=intest\r\n```\r\n\r\n* Run `parser_test`\r\n```\r\nmake parser_unit_test\r\n```\r\n\r\n2. Manual test steps (#44298 ):\r\n```\r\nmysql> create table t (a int);\r\nQuery OK, 0 rows affected (0.09 sec)\r\n\r\nmysql> create binding for select * from t where a in(1, 2, 3) using select * from t where a in (1, 2, 3);\r\nQuery OK, 0 rows affected (0.01 sec)\r\n\r\nmysql> select * from t where a in (1, 2,3);\r\nEmpty set (0.01 sec)\r\n\r\nmysql> select @@last_plan_from_binding;\r\n+--------------------------+\r\n| @@last_plan_from_binding |\r\n+--------------------------+\r\n|                        1 |\r\n+--------------------------+\r\n1 row in set (0.00 sec)\r\n\r\nmysql> select * from t where a in (1, 2);\r\nEmpty set (0.01 sec)\r\n\r\nmysql> select @@last_plan_from_binding;\r\n+--------------------------+\r\n| @@last_plan_from_binding |\r\n+--------------------------+\r\n|                        1 |\r\n+--------------------------+\r\n1 row in set (0.00 sec)\r\n\r\nmysql> select * from t where a in (1);\r\nEmpty set (0.00 sec)\r\n\r\nmysql> select @@last_plan_from_binding;\r\n+--------------------------+\r\n| @@last_plan_from_binding |\r\n+--------------------------+\r\n|                        1 |\r\n+--------------------------+\r\n1 row in set (0.00 sec)\r\n```\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [x] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nFixed the bug for binding rule like in (1,2,3) cannot be applied to in (1)\r\n```"
+  },
+  "pr_merged_at": "2023-09-07T11:24:44+08:00",
+  "test": {
+    "type": "unit",
+    "path": "bindinfo/capture_test.go",
+    "name": "TestBindingInListWithSingleLiteral"
+  },
+  "symptoms": [
+    "race = \"on\", | {\"select 1 from b order by 2\", \"select ? from `b` order by 2\"}, (parser/digester_test.go)"
+  ],
+  "failure_signature": "race = \"on\", | {\"select 1 from b order by 2\", \"select ? from `b` order by 2\"}, (parser/digester_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"on\", | {\"select 1 from b order by 2\", \"select ? from `b` order by 2\"}, (parser/digester_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/44601",
+    "https://github.com/pingcap/tidb/pull/44601.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/44601.patch",
+  "changed_files": [
+    "bindinfo/internal/testutil.go",
+    "bindinfo/tests/BUILD.bazel",
+    "bindinfo/tests/bind_test.go",
+    "parser/digester.go",
+    "parser/digester_test.go",
+    "planner/core/plan_cache_utils.go",
+    "planner/optimize.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: race = \"on\", | {\"select 1 from b order by 2\", \"select ? from `b` order by 2\"}, (parser/digester_test.go)",
+      "files: bindinfo/capture_test.go, bindinfo/handle.go, bindinfo/handle_test.go, bindinfo/internal/testutil.go, bindinfo/tests/BUILD.bazel, bindinfo/tests/bind_test.go, ddl/ddl_worker.go, executor/adapter.go, executor/cluster_table_test.go, executor/internal/querywatch/query_watch.go, expression/builtin_info.go, parser/digester.go, parser/digester_test.go, parser/parser.y, planner/core/plan_cache_utils.go, planner/core/planbuilder.go, planner/core/preprocess.go, planner/optimize.go, server/conn.go, server/conn_stmt.go, session/bootstrap.go, session/nontransactional.go, session/session.go, session/txnmanager.go, sessionctx/stmtctx/stmtctx.go, tests/realtikvtest/pessimistictest/pessimistic_test.go, util/topsql/collector/mock/mock.go, util/util.go"
+    ]
+  },
+  "analysis": "PR title: SQL digester: Modify sql digester logic for IN statement with single literal `IN (?) => IN (...)`\nPR url: https://github.com/pingcap/tidb/pull/44601\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: race = \"on\", | {\"select 1 from b order by 2\", \"select ? from `b` order by 2\"}, (parser/digester_test.go)\nChanged files (7): bindinfo/internal/testutil.go, bindinfo/tests/BUILD.bazel, bindinfo/tests/bind_test.go, parser/digester.go, parser/digester_test.go, planner/core/plan_cache_utils.go, planner/optimize.go\nPatch series analyzed; see patch_url."
+}

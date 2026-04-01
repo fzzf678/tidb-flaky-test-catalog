@@ -1,0 +1,62 @@
+{
+  "id": "pr-42769",
+  "source_pr": {
+    "number": 42769,
+    "url": "https://github.com/pingcap/tidb/pull/42769",
+    "title": "ddl: support checkpoint for ingest mode",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #42164\r\n\r\nBackground:\r\n\r\nFor creating index, most of the time are spent on reading table, writing index and importing. After code refactoring [#42472](https://github.com/pingcap/tidb/pull/42472) and [#42668](https://github.com/pingcap/tidb/pull/42668), the procedure is as follows:\r\n\r\n![image](https://user-images.githubusercontent.com/24713065/230556935-b950fe8a-59e3-4c9b-8161-d9ab82634360.png)\r\n\r\n\r\n1. The DDL worker first divides the table data into tasks, each task representing a region, and sends it to the reader, who reads the row data of the region in batches from the TiKV storage. A batch of data read by the reader is called a chunk.\r\n2. The reader reads a chunk and sends it to the writer. The writer extracts the index column for each row in the chunk, encodes it into an index KV and writes it to the local engine of TiDB-lightning. Moreover, \r\n    -  when the writer's memory occupancy reaches the threshold, a `flush` will be triggered to write the index KVs from the memory buffer to the disk.\r\n    -  when the occupancy of the disk reaches the threshold, an `unsafe import` will be triggered to import the index KV of the disk to the TiKV storage.\r\n3. After the writer completes the writing of the chunk, it will return the result to the DDL worker from time to time to update the current progress.\r\n4. The DDL worker waits for all the results to return, and finally triggers an import to write all the remaining index KVs on the disk to the TiKV storage.\r\n\r\n![image](https://user-images.githubusercontent.com/24713065/230559052-524819b1-eae7-43e1-afdc-c7b4d19368ad.png)\r\n\r\nIf we treat the overall process as a progress bar, the start point is the start key of the table, and the end point is the end key of the table. There are two keys that can represent the current progress:\r\n- Global Checkpoint: all keys smaller than this have been imported into the TiKV store. Even if all TiDB crash, these keys do not need to be re-imported. It is updated by `unsafe import`.\r\n- Local Checkpoint: all keys smaller than this have been written to at least the local disk where the TiDB local engine is located. If TiDB is restarted and the data on the local disk can be accessed, these keys do not need to be read and encoded again. It is updated by `flush`.\r\n\r\nAs long as the Global/Local Checkpoint is persisted, before reader starts to read, we can compare the end key and checkpoint of the task to determine whether the task can be skipped. Therefore, we need a component to manage checkpoints, including the addition, deletion and modification of checkpoints, called Checkpoint Manager.\r\n\r\n### What is changed and how it works?\r\n\r\nAccording to the above reading and writing process, we can abstract the interface for Checkpoint Manager:\r\n\r\n```go\r\ntype CheckpointManager interface {\r\n   IsComplete(taskID int, start, end kv.Key) bool\r\n   UpdateTotal(taskID int, added int, last bool)\r\n   UpdateCurrent(taskID int, added int) error\r\n}\r\n```\r\n\r\n![image](https://user-images.githubusercontent.com/24713065/230561069-6cfbe6eb-ae88-4811-85f3-4a433809fc9a.png)\r\n\r\n- `IsComplete()` is called before the reader reads the data and decides whether to skip the current task.\r\n- `UpdateTotal()` is called by the reader after reading the data to update the number of rows contained in the current chunk.\r\n- `UpdateCurrent()` is called by the writer after writing the local engine to update the current number of rows written.\r\n\r\nThe checkpoint manager spawns a background goroutine, which is used to update the checkpoint info to the system table `mysql.tidb_ddl_reorg` periodically.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [x] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-04-12T20:59:02+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/checkpoint_test.go",
+    "name": "checkpoint_test"
+  },
+  "symptoms": [
+    "race = \"on\","
+  ],
+  "failure_signature": "race = \"on\",",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"on\",",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/42769",
+    "https://github.com/pingcap/tidb/pull/42769.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/42769.patch",
+  "changed_files": [
+    "br/pkg/lightning/backend/backend.go",
+    "br/pkg/lightning/backend/local/local.go",
+    "ddl/backfilling.go",
+    "ddl/backfilling_scheduler.go",
+    "ddl/dist_backfilling.go",
+    "ddl/dist_owner.go",
+    "ddl/export_test.go",
+    "ddl/index.go",
+    "ddl/index_cop.go",
+    "ddl/ingest/BUILD.bazel",
+    "ddl/ingest/backend.go",
+    "ddl/ingest/backend_mgr.go",
+    "ddl/ingest/checkpoint.go",
+    "ddl/ingest/checkpoint_test.go",
+    "ddl/ingest/config.go",
+    "ddl/ingest/env.go",
+    "ddl/rollingback.go",
+    "ddl/scheduler.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: race = \"on\",",
+      "files: br/pkg/lightning/backend/backend.go, br/pkg/lightning/backend/local/local.go, ddl/BUILD.bazel, ddl/backfilling.go, ddl/backfilling_scheduler.go, ddl/checkpoint.go, ddl/checkpoint_test.go, ddl/dist_backfilling.go, ddl/dist_owner.go, ddl/export_test.go, ddl/index.go, ddl/index_cop.go, ddl/ingest/BUILD.bazel, ddl/ingest/backend.go, ddl/ingest/backend_mgr.go, ddl/ingest/checkpoint.go, ddl/ingest/checkpoint_test.go, ddl/ingest/config.go, ddl/ingest/env.go, ddl/rollingback.go, ddl/scheduler.go"
+    ]
+  },
+  "analysis": "PR title: ddl: support checkpoint for ingest mode\nPR url: https://github.com/pingcap/tidb/pull/42769\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"on\",\nChanged files (18): br/pkg/lightning/backend/backend.go, br/pkg/lightning/backend/local/local.go, ddl/backfilling.go, ddl/backfilling_scheduler.go, ddl/dist_backfilling.go, ddl/dist_owner.go, ddl/export_test.go, ddl/index.go, ddl/index_cop.go, ddl/ingest/BUILD.bazel, ddl/ingest/backend.go, ddl/ingest/backend_mgr.go, ddl/ingest/checkpoint.go, ddl/ingest/checkpoint_test.go, ddl/ingest/config.go, ddl/ingest/env.go, ddl/rollingback.go, ddl/scheduler.go\nPatch series analyzed; see patch_url."
+}

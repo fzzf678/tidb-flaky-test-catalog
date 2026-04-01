@@ -1,0 +1,47 @@
+{
+  "id": "pr-42488",
+  "source_pr": {
+    "number": 42488,
+    "url": "https://github.com/pingcap/tidb/pull/42488",
+    "title": "executor: revert #25730 to fix #28011",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #28011\r\n\r\nProblem Summary: as described in https://github.com/pingcap/tidb/issues/28011 , kv pairs converted from locks is visible to union-scan, which leads to duplicated rows (one from snapshot and the other from mem-index-reader).\r\n\r\n### What is changed and how it works?\r\n\r\nSince https://github.com/tikv/tikv/issues/13694 has introduced a better solution to the problem of accumulated locks, thus we can simply revert #25730 .\r\n\r\n[Here](https://clinic.pingcap.com.cn/portal/#/orgs/33/clusters/7213372357103198046?from=1679493001&to=1679495159) is the benchmark result. It shows that there is a slight regression in point-get workload.\r\n\r\n![2023-03-22_223208](https://user-images.githubusercontent.com/6850317/226940812-982673cc-b271-4b78-a1a5-3adcfc19c372.png)\r\n![2023-03-22_223259](https://user-images.githubusercontent.com/6850317/226940843-a7147ad4-4427-4ae4-94b7-e09ecdf4b4cc.png)\r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n\r\n"
+  },
+  "pr_merged_at": "2023-03-23T12:36:42+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "tests/realtikvtest/pessimistictest/pessimistic_test.go",
+    "name": "pessimistic_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select a, b from t order by a\").Check(tt.finalRows) (tests/realtikvtest/pessimistictest/pessimistic_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select a, b from t order by a\").Check(tt.finalRows) (tests/realtikvtest/pessimistictest/pessimistic_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select a, b from t order by a\").Check(tt.finalRows) (tests/realtikvtest/pessimistictest/pessimistic_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/42488",
+    "https://github.com/pingcap/tidb/pull/42488.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/42488.patch",
+  "changed_files": [
+    "executor/batch_point_get.go",
+    "executor/point_get.go",
+    "tests/realtikvtest/pessimistictest/pessimistic_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select a, b from t order by a\").Check(tt.finalRows) (tests/realtikvtest/pessimistictest/pessimistic_test.go)",
+      "files: executor/batch_point_get.go, executor/point_get.go, tests/realtikvtest/pessimistictest/pessimistic_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: revert #25730 to fix #28011\nPR url: https://github.com/pingcap/tidb/pull/42488\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select a, b from t order by a\").Check(tt.finalRows) (tests/realtikvtest/pessimistictest/pessimistic_test.go)\nChanged files (3): executor/batch_point_get.go, executor/point_get.go, tests/realtikvtest/pessimistictest/pessimistic_test.go\nPatch series analyzed; see patch_url."
+}

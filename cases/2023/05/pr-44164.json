@@ -1,0 +1,56 @@
+{
+  "id": "pr-44164",
+  "source_pr": {
+    "number": 44164,
+    "url": "https://github.com/pingcap/tidb/pull/44164",
+    "title": "session variable: change default value of `tidb_remove_orderby_in_subquery` to true | tidb-test=pr/2141",
+    "body": "### What problem does this PR solve?\r\n\r\nChange the default value `tidb_remove_orderby_in_subquery` to true.\r\nIt will not change the behaviors of upgrade cluster.\r\nIt just change the behaviors of new cluster after v7.2\r\n\r\nIssue Number: close #44163\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [x] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-05-26T11:31:40+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/merge_join_test.go",
+    "name": "cte"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"explain format = 'brief' select * from (select * from t1 order by a) tmp;\").Check( (planner/core/physical_plan_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"explain format = 'brief' select * from (select * from t1 order by a) tmp;\").Check( (planner/core/physical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"explain format = 'brief' select * from (select * from t1 order by a) tmp;\").Check( (planner/core/physical_plan_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/44164",
+    "https://github.com/pingcap/tidb/pull/44164.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/44164.patch",
+  "changed_files": [
+    "cmd/explaintest/r/cte.result",
+    "cmd/explaintest/r/explain_easy.result",
+    "cmd/explaintest/r/index_merge.result",
+    "cmd/explaintest/t/cte.test",
+    "executor/merge_join_test.go",
+    "executor/set_test.go",
+    "planner/cascades/testdata/transformation_rules_suite_out.json",
+    "planner/core/casetest/physicalplantest/testdata/plan_suite_out.json",
+    "planner/core/casetest/testdata/integration_suite_out.json",
+    "planner/core/integration_test.go",
+    "planner/core/physical_plan_test.go",
+    "sessionctx/variable/tidb_vars.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"explain format = 'brief' select * from (select * from t1 order by a) tmp;\").Check( (planner/core/physical_plan_test.go)",
+      "files: cmd/explaintest/r/cte.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/index_merge.result, cmd/explaintest/t/cte.test, executor/merge_join_test.go, executor/set_test.go, planner/cascades/testdata/transformation_rules_suite_out.json, planner/core/casetest/physicalplantest/testdata/plan_suite_out.json, planner/core/casetest/testdata/integration_suite_out.json, planner/core/integration_test.go, planner/core/physical_plan_test.go, sessionctx/variable/tidb_vars.go"
+    ]
+  },
+  "analysis": "PR title: session variable: change default value of `tidb_remove_orderby_in_subquery` to true | tidb-test=pr/2141\nPR url: https://github.com/pingcap/tidb/pull/44164\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"explain format = 'brief' select * from (select * from t1 order by a) tmp;\").Check( (planner/core/physical_plan_test.go)\nChanged files (12): cmd/explaintest/r/cte.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/index_merge.result, cmd/explaintest/t/cte.test, executor/merge_join_test.go, executor/set_test.go, planner/cascades/testdata/transformation_rules_suite_out.json, planner/core/casetest/physicalplantest/testdata/plan_suite_out.json, planner/core/casetest/testdata/integration_suite_out.json, planner/core/integration_test.go, planner/core/physical_plan_test.go, sessionctx/variable/tidb_vars.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,49 @@
+{
+  "id": "pr-47147",
+  "source_pr": {
+    "number": 47147,
+    "url": "https://github.com/pingcap/tidb/pull/47147",
+    "title": "*: disable autocompact of pebble",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #47145\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nlocal engine will compact sst itself, we can disable pebble auto compact to avoid it consume resource and avoid wait on cleanup.\r\ndisable autocompact of pebble for local backend\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\n**below is test result of IMPORT INTO, lightning/add-index will have simialar issue**\r\n\r\nimporting 446.3GB\r\nbefore this pr: takes 76 minutes(mostly due to cleanup as in the issue), encode speed is about 220m/s initially, then decrease to 190m/s, max import speed is about 1g/s\r\n![image](https://github.com/pingcap/tidb/assets/3312245/710d1662-09c5-40c9-b7f0-5d84ea3b45e1)\r\n```\r\n[2023/09/21 11:20:23.293 +00:00] [INFO] [backend.go:384] [\"cleanup completed\"] [engineTag=`test`.`item_core`:-1] [engineUUID=848d16a9-514f-53dc-b96f-c6f2da686193] [takeTime=21m52.902063329s] []\r\n```\r\nwith this pr: takes 51m, encode speed about 215m/s, quite uniform, max import speed 1g/s\r\n![image](https://github.com/pingcap/tidb/assets/3312245/a44e1c82-5dcd-40d7-97e3-971dd5135aa4)\r\n\r\nwith this pr, and we enable compaction for data kv, takes 53m, encode speed about 202m/s, max import speed about 1.2g/s\r\n![image](https://github.com/pingcap/tidb/assets/3312245/414241fd-61be-419c-8b02-4fa68b64db99)\r\n\r\n\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons --> \r\n\r\nperformance test WIP \r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-09-22T15:10:45+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/importer/import_test.go",
+    "name": "import_test"
+  },
+  "symptoms": [
+    "race = \"on\","
+  ],
+  "failure_signature": "race = \"on\",",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"on\",",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/47147",
+    "https://github.com/pingcap/tidb/pull/47147.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/47147.patch",
+  "changed_files": [
+    "br/pkg/lightning/backend/local/local.go",
+    "executor/importer/BUILD.bazel",
+    "executor/importer/import.go",
+    "executor/importer/import_test.go",
+    "executor/importer/table_import.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: race = \"on\",",
+      "files: br/pkg/lightning/backend/local/local.go, ddl/ingest/backend_mgr.go, executor/importer/BUILD.bazel, executor/importer/import.go, executor/importer/import_test.go, executor/importer/table_import.go"
+    ]
+  },
+  "analysis": "PR title: *: disable autocompact of pebble\nPR url: https://github.com/pingcap/tidb/pull/47147\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"on\",\nChanged files (5): br/pkg/lightning/backend/local/local.go, executor/importer/BUILD.bazel, executor/importer/import.go, executor/importer/import_test.go, executor/importer/table_import.go\nPatch series analyzed; see patch_url."
+}

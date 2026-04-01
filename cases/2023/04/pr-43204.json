@@ -1,0 +1,46 @@
+{
+  "id": "pr-43204",
+  "source_pr": {
+    "number": 43204,
+    "url": "https://github.com/pingcap/tidb/pull/43204",
+    "title": "planner: recalculate as-of ts of staleread when plan is cached",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #43044\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nRecalculate the snapshot ts for staleread when it's provided by as of statement.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nFix the bug that prepared staleread cannot read following changes.\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-04-20T20:57:20+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/stale_txn_test.go",
+    "name": "stale_txn_test"
+  },
+  "symptoms": [
+    "stmtID, _, _, err := tk.Session().PrepareStmt(\"select * from t as of timestamp now(3) - interval 1000 microsecond order by id asc\") (executor/stale_txn_test.go)"
+  ],
+  "failure_signature": "stmtID, _, _, err := tk.Session().PrepareStmt(\"select * from t as of timestamp now(3) - interval 1000 microsecond order by id asc\") (executor/stale_txn_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "stmtID, _, _, err := tk.Session().PrepareStmt(\"select * from t as of timestamp now(3) - interval 1000 microsecond order by id asc\") (executor/stale_txn_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/43204",
+    "https://github.com/pingcap/tidb/pull/43204.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/43204.patch",
+  "changed_files": [
+    "executor/stale_txn_test.go",
+    "sessiontxn/staleread/processor.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: stmtID, _, _, err := tk.Session().PrepareStmt(\"select * from t as of timestamp now(3) - interval 1000 microsecond order by id asc\") (executor/stale_txn_test.go)",
+      "files: executor/stale_txn_test.go, sessiontxn/staleread/processor.go"
+    ]
+  },
+  "analysis": "PR title: planner: recalculate as-of ts of staleread when plan is cached\nPR url: https://github.com/pingcap/tidb/pull/43204\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: stmtID, _, _, err := tk.Session().PrepareStmt(\"select * from t as of timestamp now(3) - interval 1000 microsecond order by id asc\") (executor/stale_txn_test.go)\nChanged files (2): executor/stale_txn_test.go, sessiontxn/staleread/processor.go\nPatch series analyzed; see patch_url."
+}

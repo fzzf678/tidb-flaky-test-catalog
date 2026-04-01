@@ -1,0 +1,54 @@
+{
+  "id": "pr-44272",
+  "source_pr": {
+    "number": 44272,
+    "url": "https://github.com/pingcap/tidb/pull/44272",
+    "title": "sessiontxn/staleread: more accurate stale ts",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #44215\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nWhen calculate as-of expr, calculate `now` expression by cached PD ts, the stale read ts will be more accurate, and there will also be less stale read fallback.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nI also test with 100ms staleness read:\r\n\r\n- resolved-ts.advance-ts-interval: 100ms\r\n\r\nnightly:\r\n\r\n![a](https://github.com/pingcap/tidb/assets/9587680/71a5879e-ce58-4eec-bbe3-c8b8f66460c4)\r\n\r\nthis PR:\r\n\r\n![b](https://github.com/pingcap/tidb/assets/9587680/037027f2-06ca-48b9-b227-5043d10eb851)\r\n\r\n\r\n- resolved-ts.advance-ts-interval: 50ms\r\n\r\nnightly:\r\n\r\n![c](https://github.com/pingcap/tidb/assets/9587680/bb6dd7e2-b81d-4a74-90a9-446da4982166)\r\n\r\nthis PR:\r\n\r\n![d](https://github.com/pingcap/tidb/assets/9587680/3a7a15fd-a71a-4e1a-871a-6e2f4cfb45f0)\r\n\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nUse more accurate stale read ts.\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-05-30T17:38:42+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/stale_txn_test.go",
+    "name": "stale_txn_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t as of timestamp \" + expr + \" order by id asc\").Check(testkit.Rows(\"1\")) (executor/stale_txn_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t as of timestamp \" + expr + \" order by id asc\").Check(testkit.Rows(\"1\")) (executor/stale_txn_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select * from t as of timestamp \" + expr + \" order by id asc\").Check(testkit.Rows(\"1\")) (executor/stale_txn_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/44272",
+    "https://github.com/pingcap/tidb/pull/44272.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/44272.patch",
+  "changed_files": [
+    "executor/calibrate_resource.go",
+    "executor/ddl.go",
+    "executor/stale_txn_test.go",
+    "expression/helper.go",
+    "planner/core/planbuilder.go",
+    "sessionctx/context.go",
+    "sessionctx/stmtctx/stmtctx.go",
+    "sessiontxn/staleread/BUILD.bazel",
+    "sessiontxn/staleread/processor.go",
+    "sessiontxn/staleread/util.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t as of timestamp \" + expr + \" order by id asc\").Check(testkit.Rows(\"1\")) (executor/stale_txn_test.go)",
+      "files: executor/calibrate_resource.go, executor/ddl.go, executor/stale_txn_test.go, expression/helper.go, planner/core/planbuilder.go, sessionctx/context.go, sessionctx/stmtctx/stmtctx.go, sessiontxn/staleread/BUILD.bazel, sessiontxn/staleread/processor.go, sessiontxn/staleread/util.go"
+    ]
+  },
+  "analysis": "PR title: sessiontxn/staleread: more accurate stale ts\nPR url: https://github.com/pingcap/tidb/pull/44272\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t as of timestamp \" + expr + \" order by id asc\").Check(testkit.Rows(\"1\")) (executor/stale_txn_test.go)\nChanged files (10): executor/calibrate_resource.go, executor/ddl.go, executor/stale_txn_test.go, expression/helper.go, planner/core/planbuilder.go, sessionctx/context.go, sessionctx/stmtctx/stmtctx.go, sessiontxn/staleread/BUILD.bazel, sessiontxn/staleread/processor.go, sessiontxn/staleread/util.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,56 @@
+{
+  "id": "pr-45904",
+  "source_pr": {
+    "number": 45904,
+    "url": "https://github.com/pingcap/tidb/pull/45904",
+    "title": "Log Backup: decouple log backup resolve locks from GCWorker.",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/40759\r\nProblem Summary:\r\nhttps://github.com/pingcap/tidb/pull/35403 introduce 1 minute scan locks of the whole cluster in GCWorker. which will cost CPU when cluster has large number of regions. This PR try to decouple it.\r\n\r\n### What is changed and how it works?\r\n1. Record checkpoint and move resolve locks in advancer.\r\n2. Abstract GCWorkerLockResolver used for LogBackup/GCWorker/GCWorkerTest. move `ResolveLocksForRange` into gcutil.go to avoid cycle import.\r\n```\r\n GCLockResolver is used for GCWorker and log backup advancer to resolve locks.\r\n// #Note: Put it here to avoid cycle import\r\nype GCLockResolver interface {\r\n \t// ResolveLocks tries to resolve expired locks.\r\n \t// 1. For GCWorker it will scan locks for all regions before *safepoint*,\r\n \t// and force remove locks. rollback the txn, no matter the lock is expired of not.\r\n \t// 2. For log backup advancer, it will scan all locks for a small range.\r\n \t// and it will check status of the txn. resolve the locks if txn is expired, Or do nothing.\r\n \tResolveLocks(*tikv.Backoffer, []*txnlock.Lock, tikv.RegionVerID) (bool, error)\r\n\r\n \t// ScanLocks only used for mock test.\r\n \tScanLocks([]byte, uint64) []*txnlock.Lock\r\n \t// We need to get tikvStore to build rangerunner.\r\n \t// TODO: the most code is in client.go and the store is only used to locate end keys of a region.\r\n \t// maybe we can move GCLockResolver into client.go.\r\n \tGetStore() tikv.Storage\r\n }\r\n```\r\n3. Remove logbackup logic in GCWorker.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\nbefore this PR, resolve lock every minutes\r\n<img width=\"723\" alt=\"image\" src=\"https://github.com/pingcap/tidb/assets/5906259/6e5770b7-51a0-44ae-b126-7db125f0da9c\"> \r\n\r\nwith this PR. resolve lock every 10 minutes. which will save CPU usage.\r\n<img width=\"723\" alt=\"image\" src=\"https://github.com/pingcap/tidb/assets/5906259/36fb1518-a0c5-4ee5-8a20-95dd55373e12\">\r\n\r\nand check lock resolved.\r\n<img width=\"723\" alt=\"image\" src=\"https://github.com/pingcap/tidb/assets/5906259/cd60405e-6ec9-4a9b-80db-c4a6db6c1543\">\r\n\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nDecouple log backup resolve locks from GCWorker to save TiKV CPU usage.\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-09-12T15:25:39+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/streamhelper/advancer_test.go",
+    "name": "advancer_test"
+  },
+  "symptoms": [
+    "fix race test | sort.Slice(p.fakeRegions, func(i, j int) bool { (br/pkg/streamhelper/basic_lib_for_test.go)"
+  ],
+  "failure_signature": "fix race test | sort.Slice(p.fakeRegions, func(i, j int) bool { (br/pkg/streamhelper/basic_lib_for_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "fix race test | sort.Slice(p.fakeRegions, func(i, j int) bool { (br/pkg/streamhelper/basic_lib_for_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/45904",
+    "https://github.com/pingcap/tidb/pull/45904.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/45904.patch",
+  "changed_files": [
+    "br/pkg/conn/conn.go",
+    "br/pkg/streamhelper/BUILD.bazel",
+    "br/pkg/streamhelper/advancer.go",
+    "br/pkg/streamhelper/advancer_env.go",
+    "br/pkg/streamhelper/advancer_test.go",
+    "br/pkg/streamhelper/basic_lib_for_test.go",
+    "br/pkg/task/stream.go",
+    "domain/domain.go",
+    "store/gcworker/BUILD.bazel",
+    "store/gcworker/gc_worker.go",
+    "store/gcworker/gc_worker_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: fix race test | sort.Slice(p.fakeRegions, func(i, j int) bool { (br/pkg/streamhelper/basic_lib_for_test.go)",
+      "files: DEPS.bzl, br/pkg/conn/conn.go, br/pkg/streamhelper/BUILD.bazel, br/pkg/streamhelper/advancer.go, br/pkg/streamhelper/advancer_daemon.go, br/pkg/streamhelper/advancer_env.go, br/pkg/streamhelper/advancer_test.go, br/pkg/streamhelper/basic_lib_for_test.go, br/pkg/task/stream.go, domain/domain.go, go.mod, go.sum, store/gcworker/BUILD.bazel, store/gcworker/gc_worker.go, store/gcworker/gc_worker_test.go, util/gcutil/BUILD.bazel, util/gcutil/gcutil.go"
+    ]
+  },
+  "analysis": "PR title: Log Backup: decouple log backup resolve locks from GCWorker.\nPR url: https://github.com/pingcap/tidb/pull/45904\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix race test | sort.Slice(p.fakeRegions, func(i, j int) bool { (br/pkg/streamhelper/basic_lib_for_test.go)\nChanged files (11): br/pkg/conn/conn.go, br/pkg/streamhelper/BUILD.bazel, br/pkg/streamhelper/advancer.go, br/pkg/streamhelper/advancer_env.go, br/pkg/streamhelper/advancer_test.go, br/pkg/streamhelper/basic_lib_for_test.go, br/pkg/task/stream.go, domain/domain.go, store/gcworker/BUILD.bazel, store/gcworker/gc_worker.go, store/gcworker/gc_worker_test.go\nPatch series analyzed; see patch_url."
+}

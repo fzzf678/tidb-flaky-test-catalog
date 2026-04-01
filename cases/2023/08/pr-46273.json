@@ -1,0 +1,64 @@
+{
+  "id": "pr-46273",
+  "source_pr": {
+    "number": 46273,
+    "url": "https://github.com/pingcap/tidb/pull/46273",
+    "title": "*: add session alias field in slowlog, general log and extension framework",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #46272, ref #46071\r\n\r\n### What is changed and how it works?\r\n\r\nAfter `set @@tidb_session_alias='alias123'` , you can see a field named `Session_alias` in slow log output:\r\n\r\n```\r\n# Time: 2023-08-21T15:06:02.507248+08:00\r\n# Txn_start_ts: 0\r\n# User@Host: root[root] @ 127.0.0.1 [127.0.0.1]\r\n# Conn_ID: 2097154\r\n# Session_alias: alias123\r\n# Query_time: 1.002047042\r\n# Parse_time: 0.000107792\r\n...\r\n```\r\n\r\nfor table `information_schema.SLOW_QUERY`\r\n```\r\nTiDB root@127.0.0.1:test> select * from information_schema.SLOW_QUERY where session_alias='alias123'\\G\r\n***************************[ 1. row ]***************************\r\nTime                          | 2023-08-21 15:06:02.507248\r\nTxn_start_ts                  | 0\r\nUser                          | root\r\nHost                          | 127.0.0.1\r\nConn_ID                       | 2097154\r\nSession_alias                 | alias123\r\nExec_retry_count              | 0\r\nExec_retry_time               | 0.0\r\n...\r\n```\r\n\r\n```\r\nTiDB root@127.0.0.1:test> admin show slow recent 1;\r\n+-----------------+----------------------------+----------+---------+------+---------+----------------+--------+------+-----------+-----------+----------+------------------------------------------------------------------+---------------+\r\n| SQL             | START                      | DURATION | DETAILS | SUCC | CONN_ID | TRANSACTION_TS | USER   | DB   | TABLE_IDS | INDEX_IDS | INTERNAL | DIGEST                                                           | SESSION_ALIAS |\r\n+-----------------+----------------------------+----------+---------+------+---------+----------------+--------+------+-----------+-----------+----------+------------------------------------------------------------------+---------------+\r\n| select sleep(1) | 2023-08-21 15:06:01.505137 | 0:00:01  |         | 1    | 2097154 | 0              | root@% | test |           |           | 0        | a0adeeb79b71315ac13a77f3f11162106b5ec7b48212cf17c20c754263ab9228 | alias123      |\r\n+-----------------+----------------------------+----------+---------+------+---------+----------------+--------+------+-----------+-----------+----------+------------------------------------------------------------------+---------------+\r\n```\r\n\r\nfor general log:\r\n\r\n```\r\n[2023/08/21 15:06:01.505 +08:00] [INFO] [session.go:3957] [GENERAL_LOG] [conn=2097154] [session_alias=alias123] [user=root@127.0.0.1] [schemaVersion=137] [txnStartTS=0] [forUpdateTS=0] [isReadConsistency=false] [currentDB=test] [isPessimistic=false] [sessionTxnMode=PESSIMISTIC] [sql=\"select sleep(1)\"]\r\n```\r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nadd session alias field in slowlog, general log and extension framework\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-08-23T18:59:05+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_test.go",
+    "name": "db_test"
+  },
+  "symptoms": [
+    "// skip instance and host column because it now includes the TCP socket details (unstable) | tk.MustQuery(\"select query_time, conn_id, session_alias from `CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4.895492 6 \")) (infoschema/test/clustertablestest/cluster_tables_test.go)"
+  ],
+  "failure_signature": "// skip instance and host column because it now includes the TCP socket details (unstable) | tk.MustQuery(\"select query_time, conn_id, session_alias from `CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4.895492 6 \")) (infoschema/test/clustertablestest/cluster_tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "// skip instance and host column because it now includes the TCP socket details (unstable) | tk.MustQuery(\"select query_time, conn_id, session_alias from `CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4.895492 6 \")) (infoschema/test/clustertablestest/cluster_tables_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/46273",
+    "https://github.com/pingcap/tidb/pull/46273.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/46273.patch",
+  "changed_files": [
+    "ddl/db_test.go",
+    "domain/topn_slow_query.go",
+    "executor/adapter.go",
+    "executor/executor.go",
+    "executor/slow_query.go",
+    "executor/slow_query_sql_test.go",
+    "executor/slow_query_test.go",
+    "extension/event_listener_test.go",
+    "extension/session.go",
+    "infoschema/internal/testkit.go",
+    "infoschema/tables.go",
+    "infoschema/test/clustertablestest/cluster_tables_test.go",
+    "infoschema/test/clustertablestest/tables_test.go",
+    "planner/core/planbuilder.go",
+    "server/extension.go",
+    "server/tests/tidb_test.go",
+    "session/session.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/session_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: // skip instance and host column because it now includes the TCP socket details (unstable) | tk.MustQuery(\"select query_time, conn_id, session_alias from `CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4.895492 6 \")) (infoschema/test/clustertablestest/cluster_tables_test.go)",
+      "files: ddl/db_test.go, domain/topn_slow_query.go, executor/adapter.go, executor/executor.go, executor/slow_query.go, executor/slow_query_sql_test.go, executor/slow_query_test.go, extension/event_listener_test.go, extension/session.go, infoschema/internal/testkit.go, infoschema/tables.go, infoschema/test/clustertablestest/cluster_tables_test.go, infoschema/test/clustertablestest/tables_test.go, planner/core/planbuilder.go, server/extension.go, server/tests/tidb_test.go, session/session.go, sessionctx/variable/session.go, sessionctx/variable/session_test.go"
+    ]
+  },
+  "analysis": "PR title: *: add session alias field in slowlog, general log and extension framework\nPR url: https://github.com/pingcap/tidb/pull/46273\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: // skip instance and host column because it now includes the TCP socket details (unstable) | tk.MustQuery(\"select query_time, conn_id, session_alias from `CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4.895492 6 \")) (infoschema/test/clustertablestest/cluster_tables_test.go)\nChanged files (19): ddl/db_test.go, domain/topn_slow_query.go, executor/adapter.go, executor/executor.go, executor/slow_query.go, executor/slow_query_sql_test.go, executor/slow_query_test.go, extension/event_listener_test.go, extension/session.go, infoschema/internal/testkit.go, infoschema/tables.go, infoschema/test/clustertablestest/cluster_tables_test.go, infoschema/test/clustertablestest/tables_test.go, planner/core/planbuilder.go, server/extension.go, server/tests/tidb_test.go, session/session.go, sessionctx/variable/session.go, sessionctx/variable/session_test.go\nPatch series analyzed; see patch_url."
+}

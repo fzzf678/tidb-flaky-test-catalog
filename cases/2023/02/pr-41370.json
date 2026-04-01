@@ -1,0 +1,46 @@
+{
+  "id": "pr-41370",
+  "source_pr": {
+    "number": 41370,
+    "url": "https://github.com/pingcap/tidb/pull/41370",
+    "title": "planner: add more checks when pushing TopN down",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #41355 \r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n1. TopN should not be pushed down to TiFlash/TiKV if `TopN.ByItems` contains virtually generated columns.\r\n2. The \"virtually generated column\" push down is not supported now, we need to add test cases to cover: TopN, Projection, Selection.\r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-02-16T01:38:02+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t1 order by c2 limit 2;\").Check(testkit.Rows(\"a a\", \"a a\")) (planner/core/integration_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t1 order by c2 limit 2;\").Check(testkit.Rows(\"a a\", \"a a\")) (planner/core/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select * from t1 order by c2 limit 2;\").Check(testkit.Rows(\"a a\", \"a a\")) (planner/core/integration_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/41370",
+    "https://github.com/pingcap/tidb/pull/41370.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/41370.patch",
+  "changed_files": [
+    "planner/core/integration_test.go",
+    "planner/core/task.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t1 order by c2 limit 2;\").Check(testkit.Rows(\"a a\", \"a a\")) (planner/core/integration_test.go)",
+      "files: expression/expr_to_pb.go, planner/core/integration_test.go, planner/core/task.go"
+    ]
+  },
+  "analysis": "PR title: planner: add more checks when pushing TopN down\nPR url: https://github.com/pingcap/tidb/pull/41370\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t1 order by c2 limit 2;\").Check(testkit.Rows(\"a a\", \"a a\")) (planner/core/integration_test.go)\nChanged files (2): planner/core/integration_test.go, planner/core/task.go\nPatch series analyzed; see patch_url."
+}

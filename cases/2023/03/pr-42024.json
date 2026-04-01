@@ -1,0 +1,56 @@
+{
+  "id": "pr-42024",
+  "source_pr": {
+    "number": 42024,
+    "url": "https://github.com/pingcap/tidb/pull/42024",
+    "title": "executor: support mergeSort different selectResult in TableScan and IndexScan",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #41801, ref #26166\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-03-14T22:34:39+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/distsqltest/distsql_test.go",
+    "name": "distsql_test"
+  },
+  "symptoms": [
+    "queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from tlist use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.go)"
+  ],
+  "failure_signature": "queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from tlist use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from tlist use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/42024",
+    "https://github.com/pingcap/tidb/pull/42024.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/42024.patch",
+  "changed_files": [
+    "distsql/BUILD.bazel",
+    "distsql/select_result.go",
+    "executor/builder.go",
+    "executor/distsql.go",
+    "executor/distsqltest/BUILD.bazel",
+    "executor/distsqltest/distsql_test.go",
+    "executor/partition_table.go",
+    "executor/partition_table_test.go",
+    "executor/table_reader.go",
+    "planner/core/casetest/testdata/integration_partition_suite_out.json",
+    "planner/core/physical_plans.go",
+    "planner/core/task.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from tlist use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.go)",
+      "files: distsql/BUILD.bazel, distsql/select_result.go, executor/builder.go, executor/distsql.go, executor/distsqltest/BUILD.bazel, executor/distsqltest/distsql_test.go, executor/partition_table.go, executor/partition_table_test.go, executor/table_reader.go, planner/core/casetest/testdata/integration_partition_suite_out.json, planner/core/physical_plans.go, planner/core/task.go, store/copr/coprocessor.go"
+    ]
+  },
+  "analysis": "PR title: executor: support mergeSort different selectResult in TableScan and IndexScan\nPR url: https://github.com/pingcap/tidb/pull/42024\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from tlist use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.go)\nChanged files (12): distsql/BUILD.bazel, distsql/select_result.go, executor/builder.go, executor/distsql.go, executor/distsqltest/BUILD.bazel, executor/distsqltest/distsql_test.go, executor/partition_table.go, executor/partition_table_test.go, executor/table_reader.go, planner/core/casetest/testdata/integration_partition_suite_out.json, planner/core/physical_plans.go, planner/core/task.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,50 @@
+{
+  "id": "pr-40238",
+  "source_pr": {
+    "number": 40238,
+    "url": "https://github.com/pingcap/tidb/pull/40238",
+    "title": "*: fix static pruning partition table in disaggregated tiflash mode",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #40239\r\n\r\nProblem Summary: Enable mpp for static pruing partition table in disaggregated tiflash mode.\r\n\r\n\r\n### What is changed and how it works?\r\n1. find_best_task.go: Enable mppTask for static pruning partition table\r\n2. fragment.go: For static pruning partition table, when build kvRange for MPPTask of TableScan, make it just as single table.\r\n3. mpp_gather.go: Ignore correct table id in dagReq, because it's already setup properly when building pb.\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test: Also more cases in test-infra : https://github.com/pingcap/endless/pull/1282/files#diff-cd88630a5d404279dd7eb7cb9d0d7d3a8fb3eddc5cc11e7a3b2e47274db5ca88R101\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-01-06T19:28:22+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/tiflashtest/tiflash_test.go",
+    "name": "tiflash_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"explain select max( tbl_1.col_1 ) as r0 , sum( tbl_1.col_1 ) as r1 , sum( tbl_1.col_8 ) as r2 from tbl_1 where tbl_1.col_8 != 68 or tbl_1.col_3 between null and 939 order by r0,r1,r2 ;\") (executor/tiflashtest/tiflash_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"explain select max( tbl_1.col_1 ) as r0 , sum( tbl_1.col_1 ) as r1 , sum( tbl_1.col_8 ) as r2 from tbl_1 where tbl_1.col_8 != 68 or tbl_1.col_3 between null and 939 order by r0,r1,r2 ;\") (executor/tiflashtest/tiflash_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"explain select max( tbl_1.col_1 ) as r0 , sum( tbl_1.col_1 ) as r1 , sum( tbl_1.col_8 ) as r2 from tbl_1 where tbl_1.col_8 != 68 or tbl_1.col_3 between null and 939 order by r0,r1,r2 ;\") (executor/tiflashtest/tiflash_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/40238",
+    "https://github.com/pingcap/tidb/pull/40238.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/40238.patch",
+  "changed_files": [
+    "domain/domain.go",
+    "executor/mpp_gather.go",
+    "executor/tiflashtest/tiflash_test.go",
+    "kv/mpp.go",
+    "planner/core/find_best_task.go",
+    "planner/core/fragment.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"explain select max( tbl_1.col_1 ) as r0 , sum( tbl_1.col_1 ) as r1 , sum( tbl_1.col_8 ) as r2 from tbl_1 where tbl_1.col_8 != 68 or tbl_1.col_3 between null and 939 order by r0,r1,r2 ;\") (executor/tiflashtest/tiflash_test.go)",
+      "files: ddl/placement/common.go, domain/domain.go, executor/mpp_gather.go, executor/tiflashtest/tiflash_test.go, kv/mpp.go, planner/core/find_best_task.go, planner/core/fragment.go, planner/core/planbuilder.go, planner/core/task.go, store/gcworker/gc_worker.go"
+    ]
+  },
+  "analysis": "PR title: *: fix static pruning partition table in disaggregated tiflash mode\nPR url: https://github.com/pingcap/tidb/pull/40238\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"explain select max( tbl_1.col_1 ) as r0 , sum( tbl_1.col_1 ) as r1 , sum( tbl_1.col_8 ) as r2 from tbl_1 where tbl_1.col_8 != 68 or tbl_1.col_3 between null and 939 order by r0,r1,r2 ;\") (executor/tiflashtest/tiflash_test.go)\nChanged files (6): domain/domain.go, executor/mpp_gather.go, executor/tiflashtest/tiflash_test.go, kv/mpp.go, planner/core/find_best_task.go, planner/core/fragment.go\nPatch series analyzed; see patch_url."
+}

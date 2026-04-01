@@ -1,0 +1,56 @@
+{
+  "id": "pr-48653",
+  "source_pr": {
+    "number": 48653,
+    "url": "https://github.com/pingcap/tidb/pull/48653",
+    "title": "pkg: stop using math/rand.Seed",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: https://github.com/golang/go/issues/54880\r\n\r\nProblem Summary:\r\n\r\n```golang\r\n\r\n\r\n// Seed uses the provided seed value to initialize the default Source to a\r\n// deterministic state. Seed values that have the same remainder when\r\n// divided by 2³¹-1 generate the same pseudo-random sequence.\r\n// Seed, unlike the Rand.Seed method, is safe for concurrent use.\r\n//\r\n// If Seed is not called, the generator is seeded randomly at program startup.\r\n//\r\n// Prior to Go 1.20, the generator was seeded like Seed(1) at program startup.\r\n// To force the old behavior, call Seed(1) at program startup.\r\n// Alternately, set GODEBUG=randautoseed=0 in the environment\r\n// before making any calls to functions in this package.\r\n//\r\n// Deprecated: As of Go 1.20 there is no reason to call Seed with\r\n// a random value. Programs that call Seed with a known value to get\r\n// a specific sequence of results should use New(NewSource(seed)) to\r\n// obtain a local random generator.\r\nfunc Seed(seed int64) {\r\n\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->  \r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-11-17T14:00:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/lightning/mydump/loader_test.go",
+    "name": "loader_test"
+  },
+  "symptoms": [
+    "rnd := rand.New(rand.NewSource(0)) (pkg/util/chunk/list_test.go)"
+  ],
+  "failure_signature": "rnd := rand.New(rand.NewSource(0)) (pkg/util/chunk/list_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "rnd := rand.New(rand.NewSource(0)) (pkg/util/chunk/list_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/48653",
+    "https://github.com/pingcap/tidb/pull/48653.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/48653.patch",
+  "changed_files": [
+    "br/pkg/lightning/mydump/loader_test.go",
+    "cmd/ddltest/ddl_test.go",
+    "cmd/importer/rand.go",
+    "pkg/executor/internal/vecgroupchecker/vec_group_checker_test.go",
+    "pkg/planner/core/tests/prepare/prepare_test.go",
+    "pkg/statistics/handle/updatetest/update_test.go",
+    "pkg/store/driver/tikv_driver.go",
+    "pkg/util/chunk/list_test.go",
+    "pkg/util/chunk/row_in_disk_test.go",
+    "pkg/util/importer/rand.go",
+    "pkg/util/selection/selection_test.go",
+    "tools/check/ut.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rnd := rand.New(rand.NewSource(0)) (pkg/util/chunk/list_test.go)",
+      "files: br/pkg/lightning/mydump/loader_test.go, cmd/ddltest/ddl_test.go, cmd/importer/rand.go, pkg/executor/internal/vecgroupchecker/vec_group_checker_test.go, pkg/planner/core/tests/prepare/prepare_test.go, pkg/statistics/handle/updatetest/update_test.go, pkg/store/driver/tikv_driver.go, pkg/util/chunk/list_test.go, pkg/util/chunk/row_in_disk_test.go, pkg/util/importer/rand.go, pkg/util/selection/selection_test.go, tools/check/ut.go"
+    ]
+  },
+  "analysis": "PR title: pkg: stop using math/rand.Seed\nPR url: https://github.com/pingcap/tidb/pull/48653\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rnd := rand.New(rand.NewSource(0)) (pkg/util/chunk/list_test.go)\nChanged files (12): br/pkg/lightning/mydump/loader_test.go, cmd/ddltest/ddl_test.go, cmd/importer/rand.go, pkg/executor/internal/vecgroupchecker/vec_group_checker_test.go, pkg/planner/core/tests/prepare/prepare_test.go, pkg/statistics/handle/updatetest/update_test.go, pkg/store/driver/tikv_driver.go, pkg/util/chunk/list_test.go, pkg/util/chunk/row_in_disk_test.go, pkg/util/importer/rand.go, pkg/util/selection/selection_test.go, tools/check/ut.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,57 @@
+{
+  "id": "pr-48522",
+  "source_pr": {
+    "number": 48522,
+    "url": "https://github.com/pingcap/tidb/pull/48522",
+    "title": "util/ranger: support use `like` to build range for new collation columns | tidb-test=pr/2247",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #48181 close #49138\r\n\r\n\r\n### What is changed and how it works?\r\n\r\n1. For the `builder` in `pkg/util/ranger/points.go`, we provide a new parameter `convertToSortKey bool`. If it's `true`, we can build ranges for new collation columns in `newBuildFromPatternLike`. The user of `builder` should specify if it should convert the string values to the sort key or keep the original value.\r\n    - Here we use `KeyWithoutTrimRightSpace()` and then +1 to calculate the end key. The `KeyWithoutTrimRightSpace` prevents regression compared to the existing behavior for binary collations. For other details, please see the comments.\r\n2. Add two functions `pointsConvertToSortKey`, and `pointConvertToSortKey` to do the conversion work.\r\n    - Previously, the `convertPoint` happens before converting to the sort key. Specifically, it's called in `points2Ranges`, `appendPoints2Ranges`, and `points2TableRanges`, which are right after `build()`. Now we try to keep this logic unchanged. So we do a `convertPoint` inside these two functions before the conversion to the sort key.\r\n    - To implement 2., we need to pass the `newTp` into the `builder`. Therefore I merged it with the previous `Collator` parameter for the `build()`.\r\n3. The previous `convertPoint` is not removed because it's needed to handle non-string cases. In such a case, we need to make the existing `convertPoint` able to correctly handle the new sort key cases. Specifically, we need to use the binary collation instead of the collation of the column for the `FieldType` passed into `convertPoint`.\r\n    - I also added a `convertStringFTToBinaryCollate()` to reduce some repeated code.\r\n4. In `pkg/util/ranger/checker.go`, remove the limitation that we can't use `LIKE` function on new collation column to build ranges.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->  \r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nSupport using Range Scan on non-binary collation columns for `LIKE` functions.\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-12-05T21:20:50+08:00",
+  "test": {
+    "type": "integration",
+    "path": "pkg/planner/core/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result)"
+  ],
+  "failure_signature": "explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/48522",
+    "https://github.com/pingcap/tidb/pull/48522.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/48522.patch",
+  "changed_files": [
+    "pkg/planner/core/integration_test.go",
+    "pkg/planner/core/testdata/index_merge_suite_out.json",
+    "pkg/util/ranger/BUILD.bazel",
+    "pkg/util/ranger/checker.go",
+    "pkg/util/ranger/detacher.go",
+    "pkg/util/ranger/points.go",
+    "pkg/util/ranger/ranger.go",
+    "pkg/util/ranger/ranger_test.go",
+    "tests/integrationtest/r/expression/charset_and_collation.result",
+    "tests/integrationtest/r/expression/issues.result",
+    "tests/integrationtest/r/planner/core/issuetest/planner_issue.result",
+    "tests/integrationtest/r/planner/core/range_scan_for_like.result",
+    "tests/integrationtest/t/planner/core/range_scan_for_like.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result)",
+      "files: pkg/executor/point_get.go, pkg/planner/core/casetest/physicalplantest/testdata/plan_suite_out.json, pkg/planner/core/integration_test.go, pkg/planner/core/point_get_plan.go, pkg/planner/core/testdata/index_merge_suite_out.json, pkg/util/ranger/BUILD.bazel, pkg/util/ranger/checker.go, pkg/util/ranger/detacher.go, pkg/util/ranger/points.go, pkg/util/ranger/ranger.go, pkg/util/ranger/ranger_test.go, pkg/util/ranger/types.go, tests/integrationtest/r/executor/chunk_reuse.result, tests/integrationtest/r/executor/index_advise.result, tests/integrationtest/r/executor/index_merge_reader.result, tests/integrationtest/r/executor/point_get.result, tests/integrationtest/r/explain_easy.result, tests/integrationtest/r/explain_generate_column_substitute.result, tests/integrationtest/r/explain_indexmerge_stats.result, tests/integrationtest/r/expression/charset_and_collation.result, tests/integrationtest/r/expression/issues.result, tests/integrationtest/r/generated_columns.result, tests/integrationtest/r/imdbload.result, tests/integrationtest/r/planner/cardinality/selectivity.result, tests/integrationtest/r/planner/core/casetest/integration.result, tests/integrationtest/r/planner/core/casetest/physicalplantest/physical_plan.result, tests/integrationtest/r/planner/core/casetest/rule/rule_derive_topn_from_window.result, tests/integrationtest/r/planner/core/indexmerge_path.result, tests/integrationtest/r/planner/core/integration.result, tests/integrationtest/r/planner/core/issuetest/planner_issue.result, tests/integrationtest/r/planner/core/plan.result, tests/integrationtest/r/planner/core/range_scan_for_like.result, tests/integrationtest/r/planner/core/range_scan_for_string.result, tests/integrationtest/r/session/clustered_index.result, tests/integrationtest/r/util/ranger.result, tests/integrationtest/t/planner/core/integration.test, tests/integrationtest/t/planner/core/range_scan_for_like.test, tests/integrationtest/t/planner/core/range_scan_for_string.test"
+    ]
+  },
+  "analysis": "PR title: util/ranger: support use `like` to build range for new collation columns | tidb-test=pr/2247\nPR url: https://github.com/pingcap/tidb/pull/48522\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result)\nChanged files (13): pkg/planner/core/integration_test.go, pkg/planner/core/testdata/index_merge_suite_out.json, pkg/util/ranger/BUILD.bazel, pkg/util/ranger/checker.go, pkg/util/ranger/detacher.go, pkg/util/ranger/points.go, pkg/util/ranger/ranger.go, pkg/util/ranger/ranger_test.go, tests/integrationtest/r/expression/charset_and_collation.result, tests/integrationtest/r/expression/issues.result, tests/integrationtest/r/planner/core/issuetest/planner_issue.result, tests/integrationtest/r/planner/core/range_scan_for_like.result, tests/integrationtest/t/planner/core/range_scan_for_like.test\nPatch series analyzed; see patch_url."
+}

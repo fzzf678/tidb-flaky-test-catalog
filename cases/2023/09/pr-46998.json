@@ -1,0 +1,96 @@
+{
+  "id": "pr-46998",
+  "source_pr": {
+    "number": 46998,
+    "url": "https://github.com/pingcap/tidb/pull/46998",
+    "title": "importinto: integrate global sort(without merge-sort) part 1",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #46704\r\n\r\nProblem Summary:\r\n\r\n- add cloud_storage_uri option\r\n- when use global sort: job step goes from none -> global-sorting -> importing -> validating -> none.\r\n    - otherwise, it's none -> importing -> validating -> none.\r\n- integrate global sort(without merge-sort part), but since this pr is large, will add test for it later.\r\n- add Init to dispatcher, if Init returns error, dispatcher manager will fail the task directly, so the returned error should be a fatal error.\r\n- some refactor\r\n\r\nwhen using global sort, we write index kv using IndexRouteWriter\r\nwe route kvs of different index to different writer in order to make\r\nmerge sort easier, else kv data of all subtasks will all be overlapped.\r\n\r\ndrawback of doing this is that the number of writers need to open will be\r\nindex-count * encode-concurrency, when the table has many indexes, and each\r\nwriter will take 256MiB buffer on default,\r\nthis will take a lot of memory, or even OOM.\r\nwe can adjust memory buf size later, but might write too many small files.\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-09-19T19:10:43+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "br/pkg/lightning/backend/local/local_test.go",
+    "name": "local_test"
+  },
+  "symptoms": [
+    "race = \"on\","
+  ],
+  "failure_signature": "race = \"on\",",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"on\",",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/46998",
+    "https://github.com/pingcap/tidb/pull/46998.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/46998.patch",
+  "changed_files": [
+    "Makefile",
+    "br/cmd/tidb-lightning-ctl/main.go",
+    "br/pkg/lightning/backend/backend.go",
+    "br/pkg/lightning/backend/external/BUILD.bazel",
+    "br/pkg/lightning/backend/external/util.go",
+    "br/pkg/lightning/backend/external/writer.go",
+    "br/pkg/lightning/backend/local/local.go",
+    "br/pkg/lightning/backend/local/local_test.go",
+    "br/pkg/lightning/importer/import.go",
+    "ddl/backfilling_dispatcher.go",
+    "ddl/backfilling_dist_scheduler.go",
+    "ddl/backfilling_import_cloud.go",
+    "disttask/framework/dispatcher/BUILD.bazel",
+    "disttask/framework/dispatcher/dispatcher.go",
+    "disttask/framework/dispatcher/dispatcher_manager.go",
+    "disttask/framework/dispatcher/dispatcher_test.go",
+    "disttask/framework/mock/BUILD.bazel",
+    "disttask/framework/mock/dispatcher_mock.go",
+    "disttask/framework/planner/plan.go",
+    "disttask/importinto/BUILD.bazel",
+    "disttask/importinto/dispatcher.go",
+    "disttask/importinto/dispatcher_testkit_test.go",
+    "disttask/importinto/encode_and_sort_operator.go",
+    "disttask/importinto/encode_and_sort_operator_test.go",
+    "disttask/importinto/job.go",
+    "disttask/importinto/mock/BUILD.bazel",
+    "disttask/importinto/mock/import_mock.go",
+    "disttask/importinto/planner.go",
+    "disttask/importinto/planner_test.go",
+    "disttask/importinto/proto.go",
+    "disttask/importinto/scheduler.go",
+    "disttask/importinto/subtask_executor.go",
+    "disttask/operator/operator.go",
+    "errno/errname.go",
+    "errors.toml",
+    "executor/import_into.go",
+    "executor/import_into_test.go",
+    "executor/importer/BUILD.bazel",
+    "executor/importer/chunk_process.go",
+    "executor/importer/engine_process.go",
+    "executor/importer/import.go",
+    "executor/importer/import_test.go",
+    "executor/importer/job.go",
+    "executor/importer/job_test.go",
+    "executor/importer/table_import.go",
+    "executor/test/loadremotetest/error_test.go",
+    "parser/ast/dml.go",
+    "planner/core/common_plans.go",
+    "planner/core/planbuilder.go",
+    "tablecodec/tablecodec.go",
+    "tablecodec/tablecodec_test.go",
+    "tests/realtikvtest/importintotest/from_server_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: race = \"on\",",
+      "files: Makefile, br/cmd/tidb-lightning-ctl/main.go, br/pkg/lightning/backend/backend.go, br/pkg/lightning/backend/external/BUILD.bazel, br/pkg/lightning/backend/external/util.go, br/pkg/lightning/backend/external/writer.go, br/pkg/lightning/backend/local/local.go, br/pkg/lightning/backend/local/local_test.go, br/pkg/lightning/importer/import.go, ddl/backfilling_dispatcher.go, ddl/backfilling_import_cloud.go, ddl/stage_scheduler.go, disttask/framework/dispatcher/BUILD.bazel, disttask/framework/dispatcher/dispatcher.go, disttask/framework/dispatcher/dispatcher_manager.go, disttask/framework/dispatcher/dispatcher_test.go, disttask/framework/mock/BUILD.bazel, disttask/framework/mock/dispatcher_mock.go, disttask/framework/planner/plan.go, disttask/importinto/BUILD.bazel, disttask/importinto/dispatcher.go, disttask/importinto/dispatcher_testkit_test.go, disttask/importinto/encode_and_sort_operator.go, disttask/importinto/encode_and_sort_operator_test.go, disttask/importinto/job.go, disttask/importinto/mock/BUILD.bazel, disttask/importinto/mock/import_mock.go, disttask/importinto/planner.go, disttask/importinto/planner_test.go, disttask/importinto/proto.go, disttask/importinto/scheduler.go, disttask/importinto/subtask_executor.go, disttask/operator/operator.go, errno/errname.go, errors.toml, executor/import_into.go, executor/import_into_test.go, executor/importer/BUILD.bazel, executor/importer/chunk_process.go, executor/importer/engine_process.go, executor/importer/import.go, executor/importer/import_test.go, executor/importer/job.go, executor/importer/job_test.go, executor/importer/table_import.go, executor/test/loadremotetest/error_test.go, parser/ast/dml.go, planner/core/common_plans.go, planner/core/planbuilder.go, tablecodec/tablecodec.go, tablecodec/tablecodec_test.go, tests/realtikvtest/importintotest/from_server_test.go"
+    ]
+  },
+  "analysis": "PR title: importinto: integrate global sort(without merge-sort) part 1\nPR url: https://github.com/pingcap/tidb/pull/46998\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"on\",\nChanged files (52): Makefile, br/cmd/tidb-lightning-ctl/main.go, br/pkg/lightning/backend/backend.go, br/pkg/lightning/backend/external/BUILD.bazel, br/pkg/lightning/backend/external/util.go, br/pkg/lightning/backend/external/writer.go, br/pkg/lightning/backend/local/local.go, br/pkg/lightning/backend/local/local_test.go, br/pkg/lightning/importer/import.go, ddl/backfilling_dispatcher.go, ddl/backfilling_dist_scheduler.go, ddl/backfilling_import_cloud.go, disttask/framework/dispatcher/BUILD.bazel, disttask/framework/dispatcher/dispatcher.go, disttask/framework/dispatcher/dispatcher_manager.go, disttask/framework/dispatcher/dispatcher_test.go, disttask/framework/mock/BUILD.bazel, disttask/framework/mock/dispatcher_mock.go, disttask/framework/planner/plan.go, disttask/importinto/BUILD.bazel, disttask/importinto/dispatcher.go, disttask/importinto/dispatcher_testkit_test.go, disttask/importinto/encode_and_sort_operator.go, disttask/importinto/encode_and_sort_operator_test.go, disttask/importinto/job.go, disttask/importinto/mock/BUILD.bazel, disttask/importinto/mock/import_mock.go, disttask/importinto/planner.go, disttask/importinto/planner_test.go, disttask/importinto/proto.go, disttask/importinto/scheduler.go, disttask/importinto/subtask_executor.go, disttask/operator/operator.go, errno/errname.go, errors.toml, executor/import_into.go, executor/import_into_test.go, executor/importer/BUILD.bazel, executor/importer/chunk_process.go, executor/importer/engine_process.go, executor/importer/import.go, executor/importer/import_test.go, executor/importer/job.go, executor/importer/job_test.go, executor/importer/table_import.go, executor/test/loadremotetest/error_test.go, parser/ast/dml.go, planner/core/common_plans.go, planner/core/planbuilder.go, tablecodec/tablecodec.go, tablecodec/tablecodec_test.go, tests/realtikvtest/importintotest/from_server_test.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,48 @@
+{
+  "id": "pr-45003",
+  "source_pr": {
+    "number": 45003,
+    "url": "https://github.com/pingcap/tidb/pull/45003",
+    "title": "planner: a quick fix to solve the column alias in ORDER BY's subquery",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #42732\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nThe column alias is not seeable in ORDER BY's subquery clause.\r\n\r\nThis pr provides a quick way to fix the issue.\r\n\r\nIt's not the final solution to the AST resolution problems.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-06-30T04:02:15+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/issuetest/planner_issue_test.go",
+    "name": "planner_issue_test"
+  },
+  "symptoms": [
+    "race = \"on\", | tk.MustQuery(\"SELECT one.a, one.b as b2 FROM t1 one ORDER BY (SELECT two.b FROM t2 two WHERE two.a = one.b)\").Check(testkit.Rows(\"1 1\")) (planner/core/issuetest/planner_issue_test.go)"
+  ],
+  "failure_signature": "race = \"on\", | tk.MustQuery(\"SELECT one.a, one.b as b2 FROM t1 one ORDER BY (SELECT two.b FROM t2 two WHERE two.a = one.b)\").Check(testkit.Rows(\"1 1\")) (planner/core/issuetest/planner_issue_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"on\", | tk.MustQuery(\"SELECT one.a, one.b as b2 FROM t1 one ORDER BY (SELECT two.b FROM t2 two WHERE two.a = one.b)\").Check(testkit.Rows(\"1 1\")) (planner/core/issuetest/planner_issue_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/45003",
+    "https://github.com/pingcap/tidb/pull/45003.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/45003.patch",
+  "changed_files": [
+    "planner/core/issuetest/BUILD.bazel",
+    "planner/core/issuetest/planner_issue_test.go",
+    "planner/core/logical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: race = \"on\", | tk.MustQuery(\"SELECT one.a, one.b as b2 FROM t1 one ORDER BY (SELECT two.b FROM t2 two WHERE two.a = one.b)\").Check(testkit.Rows(\"1 1\")) (planner/core/issuetest/planner_issue_test.go)",
+      "files: planner/core/issuetest/BUILD.bazel, planner/core/issuetest/planner_issue_test.go, planner/core/logical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: planner: a quick fix to solve the column alias in ORDER BY's subquery\nPR url: https://github.com/pingcap/tidb/pull/45003\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: race = \"on\", | tk.MustQuery(\"SELECT one.a, one.b as b2 FROM t1 one ORDER BY (SELECT two.b FROM t2 two WHERE two.a = one.b)\").Check(testkit.Rows(\"1 1\")) (planner/core/issuetest/planner_issue_test.go)\nChanged files (3): planner/core/issuetest/BUILD.bazel, planner/core/issuetest/planner_issue_test.go, planner/core/logical_plan_builder.go\nPatch series analyzed; see patch_url."
+}

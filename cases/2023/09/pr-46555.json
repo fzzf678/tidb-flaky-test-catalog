@@ -1,0 +1,56 @@
+{
+  "id": "pr-46555",
+  "source_pr": {
+    "number": 46555,
+    "url": "https://github.com/pingcap/tidb/pull/46555",
+    "title": "statistics: remove lockedTable cache",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref https://github.com/pingcap/tidb/issues/46351\r\n\r\nProblem Summary:\r\n\r\n### What changed and how it works?\r\n\r\n- Removed the `lockedTable` cache. The reason we're removing it is because it doesn't help. It's locked and unlocked so infrequently that it doesn't matter if we query it every time. This way we don't need to load it as often.\r\n\r\n- Removed `LoadLockedTables` background task\r\n- Use the read lock to protect the SQLExecutor\r\n- Move all code to `lockstats` pkg\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-09-02T11:53:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "statistics/handle/handletest/statslock/stats_lcok_test.go",
+    "name": "stats_lcok_test"
+  },
+  "symptoms": [
+    "race = \"on\","
+  ],
+  "failure_signature": "race = \"on\",",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"on\",",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/46555",
+    "https://github.com/pingcap/tidb/pull/46555.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/46555.patch",
+  "changed_files": [
+    "domain/domain.go",
+    "executor/analyze.go",
+    "executor/show_stats.go",
+    "statistics/handle/BUILD.bazel",
+    "statistics/handle/handle.go",
+    "statistics/handle/handletest/statslock/stats_lcok_test.go",
+    "statistics/handle/lock_stats_handler.go",
+    "statistics/handle/lockstats/BUILD.bazel",
+    "statistics/handle/lockstats/lock_stats.go",
+    "statistics/handle/lockstats/lock_stats_test.go",
+    "statistics/handle/lockstats/unlock_stats.go",
+    "statistics/handle/update.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: race = \"on\",",
+      "files: domain/domain.go, executor/analyze.go, executor/show_stats.go, statistics/handle/BUILD.bazel, statistics/handle/ddl.go, statistics/handle/dump.go, statistics/handle/gc.go, statistics/handle/handle.go, statistics/handle/handletest/statslock/stats_lcok_test.go, statistics/handle/historical_stats_handler.go, statistics/handle/lock_stats_handler.go, statistics/handle/lockstats/BUILD.bazel, statistics/handle/lockstats/lock_stats.go, statistics/handle/lockstats/lock_stats_test.go, statistics/handle/lockstats/unlock_stats.go, statistics/handle/unlock_stats_handler.go, statistics/handle/update.go"
+    ]
+  },
+  "analysis": "PR title: statistics: remove lockedTable cache\nPR url: https://github.com/pingcap/tidb/pull/46555\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"on\",\nChanged files (12): domain/domain.go, executor/analyze.go, executor/show_stats.go, statistics/handle/BUILD.bazel, statistics/handle/handle.go, statistics/handle/handletest/statslock/stats_lcok_test.go, statistics/handle/lock_stats_handler.go, statistics/handle/lockstats/BUILD.bazel, statistics/handle/lockstats/lock_stats.go, statistics/handle/lockstats/lock_stats_test.go, statistics/handle/lockstats/unlock_stats.go, statistics/handle/update.go\nPatch series analyzed; see patch_url."
+}

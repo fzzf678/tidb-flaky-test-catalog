@@ -1,0 +1,54 @@
+{
+  "id": "pr-49079",
+  "source_pr": {
+    "number": 49079,
+    "url": "https://github.com/pingcap/tidb/pull/49079",
+    "title": "txn: make load data transactional",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #49078\r\n\r\n### What changed and how does it work?\r\n\r\n```\r\nMake `LOAD DATA` statements behave normally in a transaction.\r\nPreviously the `LOAD DATA` statement commits the current transaction, start a new transaction for its own use and commit it immediately after the statement.\r\nThe PR fixes the issue and make `LOAD DATA` behave like other normal DMLs. It doesn't create txn for its own and respects the rollback or commit action of its surrounding transaction.\r\n```\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [x] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [x] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [x] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nMake `LOAD DATA` statements behave normally in a transaction.\r\nPreviously the `LOAD DATA` statement commits the current transaction, start a new transaction for its own use and commit it immediately after the statement.\r\nThe PR fixes the issue and make `LOAD DATA` behave like other normal DMLs. It doesn't create txn for its own and respects the rollback or commit action of its surrounding transaction.\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-12-18T15:43:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/executor/test/loaddatatest/load_data_test.go",
+    "name": "load_data_test"
+  },
+  "symptoms": [
+    "race = \"on\", | s.tk.MustQuery(\"select i from load_csv.t order by i\").Check( (pkg/executor/test/loadremotetest/one_csv_test.go)"
+  ],
+  "failure_signature": "race = \"on\", | s.tk.MustQuery(\"select i from load_csv.t order by i\").Check( (pkg/executor/test/loadremotetest/one_csv_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "``` Make `LOAD DATA` statements behave normally in a transaction. Previously the `LOAD DATA` statement commits the current transaction, start a new transaction for its own use and commit it immediately after the statement. The PR fixes the issue and make `LOAD DATA` behave like other normal DMLs. It doesn't create txn for its own and respects the rollback or commit action of its surrounding transaction. ```",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/49079",
+    "https://github.com/pingcap/tidb/pull/49079.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/49079.patch",
+  "changed_files": [
+    "pkg/executor/load_data.go",
+    "pkg/executor/test/loaddatatest/BUILD.bazel",
+    "pkg/executor/test/loaddatatest/load_data_test.go",
+    "pkg/executor/test/loadremotetest/one_csv_test.go",
+    "pkg/executor/test/writetest/write_test.go",
+    "pkg/privilege/privileges/privileges_test.go",
+    "pkg/server/conn.go",
+    "pkg/server/internal/testserverclient/server_client.go",
+    "pkg/server/tests/tidb_serial_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: race = \"on\", | s.tk.MustQuery(\"select i from load_csv.t order by i\").Check( (pkg/executor/test/loadremotetest/one_csv_test.go)",
+      "files: pkg/executor/load_data.go, pkg/executor/test/loaddatatest/BUILD.bazel, pkg/executor/test/loaddatatest/load_data_test.go, pkg/executor/test/loadremotetest/one_csv_test.go, pkg/executor/test/writetest/write_test.go, pkg/privilege/privileges/privileges_test.go, pkg/server/conn.go, pkg/server/internal/testserverclient/server_client.go, pkg/server/tests/tidb_serial_test.go"
+    ]
+  },
+  "analysis": "PR title: txn: make load data transactional\nPR url: https://github.com/pingcap/tidb/pull/49079\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: race = \"on\", | s.tk.MustQuery(\"select i from load_csv.t order by i\").Check( (pkg/executor/test/loadremotetest/one_csv_test.go)\nChanged files (9): pkg/executor/load_data.go, pkg/executor/test/loaddatatest/BUILD.bazel, pkg/executor/test/loaddatatest/load_data_test.go, pkg/executor/test/loadremotetest/one_csv_test.go, pkg/executor/test/writetest/write_test.go, pkg/privilege/privileges/privileges_test.go, pkg/server/conn.go, pkg/server/internal/testserverclient/server_client.go, pkg/server/tests/tidb_serial_test.go\nPatch series analyzed; see patch_url."
+}

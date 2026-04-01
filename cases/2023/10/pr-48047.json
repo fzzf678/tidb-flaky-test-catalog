@@ -1,0 +1,71 @@
+{
+  "id": "pr-48047",
+  "source_pr": {
+    "number": 48047,
+    "url": "https://github.com/pingcap/tidb/pull/48047",
+    "title": "importinto: optimize write ingest step and fix oom",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #47572, close #47643\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n- add option checkHotspot to allow read each file using single reader.\r\n- adjust concurrency of LoadIngestData depends on number of data-files when we disable checkHotspot, after this, we can have more concurrency to load ingest data.\r\n- send loaded ingestData immediately to reduce memory usage, now we can hold at most 1 DataAndRange per LoadIngestData routine\r\n- adjust WorkerConcurrency for import-into on global-sort based on thread-cnt to avoid oom see https://github.com/pingcap/tidb/issues/47643\r\n- display total file size in IEC unit\r\n- refine logs\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n  - NOTE: below test all set this:\r\n```\r\nset global tidb_server_memory_limit_gc_trigger=0.99;\r\nset global tidb_server_memory_limit='88%';\r\n```\r\n  - test a add-index case of 100M rows(sbtest1) using 1 node and global-sort, this pr takes 5 min 30.47 (5 min 38.94 on master). **KS3 speed is not that stable, the speed varies a little.**\r\n  - test import-into of 150G using 1 node and global-sort, this pr takes 26m (45m on master)\r\n  - test import-into on 1T 1 node and global-sort, success\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->  \r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-10-31T19:48:38+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "br/pkg/lightning/backend/external/engine_test.go",
+    "name": "engine_test"
+  },
+  "symptoms": [
+    "race = \"on\","
+  ],
+  "failure_signature": "race = \"on\",",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"on\",",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/48047",
+    "https://github.com/pingcap/tidb/pull/48047.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/48047.patch",
+  "changed_files": [
+    "br/pkg/lightning/backend/backend.go",
+    "br/pkg/lightning/backend/external/BUILD.bazel",
+    "br/pkg/lightning/backend/external/engine.go",
+    "br/pkg/lightning/backend/external/engine_test.go",
+    "br/pkg/lightning/backend/external/iter.go",
+    "br/pkg/lightning/backend/external/iter_test.go",
+    "br/pkg/lightning/backend/external/merge.go",
+    "br/pkg/lightning/backend/external/split.go",
+    "br/pkg/lightning/backend/external/split_test.go",
+    "br/pkg/lightning/backend/external/util.go",
+    "br/pkg/lightning/backend/external/util_test.go",
+    "br/pkg/lightning/backend/external/writer_test.go",
+    "br/pkg/lightning/backend/local/local.go",
+    "br/pkg/lightning/backend/local/local_test.go",
+    "pkg/ddl/backfilling_dispatcher.go",
+    "pkg/ddl/backfilling_import_cloud.go",
+    "pkg/ddl/backfilling_merge_sort.go",
+    "pkg/disttask/framework/scheduler/BUILD.bazel",
+    "pkg/disttask/framework/scheduler/scheduler.go",
+    "pkg/disttask/importinto/planner.go",
+    "pkg/disttask/importinto/scheduler.go",
+    "pkg/executor/importer/BUILD.bazel",
+    "pkg/executor/importer/import.go",
+    "pkg/executor/importer/import_test.go",
+    "pkg/executor/show.go",
+    "tests/realtikvtest/importintotest/import_into_test.go",
+    "tests/realtikvtest/importintotest/job_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: race = \"on\",",
+      "files: br/pkg/lightning/backend/backend.go, br/pkg/lightning/backend/external/BUILD.bazel, br/pkg/lightning/backend/external/engine.go, br/pkg/lightning/backend/external/engine_test.go, br/pkg/lightning/backend/external/iter.go, br/pkg/lightning/backend/external/iter_test.go, br/pkg/lightning/backend/external/merge.go, br/pkg/lightning/backend/external/split.go, br/pkg/lightning/backend/external/split_test.go, br/pkg/lightning/backend/external/util.go, br/pkg/lightning/backend/external/util_test.go, br/pkg/lightning/backend/external/writer_test.go, br/pkg/lightning/backend/kv/base.go, br/pkg/lightning/backend/kv/session.go, br/pkg/lightning/backend/local/local.go, br/pkg/lightning/backend/local/local_test.go, pkg/ddl/backfilling_dispatcher.go, pkg/ddl/backfilling_import_cloud.go, pkg/ddl/backfilling_merge_sort.go, pkg/disttask/framework/dispatcher/dispatcher_manager.go, pkg/disttask/framework/scheduler/BUILD.bazel, pkg/disttask/framework/scheduler/scheduler.go, pkg/disttask/importinto/planner.go, pkg/disttask/importinto/scheduler.go, pkg/executor/importer/BUILD.bazel, pkg/executor/importer/import.go, pkg/executor/importer/import_test.go, pkg/executor/show.go, pkg/table/tables/tables.go, tests/realtikvtest/importintotest/import_into_test.go, tests/realtikvtest/importintotest/job_test.go"
+    ]
+  },
+  "analysis": "PR title: importinto: optimize write ingest step and fix oom\nPR url: https://github.com/pingcap/tidb/pull/48047\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"on\",\nChanged files (27): br/pkg/lightning/backend/backend.go, br/pkg/lightning/backend/external/BUILD.bazel, br/pkg/lightning/backend/external/engine.go, br/pkg/lightning/backend/external/engine_test.go, br/pkg/lightning/backend/external/iter.go, br/pkg/lightning/backend/external/iter_test.go, br/pkg/lightning/backend/external/merge.go, br/pkg/lightning/backend/external/split.go, br/pkg/lightning/backend/external/split_test.go, br/pkg/lightning/backend/external/util.go, br/pkg/lightning/backend/external/util_test.go, br/pkg/lightning/backend/external/writer_test.go, br/pkg/lightning/backend/local/local.go, br/pkg/lightning/backend/local/local_test.go, pkg/ddl/backfilling_dispatcher.go, pkg/ddl/backfilling_import_cloud.go, pkg/ddl/backfilling_merge_sort.go, pkg/disttask/framework/scheduler/BUILD.bazel, pkg/disttask/framework/scheduler/scheduler.go, pkg/disttask/importinto/planner.go, pkg/disttask/importinto/scheduler.go, pkg/executor/importer/BUILD.bazel, pkg/executor/importer/import.go, pkg/executor/importer/import_test.go, pkg/executor/show.go, tests/realtikvtest/importintotest/import_into_test.go, tests/realtikvtest/importintotest/job_test.go\nPatch series analyzed; see patch_url."
+}

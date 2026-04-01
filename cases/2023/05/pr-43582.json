@@ -1,0 +1,116 @@
+{
+  "id": "pr-43582",
+  "source_pr": {
+    "number": 43582,
+    "url": "https://github.com/pingcap/tidb/pull/43582",
+    "title": "privilege, server: support LDAP authentication",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #43580\r\n\r\nProblem Summary:\r\n\r\nSupport LDAP authentication in TiDB.\r\n\r\n### What is changed and how it works?\r\n\r\n1. Allow creating users identified with ldap.\r\n2. Authenticate through `bind`ing with LDAP server, with simple method or SASL method.\r\n\r\nThis PR has some know issues, and will be fixed in the following PR:\r\n\r\n1. If the LDAP connection timeout (or killed by the server), it'll not be released or re-initialized.\r\n2. The LDAP connection pool is not automatically scaled, so the variable `authentication_ldap_{simple,sasl}_max_pool_size` has no meaning. Maybe we should use a single `authentication_ldap_{simple,sasl}_pool_size` variable to replace `init` and `max` pool size, if we don't support auto scaling? I'm not sure whether it's needed actually.\r\n\r\n### Check List\r\n\r\nTests\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nHere is the guide for manually test:\r\n\r\n### Manual Test Instruction\r\n\r\nHere is a guide to manually test the following functions. To help the reviewer test this function, I have prepared a docker image to setup the LDAP server environment. It will use port `389` and `3306` to setup a LDAP server and a percona server (as reference). You can execute the following commands and **don't** exit the shell. It's also suggested to use the `mysql` client in this docker image, in case that your local mysql client doesn't support LDAP authentication (or don't have related dependencies installed):\r\n\r\n```\r\ndocker run --network host -it yangkeao/ldap-sasl-example:d2b324 /bin/bash\r\n```\r\n\r\nTo test this PR, you'll need to compile the tidb server and execute it. I assume the TiDB server runs with default configuration and listens port 4000.\r\n\r\nThen we need to set some basic variables to make LDAP work:\r\n\r\n```sql\r\nset global authentication_ldap_sasl_server_host='127.0.0.1';\r\n```\r\n\r\n#### Simple LDAP authentication\r\n\r\n1. Create a user with simple LDAP authentication by executing the following SQL in TiDB server.\r\n\r\n```sql\r\ncreate user yangkeao IDENTIFIED WITH authentication_ldap_simple as 'cn=yangkeao+uid=yangkeao,dc=example,dc=org';\r\n```\r\n\r\n2. Try to login the tidb-server with user `yangkeao`. The password is `123456`.\r\n\r\n```bash\r\nLIBMYSQL_ENABLE_CLEARTEXT_PLUGIN=1 mysql -h 127.0.0.1 -u yangkeao -P 4000 -p123456\r\n```\r\n\r\nLogin successfully. It means the simple LDAP authentication method really works!\r\n\r\n#### LDAP SASL authentication (SCRAM-SHA-1/256)\r\n\r\n1. Create a user with SASL LDAP authentication, or alter the previous user to use SASL LDAP authentication:\r\n\r\n```sql\r\nalter user yangkeao IDENTIFIED WITH authentication_ldap_sasl as 'cn=yangkeao+uid=yangkeao,dc=example,dc=org';\r\n```\r\n\r\n2. Try to login the tidb-server with user `yangkeao`. As the LDAP SASL method uses `authentication_ldap_sasl_client` plugin, but not `clear_text` plugin, so you **don't** need to enable the `clear_text` plugin with environment variables:\r\n\r\n```bash\r\nmysql -h 127.0.0.1 -u yangkeao -P 4000 -p123456\r\n```\r\n\r\nLogin successfully. It means the SASL LDAP authentication method really works!\r\n\r\n3. You can also change to another SASL method to have a try (the default one is `SCRAM-SHA-1`). For example:\r\n\r\n```sql\r\nset global authentication_ldap_sasl_auth_method_name='SCRAM-SHA-256';\r\n```\r\n\r\n4. Then you can login through `mysql -h 127.0.0.1 -u yangkeao -P 4000 -p123456`, you'll get the same result.\r\n\r\n#### StartTLS\r\n\r\nTiDB also support using TLS connection between tidb-server and LDAP server (NOTE: LDAP over SSL is not supported, like MySQL). The CA certificate locates in `/etc/ssl/certs/example.crt` in the container. You can copy it to anywhere the TiDB server can read. For example, I copied it to `/tmp/ca.crt`:\r\n\r\n```bash\r\ncat <<EOF > /tmp/ca.crt\r\n-----BEGIN CERTIFICATE-----\r\nMIIFZTCCA02gAwIBAgIUZ2hQOFVvjuAHrC8Tv+5dnwPGvF0wDQYJKoZIhvcNAQEL\r\nBQAwQjELMAkGA1UEBhMCWFgxFTATBgNVBAcMDERlZmF1bHQgQ2l0eTEcMBoGA1UE\r\nCgwTRGVmYXVsdCBDb21wYW55IEx0ZDAeFw0yMzA0MjQwNjM1MTRaFw0yODA0MjMw\r\nNjM1MTRaMEIxCzAJBgNVBAYTAlhYMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAa\r\nBgNVBAoME0RlZmF1bHQgQ29tcGFueSBMdGQwggIiMA0GCSqGSIb3DQEBAQUAA4IC\r\nDwAwggIKAoICAQDFvQt3xupYFQxZsyQPr2byhR9ZHoAWBxxqNWxbvpqy7RzHeccJ\r\nJg36dO1BNIBY8NjIy/JHV7eLDVGCh9FTGozn8dODQMOwDXTYqxFOiBHb2/M9wxVX\r\nILafa1GlsOnUFxEws9T0XH7ZBqMLC/KlXdJ5xQD1C36K1eWHvphjD0AFhgUnqQ4N\r\nO3NT3tJjzcY7oXBoKpgSgQs7qeTdJLTKJE7pY02C/hJI2WvJDdIiEhZTi0UWqE06\r\n5aXp8Heag/H4VlZzRA+RzQuDXqgXC3Bt7mJwtnoym0HgyTvoKBKO/vzfAW1yQhGo\r\n6ikfSZkvIy3kyPAxD1FSWeSA0Xo8soGNDUsZjV6dQRtcnlWLPFA+7VfwivCPNiFh\r\n91csXhHNEkYPNq4yCe6ZsycydZ+GNdNygzIrMjQ+DjNnHXXmfdeiiLLJbyxYzwuu\r\nGaAT9eD98vXeJFhuWSbKyj4oXcMKnj3bTAQnudMCHIV8cMDe7Zuq1d4/gjXvk95Z\r\ns/OnxqRYYNTXECkdLrevAPfGI2Qg9d7IrhnAh6KqCDDiFkhDkS5TMbWeHA88ZPKZ\r\n6RvLYZmA+j3tjtKPpta9yPiTglExjBUDHIe+37K84G4p0C4bEo5RxEop5hHuX4EW\r\nQvwNb0254i+RCsdyt+tFHiAVzo3/mTg9EMkWlTzoy0381HytFNcLDGb37QIDAQAB\r\no1MwUTAdBgNVHQ4EFgQUHs+YTH+x0YRNja11v18CF4iu5XowHwYDVR0jBBgwFoAU\r\nHs+YTH+x0YRNja11v18CF4iu5XowDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0B\r\nAQsFAAOCAgEAqf2ukpuqXC7u0kTqWdrw+3x2R+mwoLSsy7QbpsjdPbJwVoEysC02\r\nWHiZcMj+w75wZQ2SS5Md1+1K4HiIWC3n+eRDodz+Di0Hg9lxtoMFuOIBpnYUsDuA\r\nFooo/B7HadZkw9AbWFxPK5EGLyfCRuZF50981svSX5rnYqgCLLs0zGxr7Uswhzvh\r\n3fQMDd0OGLST0M4FW/pQkRYIWnQ4zn/n+wJaHBeaKXHJ7QfgNCtVXOLTXdzpreIL\r\nRvvydcOdVoPnjMgCs1jyhB6g226+/nOuQqic53pxnUTUTvHFJQ5B6/JlzMHeJS1m\r\nycvSxmF+3RqhjePiwRAT/ui9FBXkhXSG3wp0n0w83rpq7Ne0uwPH/KE9hqFkiI5x\r\nPzobjKy6ahzoSbZrw/a4gDXfZe3fYGtm1EdyDYTh1HFCi7hkdoxY9iCIL1Gr+mpB\r\nYruELQZ+RpvZQ7V8JN7bPtzWfPybPkOSozP1EoLXhUAnXl4/DinoBZvum1MpvPWY\r\nsKF9qQfTP6cAqOuIL1LcVhJ7yHAjR+BK7tvhA2h4sIqxEjhlDmJjH0XMr9JpYQcb\r\nyBzNgkS0YycMPJru0zb2p7vodql5rxSWArQW13Pyqza6N803Qk3vP0/SCfYXeR/i\r\nhv/InNBQBwfHo79FBEv/T7UB8yS7CIu75f562jp23DFKUQD+doybmDg=\r\n-----END CERTIFICATE-----\r\nEOF\r\n```\r\n\r\nThen configure the TiDB to use StartTLS to connect to the LDAP:\r\n\r\n```sql\r\nset global authentication_ldap_sasl_tls='ON';\r\nset global authentication_ldap_sasl_ca_path='/tmp/ca.crt';\r\n```\r\n\r\nThen you can login the user `yangkeao` with the StartTLS:\r\n\r\n```bash\r\nmysql -h 127.0.0.1 -u yangkeao -P 4000 -p123456\r\n```\r\n\r\nNOTE: this certificate is signed for `localhost` and `127.0.0.1`. Using it on other host will refuse to login.\r\n\r\n\r\n### Release note\r\n\r\n```release-note\r\nSupport `authentication_ldap_simple` and `authentication_ldap_sasl` authentication plugin. Allow authenticate user with LDAP service.\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-05-10T22:51:21+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "bindinfo/bind_test.go",
+    "name": "bind_test"
+  },
+  "symptoms": [
+    "race = \"on\","
+  ],
+  "failure_signature": "race = \"on\",",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"on\",",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/43582",
+    "https://github.com/pingcap/tidb/pull/43582.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/43582.patch",
+  "changed_files": [
+    "DEPS.bzl",
+    "bindinfo/bind_test.go",
+    "bindinfo/capture_test.go",
+    "bindinfo/session_handle_test.go",
+    "ddl/db_cache_test.go",
+    "ddl/db_integration_test.go",
+    "ddl/db_test.go",
+    "ddl/fktest/foreign_key_test.go",
+    "ddl/sequence_test.go",
+    "ddl/tiflash_replica_test.go",
+    "domain/extract_test.go",
+    "executor/cluster_table_test.go",
+    "executor/executor_test.go",
+    "executor/explain_test.go",
+    "executor/explainfor_test.go",
+    "executor/grant_test.go",
+    "executor/infoschema_cluster_table_test.go",
+    "executor/infoschema_reader_test.go",
+    "executor/prepared_test.go",
+    "executor/recover_test.go",
+    "executor/show_placement_test.go",
+    "executor/simple.go",
+    "executor/simple_test.go",
+    "executor/slow_query_sql_test.go",
+    "executor/test/fktest/foreign_key_test.go",
+    "executor/test/issuetest/executor_issue_test.go",
+    "executor/test/passwordtest/password_management_test.go",
+    "executor/test/showtest/show_test.go",
+    "executor/test/simpletest/BUILD.bazel",
+    "executor/test/simpletest/simple_test.go",
+    "extension/function_test.go",
+    "extension/registry_test.go",
+    "go.mod",
+    "go.sum",
+    "infoschema/cluster_tables_test.go",
+    "infoschema/tables_test.go",
+    "parser/ast/misc.go",
+    "parser/mysql/const.go",
+    "planner/core/binary_plan_test.go",
+    "planner/core/integration_partition_test.go",
+    "planner/core/integration_test.go",
+    "planner/core/prepare_test.go",
+    "privilege/BUILD.bazel",
+    "privilege/conn/BUILD.bazel",
+    "privilege/conn/conn.go",
+    "privilege/privilege.go",
+    "privilege/privileges/BUILD.bazel",
+    "privilege/privileges/ldap/BUILD.bazel",
+    "privilege/privileges/ldap/const.go",
+    "privilege/privileges/ldap/ldap_common.go",
+    "privilege/privileges/ldap/ldap_common_test.go",
+    "privilege/privileges/ldap/sasl.go",
+    "privilege/privileges/ldap/simple.go",
+    "privilege/privileges/privileges.go",
+    "privilege/privileges/privileges_test.go",
+    "server/BUILD.bazel",
+    "server/conn.go",
+    "server/conn_test.go",
+    "server/mock_conn.go",
+    "session/BUILD.bazel",
+    "session/bootstrap_test.go",
+    "session/session.go",
+    "session/sessiontest/session_test.go",
+    "sessionctx/variable/BUILD.bazel",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "sessiontxn/staleread/externalts_test.go",
+    "table/tables/cache_test.go",
+    "table/tables/tables_test.go",
+    "table/temptable/intergration_test.go",
+    "tests/realtikvtest/pessimistictest/pessimistic_test.go",
+    "util/stmtsummary/v2/tests/table_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: race = \"on\",",
+      "files: DEPS.bzl, bindinfo/bind_test.go, bindinfo/capture_test.go, bindinfo/session_handle_test.go, ddl/db_cache_test.go, ddl/db_integration_test.go, ddl/db_test.go, ddl/fktest/foreign_key_test.go, ddl/sequence_test.go, ddl/tiflash_replica_test.go, domain/extract_test.go, executor/cluster_table_test.go, executor/executor_test.go, executor/explain_test.go, executor/explainfor_test.go, executor/grant_test.go, executor/infoschema_cluster_table_test.go, executor/infoschema_reader_test.go, executor/prepared_test.go, executor/recover_test.go, executor/show_placement_test.go, executor/simple.go, executor/simple_test.go, executor/slow_query_sql_test.go, executor/test/fktest/foreign_key_test.go, executor/test/issuetest/executor_issue_test.go, executor/test/passwordtest/password_management_test.go, executor/test/showtest/show_test.go, executor/test/simpletest/BUILD.bazel, executor/test/simpletest/simple_test.go, extension/function_test.go, extension/registry_test.go, go.mod, go.sum, infoschema/cluster_tables_test.go, infoschema/tables_test.go, parser/ast/misc.go, parser/mysql/const.go, planner/core/binary_plan_test.go, planner/core/integration_partition_test.go, planner/core/integration_test.go, planner/core/prepare_test.go, privilege/BUILD.bazel, privilege/conn/BUILD.bazel, privilege/conn/conn.go, privilege/privilege.go, privilege/privileges/BUILD.bazel, privilege/privileges/ldap/BUILD.bazel, privilege/privileges/ldap/const.go, privilege/privileges/ldap/ldap_common.go, privilege/privileges/ldap/ldap_common_test.go, privilege/privileges/ldap/mock_ldap_server_test.go, privilege/privileges/ldap/sasl.go, privilege/privileges/ldap/simple.go, privilege/privileges/privileges.go, privilege/privileges/privileges_test.go, server/BUILD.bazel, server/conn.go, server/conn_test.go, server/mock_conn.go, session/BUILD.bazel, session/bootstrap_test.go, session/session.go, session/sessiontest/session_test.go, sessionctx/variable/BUILD.bazel, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessiontxn/staleread/externalts_test.go, table/tables/cache_test.go, table/tables/tables_test.go, table/temptable/intergration_test.go, tests/realtikvtest/pessimistictest/pessimistic_test.go, util/stmtsummary/v2/tests/table_test.go"
+    ]
+  },
+  "analysis": "PR title: privilege, server: support LDAP authentication\nPR url: https://github.com/pingcap/tidb/pull/43582\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"on\",\nChanged files (72): DEPS.bzl, bindinfo/bind_test.go, bindinfo/capture_test.go, bindinfo/session_handle_test.go, ddl/db_cache_test.go, ddl/db_integration_test.go, ddl/db_test.go, ddl/fktest/foreign_key_test.go, ddl/sequence_test.go, ddl/tiflash_replica_test.go, domain/extract_test.go, executor/cluster_table_test.go, executor/executor_test.go, executor/explain_test.go, executor/explainfor_test.go, executor/grant_test.go, executor/infoschema_cluster_table_test.go, executor/infoschema_reader_test.go, executor/prepared_test.go, executor/recover_test.go, executor/show_placement_test.go, executor/simple.go, executor/simple_test.go, executor/slow_query_sql_test.go, executor/test/fktest/foreign_key_test.go, executor/test/issuetest/executor_issue_test.go, executor/test/passwordtest/password_management_test.go, executor/test/showtest/show_test.go, executor/test/simpletest/BUILD.bazel, executor/test/simpletest/simple_test.go, extension/function_test.go, extension/registry_test.go, go.mod, go.sum, infoschema/cluster_tables_test.go, infoschema/tables_test.go, parser/ast/misc.go, parser/mysql/const.go, planner/core/binary_plan_test.go, planner/core/integration_partition_test.go, planner/core/integration_test.go, planner/core/prepare_test.go, privilege/BUILD.bazel, privilege/conn/BUILD.bazel, privilege/conn/conn.go, privilege/privilege.go, privilege/privileges/BUILD.bazel, privilege/privileges/ldap/BUILD.bazel, privilege/privileges/ldap/const.go, privilege/privileges/ldap/ldap_common.go, privilege/privileges/ldap/ldap_common_test.go, privilege/privileges/ldap/sasl.go, privilege/privileges/ldap/simple.go, privilege/privileges/privileges.go, privilege/privileges/privileges_test.go, server/BUILD.bazel, server/conn.go, server/conn_test.go, server/mock_conn.go, session/BUILD.bazel, session/bootstrap_test.go, session/session.go, session/sessiontest/session_test.go, sessionctx/variable/BUILD.bazel, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessiontxn/staleread/externalts_test.go, table/tables/cache_test.go, table/tables/tables_test.go, table/temptable/intergration_test.go, tests/realtikvtest/pessimistictest/pessimistic_test.go, util/stmtsummary/v2/tests/table_test.go\nPatch series analyzed; see patch_url."
+}

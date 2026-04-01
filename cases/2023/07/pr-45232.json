@@ -1,0 +1,46 @@
+{
+  "id": "pr-45232",
+  "source_pr": {
+    "number": 45232,
+    "url": "https://github.com/pingcap/tidb/pull/45232",
+    "title": "server: add more integration/unit tests for cursor fetch",
+    "body": "Add more tests to cover the following situations:\r\n\r\n1. Execute returns error in the early check\r\n2. Execute / Fetch can return the expected data\r\n3. Execute multiple times will not return an error, and the original cursor will be closed automatically\r\n4. Reset will close the opened cursor automatically\r\n5. Command send long data works well\r\n6. Reset will removes the stored \"long data\""
+  },
+  "pr_merged_at": "2023-07-10T17:05:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "server/conn_stmt_test.go",
+    "name": "conn_stmt_test"
+  },
+  "symptoms": [
+    "stmt, _, _, err := c.Context().Prepare(\"select * from (select 1 as id union all select 2 as id union all select 3 as id) t order by id\") (server/conn_stmt_test.go)"
+  ],
+  "failure_signature": "stmt, _, _, err := c.Context().Prepare(\"select * from (select 1 as id union all select 2 as id union all select 3 as id) t order by id\") (server/conn_stmt_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "stmt, _, _, err := c.Context().Prepare(\"select * from (select 1 as id union all select 2 as id union all select 3 as id) t order by id\") (server/conn_stmt_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/45232",
+    "https://github.com/pingcap/tidb/pull/45232.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/45232.patch",
+  "changed_files": [
+    "server/conn_stmt_test.go",
+    "server/mock_conn.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: stmt, _, _, err := c.Context().Prepare(\"select * from (select 1 as id union all select 2 as id union all select 3 as id) t order by id\") (server/conn_stmt_test.go)",
+      "files: server/conn_stmt_test.go, server/mock_conn.go"
+    ]
+  },
+  "analysis": "PR title: server: add more integration/unit tests for cursor fetch\nPR url: https://github.com/pingcap/tidb/pull/45232\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: stmt, _, _, err := c.Context().Prepare(\"select * from (select 1 as id union all select 2 as id union all select 3 as id) t order by id\") (server/conn_stmt_test.go)\nChanged files (2): server/conn_stmt_test.go, server/mock_conn.go\nPatch series analyzed; see patch_url."
+}

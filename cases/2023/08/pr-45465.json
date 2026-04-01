@@ -1,0 +1,68 @@
+{
+  "id": "pr-45465",
+  "source_pr": {
+    "number": 45465,
+    "url": "https://github.com/pingcap/tidb/pull/45465",
+    "title": "*: global runaway watch by system table and impl exector for `query watch`",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref https://github.com/pingcap/tidb/issues/43691\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n1. global runaway watch by system table \r\n> create table `mysql.tidb_runaway_watch` and table `mysql.tidb_runaway_watch_done` to persist runaway watch and deletion of runaway watch. And all TiDb servers read both tables periodically to sync runaway watch among TiDBs.\r\n2. impl exector for query watch\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\nAbout runaway watch sync:\r\nExecute query on TiDB1, and then execute query on TiDB2\r\n![image](https://github.com/pingcap/tidb/assets/23399268/c09b51f1-6e8c-4af0-a245-2a312d8c31a0)\r\nWe can see TiDB1 returns error 8253, and TiDB2 returns error 8254. And mysql.tidb_runaway_watch has the record.\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-08-01T14:14:38+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/tests/resourcegroup/resource_group_test.go",
+    "name": "resource_group_test"
+  },
+  "symptoms": [
+    "fix data race | tk.MustQuery(\"select SQL_NO_CACHE resource_group_name, watch_text, action, watch from mysql.tidb_runaway_watch order by id\"). (executor/internal/querywatch/query_watch_test.go)"
+  ],
+  "failure_signature": "fix data race | tk.MustQuery(\"select SQL_NO_CACHE resource_group_name, watch_text, action, watch from mysql.tidb_runaway_watch order by id\"). (executor/internal/querywatch/query_watch_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "fix data race | tk.MustQuery(\"select SQL_NO_CACHE resource_group_name, watch_text, action, watch from mysql.tidb_runaway_watch order by id\"). (executor/internal/querywatch/query_watch_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/45465",
+    "https://github.com/pingcap/tidb/pull/45465.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/45465.patch",
+  "changed_files": [
+    "DEPS.bzl",
+    "ddl/resourcegroup/group.go",
+    "ddl/tests/resourcegroup/resource_group_test.go",
+    "ddl/util/util.go",
+    "domain/BUILD.bazel",
+    "domain/domain.go",
+    "domain/resourcegroup/runaway.go",
+    "domain/runaway.go",
+    "executor/adapter.go",
+    "executor/builder.go",
+    "executor/infoschema_cluster_table_test.go",
+    "executor/infoschema_reader.go",
+    "executor/internal/querywatch/BUILD.bazel",
+    "executor/internal/querywatch/query_watch.go",
+    "executor/internal/querywatch/query_watch_test.go",
+    "executor/simple.go",
+    "go.mod",
+    "go.sum",
+    "infoschema/tables.go",
+    "parser/model/model.go",
+    "planner/core/planbuilder.go",
+    "server/testdata/optimizer_suite_out.json",
+    "session/bootstrap.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: fix data race | tk.MustQuery(\"select SQL_NO_CACHE resource_group_name, watch_text, action, watch from mysql.tidb_runaway_watch order by id\"). (executor/internal/querywatch/query_watch_test.go)",
+      "files: DEPS.bzl, ddl/resourcegroup/group.go, ddl/tests/resourcegroup/resource_group_test.go, ddl/util/util.go, domain/BUILD.bazel, domain/domain.go, domain/resourcegroup/runaway.go, domain/runaway.go, executor/adapter.go, executor/builder.go, executor/infoschema_cluster_table_test.go, executor/infoschema_reader.go, executor/internal/querywatch/BUILD.bazel, executor/internal/querywatch/query_watch.go, executor/internal/querywatch/query_watch_test.go, executor/simple.go, go.mod, go.sum, infoschema/tables.go, parser/model/model.go, planner/core/planbuilder.go, server/testdata/optimizer_suite_out.json, session/bootstrap.go"
+    ]
+  },
+  "analysis": "PR title: *: global runaway watch by system table and impl exector for `query watch`\nPR url: https://github.com/pingcap/tidb/pull/45465\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix data race | tk.MustQuery(\"select SQL_NO_CACHE resource_group_name, watch_text, action, watch from mysql.tidb_runaway_watch order by id\"). (executor/internal/querywatch/query_watch_test.go)\nChanged files (23): DEPS.bzl, ddl/resourcegroup/group.go, ddl/tests/resourcegroup/resource_group_test.go, ddl/util/util.go, domain/BUILD.bazel, domain/domain.go, domain/resourcegroup/runaway.go, domain/runaway.go, executor/adapter.go, executor/builder.go, executor/infoschema_cluster_table_test.go, executor/infoschema_reader.go, executor/internal/querywatch/BUILD.bazel, executor/internal/querywatch/query_watch.go, executor/internal/querywatch/query_watch_test.go, executor/simple.go, go.mod, go.sum, infoschema/tables.go, parser/model/model.go, planner/core/planbuilder.go, server/testdata/optimizer_suite_out.json, session/bootstrap.go\nPatch series analyzed; see patch_url."
+}
