@@ -1,0 +1,66 @@
+{
+  "id": "pr-62540",
+  "source_pr": {
+    "number": 62540,
+    "url": "https://github.com/pingcap/tidb/pull/62540",
+    "title": "bootstrap: refactor the system tables/dbs creation",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #61702\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n- refactor DDL part of bootstrap, to use a structured way to store all the system tables\r\n- add reserved ID for all the physical system tables and system schema, we will use them later for nextgen, as we want to fix the ID of system tables\r\n- also add lint for above part\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-07-23T13:07:18+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/restore/log_client/client_test.go",
+    "name": "client_test"
+  },
+  "symptoms": [
+    "slices.Sort(reservedIDs) (pkg/session/bootstrap_test.go)"
+  ],
+  "failure_signature": "slices.Sort(reservedIDs) (pkg/session/bootstrap_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "refactor DDL part of bootstrap, to use a structured way to store all the system tables add reserved ID for all the physical system tables and system schema, we will use them later for nextgen, as we want to fix the ID of system tables also add lint for above part",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/62540",
+    "https://github.com/pingcap/tidb/pull/62540.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/62540.patch",
+  "changed_files": [
+    "br/pkg/restore/log_client/client_test.go",
+    "build/debug-linter/BUILD.bazel",
+    "build/debug-linter/main.go",
+    "build/linter/bootstrap/analyzer.go",
+    "pkg/ddl/multi_schema_change_test.go",
+    "pkg/meta/metadef/system.go",
+    "pkg/privilege/privileges/privileges_test.go",
+    "pkg/session/BUILD.bazel",
+    "pkg/session/bootstrap.go",
+    "pkg/session/bootstrap_test.go",
+    "pkg/session/session.go",
+    "pkg/session/session_test.go",
+    "pkg/session/upgrade.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/dynamic_partitioned_table_analysis_job_test.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/interval_test.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/non_partitioned_table_analysis_job_test.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/static_partitioned_table_analysis_job_test.go",
+    "pkg/timer/BUILD.bazel",
+    "pkg/timer/store_intergartion_test.go",
+    "pkg/timer/tablestore/sql.go",
+    "pkg/ttl/ttlworker/BUILD.bazel",
+    "pkg/ttl/ttlworker/timer_sync_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: slices.Sort(reservedIDs) (pkg/session/bootstrap_test.go)",
+      "files: br/pkg/restore/log_client/client_test.go, build/debug-linter/BUILD.bazel, build/debug-linter/main.go, build/linter/bootstrap/analyzer.go, pkg/ddl/multi_schema_change_test.go, pkg/meta/metadef/system.go, pkg/privilege/privileges/privileges_test.go, pkg/session/BUILD.bazel, pkg/session/bootstrap.go, pkg/session/bootstrap_test.go, pkg/session/session.go, pkg/session/session_test.go, pkg/session/upgrade.go, pkg/statistics/handle/autoanalyze/priorityqueue/dynamic_partitioned_table_analysis_job_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/interval_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/non_partitioned_table_analysis_job_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/static_partitioned_table_analysis_job_test.go, pkg/timer/BUILD.bazel, pkg/timer/store_intergartion_test.go, pkg/timer/tablestore/sql.go, pkg/ttl/ttlworker/BUILD.bazel, pkg/ttl/ttlworker/timer_sync_test.go"
+    ]
+  },
+  "analysis": "PR title: bootstrap: refactor the system tables/dbs creation\nPR url: https://github.com/pingcap/tidb/pull/62540\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: slices.Sort(reservedIDs) (pkg/session/bootstrap_test.go)\nChanged files (22): br/pkg/restore/log_client/client_test.go, build/debug-linter/BUILD.bazel, build/debug-linter/main.go, build/linter/bootstrap/analyzer.go, pkg/ddl/multi_schema_change_test.go, pkg/meta/metadef/system.go, pkg/privilege/privileges/privileges_test.go, pkg/session/BUILD.bazel, pkg/session/bootstrap.go, pkg/session/bootstrap_test.go, pkg/session/session.go, pkg/session/session_test.go, pkg/session/upgrade.go, pkg/statistics/handle/autoanalyze/priorityqueue/dynamic_partitioned_table_analysis_job_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/interval_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/non_partitioned_table_analysis_job_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/static_partitioned_table_analysis_job_test.go, pkg/timer/BUILD.bazel, pkg/timer/store_intergartion_test.go, pkg/timer/tablestore/sql.go, pkg/ttl/ttlworker/BUILD.bazel, pkg/ttl/ttlworker/timer_sync_test.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,47 @@
+{
+  "id": "pr-60694",
+  "source_pr": {
+    "number": 60694,
+    "url": "https://github.com/pingcap/tidb/pull/60694",
+    "title": "planner: add back children's `Schema` when checking `LogicalJoin`'s used columns in column pruning",
+    "body": "\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #60692\r\n\r\nProblem Summary:\r\n\r\nAs said in the issue, sometimes the `FullSchema` may contain outdated `Column`s after the projection elimination. \r\n\r\nWe should have fixed the `FullSchema`, but considering the long-standing problems in schema maintenance and column pruning in tidb, we can't make sure we won't introduce any new risk.\r\nThis PR is likely to be cherry-picked to the LTS version quickly. So it's better to just restore the previous checking logic, i.e., use the `Schema()` to do the check.\r\n\r\n### What changed and how does it work?\r\n\r\nAdd back what's been removed in #51057 in `(*LogicalJoin).ExtractUsedCols()`.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-04-23T15:54:56+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/t/planner/core/issuetest/planner_issue.test",
+    "name": "planner_issue"
+  },
+  "symptoms": [
+    "(select a, b, c, (row_number() over (partition by b order by e asc)) from t4) tmp4 on tmp4.b = t2.c and tmp4.c = t3.c (tests/integrationtest/r/planner/core/issuetest/planner_issue.result)"
+  ],
+  "failure_signature": "(select a, b, c, (row_number() over (partition by b order by e asc)) from t4) tmp4 on tmp4.b = t2.c and tmp4.c = t3.c (tests/integrationtest/r/planner/core/issuetest/planner_issue.result)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Add back what's been removed in #51057 in `(*LogicalJoin).ExtractUsedCols()`.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/60694",
+    "https://github.com/pingcap/tidb/pull/60694.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/60694.patch",
+  "changed_files": [
+    "pkg/planner/core/operator/logicalop/logical_join.go",
+    "tests/integrationtest/r/planner/core/issuetest/planner_issue.result",
+    "tests/integrationtest/t/planner/core/issuetest/planner_issue.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: (select a, b, c, (row_number() over (partition by b order by e asc)) from t4) tmp4 on tmp4.b = t2.c and tmp4.c = t3.c (tests/integrationtest/r/planner/core/issuetest/planner_issue.result)",
+      "files: pkg/planner/core/operator/logicalop/logical_join.go, tests/integrationtest/r/planner/core/issuetest/planner_issue.result, tests/integrationtest/t/planner/core/issuetest/planner_issue.test"
+    ]
+  },
+  "analysis": "PR title: planner: add back children's `Schema` when checking `LogicalJoin`'s used columns in column pruning\nPR url: https://github.com/pingcap/tidb/pull/60694\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: (select a, b, c, (row_number() over (partition by b order by e asc)) from t4) tmp4 on tmp4.b = t2.c and tmp4.c = t3.c (tests/integrationtest/r/planner/core/issuetest/planner_issue.result)\nChanged files (3): pkg/planner/core/operator/logicalop/logical_join.go, tests/integrationtest/r/planner/core/issuetest/planner_issue.result, tests/integrationtest/t/planner/core/issuetest/planner_issue.test\nPatch series analyzed; see patch_url."
+}

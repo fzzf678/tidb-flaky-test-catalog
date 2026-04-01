@@ -1,0 +1,51 @@
+{
+  "id": "pr-63897",
+  "source_pr": {
+    "number": 63897,
+    "url": "https://github.com/pingcap/tidb/pull/63897",
+    "title": "dxf: fix task cannot be cancelled when the number of active scheduler reached the limit",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #63896, ref #61702\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\nalso query tasks that doesn't need resources to run when the active schedulers reach limit\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\n<details><summary>apply this diff, so only 1 job can be run at the same time and it will wait 30s before run</summary>\r\n<p>\r\n\r\n```diff\r\ndiff --git a/pkg/disttask/framework/proto/task.go b/pkg/disttask/framework/proto/task.go\r\nindex 0ca1162f22..6fe16bd023 100644\r\n--- a/pkg/disttask/framework/proto/task.go\r\n+++ b/pkg/disttask/framework/proto/task.go\r\n@@ -65,7 +65,7 @@ const (\r\n \r\n // MaxConcurrentTask is the max concurrency of task.\r\n // TODO: remove this limit later.\r\n-var MaxConcurrentTask = 16\r\n+var MaxConcurrentTask = 1\r\n \r\n // ExtraParams is the extra params of task.\r\n // Note: only store params that's not used for filter or sort in this struct.\r\ndiff --git a/pkg/disttask/importinto/encode_and_sort_operator.go b/pkg/disttask/importinto/encode_and_sort_operator.go\r\nindex 03b18b156e..edf36c6542 100644\r\n--- a/pkg/disttask/importinto/encode_and_sort_operator.go\r\n+++ b/pkg/disttask/importinto/encode_and_sort_operator.go\r\n@@ -100,6 +100,9 @@ func newEncodeAndSortOperator(\r\n }\r\n \r\n func (op *encodeAndSortOperator) Open() error {\r\n+\top.logger.Info(\"#### wait for a while to let other operators be ready\")\r\n+\ttime.Sleep(30 * time.Second)\r\n+\top.logger.Info(\"#### wait done\")\r\n \top.wg.Run(func() {\r\n \t\tfor err := range op.errCh {\r\n \t\t\tif op.firstErr.CompareAndSwap(nil, err) {\r\n```\r\n\r\n</p>\r\n</details> \r\n\r\nthen run below SQLs\r\n```sql\r\ncreate table t1(sysid int);create table t2(sysid int);create table t3(sysid int);\r\nimport into t1 from 's3://mybucket/a.csv?access-key=minioadmin&secret-access-key=minioadmin&endpoint=http%3a%2f%2f0.0.0.0%3a9000' with detached;\r\n\r\nimport into t2 from 's3://mybucket/a.csv?access-key=minioadmin&secret-access-key=minioadmin&endpoint=http%3a%2f%2f0.0.0.0%3a9000' with detached;\r\n\r\nimport into t3 from 's3://mybucket/a.csv?access-key=minioadmin&secret-access-key=minioadmin&endpoint=http%3a%2f%2f0.0.0.0%3a9000' with detached;\r\n```\r\n\r\nwe can see only job 1 is running, others are pending\r\n```sql\r\nmysql> show import jobs;\r\n+--------+-----------+-----------------------------------------------------------------------------------------------------+--------------+----------+-----------+---------+------------------+---------------+----------------+----------------------------+----------------------------+----------+------------+---------------------+----------+-------------------------+---------------------+-----------------------+----------------+--------------+\r\n| Job_ID | Group_Key | Data_Source                                                                                         | Target_Table | Table_ID | Phase     | Status  | Source_File_Size | Imported_Rows | Result_Message | Create_Time                | Start_Time                 | End_Time | Created_By | Last_Update_Time    | Cur_Step | Cur_Step_Processed_Size | Cur_Step_Total_Size | Cur_Step_Progress_Pct | Cur_Step_Speed | Cur_Step_ETA |\r\n+--------+-----------+-----------------------------------------------------------------------------------------------------+--------------+----------+-----------+---------+------------------+---------------+----------------+----------------------------+----------------------------+----------+------------+---------------------+----------+-------------------------+---------------------+-----------------------+----------------+--------------+\r\n|      1 | NULL      | s3://mybucket/a.csv?access-key=xxxxxx&endpoint=http%3A%2F%2F0.0.0.0%3A9000&secret-access-key=xxxxxx | `test`.`t1`  |        7 | importing | running | 12B              |             0 |                | 2025-10-10 21:25:55.268217 | 2025-10-10 21:25:55.794117 | NULL     | root@%     | 2025-10-10 21:26:05 | import   | 0B                      | 0B                  | 0                     | 0B/s           | N/A          |\r\n|      2 | NULL      | s3://mybucket/a.csv?access-key=xxxxxx&endpoint=http%3A%2F%2F0.0.0.0%3A9000&secret-access-key=xxxxxx | `test`.`t2`  |        9 |           | pending | 12B              |          NULL |                | 2025-10-10 21:25:55.302702 | NULL                       | NULL     | root@%     | NULL                | NULL     | NULL                    | NULL                | NULL                  | NULL           | NULL         |\r\n|      3 | NULL      | s3://mybucket/a.csv?access-key=xxxxxx&endpoint=http%3A%2F%2F0.0.0.0%3A9000&secret-access-key=xxxxxx | `test`.`t3`  |       11 |           | pending | 12B              |          NULL |                | 2025-10-10 21:25:55.322353 | NULL                       | NULL     | root@%     | NULL                | NULL     | NULL                    | NULL                | NULL                  | NULL           | NULL         |\r\n+--------+-----------+-----------------------------------------------------------------------------------------------------+--------------+----------+-----------+---------+------------------+---------------+----------------+----------------------------+----------------------------+----------+------------+---------------------+----------+-------------------------+---------------------+-----------------------+----------------+--------------+\r\n3 rows in set (0.01 sec)\r\n```\r\nthen we can cancel job 2 and 3. **without this PR, job 2 can only be cancelled after job 1 finishes**\r\n```\r\nmysql> cancel import job 3;\r\nQuery OK, 0 rows affected (1.84 sec)\r\n\r\nmysql> cancel import job 2;\r\nQuery OK, 0 rows affected (3.63 sec)\r\n```\r\n\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-10-11T11:38:21+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/disttask/framework/scheduler/scheduler_manager_nokit_test.go",
+    "name": "scheduler_manager_nokit_test"
+  },
+  "symptoms": [
+    "t.Cleanup(func() { (pkg/disttask/framework/scheduler/scheduler_manager_nokit_test.go)"
+  ],
+  "failure_signature": "t.Cleanup(func() { (pkg/disttask/framework/scheduler/scheduler_manager_nokit_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "also query tasks that doesn't need resources to run when the active schedulers reach limit",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/63897",
+    "https://github.com/pingcap/tidb/pull/63897.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/63897.patch",
+  "changed_files": [
+    "pkg/disttask/framework/mock/scheduler_mock.go",
+    "pkg/disttask/framework/scheduler/BUILD.bazel",
+    "pkg/disttask/framework/scheduler/interface.go",
+    "pkg/disttask/framework/scheduler/scheduler_manager.go",
+    "pkg/disttask/framework/scheduler/scheduler_manager_nokit_test.go",
+    "pkg/disttask/framework/storage/table_test.go",
+    "pkg/disttask/framework/storage/task_table.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: t.Cleanup(func() { (pkg/disttask/framework/scheduler/scheduler_manager_nokit_test.go)",
+      "files: pkg/disttask/framework/mock/scheduler_mock.go, pkg/disttask/framework/scheduler/BUILD.bazel, pkg/disttask/framework/scheduler/interface.go, pkg/disttask/framework/scheduler/scheduler_manager.go, pkg/disttask/framework/scheduler/scheduler_manager_nokit_test.go, pkg/disttask/framework/storage/table_test.go, pkg/disttask/framework/storage/task_table.go"
+    ]
+  },
+  "analysis": "PR title: dxf: fix task cannot be cancelled when the number of active scheduler reached the limit\nPR url: https://github.com/pingcap/tidb/pull/63897\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: t.Cleanup(func() { (pkg/disttask/framework/scheduler/scheduler_manager_nokit_test.go)\nChanged files (7): pkg/disttask/framework/mock/scheduler_mock.go, pkg/disttask/framework/scheduler/BUILD.bazel, pkg/disttask/framework/scheduler/interface.go, pkg/disttask/framework/scheduler/scheduler_manager.go, pkg/disttask/framework/scheduler/scheduler_manager_nokit_test.go, pkg/disttask/framework/storage/table_test.go, pkg/disttask/framework/storage/task_table.go\nPatch series analyzed; see patch_url."
+}

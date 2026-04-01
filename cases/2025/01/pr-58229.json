@@ -1,0 +1,46 @@
+{
+  "id": "pr-58229",
+  "source_pr": {
+    "number": 58229,
+    "url": "https://github.com/pingcap/tidb/pull/58229",
+    "title": "ddl: Fix issue with concurrent update getting reverted by BackfillData",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #58226, close https://github.com/pingcap/tidb/issues/58692\r\n\r\nProblem Summary:\r\nA concurrency test showed that when REORGANIZE PARTITION are copying non-clustered table rows in batches, if an update happens during such batch for the same rows included in the batch, then the batch will overwrite the updates with what the batch originally read.\r\n\r\n### What changed and how does it work?\r\nReverted the use of table.AddRecord() for non-clustered tables and added the old row into the batch transaction, so the transaction would fail if the old row have been touched (if it already has been copied/double written and has not been touched, it will be skipped from being copied).\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nFor non-clustered tables during REORGANIZE PARTITION data copying/backfill, if a row is updated at the same time the reorg is copying that row in a batch, it could overwrite with the state before the update.\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-01-09T18:12:50+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/ddl/tests/partition/multi_domain_test.go",
+    "name": "multi_domain_test"
+  },
+  "symptoms": [
+    "res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)"
+  ],
+  "failure_signature": "res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Reverted the use of table.AddRecord() for non-clustered tables and added the old row into the batch transaction, so the transaction would fail if the old row have been touched (if it already has been copied/double written and has not been touched, it will be skipped from being copied).",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/58229",
+    "https://github.com/pingcap/tidb/pull/58229.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/58229.patch",
+  "changed_files": [
+    "pkg/ddl/partition.go",
+    "pkg/ddl/tests/partition/multi_domain_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)",
+      "files: pkg/ddl/partition.go, pkg/ddl/tests/partition/multi_domain_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl: Fix issue with concurrent update getting reverted by BackfillData\nPR url: https://github.com/pingcap/tidb/pull/58229\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)\nChanged files (2): pkg/ddl/partition.go, pkg/ddl/tests/partition/multi_domain_test.go\nPatch series analyzed; see patch_url."
+}

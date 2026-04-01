@@ -1,0 +1,106 @@
+{
+  "id": "pr-64402",
+  "source_pr": {
+    "number": 64402,
+    "url": "https://github.com/pingcap/tidb/pull/64402",
+    "title": "dxf: make api request metering more accurate by intercepting request call",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #61702\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\npreviously, we basically based on the formula `total file size / part-size + 2` to estimate the PUT API call count, and use reader reload as the timing to get the GET request call count, so it's not accurate, and make the UT hard to check the count.\r\nand previous way pollute normal code too much, we have to pass many params into the `external`/`local` pkg to instruct where we read/write to get the request count.\r\nand some PUT/GET is not collected, such as subtask meta file read/write.\r\nso we change to counting the API call directly by intercepting those request call. and revert the old logic introduced in https://github.com/pingcap/tidb/pull/63431.\r\n- for S3/KS3, we use it's `Send` handlers\r\n- for GCS, we use a wrapped round tripper.\r\n\r\n\r\nwe also avoid create object storage for each call of decodeBackfillSubTaskMeta and writeExternalBackfillSubTaskMeta in add-index. and add integration test for metering\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\nimport-into S3, as we will use HEAD to check whether the subtask meta file exists, so we have 2 more GETs, one for each of encode and merge-sort step, those 2 steps will update the subtask meta after the subtask finishes\r\n```\r\n[2025/11/11 13:54:00.009 +08:00] [INFO] [metering.go:176] [\"recorder unregistered and finished final flush\"] [keyspaceName=SYSTEM] [component=meter] [accumulatedData=\"{taskID: 5, keyspace: SYSTEM, type: ImportInto, getReqs: 8, putReqs: 6, readBytes: 2, writeBytes: 29}\"]\r\n```\r\n\r\nimport-into on KS3\r\n```\r\n[2025/11/11 14:02:00.015 +08:00] [INFO] [metering.go:176] [\"recorder unregistered and finished final flush\"] [keyspaceName=SYSTEM] [component=meter] [accumulatedData=\"{taskID: 30001, keyspace: SYSTEM, type: ImportInto, getReqs: 6, putReqs: 6, readBytes: 2, writeBytes: 29}\"]\r\n```\r\n\r\nadd-index on S3\r\n```\r\n[2025/11/11 20:37:00.022 +08:00] [INFO] [metering.go:185] [\"recorder unregistered and finished final flush\"] [keyspaceName=SYSTEM] [component=meter] [accumulatedData=\"{id: 1, keyspace: SYSTEM, type: backfill, requests{get: 4, put: 3}, read: 132B, write: 114B}\"]\r\n```\r\n\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-11-12T22:00:53+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "br/pkg/storage/recording/recording_test.go",
+    "name": "recording_test"
+  },
+  "symptoms": [
+    "t.Cleanup(func() { (tests/realtikvtest/addindextest2/global_sort_test.go)"
+  ],
+  "failure_signature": "t.Cleanup(func() { (tests/realtikvtest/addindextest2/global_sort_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "previously, we basically based on the formula `total file size / part-size + 2` to estimate the PUT API call count, and use reader reload as the timing to get the GET request call count, so it's not accurate, and make the UT hard to check the count. and previous way pollute normal code too much, we have to pass many params into the `external`/`local` pkg to instruct where we read/write to get the request count. and some PUT/GET is not collected, such as subtask meta file read/write. so we change to counting the API call directly by intercepting those request call. and revert the old logic introduced in https://github.com/pingcap/tidb/pull/63431. for S3/KS3, we use it's `Send` handlers for GCS, we use a wrapped round tripper.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/64402",
+    "https://github.com/pingcap/tidb/pull/64402.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/64402.patch",
+  "changed_files": [
+    "br/pkg/storage/BUILD.bazel",
+    "br/pkg/storage/azblob.go",
+    "br/pkg/storage/compress.go",
+    "br/pkg/storage/gcs.go",
+    "br/pkg/storage/ks3.go",
+    "br/pkg/storage/recording/BUILD.bazel",
+    "br/pkg/storage/recording/recording.go",
+    "br/pkg/storage/recording/recording_test.go",
+    "br/pkg/storage/s3.go",
+    "br/pkg/storage/storage.go",
+    "br/pkg/storage/writer.go",
+    "pkg/ddl/BUILD.bazel",
+    "pkg/ddl/backfilling_dist_executor.go",
+    "pkg/ddl/backfilling_dist_scheduler.go",
+    "pkg/ddl/backfilling_import_cloud.go",
+    "pkg/ddl/backfilling_merge_sort.go",
+    "pkg/ddl/backfilling_operators.go",
+    "pkg/ddl/backfilling_read_index.go",
+    "pkg/disttask/framework/handle/BUILD.bazel",
+    "pkg/disttask/framework/handle/handle.go",
+    "pkg/disttask/framework/metering/BUILD.bazel",
+    "pkg/disttask/framework/metering/data.go",
+    "pkg/disttask/framework/metering/metering.go",
+    "pkg/disttask/framework/metering/metering_test.go",
+    "pkg/disttask/framework/metering/recorder.go",
+    "pkg/disttask/framework/metering/recorder_test.go",
+    "pkg/disttask/framework/taskexecutor/execute/BUILD.bazel",
+    "pkg/disttask/framework/taskexecutor/execute/interface.go",
+    "pkg/disttask/importinto/BUILD.bazel",
+    "pkg/disttask/importinto/encode_and_sort_operator.go",
+    "pkg/disttask/importinto/proto.go",
+    "pkg/disttask/importinto/task_executor.go",
+    "pkg/executor/importer/import.go",
+    "pkg/lightning/backend/BUILD.bazel",
+    "pkg/lightning/backend/backend.go",
+    "pkg/lightning/backend/external/bench_test.go",
+    "pkg/lightning/backend/external/byte_reader.go",
+    "pkg/lightning/backend/external/byte_reader_test.go",
+    "pkg/lightning/backend/external/concurrent_reader.go",
+    "pkg/lightning/backend/external/concurrent_reader_test.go",
+    "pkg/lightning/backend/external/engine.go",
+    "pkg/lightning/backend/external/engine_test.go",
+    "pkg/lightning/backend/external/iter.go",
+    "pkg/lightning/backend/external/iter_test.go",
+    "pkg/lightning/backend/external/merge.go",
+    "pkg/lightning/backend/external/merge_test.go",
+    "pkg/lightning/backend/external/merge_v2.go",
+    "pkg/lightning/backend/external/onefile_writer.go",
+    "pkg/lightning/backend/external/onefile_writer_test.go",
+    "pkg/lightning/backend/external/reader.go",
+    "pkg/lightning/backend/external/reader_test.go",
+    "pkg/lightning/backend/external/sort_test.go",
+    "pkg/lightning/backend/external/testutil.go",
+    "pkg/lightning/backend/external/writer.go",
+    "pkg/lightning/backend/local/BUILD.bazel",
+    "pkg/lightning/backend/local/engine_mgr.go",
+    "pkg/lightning/backend/local/local_test.go",
+    "tests/realtikvtest/addindextest2/BUILD.bazel",
+    "tests/realtikvtest/addindextest2/global_sort_test.go",
+    "tests/realtikvtest/importintotest4/BUILD.bazel",
+    "tests/realtikvtest/importintotest4/global_sort_test.go",
+    "tests/realtikvtest/testkit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: t.Cleanup(func() { (tests/realtikvtest/addindextest2/global_sort_test.go)",
+      "files: br/pkg/storage/BUILD.bazel, br/pkg/storage/azblob.go, br/pkg/storage/compress.go, br/pkg/storage/gcs.go, br/pkg/storage/ks3.go, br/pkg/storage/recording/BUILD.bazel, br/pkg/storage/recording/recording.go, br/pkg/storage/recording/recording_test.go, br/pkg/storage/s3.go, br/pkg/storage/storage.go, br/pkg/storage/writer.go, pkg/ddl/BUILD.bazel, ..."
+    ]
+  },
+  "analysis": "PR title: dxf: make api request metering more accurate by intercepting request call\nPR url: https://github.com/pingcap/tidb/pull/64402\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: t.Cleanup(func() { (tests/realtikvtest/addindextest2/global_sort_test.go)\nChanged files (62): br/pkg/storage/BUILD.bazel, br/pkg/storage/azblob.go, br/pkg/storage/compress.go, br/pkg/storage/gcs.go, br/pkg/storage/ks3.go, br/pkg/storage/recording/BUILD.bazel, br/pkg/storage/recording/recording.go, br/pkg/storage/recording/recording_test.go, br/pkg/storage/s3.go, br/pkg/storage/storage.go, br/pkg/storage/writer.go, pkg/ddl/BUILD.bazel, pkg/ddl/backfilling_dist_executor.go, pkg/ddl/backfilling_dist_scheduler.go, pkg/ddl/backfilling_import_cloud.go, pkg/ddl/backfilling_merge_sort.go, pkg/ddl/backfilling_operators.go, pkg/ddl/backfilling_read_index.go, pkg/disttask/framework/handle/BUILD.bazel, pkg/disttask/framework/handle/handle.go, pkg/disttask/framework/metering/BUILD.bazel, pkg/disttask/framework/metering/data.go, pkg/disttask/framework/metering/metering.go, pkg/disttask/framework/metering/metering_test.go, pkg/disttask/framework/metering/recorder.go, pkg/disttask/framework/metering/recorder_test.go, pkg/disttask/framework/taskexecutor/execute/BUILD.bazel, pkg/disttask/framework/taskexecutor/execute/interface.go, pkg/disttask/importinto/BUILD.bazel, pkg/disttask/importinto/encode_and_sort_operator.go, pkg/disttask/importinto/proto.go, pkg/disttask/importinto/task_executor.go, pkg/executor/importer/import.go, pkg/lightning/backend/BUILD.bazel, pkg/lightning/backend/backend.go, pkg/lightning/backend/external/bench_test.go, pkg/lightning/backend/external/byte_reader.go, pkg/lightning/backend/external/byte_reader_test.go, pkg/lightning/backend/external/concurrent_reader.go, pkg/lightning/backend/external/concurrent_reader_test.go, pkg/lightning/backend/external/engine.go, pkg/lightning/backend/external/engine_test.go, pkg/lightning/backend/external/iter.go, pkg/lightning/backend/external/iter_test.go, pkg/lightning/backend/external/merge.go, pkg/lightning/backend/external/merge_test.go, pkg/lightning/backend/external/merge_v2.go, pkg/lightning/backend/external/onefile_writer.go, pkg/lightning/backend/external/onefile_writer_test.go, pkg/lightning/backend/external/reader.go, pkg/lightning/backend/external/reader_test.go, pkg/lightning/backend/external/sort_test.go, pkg/lightning/backend/external/testutil.go, pkg/lightning/backend/external/writer.go, pkg/lightning/backend/local/BUILD.bazel, pkg/lightning/backend/local/engine_mgr.go, pkg/lightning/backend/local/local_test.go, tests/realtikvtest/addindextest2/BUILD.bazel, tests/realtikvtest/addindextest2/global_sort_test.go, tests/realtikvtest/importintotest4/BUILD.bazel, tests/realtikvtest/importintotest4/global_sort_test.go, tests/realtikvtest/testkit.go\nPatch series analyzed; see patch_url."
+}

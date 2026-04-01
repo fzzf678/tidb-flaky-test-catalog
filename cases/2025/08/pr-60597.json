@@ -1,0 +1,50 @@
+{
+  "id": "pr-60597",
+  "source_pr": {
+    "number": 60597,
+    "url": "https://github.com/pingcap/tidb/pull/60597",
+    "title": "memory: new submodules `MemArbitrator` & `ResourcePool`",
+    "body": "### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #58194\r\n\r\nProblem Summary: shown in #58194\r\n\r\nDetailed Design: #60628\r\n\r\n### What changed and how does it work?\r\n\r\n- Becase TiDB cannot customize physical memory allocation, the core to solve those problems is to avoid the usage of heap (occupied legally / unable to GC) from exceeding [golang runtime soft memory limit](https://pkg.go.dev/runtime/debug#SetMemoryLimit).\r\n\r\n- Memory is a typical mutually exclusive resource and belongs to the finite `Pool` model. Therefore, `preemptive scheduling` can be performed only if its holder, `Memory Resource Pool`(aka `mem-pool`), is able to release memory.\r\n\r\n- A centralized global `Memory Resource Arbitrator` (aka `mem-arbitrator` or `arbitrator`) is proposed, which replaces the original optimistic posteriori method with a `pessimistic scheduling` model (`subscription-first-then-allocation`). It quantifies the global memory resources of the TiDB instance into dynamic virtual quotas and identify unsafe / prohibited quota to ensure global memory safety during the arbitration process.\r\n\r\n**`mem-arbitrator` / `mem-pool` are independent & self-consistent modules.**\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n```release-note\r\nNone\r\n```\r\n\r\n### Benchmark\r\n\r\nThis result is from the demo with the completed mem-arbitrator.\r\n\r\nEnv: \r\n\r\n- tidb x 1; pd x 1; tikv x 1;\r\n\r\nProcedure:\r\n\r\n- drop db & create db\r\n- prepare tpc-c warehouses 4 & analyze tables\r\n- restart tidb & change work mode\r\n- tpcc --warehouses 4 --time 3m run\r\n\r\nCPU 10c; Memory 1.5G; TPC-C Warehouses 4; | DISABLE | STANDARD | PRIORITY\r\n-- | -- | -- | --\r\nthreads 100 | tpmC: 43593.0, tpmTotal: 96726.3, efficiency: 84745.4% | tpmC: 44660.1, tpmTotal: 98927.0, efficiency: 86819.8% | tpmC: 42743.3, tpmTotal: 95252.3, efficiency: 83093.5%\r\nErrors |   | Few SQL Failure(Cancel) |  \r\n  |   |   |  \r\nthreads 150 | tpmC: 37212.5, tpmTotal: 82767.2, efficiency: 72341.6% | tpmC: 43002.2, tpmTotal: 95559.6, efficiency: 83596.8% | tpmC: 37817.2, tpmTotal: 83862.1, efficiency: 73517.0%\r\nErrors | SQL Failure(Kill Top 1) | SQL Failure(Cancel) |  \r\n  |   |   |  \r\nthreads 200 | tpmC: 25738.0, tpmTotal: 57246.9, efficiency: 50035.1% | tpmC: 40041.9, tpmTotal: 89283.3, efficiency: 77842.0% | tpmC: 25598.4, tpmTotal: 56819.8, efficiency: 49763.7%\r\nErrors | SQL Failure(Kill Top 1) | SQL Failure(Cancel) | Txn Timeout & Retry\r\n  |   |   |  \r\nthreads 400 |   |   | tpmC: min 9512.9, max 37115.8\r\nErrors | TiDB OOM | All SQL Failed(Cancel) | SQL Failure(OOM RIsk Kill)\r\n  |   |   |  \r\nthreads 800 (Errors) | TiDB OOM | All SQL Failed(Cancel) | SQL Failed(OOM RIsk Kill)\r\nthreads 2000 (Errors) | TiDB OOM | All SQL Failed(Cancel) | All SQL Failed(OOM RIsk Kill)\r\nthreads 4000 (Errors) | TiDB OOM | All SQL Failed(Cancel) | All SQL Failed(OOM RIsk Kill)\r\n\r\n----\r\n\r\n- When the maximum memory is 1.5G, the default server-limit in disable mode is 80%, and the default is 90% after mem-arbitrator is enabled, so more memory resources can be used\r\n- The memory pressure in the 100 concurrent scenario is small\r\n  - Very few SQLs are killed by oom in disable mode\r\n  - A small number of SQLs are canceled due to insufficient memory resources in standard mode, and the number of concurrent SQLs actually executed is slightly less than 100\r\n  - The overhead related to blocking scheduling in priority mode damages performance, but no SQL fails\r\n- The memory pressure in the 150 concurrent scenario is medium\r\n  - A small number of SQLs are killed by oom in disable mode, and the GC overhead damages performance\r\n  - Some SQLs are canceled due to insufficient memory resources in standard mode, and the number of concurrent SQLs actually executed is the same as above\r\n  - The overhead related to blocking scheduling in priority mode damages performance, but no SQL fails\r\n- The memory pressure in the 200 concurrent scenario is large\r\n  - Most SQLs are killed by oom in disable mode, and the GC overhead is obvious, and tidb may have oom problems\r\n  - standard In this mode, most SQLs are canceled due to insufficient memory resources, and the number of concurrent SQLs actually executed is the same as above.\r\n  - In priority mode, the overhead related to blocking scheduling degrades performance, and some SQLs fail due to txn timeout\r\n- The memory pressure in the 400 concurrent scenario is extremely high (sql parse/compile), and the memory overhead is obvious\r\n  - The memory in disable mode cannot be effectively controlled, which will inevitably lead to oom\r\n  - In standard mode, most SQLs are canceled in the parse/compile stage due to insufficient memory resources, and the tidb process is safe\r\n  - In priority mode, there are too many tasks waiting to be executed, and the memory pressure is too high, resulting in oom risk. Most SQLs are killed, and the tidb process is safe\r\n- The memory pressure in the 800/2000/4000 concurrent scenario is extremely high\r\n  - The memory in disable mode cannot be effectively controlled, which will inevitably lead to oom\r\n  - The behavior in standard mode is the same as above\r\n  - The behavior in priority mode is the same as above, and most SQLs are killed due to oom risk, and the tidb process is safe"
+  },
+  "pr_merged_at": "2025-08-15T15:00:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/util/memory/arbitrator_test.go",
+    "name": "arbitrator_test"
+  },
+  "symptoms": [
+    "rnd := rand.New(rand.NewSource(1)) (pkg/util/memory/pool_test.go)"
+  ],
+  "failure_signature": "rnd := rand.New(rand.NewSource(1)) (pkg/util/memory/pool_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Becase TiDB cannot customize physical memory allocation, the core to solve those problems is to avoid the usage of heap (occupied legally / unable to GC) from exceeding [golang runtime soft memory limit](https://pkg.go.dev/runtime/debug#SetMemoryLimit).",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/60597",
+    "https://github.com/pingcap/tidb/pull/60597.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/60597.patch",
+  "changed_files": [
+    "pkg/util/memory/BUILD.bazel",
+    "pkg/util/memory/arbitrator.go",
+    "pkg/util/memory/arbitrator_test.go",
+    "pkg/util/memory/pool.go",
+    "pkg/util/memory/pool_test.go",
+    "pkg/util/memory/utils.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rnd := rand.New(rand.NewSource(1)) (pkg/util/memory/pool_test.go)",
+      "files: pkg/util/memory/BUILD.bazel, pkg/util/memory/arbitrator.go, pkg/util/memory/arbitrator_test.go, pkg/util/memory/pool.go, pkg/util/memory/pool_test.go, pkg/util/memory/utils.go"
+    ]
+  },
+  "analysis": "PR title: memory: new submodules `MemArbitrator` & `ResourcePool`\nPR url: https://github.com/pingcap/tidb/pull/60597\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rnd := rand.New(rand.NewSource(1)) (pkg/util/memory/pool_test.go)\nChanged files (6): pkg/util/memory/BUILD.bazel, pkg/util/memory/arbitrator.go, pkg/util/memory/arbitrator_test.go, pkg/util/memory/pool.go, pkg/util/memory/pool_test.go, pkg/util/memory/utils.go\nPatch series analyzed; see patch_url."
+}

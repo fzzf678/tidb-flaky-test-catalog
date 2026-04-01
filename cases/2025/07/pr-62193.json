@@ -1,0 +1,48 @@
+{
+  "id": "pr-62193",
+  "source_pr": {
+    "number": 62193,
+    "url": "https://github.com/pingcap/tidb/pull/62193",
+    "title": "planner: remove the selection above the table dual",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #62192 \r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\nif the tableDual is with the rowcount=1, the selection above it is useless.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-07-04T14:13:06+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/t/planner/core/casetest/predicate_simplification.test",
+    "name": "predicate_simplification"
+  },
+  "symptoms": [
+    "explain format=brief select /*+ NO_HASH_JOIN( t43fc4f8a , st_57 */ avg( distinct st_57.r1 ) as r0 from t43fc4f8a , ( select /*+ use_index( tlcf30036b ) */ /*+ agg_to_cop() */ elt(2, tlcf30036b.col_72 , tlcf30036b.col_72 ) as r0 , bit_or( tlcf30036b.col_71 ) as r1 from tlcf30036b where IsNull( tlcf30036b.col_71 ) and not( tlcf30036b.col_72 in ( '1980-08-05..."
+  ],
+  "failure_signature": "explain format=brief select /*+ NO_HASH_JOIN( t43fc4f8a , st_57 */ avg( distinct st_57.r1 ) as r0 from t43fc4f8a , ( select /*+ use_index( tlcf30036b ) */ /*+ agg_to_cop() */ elt(2, tlcf30036b.col_72 , tlcf30036b.col_72 ) as r0 , bit_or( tlcf30036b.col_71 ) as r1 from tlcf30036b where IsNull( tlcf30036b.col_71 ) and not( tlcf30036b.col_72 in ( '1980-08-05...",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "if the tableDual is with the rowcount=1, the selection above it is useless.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/62193",
+    "https://github.com/pingcap/tidb/pull/62193.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/62193.patch",
+  "changed_files": [
+    "pkg/planner/core/casetest/rule/testdata/outer2inner_out.json",
+    "pkg/planner/core/operator/logicalop/logical_plans_misc.go",
+    "tests/integrationtest/r/planner/core/casetest/predicate_simplification.result",
+    "tests/integrationtest/t/planner/core/casetest/predicate_simplification.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: explain format=brief select /*+ NO_HASH_JOIN( t43fc4f8a , st_57 */ avg( distinct st_57.r1 ) as r0 from t43fc4f8a , ( select /*+ use_index( tlcf30036b ) */ /*+ agg_to_cop() */ elt(2, tlcf30036b.col_72 , tlcf30036b.col_72 ) as r0 , bit_or( tlcf30036b.col_71 ) as r1 from tlcf30036b where IsNull( tlcf30036b.col_71 ) and not( tlcf30036b.col_72 in ( '1980-08-05...",
+      "files: pkg/planner/core/casetest/rule/testdata/outer2inner_out.json, pkg/planner/core/operator/logicalop/logical_plans_misc.go, tests/integrationtest/r/planner/core/casetest/predicate_simplification.result, tests/integrationtest/t/planner/core/casetest/predicate_simplification.test"
+    ]
+  },
+  "analysis": "PR title: planner: remove the selection above the table dual\nPR url: https://github.com/pingcap/tidb/pull/62193\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: explain format=brief select /*+ NO_HASH_JOIN( t43fc4f8a , st_57 */ avg( distinct st_57.r1 ) as r0 from t43fc4f8a , ( select /*+ use_index( tlcf30036b ) */ /*+ agg_to_cop() */ elt(2, tlcf30036b.col_72 , tlcf30036b.col_72 ) as r0 , bit_or( tlcf30036b.col_71 ) as r1 from tlcf30036b where IsNull( tlcf30036b.col_71 ) and not( tlcf30036b.col_72 in ( '1980-08-05...\nChanged files (4): pkg/planner/core/casetest/rule/testdata/outer2inner_out.json, pkg/planner/core/operator/logicalop/logical_plans_misc.go, tests/integrationtest/r/planner/core/casetest/predicate_simplification.result, tests/integrationtest/t/planner/core/casetest/predicate_simplification.test\nPatch series analyzed; see patch_url."
+}

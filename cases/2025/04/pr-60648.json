@@ -1,0 +1,51 @@
+{
+  "id": "pr-60648",
+  "source_pr": {
+    "number": 60648,
+    "url": "https://github.com/pingcap/tidb/pull/60648",
+    "title": "planner: add skew risk for equals",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #60722\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\nThis enhancement is controlled by a new global/session variable tidb_opt_risk_eq_skew_ratio - that is also eligible for query level SET_VAR hint.\r\n\r\nWhen an equal predicate value is NOT found in TopN, or as the last value in a histogram bucket - we will use the histogram rowcount (which excludes topN in stats version 2) divided by the remaining NDV. Thus, we assume that every remaining value is evenly distributed throughout the range. In reality, any single value could be skewed - since the topN values are limited to 100 values, and the histograms do not attempt to preference skewed values as the last in the bucket.\r\n\r\nThis enhancement will estimate the worst case skew for a value - which is (remaining count - remaining NDV) - but not to exceed the smallest value in the existing TopN. And then the tidb_opt_risk_eq_skew_ratio variable controls how much of that skew should be considered in the estimate - with 0 (the default) resulting in an estimate that matches the current count/ndv, and 1 == 100% of the skew.\r\n\r\nThis allows a user or external process to control the amount of skew should be considered in the optimizer's estimate when statistics are insufficient for estimating the exact value's selectivity.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-04-24T12:11:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/planner/cardinality/selectivity_test.go",
+    "name": "selectivity_test"
+  },
+  "symptoms": [
+    "+ // Result should be approx 3.4, but due to floating point - result can be flaky"
+  ],
+  "failure_signature": "+ // Result should be approx 3.4, but due to floating point - result can be flaky",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "This enhancement is controlled by a new global/session variable tidb_opt_risk_eq_skew_ratio - that is also eligible for query level SET_VAR hint.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/60648",
+    "https://github.com/pingcap/tidb/pull/60648.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/60648.patch",
+  "changed_files": [
+    "pkg/planner/cardinality/BUILD.bazel",
+    "pkg/planner/cardinality/row_count_index.go",
+    "pkg/planner/cardinality/selectivity_test.go",
+    "pkg/sessionctx/vardef/tidb_vars.go",
+    "pkg/sessionctx/variable/session.go",
+    "pkg/sessionctx/variable/setvar_affect.go",
+    "pkg/sessionctx/variable/sysvar.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: + // Result should be approx 3.4, but due to floating point - result can be flaky",
+      "files: pkg/planner/cardinality/BUILD.bazel, pkg/planner/cardinality/row_count_index.go, pkg/planner/cardinality/selectivity_test.go, pkg/sessionctx/vardef/tidb_vars.go, pkg/sessionctx/variable/session.go, pkg/sessionctx/variable/setvar_affect.go, pkg/sessionctx/variable/sysvar.go"
+    ]
+  },
+  "analysis": "PR title: planner: add skew risk for equals\nPR url: https://github.com/pingcap/tidb/pull/60648\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + // Result should be approx 3.4, but due to floating point - result can be flaky\nChanged files (7): pkg/planner/cardinality/BUILD.bazel, pkg/planner/cardinality/row_count_index.go, pkg/planner/cardinality/selectivity_test.go, pkg/sessionctx/vardef/tidb_vars.go, pkg/sessionctx/variable/session.go, pkg/sessionctx/variable/setvar_affect.go, pkg/sessionctx/variable/sysvar.go\nPatch series analyzed; see patch_url."
+}

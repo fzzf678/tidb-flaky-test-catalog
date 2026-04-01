@@ -1,0 +1,67 @@
+{
+  "id": "pr-64358",
+  "source_pr": {
+    "number": 64358,
+    "url": "https://github.com/pingcap/tidb/pull/64358",
+    "title": "dxf: fix metering might be lost when failed to write, and refactor",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #61702\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\ndepends on https://github.com/pingcap/metering_sdk/pull/13\r\n- fix the issue that if we failed to write the data, previous data will be lost as we always cleanup existing data previously\r\n- move meter recorder register/unregister into DXF framework, we do it when create the step executor, so the DXF app can use it directly\r\n- reset the global metering instance when shutdown\r\n- refactor metering and recording part, not we always accumulate data inside the recorder, and let the meter to calculate the delta when flush\r\n- decouple meter write/flush part and recording part, so later we can choose directly write some metering data without go through recorder.\r\n- log the total metered data when we unregister the recorder, to help diagnose\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\nrun a simple import\r\n```\r\n[2025/11/07 20:03:00.023 +08:00] [INFO] [metering.go:243] [\"succeed to write metering data\"] [keyspaceName=SYSTEM] [component=meter] [duration=22.375333ms] [data=\"[{\\\"cluster_id\\\":\\\"SYSTEM\\\",\\\"read_bytes\\\":2,\\\"source_name\\\":\\\"dxf\\\",\\\"task_id\\\":1,\\\"task_type\\\":\\\"ImportInto\\\",\\\"version\\\":\\\"1\\\",\\\"write_bytes\\\":29}]\"]\r\n[2025/11/07 20:03:00.024 +08:00] [INFO] [metering.go:176] [\"recorder unregistered and finished final flush\"] [keyspaceName=SYSTEM] [component=meter] [accumulatedData=\"{taskID: 1, keyspace: SYSTEM, type: ImportInto, getReqs: 0, putReqs: 0, readBytes: 2, writeBytes: 29}\"]\r\n\r\n```\r\n\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-11-10T21:48:17+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/disttask/framework/metering/data_test.go",
+    "name": "data_test"
+  },
+  "symptoms": [
+    "t.Cleanup(func() { (pkg/disttask/framework/metering/metering_test.go)"
+  ],
+  "failure_signature": "t.Cleanup(func() { (pkg/disttask/framework/metering/metering_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "depends on https://github.com/pingcap/metering_sdk/pull/13 fix the issue that if we failed to write the data, previous data will be lost as we always cleanup existing data previously move meter recorder register/unregister into DXF framework, we do it when create the step executor, so the DXF app can use it directly reset the global metering instance when shutdown refactor metering and recording part, not we always accumulate data inside the recorder, and let the meter to calculate the delta when flush decouple meter write/flush part and recording part, so later we can choose directly write some metering data without go through recorder. log the total metered data when we unregister the recorder, to help diagnose",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/64358",
+    "https://github.com/pingcap/tidb/pull/64358.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/64358.patch",
+  "changed_files": [
+    "DEPS.bzl",
+    "br/pkg/storage/s3.go",
+    "go.mod",
+    "go.sum",
+    "pkg/ddl/backfilling_import_cloud.go",
+    "pkg/ddl/backfilling_merge_sort.go",
+    "pkg/ddl/backfilling_read_index.go",
+    "pkg/disttask/framework/metering/BUILD.bazel",
+    "pkg/disttask/framework/metering/data.go",
+    "pkg/disttask/framework/metering/data_test.go",
+    "pkg/disttask/framework/metering/metering.go",
+    "pkg/disttask/framework/metering/metering_test.go",
+    "pkg/disttask/framework/metering/recorder.go",
+    "pkg/disttask/framework/metering/recorder_test.go",
+    "pkg/disttask/framework/taskexecutor/BUILD.bazel",
+    "pkg/disttask/framework/taskexecutor/execute/BUILD.bazel",
+    "pkg/disttask/framework/taskexecutor/execute/interface.go",
+    "pkg/disttask/framework/taskexecutor/task_executor.go",
+    "pkg/disttask/framework/taskexecutor/task_executor_test.go",
+    "pkg/disttask/importinto/encode_and_sort_operator.go",
+    "pkg/disttask/importinto/encode_and_sort_operator_test.go",
+    "pkg/disttask/importinto/task_executor.go",
+    "pkg/domain/domain.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: t.Cleanup(func() { (pkg/disttask/framework/metering/metering_test.go)",
+      "files: DEPS.bzl, br/pkg/storage/s3.go, go.mod, go.sum, pkg/ddl/backfilling_import_cloud.go, pkg/ddl/backfilling_merge_sort.go, pkg/ddl/backfilling_read_index.go, pkg/disttask/framework/metering/BUILD.bazel, pkg/disttask/framework/metering/data.go, pkg/disttask/framework/metering/data_test.go, pkg/disttask/framework/metering/metering.go, pkg/disttask/framework/metering/metering_test.go, ..."
+    ]
+  },
+  "analysis": "PR title: dxf: fix metering might be lost when failed to write, and refactor\nPR url: https://github.com/pingcap/tidb/pull/64358\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: t.Cleanup(func() { (pkg/disttask/framework/metering/metering_test.go)\nChanged files (23): DEPS.bzl, br/pkg/storage/s3.go, go.mod, go.sum, pkg/ddl/backfilling_import_cloud.go, pkg/ddl/backfilling_merge_sort.go, pkg/ddl/backfilling_read_index.go, pkg/disttask/framework/metering/BUILD.bazel, pkg/disttask/framework/metering/data.go, pkg/disttask/framework/metering/data_test.go, pkg/disttask/framework/metering/metering.go, pkg/disttask/framework/metering/metering_test.go, pkg/disttask/framework/metering/recorder.go, pkg/disttask/framework/metering/recorder_test.go, pkg/disttask/framework/taskexecutor/BUILD.bazel, pkg/disttask/framework/taskexecutor/execute/BUILD.bazel, pkg/disttask/framework/taskexecutor/execute/interface.go, pkg/disttask/framework/taskexecutor/task_executor.go, pkg/disttask/framework/taskexecutor/task_executor_test.go, pkg/disttask/importinto/encode_and_sort_operator.go, pkg/disttask/importinto/encode_and_sort_operator_test.go, pkg/disttask/importinto/task_executor.go, pkg/domain/domain.go\nPatch series analyzed; see patch_url."
+}
