@@ -1,0 +1,46 @@
+{
+  "id": "pr-66745",
+  "source_pr": {
+    "number": 66745,
+    "url": "https://github.com/pingcap/tidb/pull/66745",
+    "title": "pkg/session/test/txn: increase txn_test timeout budget to moderate",
+    "body": "<!--\n\nThank you for contributing to TiDB!\n\nPR Title Format:\n1. pkg [, pkg2, pkg3]: what's changed\n2. *: what's changed\n\n-->\n\n### What problem does this PR solve?\n<!--\n\nPlease create an issue first to describe the problem.\n\nThere MUST be one line starting with \"Issue Number:  \" and\nlinking the relevant issues via the \"close\" or \"ref\".\n\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\n\n-->\n\nIssue Number: close #66040\n\nProblem Summary:\n`//pkg/session/test/txn:txn_test` is configured with `timeout = \"short\"` (150s in CI), while shard `2/11` repeatedly runs close to that limit due to `TestTxnLazyInitialize` taking ~112-126s in race+coverage mode. This causes flaky timeout failures after test logic passes.\n\n### What changed and how does it work?\n- Updated `pkg/session/test/txn/BUILD.bazel` to set `txn_test` timeout from `short` to `moderate`.\n- This increases the allowed execution budget for the slow shard so retries are less likely to fail on timeout when tests themselves pass.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [ ] Unit test\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [x] No need to test\n  > - [x] I checked and no code files have been changed.\n  > - [x] Change is Bazel test timeout metadata only (`BUILD.bazel`).\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\n\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\n\n```release-note\nNone\n```\n\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n\n## Summary by CodeRabbit\n\n* **Tests**\n  * Updated test timeout configuration to improve execution stability.\n\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-06T21:39:01+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/session/test/txn/BUILD.bazel",
+    "name": "TestTxnLazyInitialize"
+  },
+  "symptoms": [
+    "`//pkg/session/test/txn:txn_test` is configured with `timeout = \"short\"` (150s in CI), while shard `2/11` repeatedly runs close to that limit due to `TestTxnLazyInitialize` taking ~112-126s in race+coverage mode. This causes flaky timeout failures after test logic passes."
+  ],
+  "failure_signature": "`//pkg/session/test/txn:txn_test` is configured with `timeout = \"short\"` (150s in CI), while shard `2/11` repeatedly runs close to that limit due to `TestTxnLazyInitialize` taking ~112-126s in race+coverage mode. This causes flaky timeout failures after test logic passes.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "`//pkg/session/test/txn:txn_test` is configured with `timeout = \"short\"` (150s in CI), while shard `2/11` repeatedly runs close to that limit due to `TestTxnLazyInitialize` taking ~112-126s in race+coverage mode. This causes flaky timeout failures after test logic passes.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66745",
+    "https://github.com/pingcap/tidb/pull/66745.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66745.patch",
+  "changed_files": [
+    "pkg/session/test/txn/BUILD.bazel"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: `//pkg/session/test/txn:txn_test` is configured with `timeout = \"short\"` (150s in CI), while shard `2/11` repeatedly runs close to that limit due to `TestTxnLazyInitialize` taking ~112-126s in race+coverage mode. This causes flaky timeout failures after test logic passes.",
+      "files: pkg/session/test/txn/BUILD.bazel"
+    ]
+  },
+  "analysis": "PR title: pkg/session/test/txn: increase txn_test timeout budget to moderate\nPR url: https://github.com/pingcap/tidb/pull/66745\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: `//pkg/session/test/txn:txn_test` is configured with `timeout = \"short\"` (150s in CI), while shard `2/11` repeatedly runs close to that limit due to `TestTxnLazyInitialize` taking ~112-126s in race+coverage mode. This causes flaky timeout failures after test logic passes.\nChanged files (1): pkg/session/test/txn/BUILD.bazel\nDiff highlights (excerpt):\n- timeout = \"short\",\n- timeout = \"moderate\",\nFull patch analyzed; see patch_url."
+}

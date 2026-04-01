@@ -1,0 +1,45 @@
+{
+  "id": "pr-66887",
+  "source_pr": {
+    "number": 66887,
+    "url": "https://github.com/pingcap/tidb/pull/66887",
+    "title": "executor: cancel inner inflight workers bug fix",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #66716\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\nDue to a mistake in resolving a merge conflict (in PR https://github.com/pingcap/tidb/pull/66764) - the incorrect context was set, meaning that the child workers were not canceled correctly. This was an incorrect merge resolution in github (human error).\r\n\r\nThis caused TestParallelApplyCancelInflight to become flaky. Where, due to timing, it can succeed on a local system or when CI resources are available, but fail on a busy CI system.\r\n\r\nThe first priority is to fix the context to reduce the flaky test.\r\n\r\nOther review comments have come up from AI reviewers - the goal is to address those in this PR https://github.com/pingcap/tidb/pull/66856. But that will require more complex review.\r\n\r\nWhat is the risk of this and the prior PR? In general it is low since it applies only to LIMIT queries when parallel apply is enabled. And parallel apply is disabled by default. When is \"apply\" used? Mostly when you have a correlated subquery (meaning you are using the NO_DECORRELATE hint or variable). So this is a relatively narrow case. And what happens? Basically it doesn't correctly cancel any existing works that are still executing once the LIMIT value is reached. There is an AI review comment - it is intended to be fixed separately.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n\r\n\r\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\r\n## Summary by CodeRabbit\r\n\r\n* **Bug Fixes**\r\n  * Improved parallel execution reliability by fixing cancellation and lifecycle handling so ordered and unordered processing complete and cancel correctly.\r\n  * Ensured end-of-stream signaling now remains reliable even when workers are canceled, preventing premature termination or missed completion messages.\r\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-11T08:34:59+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/executor/parallel_apply.go",
+    "name": "TestParallelApplyCancelInflight"
+  },
+  "symptoms": [
+    "This caused TestParallelApplyCancelInflight to become flaky. Where, due to timing, it can succeed on a local system or when CI resources are available, but fail on a busy CI system. | The first priority is to fix the context to reduce the flaky test."
+  ],
+  "failure_signature": "This caused TestParallelApplyCancelInflight to become flaky. Where, due to timing, it can succeed on a local system or when CI resources are available, but fail on a busy CI system. | The first priority is to fix the context to reduce the flaky test.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "This caused TestParallelApplyCancelInflight to become flaky. Where, due to timing, it can succeed on a local system or when CI resources are available, but fail on a busy CI system. | The first priority is to fix the context to reduce the flaky test.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66887",
+    "https://github.com/pingcap/tidb/pull/66887.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66887.patch",
+  "changed_files": [
+    "pkg/executor/parallel_apply.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: This caused TestParallelApplyCancelInflight to become flaky. Where, due to timing, it can succeed on a local system or when CI resources are available, but fail on a busy CI system. | The first priority is to fix the context to reduce the flaky test.",
+      "files: pkg/executor/parallel_apply.go"
+    ]
+  },
+  "analysis": "PR title: executor: cancel inner inflight workers bug fix\nPR url: https://github.com/pingcap/tidb/pull/66887\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: This caused TestParallelApplyCancelInflight to become flaky. Where, due to timing, it can succeed on a local system or when CI resources are available, but fail on a busy CI system. | The first priority is to fix the context to reduce the flaky test.\nChanged files (1): pkg/executor/parallel_apply.go\nDiff highlights (excerpt):\n- go e.innerWorkerOrdered(ctx, i)\n- go e.innerWorkerOrdered(workerCtx, i)\nFull patch analyzed; see patch_url."
+}

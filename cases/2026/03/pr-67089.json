@@ -1,0 +1,63 @@
+{
+  "id": "pr-67089",
+  "source_pr": {
+    "number": 67089,
+    "url": "https://github.com/pingcap/tidb/pull/67089",
+    "title": "topsql/reporter: add TopRU RU window aggregation and reporting pipeline",
+    "body": "### What problem does this PR solve?\nIssue Number: close #67065\n\nProblem Summary:\n\nAdd reporter-side TopRU aggregation/output path, while keeping PR2/PR3 responsibilities split and reviewable.\n\n### What changed and how does it work?\n\n- Add RU aggregation datamodel and window aggregator:\n  - `ru_datamodel.go`, `ru_window_aggregator.go`\n- Extend reporter pipeline to collect and emit `RURecords` on report tick:\n  - `reporter.go`\n- Wire TopRU collector registration lifecycle in TopSQL setup/close:\n  - `topsql.go`\n- Add reporter-side TopRU tests/cases:\n  - `ru_datamodel_test.go`, `ru_window_aggregator_test.go`, `topru_case_runner_test.go`, `topru_generated_cases_test.go`, `reporter_test.go`\n- Split-only BUILD adjustment:\n  - remove `topru_structured_test.go` from reporter test srcs (file no longer exists in current source branch).\n\n**Dependency note:**\nThis PR depends on PR2 (RU delta collection in stmtstats/executor). RU collection is completed in PR2; this PR only handles reporter aggregation/output.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n```release-note\nNone\n```\n\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n## Summary by CodeRabbit\n\n* **New Features**\n  * TopSQL accepts RU (resource-usage) increments, aggregates them in 15s buckets, and emits aligned 60s Top‑N RU summaries (per-user/SQL/plan). Ingestion is non‑blocking with drop metrics for backpressure; RU is included alongside existing report payloads.\n\n* **Chores**\n  * RU collector is auto-registered/unregistered during TopSQL setup/teardown.\n\n* **Tests**\n  * Extensive unit tests and benchmarks for RU data model, windowed aggregation, Top‑N eviction/“others” behavior, concurrency, backpressure and reporting.\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-21T01:01:23+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/util/topsql/reporter/reporter_test.go",
+    "name": "TestCollectAndEvicted"
+  },
+  "symptoms": [
+    "require.Eventually(t, func() bool { | // Drain queued RU into aggregator to make the attribution deterministic in UT. | // Normalize record/item order so assertions are stable across map iteration order. | TotalRU:      float64(250 - i), // keep deterministic ranking"
+  ],
+  "failure_signature": "require.Eventually(t, func() bool { | // Drain queued RU into aggregator to make the attribution deterministic in UT. | // Normalize record/item order so assertions are stable across map iteration order. | TotalRU:      float64(250 - i), // keep deterministic ranking",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "require.Eventually(t, func() bool { | // Drain queued RU into aggregator to make the attribution deterministic in UT. | // Normalize record/item order so assertions are stable across map iteration order. | TotalRU:      float64(250 - i), // keep deterministic ranking",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/67089",
+    "https://github.com/pingcap/tidb/pull/67089.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/67089.patch",
+  "changed_files": [
+    "build/linter/toomanytests/analyze.go",
+    "docs/workflows/conclude-records/toomanytests-generated-cases.md",
+    "pkg/server/tests/servertestkit/BUILD.bazel",
+    "pkg/server/tests/servertestkit/testkit.go",
+    "pkg/util/topsql/reporter/BUILD.bazel",
+    "pkg/util/topsql/reporter/datamodel.go",
+    "pkg/util/topsql/reporter/report_ticker.go",
+    "pkg/util/topsql/reporter/reporter.go",
+    "pkg/util/topsql/reporter/reporter_test.go",
+    "pkg/util/topsql/reporter/ru_datamodel.go",
+    "pkg/util/topsql/reporter/ru_datamodel_test.go",
+    "pkg/util/topsql/reporter/ru_window_aggregator.go",
+    "pkg/util/topsql/reporter/ru_window_aggregator_test.go",
+    "pkg/util/topsql/reporter/topru_case_runner_test.go",
+    "pkg/util/topsql/reporter/topru_generated_cases_test.go",
+    "pkg/util/topsql/state/state.go",
+    "pkg/util/topsql/stmtstats/aggregator_bench_test.go",
+    "pkg/util/topsql/topsql.go",
+    "pkg/util/topsql/topsql_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: require.Eventually(t, func() bool { | // Drain queued RU into aggregator to make the attribution deterministic in UT. | // Normalize record/item order so assertions are stable across map iteration order. | TotalRU:      float64(250 - i), // keep deterministic ranking",
+      "files: pkg/util/topsql/reporter/reporter_test.go, pkg/util/topsql/reporter/ru_datamodel_test.go, pkg/util/topsql/reporter/ru_window_aggregator_test.go, pkg/util/topsql/reporter/topru_case_runner_test.go, pkg/util/topsql/reporter/topru_generated_cases_test.go, pkg/util/topsql/stmtstats/aggregator_bench_test.go"
+    ]
+  },
+  "analysis": "PR title: topsql/reporter: add TopRU RU window aggregation and reporting pipeline\nPR url: https://github.com/pingcap/tidb/pull/67089\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: require.Eventually(t, func() bool { | // Drain queued RU into aggregator to make the attribution deterministic in UT. | // Normalize record/item order so assertions are stable across map iteration order. | TotalRU:      float64(250 - i), // keep deterministic ranking\nChanged files (19): build/linter/toomanytests/analyze.go, docs/workflows/conclude-records/toomanytests-generated-cases.md, pkg/server/tests/servertestkit/BUILD.bazel, pkg/server/tests/servertestkit/testkit.go, pkg/util/topsql/reporter/BUILD.bazel, pkg/util/topsql/reporter/datamodel.go, pkg/util/topsql/reporter/report_ticker.go, pkg/util/topsql/reporter/reporter.go, pkg/util/topsql/reporter/reporter_test.go, pkg/util/topsql/reporter/ru_datamodel.go ...\nDiff highlights (excerpt):\n- \"sync/atomic\"\n- return time.Unix(atomic.LoadInt64(&currentUnix), 0)\n- atomic.StoreInt64(&currentUnix, ts)\n- require.Eventually(t, func() bool {\n- t.Fatal(\"timeout waiting for TopRU pipeline report payload\")\n- // TestTopRUPipelineGracefulShutdown covers shutdown risk: workers should exit\n- func TestTopRUPipelineGracefulShutdown(t *testing.T) {\n- // ruItems is sorted by timestamp in ascending order.\nFull patch analyzed; see patch_url."
+}

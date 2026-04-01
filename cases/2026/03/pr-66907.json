@@ -1,0 +1,46 @@
+{
+  "id": "pr-66907",
+  "source_pr": {
+    "number": 66907,
+    "url": "https://github.com/pingcap/tidb/pull/66907",
+    "title": "br/streamhelper: fix flaky TestCheckPointLagged",
+    "body": "### What problem does this PR solve?\n\nIssue Number: close #66899\n\nProblem Summary:\n\n`TestCheckPointLagged` is flaky under race detector (`-race`) with parallel test shards. It fails with:\n\n```\nError: Received unexpected error: check point lagged too large\n```\n\ninside the `require.Eventually` block that expects `OnTick` to eventually return `nil`.\n\n### What changed and how does it work?\n\n**Root cause:**\n\nThe original condition function used `assert.NoError(t, adv.OnTick(ctx))`. This is incorrect: `assert.NoError` calls `t.Errorf()` on every failed attempt, which **permanently marks the test as failed** even if `require.Eventually` later succeeds.\n\nUnder the race detector with 36 parallel test shards, the testify `Eventually` implementation calls the condition at T≈0ms (immediately), racing with the listener goroutine that needs to process the `EventPause` event and set `isPaused = true`. Because both the condition goroutine and the listener goroutine compete for `taskMu`, the condition goroutine often wins the first attempt, calls `importantTick()` again, detects the lag again, and calls `t.Errorf()` — permanently failing the test before the listener goroutine ever gets a chance to run.\n\n**Fix:**\n\nReplace `assert.NoError(t, adv.OnTick(ctx))` with `adv.OnTick(ctx) == nil`. This returns `false` on intermediate failures without calling `t.Errorf()`, so early races with the listener goroutine are harmless. Once `isPaused` is set, subsequent attempts return `nil` and the test passes cleanly.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n```release-note\nNone\n```\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n\n## Summary by CodeRabbit\n\n* **Tests**\n  * Improved test assertions to better verify behavior during paused task states.\n\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-12T19:55:11+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/streamhelper/advancer_test.go",
+    "name": "TestCheckPointLagged"
+  },
+  "symptoms": [
+    "br/streamhelper: fix flaky TestCheckPointLagged | `TestCheckPointLagged` is flaky under race detector (`-race`) with parallel test shards. It fails with: | Subject: [PATCH] br/streamhelper: fix flaky TestCheckPointLagged | require.Eventually(t, func() bool {"
+  ],
+  "failure_signature": "br/streamhelper: fix flaky TestCheckPointLagged | `TestCheckPointLagged` is flaky under race detector (`-race`) with parallel test shards. It fails with: | Subject: [PATCH] br/streamhelper: fix flaky TestCheckPointLagged | require.Eventually(t, func() bool {",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "br/streamhelper: fix flaky TestCheckPointLagged | `TestCheckPointLagged` is flaky under race detector (`-race`) with parallel test shards. It fails with: | Subject: [PATCH] br/streamhelper: fix flaky TestCheckPointLagged | require.Eventually(t, func() bool {",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66907",
+    "https://github.com/pingcap/tidb/pull/66907.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66907.patch",
+  "changed_files": [
+    "br/pkg/streamhelper/advancer_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: br/streamhelper: fix flaky TestCheckPointLagged | `TestCheckPointLagged` is flaky under race detector (`-race`) with parallel test shards. It fails with: | Subject: [PATCH] br/streamhelper: fix flaky TestCheckPointLagged | require.Eventually(t, func() bool {",
+      "files: br/pkg/streamhelper/advancer_test.go"
+    ]
+  },
+  "analysis": "PR title: br/streamhelper: fix flaky TestCheckPointLagged\nPR url: https://github.com/pingcap/tidb/pull/66907\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: br/streamhelper: fix flaky TestCheckPointLagged | `TestCheckPointLagged` is flaky under race detector (`-race`) with parallel test shards. It fails with: | Subject: [PATCH] br/streamhelper: fix flaky TestCheckPointLagged | require.Eventually(t, func() bool {\nChanged files (1): br/pkg/streamhelper/advancer_test.go\nDiff highlights (excerpt):\n- require.Eventually(t, func() bool {\n- require.EventuallyWithT(t, func(c *assert.CollectT) {\nFull patch analyzed; see patch_url."
+}

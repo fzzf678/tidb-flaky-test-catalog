@@ -1,0 +1,46 @@
+{
+  "id": "pr-66962",
+  "source_pr": {
+    "number": 66962,
+    "url": "https://github.com/pingcap/tidb/pull/66962",
+    "title": "br: stabilize TestConcurrency in pitr_collector_test",
+    "body": "### What problem does this PR solve?\n\nIssue Number: close #66961\n\nProblem Summary:\n- Fix flaky `br/pkg/restore/snap_client.TestConcurrency` panic: \\\"Log in goroutine after Test... has completed\\\".\n\n### What changed and how does it work?\n\n- Refactor `pitrCollectorT.RestoreAFile` to expose an error-returning helper for goroutines (`RestoreAFileWithErr`).\n- Make `TestConcurrency` wait for all goroutines, avoid using `require.*` from goroutines, and always unblock the failpoint fence + disable the failpoint via `t.Cleanup`.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n  > <!-- Or your custom  \\\"No need to test\\\" reasons -->\n\nTest details:\n- Failpoint-enabled run:\n  - `make failpoint-enable`\n  - `go test -run TestConcurrency -tags=intest,deadlock ./br/pkg/restore/snap_client -count 20`\n  - `make failpoint-disable`\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n```release-note\nNone\n```\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n## Summary by CodeRabbit\n\n* **Tests**\n  * Improved concurrent restoration tests with stronger error propagation, deferred completion callbacks, enhanced synchronization, and explicit cleanup to better validate multi-step restore flows and resource handling.\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-16T14:04:51+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/restore/snap_client/pitr_collector_test.go",
+    "name": "br/pkg/restore/snap_client.TestConcurrency"
+  },
+  "symptoms": [
+    "br: stabilize TestConcurrency in pitr_collector_test | - Fix flaky `br/pkg/restore/snap_client.TestConcurrency` panic: \\\"Log in goroutine after Test... has completed\\\". | Subject: [PATCH 1/2] br: stabilize TestConcurrency goroutines in"
+  ],
+  "failure_signature": "br: stabilize TestConcurrency in pitr_collector_test | - Fix flaky `br/pkg/restore/snap_client.TestConcurrency` panic: \\\"Log in goroutine after Test... has completed\\\". | Subject: [PATCH 1/2] br: stabilize TestConcurrency goroutines in",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "br: stabilize TestConcurrency in pitr_collector_test | - Fix flaky `br/pkg/restore/snap_client.TestConcurrency` panic: \\\"Log in goroutine after Test... has completed\\\". | Subject: [PATCH 1/2] br: stabilize TestConcurrency goroutines in",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66962",
+    "https://github.com/pingcap/tidb/pull/66962.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66962.patch",
+  "changed_files": [
+    "br/pkg/restore/snap_client/pitr_collector_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: br: stabilize TestConcurrency in pitr_collector_test | - Fix flaky `br/pkg/restore/snap_client.TestConcurrency` panic: \\\"Log in goroutine after Test... has completed\\\". | Subject: [PATCH 1/2] br: stabilize TestConcurrency goroutines in",
+      "files: br/pkg/restore/snap_client/pitr_collector_test.go"
+    ]
+  },
+  "analysis": "PR title: br: stabilize TestConcurrency in pitr_collector_test\nPR url: https://github.com/pingcap/tidb/pull/66962\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: br: stabilize TestConcurrency in pitr_collector_test | - Fix flaky `br/pkg/restore/snap_client.TestConcurrency` panic: \\\"Log in goroutine after Test... has completed\\\". | Subject: [PATCH 1/2] br: stabilize TestConcurrency goroutines in\nChanged files (1): br/pkg/restore/snap_client/pitr_collector_test.go\nDiff highlights (excerpt):\n- wg := sync.WaitGroup{}\nFull patch analyzed; see patch_url."
+}

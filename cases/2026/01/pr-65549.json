@@ -1,0 +1,46 @@
+{
+  "id": "pr-65549",
+  "source_pr": {
+    "number": 65549,
+    "url": "https://github.com/pingcap/tidb/pull/65549",
+    "title": "test: refine network port assignment in test",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #xxx\r\n\r\nProblem Summary:\r\n- Unit tests that start embedded etcd or attempt TCP connections can be flaky due to random port collisions.\r\n- Socket-only server tests can hang when pinging without a timeout if the connection cannot be established.\r\n\r\n### What changed and how does it work?\r\n- Use OS-assigned free ports for embedded etcd startup and retry on address-in-use errors to reduce port-collision flakiness.\r\n- Allocate a free TCP port for the socket-only server test and use context timeouts for `db.PingContext` to avoid hangs.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2026-01-14T00:29:40+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/server/tests/commontest/tidb_test.go",
+    "name": "TestCheckRequirements"
+  },
+  "symptoms": [
+    "Unit tests that start embedded etcd or attempt TCP connections can be flaky due to random port collisions.\r - Socket-only server tests can hang when pinging without"
+  ],
+  "failure_signature": "Unit tests that start embedded etcd or attempt TCP connections can be flaky due to random port collisions.\r - Socket-only server tests can hang when pinging without",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Remove/contain randomness (rand) in tests or make it deterministic to avoid flaky outcomes.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/65549",
+    "https://github.com/pingcap/tidb/pull/65549.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/65549.patch",
+  "changed_files": [
+    "pkg/executor/importer/precheck_test.go",
+    "pkg/server/tests/commontest/tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: Unit tests that start embedded etcd or attempt TCP connections can be flaky due to random port collisions.\r - Socket-only server tests can hang when pinging without",
+      "files: pkg/server/tests/commontest/tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: test: refine network port assignment in test\nPR url: https://github.com/pingcap/tidb/pull/65549\nTriage summary: Unit tests that start embedded etcd or attempt TCP connections can be flaky due to random port collisions.\r - Socket-only server tests can hang when pinging without\nChanged files (2): pkg/executor/importer/precheck_test.go, pkg/server/tests/commontest/tidb_test.go\nFull patch analyzed; see patch_url."
+}

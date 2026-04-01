@@ -1,0 +1,57 @@
+{
+  "id": "pr-66813",
+  "source_pr": {
+    "number": 66813,
+    "url": "https://github.com/pingcap/tidb/pull/66813",
+    "title": "dxf/importinto: add import-into history job info API",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #61702\r\n\r\nProblem Summary:\r\n\r\nIn nextgen, IMPORT INTO dist-task metadata is maintained by DXF service in SYSTEM keyspace. We need a dedicated DXF API to query a single IMPORT INTO history job by keyspace and job ID, while keeping task key construction reusable and maintainable.\r\n\r\n### What changed and how does it work?\r\n\r\n- Add DXF endpoint `/dxf/import-into/job/{keyspace}/{jobID}` (registered under the existing SYSTEM keyspace DXF guard).\r\n- Add `DXFImportIntoJobInfoHandler` to validate request method/params and return structured history info.\r\n- Move IMPORT INTO history query/mapping logic to `pkg/dxf/importinto/jobhistory`.\r\n- Add lightweight `pkg/dxf/importinto/taskkey` helper and reuse it from both `importinto` and `jobhistory` to avoid duplicated task-key formatting.\r\n- Add tests for history info retrieval and DXF API behavior (including invalid keyspace input).\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\n```\r\n➜  tikv-worker-test curl localhost:10080/dxf/import-into/history/job/SYSTEM/2\r\n{\r\n \"job_id\": 2,\r\n \"keyspace\": \"SYSTEM\",\r\n \"task_id\": 2,\r\n \"state\": \"succeed\",\r\n \"concurrency\": 1,\r\n \"max_node_count\": 1,\r\n \"distsql_scan_concurrency\": 15,\r\n \"index_count\": 4,\r\n \"column_count\": 12,\r\n \"file_size\": \"241.4MiB\",\r\n \"data_kv_size\": \"249.4MiB\",\r\n \"index_kv_size\": \"40.05MiB\",\r\n \"per_core_speed\": \"24.97GiB/core/hour\",\r\n \"overall_speed\": \"24.97GiB/hour\",\r\n \"row_count\": 250000,\r\n \"row_length\": 1013,\r\n \"duration\": {\r\n  \"total\": \"34s\",\r\n  \"encode\": \"2s\",\r\n  \"merge_sort\": \"\",\r\n  \"ingest\": \"25s\",\r\n  \"collect_conflicts\": \"\",\r\n  \"resolve_conflicts\": \"\",\r\n  \"post_process\": \"4s\"\r\n }\r\n}\r\n```\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [x] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nAdd DXF endpoint `/dxf/import-into/job/{keyspace}/{jobID}` to query IMPORT INTO history job details in nextgen.\r\n```\r\n\r\nMade with [Cursor](https://cursor.com)\r\n\r\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\r\n## Summary by CodeRabbit\r\n\r\n* **New Features**\r\n  * Added an HTTP API to fetch detailed history for completed IMPORT INTO jobs (status, concurrency, resource/data metrics, speeds, row counts, and per-step durations).\r\n\r\n* **Chores**\r\n  * Introduced a dedicated history component for IMPORT INTO to centralize history retrieval and formatting.\r\n\r\n* **Tests**\r\n  * Added unit and integration tests validating history retrieval and the new API paths.\r\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-10T20:57:20+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/dxf/framework/storage/table_test.go",
+    "name": "TestTaskHistoryTable"
+  },
+  "symptoms": [
+    "flaky = True, (pkg/dxf/importinto/jobhistory/BUILD.bazel)"
+  ],
+  "failure_signature": "flaky = True, (pkg/dxf/importinto/jobhistory/BUILD.bazel)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Quarantine/mark Bazel test target as flaky (flaky = True) to avoid unstable CI signal; add/update related tests.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66813",
+    "https://github.com/pingcap/tidb/pull/66813.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66813.patch",
+  "changed_files": [
+    "pkg/dxf/importinto/BUILD.bazel",
+    "pkg/dxf/importinto/job.go",
+    "pkg/dxf/importinto/jobhistory/BUILD.bazel",
+    "pkg/dxf/importinto/jobhistory/history.go",
+    "pkg/dxf/importinto/jobhistory/history_test.go",
+    "pkg/dxf/importinto/taskkey/BUILD.bazel",
+    "pkg/dxf/importinto/taskkey/task_key.go",
+    "pkg/server/handler/tests/BUILD.bazel",
+    "pkg/server/handler/tests/dxf_test.go",
+    "pkg/server/handler/tikvhandler/BUILD.bazel",
+    "pkg/server/handler/tikvhandler/dxf.go",
+    "pkg/server/http_status.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "bazel_flaky_attr"
+    ],
+    "evidence": [
+      "evidence: flaky = True, (pkg/dxf/importinto/jobhistory/BUILD.bazel)",
+      "files: pkg/dxf/framework/storage/table_test.go, pkg/server/handler/tests/dxf_test.go, pkg/dxf/framework/storage/BUILD.bazel, pkg/dxf/importinto/jobhistory/BUILD.bazel, pkg/dxf/importinto/jobhistory/history_test.go, pkg/server/handler/tests/BUILD.bazel"
+    ]
+  },
+  "analysis": "PR title: dxf/importinto: add import-into history job info API\nPR url: https://github.com/pingcap/tidb/pull/66813\nTriage sources: manual_triage, explicit_flaky_signal, bazel_flaky_attr\nTriage summary: flaky = True, (pkg/dxf/importinto/jobhistory/BUILD.bazel)\nChanged files (12): pkg/dxf/importinto/BUILD.bazel, pkg/dxf/importinto/job.go, pkg/dxf/importinto/jobhistory/BUILD.bazel, pkg/dxf/importinto/jobhistory/history.go, pkg/dxf/importinto/jobhistory/history_test.go, pkg/dxf/importinto/taskkey/BUILD.bazel, pkg/dxf/importinto/taskkey/task_key.go, pkg/server/handler/tests/BUILD.bazel, pkg/server/handler/tests/dxf_test.go, pkg/server/handler/tikvhandler/BUILD.bazel ...\nDiff highlights (excerpt):\n- if err := injectfailpoint.DXFRandomErrorWithOnePercent(); err != nil {\n- ctx, cancel := context.WithTimeout(context.Background(), requestDefaultTimeout)\n- timeout = \"short\",\n- flaky = True,\nFull patch analyzed; see patch_url."
+}

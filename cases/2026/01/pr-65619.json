@@ -1,0 +1,46 @@
+{
+  "id": "pr-65619",
+  "source_pr": {
+    "number": 65619,
+    "url": "https://github.com/pingcap/tidb/pull/65619",
+    "title": "planner: fix flaky tests in instanceplancache package",
+    "body": "Issue Number: close #64604, #57514\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\nThis commit fixes two sources of flakiness in the instanceplancache test package:\r\n\r\n1. TestInstancePlanCache - \"key too long\" error\r\n\r\n   The test randomly generates table schemas with indexes that can include multiple varchar columns. With varchar(255) and UTF8MB4 encoding (4 bytes per char), a single column requires 1020 bytes in an index. When 3+ varchar columns were randomly selected for an index, the total key length exceeded the 3072-byte limit.\r\n\r\n   Fix: Reduce varchar(255) to varchar(128). This ensures even the worst case (6 varchar columns in one index) stays within the limit: 6 * 128 * 4 = 3072 bytes.\r\n\r\n2. TestInstancePlanCacheConcurrencySysbench - deadlock error\r\n\r\n   The test generates DML statements sequentially then randomly distributes them to concurrent workers. Two DMLs targeting the same row ID can be assigned to different workers, causing:\r\n   - Worker A: locks row X in normal.sbtest, waits for prepared.sbtest\r\n   - Worker B: locks row X in prepared.sbtest, waits for normal.sbtest\r\n\r\n   This is a classic deadlock scenario that's expected in concurrent\r\n   DML workloads. The test's purpose is to verify the instance plan\r\n   cache works correctly, not to test deadlock-free DML patterns.\r\n\r\n   Fix: Handle deadlock errors gracefully by skipping the affected\r\n   DML statement rather than failing the test.\r\n\r\n\r\n\r\n### Check List\r\n\r\nTests \r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2026-01-19T10:17:20+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/planner/core/casetest/instanceplancache/concurrency_test.go",
+    "name": "TestInstancePlanCache"
+  },
+  "symptoms": [
+    "planner: fix flaky tests in instanceplancache package"
+  ],
+  "failure_signature": "planner: fix flaky tests in instanceplancache package",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/65619",
+    "https://github.com/pingcap/tidb/pull/65619.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/65619.patch",
+  "changed_files": [
+    "pkg/planner/core/casetest/instanceplancache/concurrency_test.go",
+    "pkg/planner/core/casetest/instanceplancache/main_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: planner: fix flaky tests in instanceplancache package",
+      "files: pkg/planner/core/casetest/instanceplancache/concurrency_test.go, pkg/planner/core/casetest/instanceplancache/main_test.go"
+    ]
+  },
+  "analysis": "PR title: planner: fix flaky tests in instanceplancache package\nPR url: https://github.com/pingcap/tidb/pull/65619\nTriage summary: planner: fix flaky tests in instanceplancache package\nChanged files (2): pkg/planner/core/casetest/instanceplancache/concurrency_test.go, pkg/planner/core/casetest/instanceplancache/main_test.go\nFull patch analyzed; see patch_url."
+}

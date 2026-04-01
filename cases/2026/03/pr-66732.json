@@ -1,0 +1,46 @@
+{
+  "id": "pr-66732",
+  "source_pr": {
+    "number": 66732,
+    "url": "https://github.com/pingcap/tidb/pull/66732",
+    "title": "test: stabilize TestGetAndResetRecentInfoSchemaTS",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #66365\r\n\r\nProblem Summary:\r\n\r\n`TestGetAndResetRecentInfoSchemaTS` is flaky because it assumes `recentMinTS` must stay `MaxUint64` after `dom.Reload()`.\r\nIn practice, `recentMinTS` is shared state and may be updated by background infoschema accesses (for example internal domain routines calling infoschema v2 APIs), so strict equality is nondeterministic.\r\n\r\n### What changed and how does it work?\r\n\r\n- Removed strict `MaxUint64` equality assertions after `dom.Reload()`.\r\n- Kept reset calls after reload to preserve test flow.\r\n- Added explicit reset before read checks to reduce noise.\r\n- Switched to semantic assertions that are stable under concurrency:\r\n  - current read should update `recentMinTS` (not `MaxUint64`);\r\n  - snapshot read should report an older TS than current read.\r\n\r\nThis keeps the test intent while removing timing-sensitive assumptions on shared state.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n  - `make failpoint-enable`\r\n  - `go test ./pkg/infoschema/test/infoschemav2test -run TestGetAndResetRecentInfoSchemaTS -tags=intest,deadlock -count=20`\r\n  - `make failpoint-disable`\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n```release-note\r\nNone\r\n```\r\n\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n\n## Summary by CodeRabbit\n\n* **Tests**\n  * Enhanced test robustness for schema timestamp validation with improved assertion logic to better handle background operations.\n\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-14T06:03:59+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/infoschema/test/infoschemav2test/v2_test.go",
+    "name": "TestGetAndResetRecentInfoSchemaTS"
+  },
+  "symptoms": [
+    "test: stabilize TestGetAndResetRecentInfoSchemaTS | `TestGetAndResetRecentInfoSchemaTS` is flaky because it assumes `recentMinTS` must stay `MaxUint64` after `dom.Reload()`. | Subject: [PATCH] test: Fix flaky assertion after dom.Reload() in"
+  ],
+  "failure_signature": "test: stabilize TestGetAndResetRecentInfoSchemaTS | `TestGetAndResetRecentInfoSchemaTS` is flaky because it assumes `recentMinTS` must stay `MaxUint64` after `dom.Reload()`. | Subject: [PATCH] test: Fix flaky assertion after dom.Reload() in",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test: stabilize TestGetAndResetRecentInfoSchemaTS | `TestGetAndResetRecentInfoSchemaTS` is flaky because it assumes `recentMinTS` must stay `MaxUint64` after `dom.Reload()`. | Subject: [PATCH] test: Fix flaky assertion after dom.Reload() in",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66732",
+    "https://github.com/pingcap/tidb/pull/66732.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66732.patch",
+  "changed_files": [
+    "pkg/infoschema/test/infoschemav2test/v2_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: test: stabilize TestGetAndResetRecentInfoSchemaTS | `TestGetAndResetRecentInfoSchemaTS` is flaky because it assumes `recentMinTS` must stay `MaxUint64` after `dom.Reload()`. | Subject: [PATCH] test: Fix flaky assertion after dom.Reload() in",
+      "files: pkg/infoschema/test/infoschemav2test/v2_test.go"
+    ]
+  },
+  "analysis": "PR title: test: stabilize TestGetAndResetRecentInfoSchemaTS\nPR url: https://github.com/pingcap/tidb/pull/66732\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: test: stabilize TestGetAndResetRecentInfoSchemaTS | `TestGetAndResetRecentInfoSchemaTS` is flaky because it assumes `recentMinTS` must stay `MaxUint64` after `dom.Reload()`. | Subject: [PATCH] test: Fix flaky assertion after dom.Reload() in\nChanged files (1): pkg/infoschema/test/infoschemav2test/v2_test.go\nFull patch analyzed; see patch_url."
+}

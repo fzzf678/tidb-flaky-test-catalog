@@ -1,0 +1,58 @@
+{
+  "id": "pr-66701",
+  "source_pr": {
+    "number": 66701,
+    "url": "https://github.com/pingcap/tidb/pull/66701",
+    "title": "importinto: introduce a param to control conflict resolution",
+    "body": "<!--\n\nThank you for contributing to TiDB!\n\nPR Title Format:\n1. pkg [, pkg2, pkg3]: what's changed\n2. *: what's changed\n\n-->\n\n### What problem does this PR solve?\n<!--\n\nPlease create an issue first to describe the problem.\n\nThere MUST be one line starting with \"Issue Number:  \" and\nlinking the relevant issues via the \"close\" or \"ref\".\n\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\n\n-->\n\nIssue Number: ref #66019\n\nProblem Summary:\n\nIMPORT INTO did not provide an explicit conflict policy option for duplicate keys in the global-sort path, and duplicate-key failures from subtasks could surface as low-level errors that were not user-friendly.\n\n### What changed and how does it work?\n\n- Added `on_duplicate_key` option for `IMPORT INTO` with values `error` (default) and `capture`.\n- Extended plan parsing/validation to persist the mode and reject this option for local sort.\n- Propagated the selected mode into encode, merge, and write+ingest duplicate handling for both data KV and index KV flows.\n- Added a normalized executor error (`[executor:8167]`) for duplicate-key conflicts with actionable guidance.\n- Added/updated unit, integration, and real TiKV tests for option validation and duplicate conflicts across different execution steps.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [x] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n  > <!-- Or your custom  \"No need to test\" reasons -->\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\n\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\n\n```release-note\nIMPORT INTO supports `on_duplicate_key` (`error` by default, or `capture`) to control duplicate-key conflict handling in global-sort imports; duplicate-key failures now return a normalized, user-facing error.\n```\n\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n## Summary by CodeRabbit\n\n* **New Features**\n  * Added on_duplicate_key option for IMPORT INTO with modes \"record\" and \"error\" (default) to control duplicate-key conflict handling; import tasks and writers honor the chosen mode.\n* **Behavior/Validation**\n  * on_duplicate_key is validated; using it with local sort is disallowed.\n* **Errors**\n  * New user-facing duplicate-key conflict error and message guiding remediation or using on_duplicate_key='record'.\n* **Tests**\n  * Added/updated unit, integration, and end-to-end tests for parsing, defaults, invalid values, and conflict-resolution.\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-06T19:52:02+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "tests/realtikvtest/importintotest4/conflict_resolution_test.go",
+    "name": "TestGlobalSortOnDuplicateKeyError"
+  },
+  "symptoms": [
+    "TestGlobalSortOnDuplicateKeyError was timing-sensitive/flaky due to async cleanup after an import task; the test could proceed before cleanup completed."
+  ],
+  "failure_signature": "Timing-sensitive import task cleanup (task still present / table mode not reset) causing nondeterministic follow-up steps.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Capture the import task ID via failpoint and wait for async task cleanup with `Eventually` before truncating and rerunning import, making the test deterministic.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66701",
+    "https://github.com/pingcap/tidb/pull/66701.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66701.patch",
+  "changed_files": [
+    "errors.toml",
+    "pkg/dxf/importinto/BUILD.bazel",
+    "pkg/dxf/importinto/encode_and_sort_operator.go",
+    "pkg/dxf/importinto/task_executor.go",
+    "pkg/dxf/importinto/task_executor_test.go",
+    "pkg/errno/errcode.go",
+    "pkg/errno/errname.go",
+    "pkg/executor/importer/BUILD.bazel",
+    "pkg/executor/importer/import.go",
+    "pkg/executor/importer/import_test.go",
+    "pkg/util/dbterror/exeerrors/errors.go",
+    "tests/integrationtest/r/executor/import_into.result",
+    "tests/integrationtest/t/executor/import_into.test",
+    "tests/realtikvtest/importintotest2/subtask_count_test.go",
+    "tests/realtikvtest/importintotest4/conflict_resolution_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage"
+    ],
+    "evidence": [
+      "evidence: Subject: [PATCH 06/11] make test stable",
+      "files: pkg/dxf/importinto/task_executor_test.go, pkg/executor/importer/import_test.go, tests/integrationtest/r/executor/import_into.result, tests/integrationtest/t/executor/import_into.test, tests/realtikvtest/importintotest4/conflict_resolution_test.go, tests/realtikvtest/importintotest2/subtask_count_test.go"
+    ]
+  },
+  "analysis": "PR title: importinto: introduce a param to control conflict resolution\nPR url: https://github.com/pingcap/tidb/pull/66701\nTriage sources: manual_triage\nTriage summary: Subject: [PATCH 06/11] make test stable\nChanged files (15): errors.toml, pkg/dxf/importinto/BUILD.bazel, pkg/dxf/importinto/encode_and_sort_operator.go, pkg/dxf/importinto/task_executor.go, pkg/dxf/importinto/task_executor_test.go, pkg/errno/errcode.go, pkg/errno/errname.go, pkg/executor/importer/BUILD.bazel, pkg/executor/importer/import.go, pkg/executor/importer/import_test.go ...\nDiff highlights (excerpt):\n- sourceBucket := fmt.Sprintf(\"conflict-handling-src-%d\", rand.Int())\n- sortedBucket := fmt.Sprintf(\"conflict-handling-sorted-%d\", rand.Int())\n- dbName := fmt.Sprintf(\"conflict_handling%d\", rand.Int())\n- sourceBucket := fmt.Sprintf(\"on-duplicate-key-src-%d\", rand.Int())\n- sortedBucket := fmt.Sprintf(\"on-duplicate-key-sorted-%d\", rand.Int())\n- dbName := fmt.Sprintf(\"on_duplicate_key%d\", rand.Int())\n- s.Eventually(func() bool {\n- err := normalizeSubtaskErr(errors.Trace(dupErr))\nFull patch analyzed; see patch_url."
+}

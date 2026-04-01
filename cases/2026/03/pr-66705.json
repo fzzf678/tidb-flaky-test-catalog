@@ -1,0 +1,46 @@
+{
+  "id": "pr-66705",
+  "source_pr": {
+    "number": 66705,
+    "url": "https://github.com/pingcap/tidb/pull/66705",
+    "title": "plugin: fix flaky test TestAuditLogNormal",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close pingcap/tidb#66372\r\n\r\nProblem Summary:\r\n\r\n`TestAuditLogNormal` assumes each SQL generates exactly 2 audit events (`Starting` + `Completed`).\r\nWhen a transaction retry happens (for example, write conflict on `DELETE FROM t1 WHERE a = 2`), TiDB may emit extra `Completed` events for retry attempts, which makes the event count nondeterministic and causes flaky failures.\r\n\r\n### What changed and how does it work?\r\n\r\n- Keep retry metadata from audit callback context via `plugin.IsRetryingCtxKey`.\r\n- Count retry-generated `Completed` events separately.\r\n- Preserve the original semantic assertions by validating them on non-retry events.\r\n- Update count assertion to include retry-generated completed events:\r\n  - `len(testResults) == baseExpected + retryingCompletedCount`\r\n  - semantic checks still use the filtered effective results.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nTest command:\r\n\r\n- `GOCACHE=/tmp/go-cache go test ./pkg/plugin -run TestAuditLogNormal -count=100`\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n```release-note\r\nFix flaky TestAuditLogNormal by accounting for retry-generated Completed audit events in plugin integration tests.\r\n```\r\n\r\n\r\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\r\n\r\n## Summary by CodeRabbit\r\n\r\n* **Bug Fixes**\r\n  * Enhanced test evaluation logic to accurately track and report results during transaction retry scenarios.\r\n  * Improved handling of duplicate events that occur when transactions are retried.\r\n  * More accurate test result reporting when retry operations are involved.\r\n\r\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-11T02:13:32+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/plugin/integration_test.go",
+    "name": "TestAuditLogNormal"
+  },
+  "symptoms": [
+    "plugin: fix flaky test TestAuditLogNormal | When a transaction retry happens (for example, write conflict on `DELETE FROM t1 WHERE a = 2`), TiDB may emit extra `Completed` events for retry attempts, which makes the event count nondeterministic and causes flaky failures. | // Transaction retries can emit extra Completed events, so this test tracks retry events separately. | // Total includes extra retry completion events."
+  ],
+  "failure_signature": "plugin: fix flaky test TestAuditLogNormal | When a transaction retry happens (for example, write conflict on `DELETE FROM t1 WHERE a = 2`), TiDB may emit extra `Completed` events for retry attempts, which makes the event count nondeterministic and causes flaky failures. | // Transaction retries can emit extra Completed events, so this test tracks retry events separately. | // Total includes extra retry completion events.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "plugin: fix flaky test TestAuditLogNormal | When a transaction retry happens (for example, write conflict on `DELETE FROM t1 WHERE a = 2`), TiDB may emit extra `Completed` events for retry attempts, which makes the event count nondeterministic and causes flaky failures. | // Transaction retries can emit extra Completed events, so this test tracks retry events separately. | // Total includes extra retry completion events.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66705",
+    "https://github.com/pingcap/tidb/pull/66705.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66705.patch",
+  "changed_files": [
+    "pkg/plugin/integration_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: plugin: fix flaky test TestAuditLogNormal | When a transaction retry happens (for example, write conflict on `DELETE FROM t1 WHERE a = 2`), TiDB may emit extra `Completed` events for retry attempts, which makes the event count nondeterministic and causes flaky failures. | // Transaction retries can emit extra Completed events, so this test tracks retry events separately. | // Total includes extra retry completion events.",
+      "files: pkg/plugin/integration_test.go"
+    ]
+  },
+  "analysis": "PR title: plugin: fix flaky test TestAuditLogNormal\nPR url: https://github.com/pingcap/tidb/pull/66705\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: plugin: fix flaky test TestAuditLogNormal | When a transaction retry happens (for example, write conflict on `DELETE FROM t1 WHERE a = 2`), TiDB may emit extra `Completed` events for retry attempts, which makes the event count nondeterministic and causes flaky failures. | // Transaction retries can emit extra Completed events, so this test tracks retry events separately. | // Total includes extra retry completion events.\nChanged files (1): pkg/plugin/integration_test.go\nDiff highlights (excerpt):\n- retrying bool\n- // Transaction retries can emit extra Completed events, so this test tracks retry events separately.\n- retrying := false\n- if v := ctx.Value(plugin.IsRetryingCtxKey); v != nil {\n- retrying = b\n- retrying: retrying,\n- retryingCompletedCount := 0\n- if result.event == plugin.Completed && result.retrying {\nFull patch analyzed; see patch_url."
+}

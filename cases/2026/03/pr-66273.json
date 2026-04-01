@@ -1,0 +1,57 @@
+{
+  "id": "pr-66273",
+  "source_pr": {
+    "number": 66273,
+    "url": "https://github.com/pingcap/tidb/pull/66273",
+    "title": "planner/core: fix redundant USING-column binding in ALL subquery",
+    "body": "### What problem does this PR solve?\n\nIssue Number: close #66272\n\nProblem Summary:\n\n`JOIN ... USING` / `NATURAL JOIN` keeps two different column views in the planner:\n\n- `FullSchema` / `FullNames` are used for name resolution and still contain the redundant side of common columns.\n- `Join.Schema()` / `OutputNames()` are the executable join outputs and only keep the canonical visible column.\n\nBecause of that split, a qualified predicate such as `t3.id = 10` could be resolved from `FullSchema`, but the resolved redundant column was not present in `Join.Schema()` anymore. The planner then carried that redundant column into later optimization, and physical `ResolveIndices` finally failed with a missing-column error.\n\nThe original repro is a `JOIN ... USING` query with a qualified predicate and `= ALL (subquery)`:\n\n```sql\nSELECT /* issue:66272 */ id AS t0_id\nFROM t1 JOIN t3 USING (id)\nWHERE (((t3.right_v = 749) AND (t3.id = 10)) AND (t1.left_v = 93))\n  AND (t3.right_v = ALL (SELECT t3.right_v AS c0 FROM t3 WHERE t3.right_v = 749));\n```\n\nThis could fail with:\n\n```text\nCan't find column test.t3.id in schema Column: [test.t1.id] ...\n```\n\nFollow-up review also showed that the fix must preserve several correctness constraints:\n\n- do not change derived-column behavior (`NATURAL JOIN` with view columns),\n- do not mislabel projection metadata for `SELECT t_right.col`,\n- do not silently change predicate semantics for mixed-type `USING` columns,\n- do not apply the same remap blindly to outer joins or DML paths.\n\n### What changed and how does it work?\n\n- Record redundant-column mappings during `USING` / `NATURAL JOIN` construction.\n  - `LogicalJoin` now stores `redundant column -> canonical visible output` mappings when common columns are coalesced.\n- Remap redundant qualified base-table columns during predicate resolution instead of letting them leak into later phases.\n  - In `expression_rewriter`, `WHERE` / `HAVING` remap a redundant column to the canonical join output only when:\n    - the column comes from a base table (`OrigTblName != \"\"`),\n    - the mapping comes from an inner `USING` / `NATURAL JOIN`,\n    - the redundant column and the visible output column have identical `RetType`.\n  - In `havingWindowAndOrderbyExprResolver`, apply the same idea for `ORDER BY` / `HAVING` name resolution.\n- Keep projection identity separate from predicate remapping.\n  - `findColFromNaturalUsingJoin` keeps reading the original redundant-side identity from `FullSchema` / `FullNames`, so `SELECT t3.id FROM t1 JOIN t3 USING(id)` still reports `t3` in result-field metadata.\n- Keep DML and outer-join behavior safe.\n  - Skip redundant-column remap for `UPDATE` / `DELETE`.\n  - Only allow remap for inner joins; outer joins keep original side semantics.\n\n### Cases and Fixes\n\n| Case | Expected behavior | How this PR handles it |\n| --- | --- | --- |\n| `JOIN ... USING` + qualified predicate + `= ALL (subquery)` | Do not carry redundant `t3.id` into physical planning | Remap the redundant qualified base-table column to the canonical join output during predicate resolution |\n| `SELECT t3.id FROM t1 JOIN t3 USING(id)` | Result-field metadata should still report `t3` | Keep projection naming from `FullSchema` / `FullNames`; do not reuse predicate remap for select-list metadata |\n| `NATURAL JOIN` with a view / derived column | Do not rewrite derived-column semantics | Only remap base-table columns with `OrigTblName != \"\"` |\n| Mixed-type `USING(id)` such as `VARCHAR` vs `INT` | Do not silently change predicate semantics | Only remap when redundant and visible columns have identical `RetType` |\n| `LEFT JOIN` / `RIGHT JOIN` with null-preserving semantics | Preserve original outer-join behavior | Only allow redundant-column remap for inner joins |\n| `UPDATE` / `DELETE ... USING(id)` | Keep DML binding behavior unchanged | Skip redundant-column remap in DML builder paths |\n\n### Cases covered by regression tests\n\n- Original `JOIN ... USING` + qualified predicate + `= ALL (subquery)` missing-column repro\n- Nested join with qualified redundant-column predicates\n- `HAVING` and `ORDER BY` on qualified redundant columns\n- Derived-column regression: `NATURAL JOIN` with a view column must not be remapped\n- Projection metadata regression: `SELECT t3.id FROM t1 JOIN t3 USING(id)` must still report `t3`\n- Mixed-type `VARCHAR` / `INT USING(id)` must remain type-safe\n- `UPDATE` / `DELETE` with `USING`\n- `LEFT JOIN` / `RIGHT JOIN` null-side semantics remain unchanged\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n  > <!-- Or your custom  \"No need to test\" reasons -->\n\nTest commands:\n\n- `/Users/weizhenwang/.gvm/gos/go1.25.7/bin/go test -run '^TestSchemaCannotFindColumnRegression$' --tags=intest ./pkg/planner/core/casetest/schema`\n- `/Users/weizhenwang/.gvm/gos/go1.25.7/bin/go test -run 'TestJoinRegression/on' --tags=intest ./pkg/planner/core/casetest/join`\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n```release-note\nFix planner missing-column errors for qualified redundant columns in `JOIN ... USING` / `NATURAL JOIN` queries.\n```\n"
+  },
+  "pr_merged_at": "2026-03-10T13:22:17+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/planner/core/issuetest/planner_issue_test.go",
+    "name": "TestPlannerIssueRegressions"
+  },
+  "symptoms": [
+    "flaky = True, (pkg/planner/core/casetest/schema/BUILD.bazel)"
+  ],
+  "failure_signature": "flaky = True, (pkg/planner/core/casetest/schema/BUILD.bazel)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Quarantine/mark Bazel test target as flaky (flaky = True) to avoid unstable CI signal; add/update related tests.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66273",
+    "https://github.com/pingcap/tidb/pull/66273.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66273.patch",
+  "changed_files": [
+    "docs/note/planner/README.md",
+    "docs/note/planner/redundant_using_join_notes.md",
+    "pkg/planner/core/casetest/join/join_test.go",
+    "pkg/planner/core/casetest/schema/BUILD.bazel",
+    "pkg/planner/core/casetest/schema/cannot_find_column_test.go",
+    "pkg/planner/core/casetest/schema/main_test.go",
+    "pkg/planner/core/casetest/schema/testdata/cannot_find_column_suite_in.json",
+    "pkg/planner/core/casetest/schema/testdata/cannot_find_column_suite_out.json",
+    "pkg/planner/core/casetest/schema/testdata/cannot_find_column_suite_xut.json",
+    "pkg/planner/core/expression_rewriter.go",
+    "pkg/planner/core/logical_plan_builder.go",
+    "pkg/planner/core/operator/logicalop/logical_join.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "bazel_flaky_attr"
+    ],
+    "evidence": [
+      "evidence: flaky = True, (pkg/planner/core/casetest/schema/BUILD.bazel)",
+      "files: pkg/planner/core/issuetest/planner_issue_test.go, pkg/planner/core/casetest/schema/BUILD.bazel, pkg/planner/core/casetest/schema/cannot_find_column_test.go, pkg/planner/core/casetest/schema/main_test.go, pkg/planner/core/casetest/join/join_test.go, pkg/planner/core/casetest/schema/testdata/cannot_find_column_suite_in.json"
+    ]
+  },
+  "analysis": "PR title: planner/core: fix redundant USING-column binding in ALL subquery\nPR url: https://github.com/pingcap/tidb/pull/66273\nTriage sources: manual_triage, explicit_flaky_signal, bazel_flaky_attr\nTriage summary: flaky = True, (pkg/planner/core/casetest/schema/BUILD.bazel)\nChanged files (12): docs/note/planner/README.md, docs/note/planner/redundant_using_join_notes.md, pkg/planner/core/casetest/join/join_test.go, pkg/planner/core/casetest/schema/BUILD.bazel, pkg/planner/core/casetest/schema/cannot_find_column_test.go, pkg/planner/core/casetest/schema/main_test.go, pkg/planner/core/casetest/schema/testdata/cannot_find_column_suite_in.json, pkg/planner/core/casetest/schema/testdata/cannot_find_column_suite_out.json, pkg/planner/core/casetest/schema/testdata/cannot_find_column_suite_xut.json, pkg/planner/core/expression_rewriter.go ...\nDiff highlights (excerpt):\n- timeout = \"short\",\n- flaky = True,\n- goleak.IgnoreTopFunction(\"github.com/bazelbuild/rules_go/go/tools/bzltestutil.RegisterTimeoutHandler.func1\"),\n- // ORDER BY/HAVING name resolution may still be based on FullNames. Remap\n- \"        └─TableFullScan 10000.00 cop[tikv] table:t3 keep order:false, stats:pseudo\"\n- tk.MustQuery(\"select id, a from t_up_l order by id\").Check(testkit.Rows(\n- tk.MustQuery(\"select id, a from t_del_l order by id\").Check(testkit.Rows(\n- tk.MustQuery(\"select id, a from t_ru_l order by id\").Check(testkit.Rows(\nFull patch analyzed; see patch_url."
+}

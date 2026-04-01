@@ -1,0 +1,57 @@
+{
+  "id": "pr-66529",
+  "source_pr": {
+    "number": 66529,
+    "url": "https://github.com/pingcap/tidb/pull/66529",
+    "title": "pkg/planner: simplify regression test setup in planner suites",
+    "body": "### What problem does this PR solve?\n\nIssue Number: none\n\nProblem Summary:\n- Regression tests under planner had repetitive setup and mixed test styles (`t.Run` + inline), making maintenance harder.\n- `TestPlanCachePartitionSuite` had warning checks that could be polluted by `explain for connection` executed in the same session.\n\n### What changed and how does it work?\n- Refactored `TestPlannerIssueRegressions` to sequential scenario blocks (removed `t.Run`).\n- Kept one shared `TestKit` reset helper for scenario setup and preserved semantics for each regression scenario.\n- Relaxed one brittle explain assertion in `join-reorder-adds-selection` to key-fragment checks to avoid unstable plan id suffix dependencies.\n- In `TestPlanCachePartitionSuite`, reused setup where safe and used a dedicated `tkExplain` session for `explain for connection` so `show warnings` remains from the target execution session.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n  > <!-- Or your custom  \"No need to test\" reasons -->\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n```release-note\nNone\n```\n"
+  },
+  "pr_merged_at": "2026-02-26T18:29:06+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/executor/test/analyzetest/analyze_test.go",
+    "name": "TestPlanCachePartitionSuite"
+  },
+  "symptoms": [
+    "oin-reorder-adds-selection` to key-fragment checks to avoid unstable plan id suffix dependencies. - In `TestPlanCachePartitionSuite`, reused setup w"
+  ],
+  "failure_signature": "oin-reorder-adds-selection` to key-fragment checks to avoid unstable plan id suffix dependencies. - In `TestPlanCachePartitionSuite`, reused setup w",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66529",
+    "https://github.com/pingcap/tidb/pull/66529.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66529.patch",
+  "changed_files": [
+    ".agents/skills/tidb-test-guidelines/SKILL.md",
+    ".agents/skills/tidb-test-guidelines/references/executor-case-map.md",
+    "build/linter/toomanytests/analyze.go",
+    "pkg/executor/test/analyzetest/BUILD.bazel",
+    "pkg/executor/test/analyzetest/analyze_test.go",
+    "pkg/executor/test/analyzetest/columns/BUILD.bazel",
+    "pkg/executor/test/analyzetest/columns/analyze_columns_with_test.go",
+    "pkg/executor/test/analyzetest/columns/main_test.go",
+    "pkg/executor/test/analyzetest/options/BUILD.bazel",
+    "pkg/executor/test/analyzetest/options/analyze_saved_options_test.go",
+    "pkg/executor/test/analyzetest/options/main_test.go",
+    "pkg/planner/core/casetest/plancache/plan_cache_partition_test.go",
+    "pkg/planner/core/issuetest/planner_issue_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: oin-reorder-adds-selection` to key-fragment checks to avoid unstable plan id suffix dependencies. - In `TestPlanCachePartitionSuite`, reused setup w",
+      "files: .agents/skills/tidb-test-guidelines/SKILL.md, .agents/skills/tidb-test-guidelines/references/executor-case-map.md, build/linter/toomanytests/analyze.go, pkg/executor/test/analyzetest/BUILD.bazel, pkg/executor/test/analyzetest/analyze_test.go, pkg/executor/test/analyzetest/columns/BUILD.bazel, pkg/executor/test/analyzetest/columns/analyze_columns_with_test.go, pkg/executor/test/analyzetest/columns/main_test.go, pkg/executor/test/analyzetest/options/BUILD.bazel, pkg/executor/test/analyzetest/options/analyze_saved_options_test.go, pkg/executor/test/analyzetest/options/main_test.go, pkg/planner/core/casetest/plancache/plan_cache_partition_test.go, ..."
+    ]
+  },
+  "analysis": "PR title: pkg/planner: simplify regression test setup in planner suites\nPR url: https://github.com/pingcap/tidb/pull/66529\nTriage summary: oin-reorder-adds-selection` to key-fragment checks to avoid unstable plan id suffix dependencies. - In `TestPlanCachePartitionSuite`, reused setup w\nChanged files (13): .agents/skills/tidb-test-guidelines/SKILL.md, .agents/skills/tidb-test-guidelines/references/executor-case-map.md, build/linter/toomanytests/analyze.go, pkg/executor/test/analyzetest/BUILD.bazel, pkg/executor/test/analyzetest/analyze_test.go, pkg/executor/test/analyzetest/columns/BUILD.bazel, pkg/executor/test/analyzetest/columns/analyze_columns_with_test.go, pkg/executor/test/analyzetest/columns/main_test.go, pkg/executor/test/analyzetest/options/BUILD.bazel, pkg/executor/test/analyzetest/options/analyze_saved_options_test.go, pkg/executor/test/analyzetest/options/main_test.go, pkg/planner/core/casetest/plancache/plan_cache_partition_test.go ...\nFull patch analyzed; see patch_url."
+}

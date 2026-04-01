@@ -1,0 +1,46 @@
+{
+  "id": "pr-66703",
+  "source_pr": {
+    "number": 66703,
+    "url": "https://github.com/pingcap/tidb/pull/66703",
+    "title": "pkg/lightning: fix TestRegionJobBaseWorker waitgroup race",
+    "body": "### What problem does this PR solve?\n<!--\n\nPlease create an issue first to describe the problem.\n\nThere MUST be one line starting with \"Issue Number:  \" and\nlinking the relevant issues via the \"close\" or \"ref\".\n\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\n\n-->\n\nIssue Number: close #66702\n\nProblem Summary:\n\n`TestRegionJobBaseWorker/if_the_region_has_no_leader,_rescan_the_region` is flaky in nextgen CI. In test helper `prepareAndExecute`, `jobInCh <- job` happened before `jobWg.Add(1)`, so worker-side `Done` could race ahead and trigger `sync: negative WaitGroup counter`.\n\n### What changed and how does it work?\n\n- Reordered test helper accounting to call `jobWg.Add(1)` before `jobInCh <- job`.\n- This guarantees waitgroup accounting is established before workers can decrement it.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n  > <!-- Or your custom  \"No need to test\" reasons -->\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\n\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\n\n```release-note\nNone\n```\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n\n## Summary by CodeRabbit\n\n* **Tests**\n  * Improved job worker test to tighten synchronization around enqueue timing, reducing flakiness for timing-sensitive scenarios and ensuring more reliable verification of job enqueueing and processing behavior.\n\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-05T19:58:36+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/lightning/backend/local/job_worker_test.go",
+    "name": "TestRegionJobBaseWorker/if_the_region_has_no_leader,_rescan_the_region"
+  },
+  "symptoms": [
+    "`TestRegionJobBaseWorker/if_the_region_has_no_leader,_rescan_the_region` is flaky in nextgen CI. In test helper `prepareAndExecute`, `jobInCh <- job` happened before `jobWg.Add(1)`, so worker-side `Done` could race ahead and trigger `sync: negative WaitGroup counter`. | * Improved job worker test to tighten synchronization around enqueue timing, reducing flakiness for timing-sensitive scenarios and ensuring more reliable verification of job enqueueing and processing behavior. | time.Sleep(50 * time.Millisecond)"
+  ],
+  "failure_signature": "`TestRegionJobBaseWorker/if_the_region_has_no_leader,_rescan_the_region` is flaky in nextgen CI. In test helper `prepareAndExecute`, `jobInCh <- job` happened before `jobWg.Add(1)`, so worker-side `Done` could race ahead and trigger `sync: negative WaitGroup counter`. | * Improved job worker test to tighten synchronization around enqueue timing, reducing flakiness for timing-sensitive scenarios and ensuring more reliable verification of job enqueueing and processing behavior. | time.Sleep(50 * time.Millisecond)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Move `jobWg.Add(1)` before `jobInCh <- job` in the test helper to prevent `sync: negative WaitGroup counter` (waitgroup race) and stabilize `TestRegionJobBaseWorker`.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66703",
+    "https://github.com/pingcap/tidb/pull/66703.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66703.patch",
+  "changed_files": [
+    "pkg/lightning/backend/local/job_worker_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: `TestRegionJobBaseWorker/if_the_region_has_no_leader,_rescan_the_region` is flaky in nextgen CI. In test helper `prepareAndExecute`, `jobInCh <- job` happened before `jobWg.Add(1)`, so worker-side `Done` could race ahead and trigger `sync: negative WaitGroup counter`. | * Improved job worker test to tighten synchronization around enqueue timing, reducing flakiness for timing-sensitive scenarios and ensuring more reliable verification of job enqueueing and processing behavior. | time.Sleep(50 * time.Millisecond)",
+      "files: pkg/lightning/backend/local/job_worker_test.go"
+    ]
+  },
+  "analysis": "PR title: pkg/lightning: fix TestRegionJobBaseWorker waitgroup race\nPR url: https://github.com/pingcap/tidb/pull/66703\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: `TestRegionJobBaseWorker/if_the_region_has_no_leader,_rescan_the_region` is flaky in nextgen CI. In test helper `prepareAndExecute`, `jobInCh <- job` happened before `jobWg.Add(1)`, so worker-side `Done` could race ahead and trigger `sync: negative WaitGroup counter`. | * Improved job worker test to tighten synchronization around enqueue timing, reducing flakiness for timing-sensitive scenarios and ensuring more reliable verification of job enqueueing and processing behavior. | time.Sleep(50 * time.Millisecond)\nChanged files (1): pkg/lightning/backend/local/job_worker_test.go\nDiff highlights (excerpt):\n- t.Run(\"track waitgroup before enqueue to avoid negative counter\", func(t *testing.T) {\n- time.Sleep(50 * time.Millisecond)\nFull patch analyzed; see patch_url."
+}

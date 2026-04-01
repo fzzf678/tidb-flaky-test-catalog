@@ -1,0 +1,47 @@
+{
+  "id": "pr-65732",
+  "source_pr": {
+    "number": 65732,
+    "url": "https://github.com/pingcap/tidb/pull/65732",
+    "title": "br/pkg/utils: stabilize task register tests",
+    "body": "<!--\n\nThank you for contributing to TiDB!\n\nPR Title Format:\n1. pkg [, pkg2, pkg3]: what's changed\n2. *: what's changed\n\n-->\n\n### What problem does this PR solve?\n<!--\n\nPlease create an issue first to describe the problem.\n\nThere MUST be one line starting with \"Issue Number:  \" and\nlinking the relevant issues via the \"close\" or \"ref\".\n\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\n\n-->\n\nIssue Number: close #65726\n\nProblem Summary:\n\n`TestTaskRegisterFailedGrant` / `TestTaskRegisterFailedReput` were flaky because they used fixed sleeps while etcd lease keepalive/retry is asynchronous, and TTL queries can transiently fail during lease revoke/expiry.\n\n### What changed and how does it work?\n\n- Add `taskRegister.sleepRetryInterval` (with failpoint override) and use it in retry loops.\n- Replace fixed sleeps with `require.Eventually`.\n- Make `Close` and task listing tolerant to `lease not found` races.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [ ] Unit test\n  - `make failpoint-enable && go test ./br/pkg/utils -run '^TestTaskRegister' -tags=intest`\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [x] No need to test\n  > - [x] The change is for stabilizing unit tests; CI will cover it.\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\n\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\n\n```release-note\nNone\n```\n"
+  },
+  "pr_merged_at": "2026-02-28T20:59:43+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/utils/register_test.go",
+    "name": "TestTaskRegisterFailedReput"
+  },
+  "symptoms": [
+    "skRegisterFailedGrant` / `TestTaskRegisterFailedReput` were flaky because they used fixed sleeps while etcd lease keepalive/retry is asynchronous"
+  ],
+  "failure_signature": "skRegisterFailedGrant` / `TestTaskRegisterFailedReput` were flaky because they used fixed sleeps while etcd lease keepalive/retry is asynchronous",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/65732",
+    "https://github.com/pingcap/tidb/pull/65732.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/65732.patch",
+  "changed_files": [
+    "br/pkg/utils/BUILD.bazel",
+    "br/pkg/utils/register.go",
+    "br/pkg/utils/register_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: skRegisterFailedGrant` / `TestTaskRegisterFailedReput` were flaky because they used fixed sleeps while etcd lease keepalive/retry is asynchronous",
+      "files: br/pkg/utils/BUILD.bazel, br/pkg/utils/register.go, br/pkg/utils/register_test.go"
+    ]
+  },
+  "analysis": "PR title: br/pkg/utils: stabilize task register tests\nPR url: https://github.com/pingcap/tidb/pull/65732\nTriage summary: skRegisterFailedGrant` / `TestTaskRegisterFailedReput` were flaky because they used fixed sleeps while etcd lease keepalive/retry is asynchronous\nChanged files (3): br/pkg/utils/BUILD.bazel, br/pkg/utils/register.go, br/pkg/utils/register_test.go\nFull patch analyzed; see patch_url."
+}
