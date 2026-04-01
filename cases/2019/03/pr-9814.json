@@ -1,0 +1,48 @@
+{
+  "id": "pr-9814",
+  "source_pr": {
+    "number": 9814,
+    "url": "https://github.com/pingcap/tidb/pull/9814",
+    "title": "config, server: Add http status host",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nThere was no way to set the host for the Status listener to bind to. The --status option only accepts a port number. This could be a security problem (since a user might want to only listen for status requests on an internal network interface, etc.). It's also a usability issue, since services trying to listen on external interfaces can cause firewall issues (macOS gives an annoying popup in this case, for example).\r\n\r\n### What is changed and how it works?\r\nI added a --status-host option that allows a user to set the host the Status listener should bind to. It defaults to 0.0.0.0, the same as the --host option.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n\r\nI did *not* add a test to bind to different addresses to make sure the server functions as expected, because I wasn't sure how to do that in a way that wouldn't break in certain environments.\r\n\r\n - Manual test (add detailed scripts or steps below)\r\n\r\nI did manually test this, binding explicitly to some IP addresses, hostnames, localhost, etc.\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\nNo\r\n - Has exported variable/fields change\r\nNo\r\n - Has interface methods change\r\nNo\r\n - Has persistent data change\r\nNo\r\n\r\nThis change affects the \"Status\" config struct, adding a StatusHost member. It also adds a `--status-host` flag to tidb-server.\r\n\r\nSide effects\r\n\r\n - Possible performance regression\r\nNo\r\n - Increased code complexity\r\nNo\r\n - Breaking backward compatibility\r\nThe default server-host is 0.0.0.0, which matches the default of 0.0.0.0 for host (where TiDB listens for MySQL-protocol connections). The existing behavior is to bind to an empty interface, and I think in some environments, binding to 0.0.0.0 can mean that IPv6 connections are not allowed, but I did not observe that on my Mac. So, the change is that my patch makes the Status listener bind to \"0.0.0.0\" by default, while the old behavior was to find to \"\".\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\nNo.\r\n - Need to update the documentation\r\nYes, to add new flag name and config file option.\r\n - Need to update the `tidb-ansible` repository\r\nPossibly, if it's desirable to allow users to set the status host as part of an Ansible deployment.\r\n - Need to be included in the release note\r\nYes."
+  },
+  "pr_merged_at": "2019-03-30T10:50:06+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/callback_test.go",
+    "name": "callback_test"
+  },
+  "symptoms": [
+    "-// It's used for fixing data race in tests."
+  ],
+  "failure_signature": "-// It's used for fixing data race in tests.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "config, server: Add http status host",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9814",
+    "https://github.com/pingcap/tidb/pull/9814.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9814.patch",
+  "changed_files": [
+    "config/config.go",
+    "config/config.toml.example",
+    "server/http_status.go",
+    "tidb-server/main.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: -// It's used for fixing data race in tests.",
+      "files: cmd/explaintest/r/subquery.result, cmd/explaintest/t/subquery.test, config/config.go, config/config.toml.example, ddl/callback_test.go, ddl/column.go, ddl/db_change_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_test.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/failtest/fail_db_test.go, ddl/index.go, ddl/reorg.go, ddl/rollingback.go, ddl/session_pool.go, ddl/syncer.go, ddl/table.go, domain/domain.go, domain/domain_test.go, executor/builder.go, executor/executor_required_rows_test.go, executor/index_lookup_join.go, executor/join.go, executor/joiner.go, executor/joiner_test.go, executor/merge_join.go, infoschema/slow_log.go, planner/core/logical_plans.go, planner/core/stats.go, server/http_status.go, session/session_test.go, sessionctx/variable/session.go, tidb-server/main.go, util/logutil/log.go, util/logutil/log_test.go"
+    ]
+  },
+  "analysis": "PR title: config, server: Add http status host\nPR url: https://github.com/pingcap/tidb/pull/9814\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: -// It's used for fixing data race in tests.\nChanged files (4): config/config.go, config/config.toml.example, server/http_status.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/9814.patch\nPicked test: type=unit path=ddl/callback_test.go name=callback_test"
+}

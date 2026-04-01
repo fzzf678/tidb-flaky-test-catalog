@@ -1,0 +1,50 @@
+{
+  "id": "pr-10007",
+  "source_pr": {
+    "number": 10007,
+    "url": "https://github.com/pingcap/tidb/pull/10007",
+    "title": "table, infoschema, executor: fix Charset/Collation shown in column desc",
+    "body": "### What problem does this PR solve?\r\nWith the help of a parser PR(https://github.com/pingcap/parser/pull/270), this request aims to fix:\r\n\r\n1. `Collate` descriptions displayed in `SHOW FULL COLUMNS` statement. It will: close #9807, close #9837.\r\n\r\n2. Some corner cases in `information_schema.COLUMNS` table, take the following statements as instance:\r\n\r\n```\r\nmysql> create table t1(a tinytext);\r\nQuery OK, 0 rows affected (0.08 sec)\r\n```\r\n\r\nIn MySQL 5.7:\r\n\r\n```\r\nmysql> SELECT column_name, character_set_name, collation_name FROM information_schema.COLUMNS WHERE table_schema = \"test\" AND table_name = \"t1\";\r\n+-------------+--------------------+--------------------+\r\n| column_name | character_set_name | collation_name     |\r\n+-------------+--------------------+--------------------+\r\n| a           | utf8mb4            | utf8mb4_general_ci |\r\n+-------------+--------------------+--------------------+\r\n1 row in set (0.03 sec)\r\n```\r\n\r\nIn TiDB master before this PR:\r\n\r\n```\r\nmysql> SELECT column_name, character_set_name, collation_name FROM information_schema.COLUMNS WHERE table_schema = \"test\" AND table_name = \"t1\";\r\n+-------------+--------------------+----------------+\r\n| column_name | character_set_name | collation_name |\r\n+-------------+--------------------+----------------+\r\n| a           | NULL               | NULL           |\r\n+-------------+--------------------+----------------+\r\n1 row in set (0.01 sec)\r\n``` \r\n\r\n### What is changed and how it works?\r\nIt used a HasCharset() function ported from MySQL source and use it to determine if given column's Charset/Collation should be displayed, following the way MySQL does:\r\n\r\n[sql_show.cc::store_column_type()](https://github.com/mysql/mysql-server/blob/3701bd36bec259fe494c75c9b30c57b01e598297/sql/sql_show.cc#L5303) \r\n\r\n### Check List\r\n\r\nTests\r\n\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has interface methods change\r\n\r\nSide effects\r\n\r\n - Increased code complexity\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n"
+  },
+  "pr_merged_at": "2019-04-09T20:00:14+08:00",
+  "test": {
+    "type": "unit",
+    "path": "infoschema/tables_test.go",
+    "name": "tables_test"
+  },
+  "symptoms": [
+    "ORDER BY column_name`, (infoschema/tables_test.go)"
+  ],
+  "failure_signature": "ORDER BY column_name`, (infoschema/tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/10007",
+    "https://github.com/pingcap/tidb/pull/10007.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/10007.patch",
+  "changed_files": [
+    "executor/seqtest/seq_executor_test.go",
+    "executor/show.go",
+    "executor/show_test.go",
+    "infoschema/tables.go",
+    "infoschema/tables_test.go",
+    "table/column.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: ORDER BY column_name`, (infoschema/tables_test.go)",
+      "files: executor/seqtest/seq_executor_test.go, executor/show.go, executor/show_test.go, infoschema/tables.go, infoschema/tables_test.go, table/column.go"
+    ]
+  },
+  "analysis": "PR title: table, infoschema, executor: fix Charset/Collation shown in column desc\nPR url: https://github.com/pingcap/tidb/pull/10007\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: ORDER BY column_name`, (infoschema/tables_test.go)\nChanged files (6): executor/seqtest/seq_executor_test.go, executor/show.go, executor/show_test.go, infoschema/tables.go, infoschema/tables_test.go, table/column.go\nPatch url: https://github.com/pingcap/tidb/pull/10007.patch\nPicked test: type=unit path=infoschema/tables_test.go name=tables_test"
+}

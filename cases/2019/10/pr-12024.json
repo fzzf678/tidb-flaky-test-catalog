@@ -1,0 +1,52 @@
+{
+  "id": "pr-12024",
+  "source_pr": {
+    "number": 12024,
+    "url": "https://github.com/pingcap/tidb/pull/12024",
+    "title": "executor: support index lookup merge join in executor.",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nA sub PR for https://github.com/pingcap/tidb/pull/9571\r\n\r\n### What is changed and how it works?\r\nSupport index merge join in executor.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n - Has exported variable/fields change\r\n - Has interface methods change\r\n - Has persistent data change\r\n\r\nSide effects\r\n\r\n - Possible performance regression\r\n - Increased code complexity"
+  },
+  "pr_merged_at": "2019-10-14T19:21:34+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "fix data race | tk.MustQuery(\"select /*+ TIDB_INLJ(t, s) */ t.a from t left join s on t.a = s.a order by t.a desc\").Check(testkit.Rows(\"148307968\", \"-277544960\", \"-277544960\", \"-1327693824\")) (executor/join_test.go)"
+  ],
+  "failure_signature": "fix data race | tk.MustQuery(\"select /*+ TIDB_INLJ(t, s) */ t.a from t left join s on t.a = s.a order by t.a desc\").Check(testkit.Rows(\"148307968\", \"-277544960\", \"-277544960\", \"-1327693824\")) (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/12024",
+    "https://github.com/pingcap/tidb/pull/12024.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/12024.patch",
+  "changed_files": [
+    "executor/benchmark_test.go",
+    "executor/builder.go",
+    "executor/index_lookup_merge_join.go",
+    "executor/join_test.go",
+    "planner/core/exhaust_physical_plans.go",
+    "planner/core/physical_plans.go",
+    "planner/core/testdata/plan_suite_out.json"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: fix data race | tk.MustQuery(\"select /*+ TIDB_INLJ(t, s) */ t.a from t left join s on t.a = s.a order by t.a desc\").Check(testkit.Rows(\"148307968\", \"-277544960\", \"-277544960\", \"-1327693824\")) (executor/join_test.go)",
+      "files: cmd/explaintest/r/access_path_selection.result, cmd/explaintest/r/black_list.result, cmd/explaintest/r/explain.result, cmd/explaintest/r/explain_complex.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/explain_easy_stats.result, cmd/explaintest/r/explain_stats.result, cmd/explaintest/r/generated_columns.result, cmd/explaintest/r/index_join.result, cmd/explaintest/r/partition_pruning.result, cmd/explaintest/r/select.result, cmd/explaintest/r/subquery.result, cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/topn_pushdown.result, cmd/explaintest/r/tpch.result, cmd/explaintest/r/window_function.result, executor/benchmark_test.go, executor/builder.go, executor/index_lookup_join.go, executor/index_lookup_join_test.go, executor/index_lookup_merge_join.go, executor/join_test.go, go.sum, log.txt, planner/core/cbo_test.go, planner/core/exhaust_physical_plans.go, planner/core/initialize.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/physical_plan_test.go, planner/core/physical_plans.go, planner/core/stringer.go, planner/core/task.go, planner/core/testdata/plan_suite_out.json, util/ranger/ranger_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: support index lookup merge join in executor.\nPR url: https://github.com/pingcap/tidb/pull/12024\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix data race | tk.MustQuery(\"select /*+ TIDB_INLJ(t, s) */ t.a from t left join s on t.a = s.a order by t.a desc\").Check(testkit.Rows(\"148307968\", \"-277544960\", \"-277544960\", \"-1327693824\")) (executor/join_test.go)\nChanged files (7): executor/benchmark_test.go, executor/builder.go, executor/index_lookup_merge_join.go, executor/join_test.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plans.go, planner/core/testdata/plan_suite_out.json\nPatch url: https://github.com/pingcap/tidb/pull/12024.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

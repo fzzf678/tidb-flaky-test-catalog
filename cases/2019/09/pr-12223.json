@@ -1,0 +1,54 @@
+{
+  "id": "pr-12223",
+  "source_pr": {
+    "number": 12223,
+    "url": "https://github.com/pingcap/tidb/pull/12223",
+    "title": "*: calculate GC safe point based on global min start timestamp",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nWe do not need to increase GC life time or GC run interval to avoid the transaction aborted when it took too much time.\r\n\r\n### What is changed and how it works?\r\n1. calculate the new safe point using the minimum of (now - GC life time) and the global min transaction start timestamp.\r\n1. remove the configurable max-txn-time-use and use a fixed 24 hours instead, which is the longest transaction life time.\r\n1. remove the relation of GC life time and the max-txn-time-use.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Manual test (add detailed scripts or steps below)\r\n1. start 2 TiDB's cluster\r\n1. connect to one TiDB, then begin; and get its start ts by information_schema.processlist\r\n1. checkout /tidb/store/gcworker/saved_safe_point, it will pin to the min start ts\r\n1. commit the transaction\r\n1. checkout /tidb/store/gcworker/saved_safe_point again, and the safe point will update again.\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nRelated changes\r\n\r\n - Need to update the documentation"
+  },
+  "pr_merged_at": "2019-09-30T13:35:37+08:00",
+  "test": {
+    "type": "unit",
+    "path": "domain/domain_test.go",
+    "name": "domain_test"
+  },
+  "symptoms": [
+    "fix data race in test cases"
+  ],
+  "failure_signature": "fix data race in test cases",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: calculate GC safe point based on global min start timestamp",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/12223",
+    "https://github.com/pingcap/tidb/pull/12223.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/12223.patch",
+  "changed_files": [
+    "config/config.go",
+    "config/config.toml.example",
+    "domain/domain.go",
+    "domain/domain_test.go",
+    "domain/info.go",
+    "kv/kv.go",
+    "store/tikv/2pc.go",
+    "store/tikv/gcworker/gc_worker.go",
+    "store/tikv/gcworker/gc_worker_test.go",
+    "store/tikv/safepoint.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix data race in test cases",
+      "files: config/config.go, config/config.toml.example, domain/domain.go, domain/domain_test.go, domain/info.go, go.mod, kv/kv.go, store/tikv/2pc.go, store/tikv/gcworker/gc_worker.go, store/tikv/gcworker/gc_worker_test.go, store/tikv/safepoint.go, tools/check/go.mod"
+    ]
+  },
+  "analysis": "PR title: *: calculate GC safe point based on global min start timestamp\nPR url: https://github.com/pingcap/tidb/pull/12223\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race in test cases\nChanged files (10): config/config.go, config/config.toml.example, domain/domain.go, domain/domain_test.go, domain/info.go, kv/kv.go, store/tikv/2pc.go, store/tikv/gcworker/gc_worker.go, store/tikv/gcworker/gc_worker_test.go, store/tikv/safepoint.go\nPatch url: https://github.com/pingcap/tidb/pull/12223.patch\nPicked test: type=unit path=domain/domain_test.go name=domain_test"
+}

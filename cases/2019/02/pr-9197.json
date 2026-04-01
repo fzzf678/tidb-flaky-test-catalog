@@ -1,0 +1,48 @@
+{
+  "id": "pr-9197",
+  "source_pr": {
+    "number": 9197,
+    "url": "https://github.com/pingcap/tidb/pull/9197",
+    "title": "planner, executor: inject proj below TopN and Sort if byItem contains scalarFunc",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nFix https://github.com/pingcap/tidb/issues/9047\r\n\r\n### What is changed and how it works?\r\nThe issue is caused by the re-usage of chunk between SortExec/TopNExec and HashAggExec. Different chunks have different **capacity** thus the growth of SortExec.rowChunks and SortExec.keyChunks is not exactly the same( **SortExec.rowChunks.NumChunks() != SortExec.keyChunks.NumChunks()**), so `index outof range` error may be raised when we use a singe rowPtr to record the position of every rows in SortExec.rowChunks and SortExec.keyChunks. \r\n\r\nInject a Projection below TopN/ Sort when Orderby-item contains scalar function(s). Thus we can remove the keyChunks from SortExec and fix the issue.\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Integration test\r\n - Manual test \r\n - Exists tests\r\n\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n - Has exported variable/fields change\r\n\r\n\r\nSide effects\r\nN/A\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n\r\n"
+  },
+  "pr_merged_at": "2019-02-15T15:34:31+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"explain select * from t order by i + 1\").Check(testkit.Rows( (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"explain select * from t order by i + 1\").Check(testkit.Rows( (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9197",
+    "https://github.com/pingcap/tidb/pull/9197.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9197.patch",
+  "changed_files": [
+    "executor/aggregate_test.go",
+    "executor/sort.go",
+    "planner/core/physical_plan_test.go",
+    "planner/core/rule_inject_extra_projection.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"explain select * from t order by i + 1\").Check(testkit.Rows( (executor/aggregate_test.go)",
+      "files: executor/aggregate_test.go, executor/sort.go, planner/core/physical_plan_test.go, planner/core/rule_inject_extra_projection.go"
+    ]
+  },
+  "analysis": "PR title: planner, executor: inject proj below TopN and Sort if byItem contains scalarFunc\nPR url: https://github.com/pingcap/tidb/pull/9197\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"explain select * from t order by i + 1\").Check(testkit.Rows( (executor/aggregate_test.go)\nChanged files (4): executor/aggregate_test.go, executor/sort.go, planner/core/physical_plan_test.go, planner/core/rule_inject_extra_projection.go\nPatch url: https://github.com/pingcap/tidb/pull/9197.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

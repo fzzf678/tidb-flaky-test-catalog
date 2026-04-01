@@ -1,0 +1,45 @@
+{
+  "id": "pr-14102",
+  "source_pr": {
+    "number": 14102,
+    "url": "https://github.com/pingcap/tidb/pull/14102",
+    "title": "test: optimize expression unit test",
+    "body": "### What problem does this PR solve?\r\noptimize expression unit test by fix duplicated cases  due to wrong embedding struct\r\n\r\n### What is changed and how it works?\r\nThe expression test suite `testIntegrationSuite2` embedding another test suite `testIntegrationSuite`, so all the test cases under `testIntegrationSuite` will be implicitly auto-generated for `testIntegrationSuite2` thus make expression unit test run slow and unnecessary .\r\n\r\nresult:\r\nbefore changes: \r\n```\r\n> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/expression\r\n[2019-12-18T02:23:57.925Z] OK: 470 passed, 1 skipped\r\n[2019-12-18T02:23:57.925Z] --- PASS: TestT (88.37s)\r\n[2019-12-18T02:23:59.292Z] ok  \tgithub.com/pingcap/tidb/expression\t89.517s\r\n```\r\n\r\nafter change:\r\n```\r\n> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/expression\r\n[2019-12-18T02:23:07.926Z] OK: 406 passed, 1 skipped\r\n[2019-12-18T02:23:07.926Z] --- PASS: TestT (76.40s)\r\n[2019-12-18T02:23:08.854Z] ok  \tgithub.com/pingcap/tidb/expression\t77.532s\r\n```\r\n\r\n### Check List\r\nTests\r\n\r\n- unit tests\r\n\r\nCode changes\r\n\r\nSide effects\r\n\r\nRelated changes"
+  },
+  "pr_merged_at": "2019-12-18T11:48:47+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/expression"
+  ],
+  "failure_signature": "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/expression",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test: optimize expression unit test",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/14102",
+    "https://github.com/pingcap/tidb/pull/14102.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/14102.patch",
+  "changed_files": [
+    "expression/integration_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: > go test -v -vet=off -p 10 -race github.com/pingcap/tidb/expression",
+      "files: expression/integration_test.go"
+    ]
+  },
+  "analysis": "PR title: test: optimize expression unit test\nPR url: https://github.com/pingcap/tidb/pull/14102\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: > go test -v -vet=off -p 10 -race github.com/pingcap/tidb/expression\nChanged files (1): expression/integration_test.go\nPatch url: https://github.com/pingcap/tidb/pull/14102.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+}

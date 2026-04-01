@@ -1,0 +1,81 @@
+{
+  "id": "pr-10581",
+  "source_pr": {
+    "number": 10581,
+    "url": "https://github.com/pingcap/tidb/pull/10581",
+    "title": "*: refactor cost model formulas and constants",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nOur current cost model is too naive to pick out the physical plans we prefer in some scenarios, for example:\r\n- cost such as sorting in index lookup operator, or inner cost of index join operator, is not reflected in cost computing at all;\r\n- some cost computings are wrong or not that accurate because we are using wrong input row count estimation (e.g, cost computing of TopN operator);\r\n\r\nBesides, cost computings for different operators are not uniform now: some operators consider memory cost, others do not; some operators consider operator parallelism, others do not;\r\n\r\n\r\n### What is changed and how it works?\r\n\r\nThis PR tries to\r\n- 1) refine cost model to catch up with the current executor implementations\r\n- 2) and uniform the dimensions we consider in cost computing for all operators, i.e, CPU cost, memory cost, network cost, scan cost, and operator parallelism.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test: some UT results are updated\r\n - Integration test: some integration tests are updated\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n - Has exported variable/fields change\r\n - Has interface methods change\r\n\r\nSide effects\r\n\r\n - Possible performance regression\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch: we may need this in release-3.0\r\n - Need to be included in the release note\r\n"
+  },
+  "pr_merged_at": "2019-08-07T17:44:09+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select count(a) from t where b>0 group by a, b order by a;\").Check(testkit.Rows(\"3\", \"1\", \"1\", \"1\")) (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select count(a) from t where b>0 group by a, b order by a;\").Check(testkit.Rows(\"3\", \"1\", \"1\", \"1\")) (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/10581",
+    "https://github.com/pingcap/tidb/pull/10581.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/10581.patch",
+  "changed_files": [
+    "cmd/explaintest/r/access_path_selection.result",
+    "cmd/explaintest/r/explain.result",
+    "cmd/explaintest/r/explain_complex_stats.result",
+    "cmd/explaintest/r/explain_easy.result",
+    "cmd/explaintest/r/explain_easy_stats.result",
+    "cmd/explaintest/r/generated_columns.result",
+    "cmd/explaintest/r/index_join.result",
+    "cmd/explaintest/r/partition_pruning.result",
+    "cmd/explaintest/r/select.result",
+    "cmd/explaintest/r/subquery.result",
+    "cmd/explaintest/r/tpch.result",
+    "cmd/explaintest/t/explain.test",
+    "cmd/explaintest/t/explain_easy.test",
+    "cmd/explaintest/t/explain_easy_stats.test",
+    "cmd/explaintest/t/index_join.test",
+    "cmd/explaintest/t/select.test",
+    "cmd/explaintest/t/subquery.test",
+    "executor/aggregate_test.go",
+    "executor/builder.go",
+    "executor/index_lookup_join_test.go",
+    "expression/constant_propagation_test.go",
+    "planner/core/cbo_test.go",
+    "planner/core/exhaust_physical_plans.go",
+    "planner/core/find_best_task.go",
+    "planner/core/logical_plan_builder.go",
+    "planner/core/logical_plan_test.go",
+    "planner/core/logical_plans.go",
+    "planner/core/physical_plan_test.go",
+    "planner/core/physical_plans.go",
+    "planner/core/planbuilder.go",
+    "planner/core/resolve_indices.go",
+    "planner/core/stats.go",
+    "planner/core/task.go",
+    "planner/property/stats_info.go",
+    "statistics/selectivity_test.go",
+    "statistics/table.go",
+    "util/ranger/ranger_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select count(a) from t where b>0 group by a, b order by a;\").Check(testkit.Rows(\"3\", \"1\", \"1\", \"1\")) (executor/aggregate_test.go)",
+      "files: cmd/explaintest/r/access_path_selection.result, cmd/explaintest/r/explain.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/explain_easy_stats.result, cmd/explaintest/r/generated_columns.result, cmd/explaintest/r/index_join.result, cmd/explaintest/r/partition_pruning.result, cmd/explaintest/r/select.result, cmd/explaintest/r/subquery.result, cmd/explaintest/r/tpch.result, cmd/explaintest/t/explain.test, cmd/explaintest/t/explain_easy.test, cmd/explaintest/t/explain_easy_stats.test, cmd/explaintest/t/index_join.test, cmd/explaintest/t/select.test, cmd/explaintest/t/subquery.test, executor/aggregate_test.go, executor/builder.go, executor/index_lookup_join_test.go, expression/constant_propagation_test.go, planner/core/cbo_test.go, planner/core/exhaust_physical_plans.go, planner/core/find_best_task.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/physical_plan_test.go, planner/core/physical_plans.go, planner/core/planbuilder.go, planner/core/resolve_indices.go, planner/core/stats.go, planner/core/task.go, planner/property/stats_info.go, statistics/selectivity_test.go, statistics/table.go, util/ranger/ranger_test.go"
+    ]
+  },
+  "analysis": "PR title: *: refactor cost model formulas and constants\nPR url: https://github.com/pingcap/tidb/pull/10581\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select count(a) from t where b>0 group by a, b order by a;\").Check(testkit.Rows(\"3\", \"1\", \"1\", \"1\")) (executor/aggregate_test.go)\nChanged files (37): cmd/explaintest/r/access_path_selection.result, cmd/explaintest/r/explain.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/explain_easy_stats.result, cmd/explaintest/r/generated_columns.result, cmd/explaintest/r/index_join.result, cmd/explaintest/r/partition_pruning.result, cmd/explaintest/r/select.result, cmd/explaintest/r/subquery.result, cmd/explaintest/r/tpch.result, cmd/explaintest/t/explain.test, cmd/explaintest/t/explain_easy.test, cmd/explaintest/t/explain_easy_stats.test, cmd/explaintest/t/index_join.test, cmd/explaintest/t/select.test, cmd/explaintest/t/subquery.test, executor/aggregate_test.go, executor/builder.go, executor/index_lookup_join_test.go, expression/constant_propagation_test.go, planner/core/cbo_test.go, planner/core/exhaust_physical_plans.go, planner/core/find_best_task.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/physical_plan_test.go, planner/core/physical_plans.go, planner/core/planbuilder.go, planner/core/resolve_indices.go, planner/core/stats.go, planner/core/task.go, planner/property/stats_info.go, statistics/selectivity_test.go, statistics/table.go, util/ranger/ranger_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10581.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

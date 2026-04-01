@@ -1,0 +1,53 @@
+{
+  "id": "pr-10256",
+  "source_pr": {
+    "number": 10256,
+    "url": "https://github.com/pingcap/tidb/pull/10256",
+    "title": "tikvclient: refine region-cache",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\ntry to fixes #10037, keep retry region's other stores\r\n\r\n- meet hibernate region feature in tikv\r\n- keep using old data when tidb can not connect to pd\r\n\r\n### What is changed and how it works?\r\n\r\n#### What region-cache can hold?\r\n\r\n- region: region maintains a range of data,  one region has multiple stores, it will be created/deleted frequently(region split, region merge, leader change,  schedule from one store to another)\r\n- stores: store is kv process, one machine can hold multiple stores,  one store can hold multiple regions,  it will be infrequent change(copy old kv to new machine, change network interface...)\r\n\r\n#### What fails or data outdated region-cache will meet?\r\n\r\n1) send data failure\r\n\r\nnormally, it happens when **machine down or network partition between tidb and kv or process crash**.\r\nfor TiDB side, it will see **send data failure event** to identify the store failure.\r\n\r\nbut sometimes, this will be caused by someone to **replace a new machine or change network interface**, but people don't often do that.\r\n\r\n2) send success but got the error response\r\n\r\nthis means the store is working well, but info is miss matched.\r\nfor TiDB side, send data will success, but will **get fail response** from kv.\r\n\r\nnormally, it's the region info be changed, seldom it's store info changed.\r\n\r\n#### How current running\r\n\r\non send fail,  it will drop region cache and remove store info, it will trigger reload region and store info.\r\n\r\nbut have 2 problems:\r\n\r\n- re-fetch region info will get the old leader when kv doesn't trigger new election, but hibernate region need trigger other peer to start new election\r\n- fetch region from pd maybe failure if pd have network partition.\r\n\r\n#### how this PR change\r\n\r\n1) mark store after send\r\n\r\n- mark store be failed when sending data failure, it let tidb blackout this store in following in a period(continue fail count + last fail timestamp).\r\n- mark store as success when sending data success.\r\n\r\n\"blackout store when failure\" keep the chance that failure peer can be used again but doesn't make retry flood.\r\n\r\n2) invalidate region cache\r\n\r\ncache item never be deleted and only invalidate it to trigger pd re-fetch\r\nit will make it validate again to keep use old data if fetch failure caused by pd down. \r\n\r\nreview this PR maybe need to take look at https://github.com/pingcap/tidb/pull/6880 and https://github.com/pingcap/tidb/pull/2792, also `GetRPCContext` method which isn't modified but vital to this logic.\r\n\r\n3) main focus\r\n\r\n- fast & lock-free for cache-hit code path?\r\n- when to try other peers when the current leader unreachable? \r\n- when to invalidate a region and trigger reload region?\r\n- when & how long to blackout a store when it continues failed?\r\n- when to trigger stores info to be reloaded?\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test(WIP add more)\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n - Has exported variable/fields change\r\n - Has interface methods change\r\n\r\nSide effects\r\n\r\n - Increased code complexity\r\n\r\nRelated changes\r\n\r\n - N/A\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/10256)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2019-05-21T13:11:34+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/table_split_test.go",
+    "name": "table_split_test"
+  },
+  "symptoms": [
+    "- // need to clone it to avoid data race."
+  ],
+  "failure_signature": "- // need to clone it to avoid data race.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tikvclient: refine region-cache",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/10256",
+    "https://github.com/pingcap/tidb/pull/10256.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/10256.patch",
+  "changed_files": [
+    "ddl/table_split_test.go",
+    "store/tikv/coprocessor_test.go",
+    "store/tikv/kv.go",
+    "store/tikv/rawkv.go",
+    "store/tikv/region_cache.go",
+    "store/tikv/region_cache_test.go",
+    "store/tikv/region_request.go",
+    "store/tikv/region_request_test.go",
+    "store/tikv/split_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: - // need to clone it to avoid data race.",
+      "files: ddl/table_split_test.go, store/tikv/coprocessor_test.go, store/tikv/kv.go, store/tikv/rawkv.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, store/tikv/region_request.go, store/tikv/region_request_test.go, store/tikv/split_test.go"
+    ]
+  },
+  "analysis": "PR title: tikvclient: refine region-cache\nPR url: https://github.com/pingcap/tidb/pull/10256\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - // need to clone it to avoid data race.\nChanged files (9): ddl/table_split_test.go, store/tikv/coprocessor_test.go, store/tikv/kv.go, store/tikv/rawkv.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, store/tikv/region_request.go, store/tikv/region_request_test.go, store/tikv/split_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10256.patch\nPicked test: type=unit path=ddl/table_split_test.go name=table_split_test"
+}

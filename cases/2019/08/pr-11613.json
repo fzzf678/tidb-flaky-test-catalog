@@ -1,0 +1,47 @@
+{
+  "id": "pr-11613",
+  "source_pr": {
+    "number": 11613,
+    "url": "https://github.com/pingcap/tidb/pull/11613",
+    "title": "planner/core: check the window func arg first before checking window specs",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nFix https://github.com/pingcap/tidb/issues/11008.\r\n\r\n\r\n\r\n### What is changed and how it works?\r\nit seems not a good idea but we need to be compatible with mysql. \r\nso here, when extract windows funcs, it the continue to check the window arg. when checking window func arg, it need to be able to do the expression check.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test  -- added\r\n - Integration test -- the explain test tool is changed because the plan id increased. and the error EOF is ignored in test.\r\n\r\n\r\nCode changes\r\n\r\n - Has exported function/method change -- add a function to check the window args. \r\n\r\n\r\nSide effects\r\n- Increased code complexity and the process of parsing and check arg is done twice. \r\n\r\n"
+  },
+  "pr_merged_at": "2019-08-10T16:22:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"SELECT NTH_VALUE(fieldA, ATAN(-1)) OVER (w1) AS 'ntile', fieldA, fieldB FROM ( SELECT a AS fieldA, b AS fieldB FROM t ) as te WINDOW w1 AS ( ORDER BY fieldB ASC, fieldA DESC )\", (planner/core/logical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"SELECT NTH_VALUE(fieldA, ATAN(-1)) OVER (w1) AS 'ntile', fieldA, fieldB FROM ( SELECT a AS fieldA, b AS fieldB FROM t ) as te WINDOW w1 AS ( ORDER BY fieldB ASC, fieldA DESC )\", (planner/core/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/11613",
+    "https://github.com/pingcap/tidb/pull/11613.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/11613.patch",
+  "changed_files": [
+    "cmd/explaintest/main.go",
+    "planner/core/logical_plan_builder.go",
+    "planner/core/logical_plan_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"SELECT NTH_VALUE(fieldA, ATAN(-1)) OVER (w1) AS 'ntile', fieldA, fieldB FROM ( SELECT a AS fieldA, b AS fieldB FROM t ) as te WINDOW w1 AS ( ORDER BY fieldB ASC, fieldA DESC )\", (planner/core/logical_plan_test.go)",
+      "files: cmd/explaintest/main.go, cmd/explaintest/r/window_function.result, expression/integration_test.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go"
+    ]
+  },
+  "analysis": "PR title: planner/core: check the window func arg first before checking window specs\nPR url: https://github.com/pingcap/tidb/pull/11613\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"SELECT NTH_VALUE(fieldA, ATAN(-1)) OVER (w1) AS 'ntile', fieldA, fieldB FROM ( SELECT a AS fieldA, b AS fieldB FROM t ) as te WINDOW w1 AS ( ORDER BY fieldB ASC, fieldA DESC )\", (planner/core/logical_plan_test.go)\nChanged files (3): cmd/explaintest/main.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11613.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
+}

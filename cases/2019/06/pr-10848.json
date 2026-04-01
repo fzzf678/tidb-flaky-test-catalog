@@ -1,0 +1,46 @@
+{
+  "id": "pr-10848",
+  "source_pr": {
+    "number": 10848,
+    "url": "https://github.com/pingcap/tidb/pull/10848",
+    "title": "ddl: fix race in table lock config",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nFix data race in test.\r\n\r\n```\r\n==================\r\nwarning: data race\r\nread at 0x000003fe1bf2 by goroutine 252:\r\n  github.com/pingcap/tidb/planner/core.checktablelock()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/config/config.go:586 +0x82\r\n  github.com/pingcap/tidb/planner.optimize()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/planner/optimize.go:53 +0x4d5\r\n  github.com/pingcap/tidb/executor.(*compiler).compile()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/compiler.go:78 +0x268\r\n  github.com/pingcap/tidb/session.(*session).execute()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/compiler.go:55 +0x82f\r\n  github.com/pingcap/tidb/session.(*session).execute()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:1015 +0xd4\r\n  github.com/pingcap/tidb/ddl/util.completedeleterange()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/util/util.go:107 +0x190\r\n  github.com/pingcap/tidb/ddl.(*delrange).dotask()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/delete_range.go:223 +0x693\r\n  github.com/pingcap/tidb/ddl.(*delrange).dodelrangework()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/delete_range.go:177 +0x5a5\r\n  github.com/pingcap/tidb/ddl.(*delrange).startemulator()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/delete_range.go:141 +0x204\r\n\r\nprevious write at 0x000003fe1bf2 by goroutine 480:\r\n  github.com/pingcap/tidb/ddl_test.(*testdbsuite2).testconcurrentlocktables()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/db_test.go:2979 +0x44d\r\n  github.com/pingcap/tidb/ddl_test.(*testdbsuite2).testconcurrentlocktables()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/db_test.go:2969 +0x359\r\n  runtime.call32()\r\n      /usr/local/go/src/runtime/asm_amd64.s:519 +0x3a\r\n  reflect.value.call()\r\n      /usr/local/go/src/reflect/value.go:308 +0xc0\r\n  github.com/pingcap/check.(*suiterunner).forktest.func1()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:836 +0x9fc\r\n  github.com/pingcap/check.(*suiterunner).forkcall.func1()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:730 +0xb7\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - No code\r\n\r\nCode changes"
+  },
+  "pr_merged_at": "2019-06-20T10:47:06+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_test.go",
+    "name": "db_test"
+  },
+  "symptoms": [
+    "ddl: fix race in table lock config"
+  ],
+  "failure_signature": "ddl: fix race in table lock config",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: fix race in table lock config",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/10848",
+    "https://github.com/pingcap/tidb/pull/10848.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/10848.patch",
+  "changed_files": [
+    "ddl/db_test.go",
+    "ddl/serial_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: ddl: fix race in table lock config",
+      "files: ddl/db_test.go, ddl/serial_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl: fix race in table lock config\nPR url: https://github.com/pingcap/tidb/pull/10848\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix race in table lock config\nChanged files (2): ddl/db_test.go, ddl/serial_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10848.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+}

@@ -1,0 +1,47 @@
+{
+  "id": "pr-9899",
+  "source_pr": {
+    "number": 9899,
+    "url": "https://github.com/pingcap/tidb/pull/9899",
+    "title": "types: fix converting decimal to datetime and timestamp",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nfix https://github.com/pingcap/tidb/issues/9770\r\n\r\n### What is changed and how it works?\r\nIn Datum.convertToMysqlTime function add `KindMysqlDecimal` switch case, and convert decimal to string then parse to Time\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n - Unit Test\r\n - Manual test (https://github.com/pingcap/tidb/issues/9770)\r\n\r\n```\r\nmysql> INSERT INTO t1 VALUES (20010101100000.1234566);\r\nQuery OK, 1 row affected (0.00 sec)\r\n\r\nmysql> select * from t1;\r\n+----------------------------+\r\n| a                          |\r\n+----------------------------+\r\n| 2001-01-01 10:00:00.123456 |\r\n| 2001-01-01 10:00:00.123457 |\r\n| 2001-01-01 10:00:00.123457 |\r\n+----------------------------+\r\n3 rows in set (0.00 sec)\r\n\r\nmysql> select tidb_version();\r\n+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\r\n| tidb_version()                                                                                                                                                                                                                                                                                                                             |\r\n| Release Version: v3.0.0-beta-251-gb4cc3e489-dirty\r\nGit Commit Hash: b4cc3e48934afaefbf6d5f65b5414b8b65117234\r\nGit Branch: master\r\nUTC Build Time: 2019-03-26 07:10:09\r\nGoVersion: go version go1.12.1 darwin/amd64\r\nRace Enabled: false\r\nTiKV Min Version: 2.1.0-alpha.1-ff3dd160846b7d1aed9079c389fc188f7f5ea13e\r\nCheck Table Before Drop: false |\r\n\r\n1 row in set (0.00 sec)\r\n```\r\n\r\nSide effects\r\n\r\n - Possible performance regression\r\n\r\n"
+  },
+  "pr_merged_at": "2019-03-30T11:27:06+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "Race Enabled: false"
+  ],
+  "failure_signature": "Race Enabled: false",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "types: fix converting decimal to datetime and timestamp",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9899",
+    "https://github.com/pingcap/tidb/pull/9899.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9899.patch",
+  "changed_files": [
+    "expression/integration_test.go",
+    "types/convert_test.go",
+    "types/datum.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: Race Enabled: false",
+      "files: expression/integration_test.go, types/convert_test.go, types/datum.go"
+    ]
+  },
+  "analysis": "PR title: types: fix converting decimal to datetime and timestamp\nPR url: https://github.com/pingcap/tidb/pull/9899\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Race Enabled: false\nChanged files (3): expression/integration_test.go, types/convert_test.go, types/datum.go\nPatch url: https://github.com/pingcap/tidb/pull/9899.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+}

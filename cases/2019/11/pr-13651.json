@@ -1,0 +1,57 @@
+{
+  "id": "pr-13651",
+  "source_pr": {
+    "number": 13651,
+    "url": "https://github.com/pingcap/tidb/pull/13651",
+    "title": "util: fix staticcheck errors (#13456)",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nFixes static check errors in util, mentioned in #13456 . The version of staticcheck is `2019.2.3`.\r\n\r\n```\r\nutil/admin/admin.go:757:2: only the first constant in this group has an explicit type (SA9004)\r\nutil/chunk/list.go:114:2: redundant return statement (S1023)\r\nutil/codec/bytes.go:32:2: var encPads is unused (U1000)\r\nutil/encrypt/aes.go:55:2: redundant return statement (S1023)\r\nutil/encrypt/crypt.go:91:21: func (*sqlCrypt).reinit is unused (U1000)\r\nutil/expensivequery/expensivequery.go:34:2: field mu is unused (U1000)\r\nutil/filesort/filesort.go:624:2: redundant return statement (S1023)\r\nutil/kvcache/simple_lru.go:51:5: no value of type uint is less than 0 (SA4003)\r\nutil/kvcache/simple_lru.go:93:5: no value of type uint64 is less than 0 (SA4003)\r\nutil/mock/context.go:46:2: field mux is unused (U1000)\r\nutil/mvmap/fnv.go:21:2: only the first constant in this group has an explicit type (SA9004)\r\nutil/plancodec/codec.go:223:7: identical expressions on the left and right side of the '!=' operator (SA4000)\r\nutil/rowcodec/encoder.go:34:2: field tempData is unused (U1000)\r\nutil/stringutil/string_util_test.go:65:4: string literal contains the Unicode control character U+0005, consider using the '\\x05' escape sequence (ST1018)\r\nutil/stringutil/string_util_test.go:65:4: string literal contains the Unicode control character U+0018, consider using the '\\x18' escape sequence (ST1018)\r\nutil/stringutil/string_util_test.go:65:22: string literal contains the Unicode control character U+0005, consider using the '\\x05' escape sequence (ST1018)\r\nutil/stringutil/string_util_test.go:65:22: string literal contains the Unicode control character U+0018, consider using the '\\x18' escape sequence (ST1018)\r\nutil/testutil/testutil.go:153:34: should use make([]testCases, len(res.input)) instead (S1019)\r\nutil/testutil/testutil.go:276:23: should use make([]byte, len(buf.Bytes())) instead (S1019)\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\nChanges code according to the list of staticcheck output.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - No code\r\n\r\nCode changes\r\n\r\nSide effects\r\n\r\nRelated changes\r\n\r\nRelease note\r\n"
+  },
+  "pr_merged_at": "2019-11-22T17:20:26+08:00",
+  "test": {
+    "type": "unit",
+    "path": "util/stringutil/string_util_test.go",
+    "name": "string_util_test"
+  },
+  "symptoms": [
+    "- mux sync.Mutex // fix data race in ddl test."
+  ],
+  "failure_signature": "- mux sync.Mutex // fix data race in ddl test.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "util: fix staticcheck errors (#13456)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13651",
+    "https://github.com/pingcap/tidb/pull/13651.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13651.patch",
+  "changed_files": [
+    "util/admin/admin.go",
+    "util/chunk/list.go",
+    "util/encrypt/aes.go",
+    "util/encrypt/crypt.go",
+    "util/expensivequery/expensivequery.go",
+    "util/filesort/filesort.go",
+    "util/kvcache/simple_lru.go",
+    "util/mock/context.go",
+    "util/mvmap/fnv.go",
+    "util/plancodec/codec.go",
+    "util/rowcodec/encoder.go",
+    "util/stringutil/string_util_test.go",
+    "util/testutil/testutil.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: - mux sync.Mutex // fix data race in ddl test.",
+      "files: util/admin/admin.go, util/chunk/list.go, util/codec/bytes.go, util/encrypt/aes.go, util/encrypt/crypt.go, util/expensivequery/expensivequery.go, util/filesort/filesort.go, util/kvcache/simple_lru.go, util/mock/context.go, util/mvmap/fnv.go, util/plancodec/codec.go, util/rowcodec/encoder.go, util/stringutil/string_util_test.go, util/testutil/testutil.go"
+    ]
+  },
+  "analysis": "PR title: util: fix staticcheck errors (#13456)\nPR url: https://github.com/pingcap/tidb/pull/13651\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - mux sync.Mutex // fix data race in ddl test.\nChanged files (13): util/admin/admin.go, util/chunk/list.go, util/encrypt/aes.go, util/encrypt/crypt.go, util/expensivequery/expensivequery.go, util/filesort/filesort.go, util/kvcache/simple_lru.go, util/mock/context.go, util/mvmap/fnv.go, util/plancodec/codec.go, util/rowcodec/encoder.go, util/stringutil/string_util_test.go, util/testutil/testutil.go\nPatch url: https://github.com/pingcap/tidb/pull/13651.patch\nPicked test: type=unit path=util/stringutil/string_util_test.go name=string_util_test"
+}

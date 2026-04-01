@@ -1,0 +1,51 @@
+{
+  "id": "pr-9390",
+  "source_pr": {
+    "number": 9390,
+    "url": "https://github.com/pingcap/tidb/pull/9390",
+    "title": "executor, planner: refine merge join compare methods to avoid some rare cases",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nfix merge join incorrect result in some rare cases.\r\n\r\n### What is changed and how it works?\r\n\r\nchange the compare method\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n"
+  },
+  "pr_merged_at": "2019-02-25T14:19:27+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/merge_join_test.go",
+    "name": "merge_join_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(`select t1.a, t2.a from t1 join t2 on t1.a=t2.a order by t1.a;`).Check(testkit.Rows( (executor/merge_join_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(`select t1.a, t2.a from t1 join t2 on t1.a=t2.a order by t1.a;`).Check(testkit.Rows( (executor/merge_join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9390",
+    "https://github.com/pingcap/tidb/pull/9390.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9390.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/merge_join.go",
+    "executor/merge_join_test.go",
+    "expression/builtin_compare.go",
+    "planner/core/exhaust_physical_plans.go",
+    "planner/core/physical_plans.go",
+    "util/set/int_set.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(`select t1.a, t2.a from t1 join t2 on t1.a=t2.a order by t1.a;`).Check(testkit.Rows( (executor/merge_join_test.go)",
+      "files: executor/builder.go, executor/merge_join.go, executor/merge_join_test.go, expression/builtin_compare.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plans.go, util/set/int_set.go"
+    ]
+  },
+  "analysis": "PR title: executor, planner: refine merge join compare methods to avoid some rare cases\nPR url: https://github.com/pingcap/tidb/pull/9390\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(`select t1.a, t2.a from t1 join t2 on t1.a=t2.a order by t1.a;`).Check(testkit.Rows( (executor/merge_join_test.go)\nChanged files (7): executor/builder.go, executor/merge_join.go, executor/merge_join_test.go, expression/builtin_compare.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plans.go, util/set/int_set.go\nPatch url: https://github.com/pingcap/tidb/pull/9390.patch\nPicked test: type=unit path=executor/merge_join_test.go name=merge_join_test"
+}

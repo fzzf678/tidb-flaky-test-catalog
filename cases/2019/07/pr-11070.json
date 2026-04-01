@@ -1,0 +1,48 @@
+{
+  "id": "pr-11070",
+  "source_pr": {
+    "number": 11070,
+    "url": "https://github.com/pingcap/tidb/pull/11070",
+    "title": "executor, infoschema: fix display of default CURRENT_TIMESTAMP with decimal",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nThis PR fixes the following scenarios in which decimal fraction is missed for default `CURRENT_TIMESTAMP` in TiDB:\r\n\r\n```\r\ntidb> create table t(a datetime(3) default current_timestamp(3), b timestamp(4) default current_timestamp(4));\r\nQuery OK, 0 rows affected (0.01 sec)\r\n```\r\n\r\n* For `SHOW CREATE TABLE`:\r\n```\r\ntidb> show create table t;\r\n+-------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\r\n| Table | Create Table                                                                                                                                                                   |\r\n+-------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\r\n| t     | CREATE TABLE `t` (\r\n  `a` datetime(3) DEFAULT CURRENT_TIMESTAMP,\r\n  `b` timestamp(4) DEFAULT CURRENT_TIMESTAMP\r\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin |\r\n+-------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\r\n1 row in set (0.01 sec)\r\n```\r\n* For `SHOW (FULL) COLUMNS`:\r\n```\r\ntidb> show full columns from t;\r\n+-------+--------------+-----------+------+------+-------------------+-------+---------------------------------+---------+\r\n| Field | Type         | Collation | Null | Key  | Default           | Extra | Privileges                      | Comment |\r\n+-------+--------------+-----------+------+------+-------------------+-------+---------------------------------+---------+\r\n| a     | datetime(3)  | NULL      | YES  |      | CURRENT_TIMESTAMP |       | select,insert,update,references |         |\r\n| b     | timestamp(4) | NULL      | YES  |      | CURRENT_TIMESTAMP |       | select,insert,update,references |         |\r\n+-------+--------------+-----------+------+------+-------------------+-------+---------------------------------+---------+\r\n2 rows in set (0.01 sec)\r\n```\r\n* For the queries on `information_schema`:\r\n```\r\ntidb> select column_name, column_default from information_schema.COLUMNS where table_schema=\"test\" and table_name = \"t\" order by column_name;\r\n+-------------+-------------------+\r\n| column_name | column_default    |\r\n+-------------+-------------------+\r\n| a           | CURRENT_TIMESTAMP |\r\n| b           | CURRENT_TIMESTAMP |\r\n+-------------+-------------------+\r\n2 rows in set (0.00 sec)\r\n```\r\nNotice that for all displays of the default values of time-related columns, the decimal fraction part is missed. This would cause some errors when users try to use those pieces of information, for example, create a table from `SHOW CREATE TABLE`:\r\n\r\n```\r\ntidb> CREATE TABLE `t` (\r\n  `a` datetime(3) DEFAULT CURRENT_TIMESTAMP,\r\n  `b` timestamp(4) DEFAULT CURRENT_TIMESTAMP\r\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;\r\nERROR 1067 (42000): Invalid default value for 'a'\r\n```\r\n\r\n### What is changed and how it works?\r\nSimply adding the missed parts.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has interface methods change\r\n\r\nSide effects\r\n\r\n - Increased code complexity\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n"
+  },
+  "pr_merged_at": "2019-07-04T16:44:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "infoschema/tables_test.go",
+    "name": "tables_test"
+  },
+  "symptoms": [
+    "ORDER BY column_name`, (infoschema/tables_test.go)"
+  ],
+  "failure_signature": "ORDER BY column_name`, (infoschema/tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/11070",
+    "https://github.com/pingcap/tidb/pull/11070.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/11070.patch",
+  "changed_files": [
+    "executor/show.go",
+    "executor/show_test.go",
+    "infoschema/tables_test.go",
+    "table/column.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: ORDER BY column_name`, (infoschema/tables_test.go)",
+      "files: executor/show.go, executor/show_test.go, infoschema/tables_test.go, table/column.go"
+    ]
+  },
+  "analysis": "PR title: executor, infoschema: fix display of default CURRENT_TIMESTAMP with decimal\nPR url: https://github.com/pingcap/tidb/pull/11070\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: ORDER BY column_name`, (infoschema/tables_test.go)\nChanged files (4): executor/show.go, executor/show_test.go, infoschema/tables_test.go, table/column.go\nPatch url: https://github.com/pingcap/tidb/pull/11070.patch\nPicked test: type=unit path=infoschema/tables_test.go name=tables_test"
+}

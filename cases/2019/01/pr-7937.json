@@ -1,0 +1,67 @@
+{
+  "id": "pr-7937",
+  "source_pr": {
+    "number": 7937,
+    "url": "https://github.com/pingcap/tidb/pull/7937",
+    "title": "ddl: add restore deleted table",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nAdd `admin restore table by job job_id` to restore the deleted table.\r\nrelated proposal: https://github.com/pingcap/tidb/pull/7383\r\nrelated parser PR: https://github.com/pingcap/parser/pull/85, https://github.com/pingcap/parser/pull/172\r\n\r\n### What is changed ?\r\nAdd a new ddl type job: `restore table` to do restore.\r\nthe function of `restore table` almost as same as `create table` ddl. \r\nBut still a little bit different: \r\n* `restore table` don't do split table region.\r\n* `restore table` will rebase the table auto id with the original table autoID.\r\n\r\n## restore table usage\r\n\r\n### Scenario 1\r\n\r\nIf you drop table by mistake, you can use `admin restore table [table_name]` to restore the table.\r\n\r\nEg:\r\n\r\n```sql\r\nmysql> use test\r\nYou are now connected to database \"test\" as user \"root\"\r\nmysql> create table t (a int)\r\nmysql> insert into t values (1);\r\nmysql> select a from t;\r\n+---+\r\n| a |\r\n+---+\r\n| 1 |\r\n+---+\r\nmysql> drop table t;\r\nmysql> select a from t;\r\n(1146, u\"Table 'test.t' doesn't exist\")\r\nmysql> admin restore table test.t;\r\nmysql> select a from t;\r\n+---+\r\n| a |\r\n+---+\r\n| 1 |\r\n+---+\r\nmysql> insert into t values (2);\r\nmysql> select a from t;\r\n+---+\r\n| a |\r\n+---+\r\n| 1 |\r\n| 2 |\r\n+---+\r\n```\r\n\r\n### Scenario 2\r\n\r\nIf you drop table `t` by mistable, then create  a new table `t`, then drop the new table `t`, now, if you use `admin restore table t`, It will restore the new table `t`,  not the ole table `t` . But how to restore the old table `t` ? You  can use `admin restore table by job [drop_table_job_ID]` .\r\n\r\nEg:\r\n\r\n```sql\r\nmysql> use test\r\nYou are now connected to database \"test\" as user \"root\"\r\nmysql> select * from t;\r\n+---+\r\n| a |\r\n+---+\r\n| 1 |\r\n+---+\r\nmysql> drop table t;\r\nmysql> create table t (a int,b varchar(10));\r\nmysql> insert into t values (1,\"new t\");\r\nmysql> select * from t;\r\n+---+-------+\r\n| a | b     |\r\n+---+-------+\r\n| 1 | new t |\r\n+---+-------+\r\nmysql> drop table t;\r\nmysql> admin restore table test.t;\r\nmysql> select * from t;\r\n+---+-------+\r\n| a | b     |\r\n+---+-------+\r\n| 1 | new t |\r\n+---+-------+\r\nmysql> admin show ddl jobs;\r\n+--------+---------+------------+---------------+--------------+-----------+----------+-----------+-----------------------------------+--------+\r\n| JOB_ID | DB_NAME | TABLE_NAME | JOB_TYPE      | SCHEMA_STATE | SCHEMA_ID | TABLE_ID | ROW_COUNT | START_TIME                        | STATE  |\r\n+--------+---------+------------+---------------+--------------+-----------+----------+-----------+-----------------------------------+--------+\r\n| 73     | test    | t          | restore table | public       | 1         | 70       | 0         | 2019-01-13 14:55:59.016 +0800 CST | synced |\r\n| 72     | test    | t          | drop table    | none         | 1         | 70       | 0         | 2019-01-13 14:55:54.116 +0800 CST | synced |\r\n| 71     | test    | t          | create table  | public       | 1         | 70       | 0         | 2019-01-13 14:55:17.414 +0800 CST | synced |\r\n| 69     | test    |            | drop table    | none         | 1         | 60       | 0         | 2019-01-13 14:55:03.262 +0800 CST | synced |\r\n| 68     | test    |            | add index     | public       | 1         | 60       | 0         | 2019-01-13 14:54:28.415 +0800 CST | synced |\r\n| 67     | test    |            | add index     | public       | 1         | 60       | 0         | 2019-01-13 14:54:24.563 +0800 CST | synced |\r\n| 66     | test    |            | add index     | public       | 1         | 60       | 0         | 2019-01-13 14:54:20.611 +0800 CST | synced |\r\n| 65     | test    |            | add index     | public       | 1         | 60       | 0         | 2019-01-13 14:54:10.915 +0800 CST | synced |\r\n| 64     | test    |            | add index     | public       | 1         | 60       | 0         | 2019-01-13 14:54:05.511 +0800 CST | synced |\r\n| 63     | test    |            | add index     | public       | 1         | 60       | 0         | 2019-01-13 14:54:01.411 +0800 CST | synced |\r\n+--------+---------+------------+---------------+--------------+-----------+----------+-----------+-----------------------------------+--------+\r\n10 rows in set\r\nmysql> admin restore table by job 69; /* if you not sure which job drop the old table, you can also find this in tidb log file. */\r\n(1050, u\"Table 't' already exists\")  /* because there is already have a table name `t`, so have to rename the table first. */\r\nmysql> rename table t to t_new;\r\nmysql> admin restore table by job 69;\r\nmysql> show tables;\r\n+----------------+\r\n| Tables_in_test |\r\n+----------------+\r\n| t              |\r\n| t_new          |\r\n+----------------+\r\nmysql> select * from t;\r\n+---+\r\n| a |\r\n+---+\r\n| 1 |\r\n+---+\r\nmysql> select * from t_new;\r\n+---+-------+\r\n| a | b     |\r\n+---+-------+\r\n| 1 | new t |\r\n+---+-------+\r\n\r\n```\r\n\r\n### Watch out\r\n\r\nIf you drop table `t` multiple time,  then use `admin recover table by job [ID]` with the old drop job ID, there will have some problem when you write.\r\n\r\nEg:\r\n\r\n```sql\r\nmysql> use test\r\nYou are now connected to database \"test\" as user \"root\"\r\nmysql> insert into t set b=1;\r\nmysql> select * from t;\r\n+---+---+\r\n| a | b |\r\n+---+---+\r\n| 1 | 1 |\r\n+---+---+\r\nmysql> drop table t;\r\nmysql> admin restore table t;\r\nmysql> insert into t set b=2;\r\nmysql> select * from t;\r\n+-------+---+\r\n| a     | b |\r\n+-------+---+\r\n| 1     | 1 |\r\n| 30001 | 2 |\r\n+-------+---+\r\nmysql> drop table t;\r\nmysql> admin show ddl jobs;\r\n+--------+---------+------------+---------------+--------------+-----------+----------+-----------+-----------------------------------+--------+\r\n| JOB_ID | DB_NAME | TABLE_NAME | JOB_TYPE      | SCHEMA_STATE | SCHEMA_ID | TABLE_ID | ROW_COUNT | START_TIME                        | STATE  |\r\n+--------+---------+------------+---------------+--------------+-----------+----------+-----------+-----------------------------------+--------+\r\n| 106    | test    |            | drop table    | none         | 1         | 94       | 0         | 2019-01-13 15:21:27.016 +0800 CST | synced |\r\n| 105    | test    |            | restore table | public       | 1         | 94       | 0         | 2019-01-13 15:19:37.564 +0800 CST | synced |\r\n| 104    | test    |            | drop table    | none         | 1         | 94       | 0         | 2019-01-13 15:19:29.318 +0800 CST | synced |\r\n| 103    | test    |            | drop index    | none         | 1         | 94       | 0         | 2019-01-13 15:18:56.266 +0800 CST | synced |\r\n| 102    | test    |            | drop index    | none         | 1         | 94       | 0         | 2019-01-13 15:18:50.815 +0800 CST | synced |\r\n| 101    | test    |            | drop index    | none         | 1         | 94       | 0         | 2019-01-13 15:18:47.715 +0800 CST | synced |\r\n| 100    | test    |            | drop index    | none         | 1         | 94       | 0         | 2019-01-13 15:18:45.364 +0800 CST | synced |\r\n| 99     | test    |            | add index     | public       | 1         | 94       | 0         | 2019-01-13 15:18:25.263 +0800 CST | synced |\r\n| 98     | test    |            | add index     | public       | 1         | 94       | 0         | 2019-01-13 15:18:22.063 +0800 CST | synced |\r\n| 97     | test    |            | add index     | public       | 1         | 94       | 0         | 2019-01-13 15:18:10.763 +0800 CST | synced |\r\n+--------+---------+------------+---------------+--------------+-----------+----------+-----------+-----------------------------------+--------+\r\nmysql> admin restore table by job 104;\r\nmysql> select * from t;\r\n+-------+---+\r\n| a     | b |\r\n+-------+---+\r\n| 1     | 1 |\r\n| 30001 | 2 |\r\n+-------+---+\r\nmysql> insert into t set b=3;\r\nmysql> select * from t;\r\n+-------+---+\r\n| a     | b |\r\n+-------+---+\r\n| 1     | 1 |\r\n| 30001 | 3 |  /* Watch out: miss record b=2, This because record b=2 is covered by record b=3.*/\r\n+-------+---+\r\n```\r\n\r\n\r\n\r\n### summary\r\n\r\nNormally recommend use `admin restore table [table_name]` to restore table. `admin restore table by job [ID]` is only for the Scenario 2.\r\n\r\n \r\n### How it works ?\r\nThis is done through the following steps:\r\n1. Get the history ddl job by job_id.\r\n3. Use the drop table job's `StartTS` to get a snapshot infoSchema before drop table.\r\n4. Find the `table meta` by `table_id` in snapshot infoSchema, if not found, return `ErrTableIDNotExists`.\r\n5. Using the Found `table meta` to `create table`( recover table ). the table_id is still the original table id. Return if encounter any error.\r\n6. Remove dropped table DDL job from `gc_delete_range` table by `drop table job's id` and `table_id`. \r\n\r\nBut Change Settings and undo Settings will make the problem more complicated.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Manual test \r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n - Has exported variable/fields change\r\n - Has interface methods change\r\n\r\nSide effects\r\n\r\n - Increased code complexity\r\n\r\nRelated changes\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/7937)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2019-01-16T15:37:34+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_test.go",
+    "name": "db_test"
+  },
+  "symptoms": [
+    "fix data race in gofail test"
+  ],
+  "failure_signature": "fix data race in gofail test",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: add restore deleted table",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7937",
+    "https://github.com/pingcap/tidb/pull/7937.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7937.patch",
+  "changed_files": [
+    "ddl/ddl.go",
+    "ddl/ddl_api.go",
+    "ddl/ddl_worker.go",
+    "ddl/delete_range.go",
+    "ddl/mock.go",
+    "ddl/serial_test.go",
+    "ddl/table.go",
+    "ddl/util/util.go",
+    "domain/domain.go",
+    "executor/builder.go",
+    "executor/ddl.go",
+    "executor/ddl_test.go",
+    "executor/set.go",
+    "go.mod",
+    "go.sum",
+    "infoschema/builder.go",
+    "kv/txn.go",
+    "meta/meta.go",
+    "planner/core/common_plans.go",
+    "planner/core/planbuilder.go",
+    "planner/core/preprocess.go",
+    "store/tikv/txn.go",
+    "util/gcutil/gcutil.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix data race in gofail test",
+      "files: ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/mock.go, ddl/serial_test.go, ddl/table.go, ddl/table_test.go, ddl/util/util.go, domain/domain.go, executor/admin.go, executor/builder.go, executor/ddl.go, executor/ddl_test.go, executor/set.go, go.mod, go.sum, infoschema/builder.go, kv/txn.go, meta/meta.go, planner/core/common_plans.go, planner/core/planbuilder.go, planner/core/preprocess.go, store/tikv/txn.go, util/admin/admin.go, util/gcutil/gcutil.go"
+    ]
+  },
+  "analysis": "PR title: ddl: add restore deleted table\nPR url: https://github.com/pingcap/tidb/pull/7937\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race in gofail test\nChanged files (23): ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/mock.go, ddl/serial_test.go, ddl/table.go, ddl/util/util.go, domain/domain.go, executor/builder.go, executor/ddl.go, executor/ddl_test.go, executor/set.go, go.mod, go.sum, infoschema/builder.go, kv/txn.go, meta/meta.go, planner/core/common_plans.go, planner/core/planbuilder.go, planner/core/preprocess.go, store/tikv/txn.go, util/gcutil/gcutil.go\nPatch url: https://github.com/pingcap/tidb/pull/7937.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+}

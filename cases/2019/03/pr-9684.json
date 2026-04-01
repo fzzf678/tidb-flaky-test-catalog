@@ -1,0 +1,51 @@
+{
+  "id": "pr-9684",
+  "source_pr": {
+    "number": 9684,
+    "url": "https://github.com/pingcap/tidb/pull/9684",
+    "title": "planner, executor: set new child after injecting Project operator",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\n1. forget to set new child after injecting project operator\r\n2. remove unnecessary TopN if child is a TableDual in rule topN pushdown\r\n\r\n### What is changed and how it works?\r\n\r\ndo as the title said.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n - Need to be included in the release note\r\n"
+  },
+  "pr_merged_at": "2019-03-13T14:19:33+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select t1.a+t1.b as result from t1 left join t2 on 1 = 0 order by result limit 20;\").Check(testkit.Rows( (executor/join_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select t1.a+t1.b as result from t1 left join t2 on 1 = 0 order by result limit 20;\").Check(testkit.Rows( (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9684",
+    "https://github.com/pingcap/tidb/pull/9684.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9684.patch",
+  "changed_files": [
+    "cmd/explaintest/r/topn_push_down.result",
+    "cmd/explaintest/r/topn_pushdown.result",
+    "cmd/explaintest/t/topn_pushdown.test",
+    "executor/join_test.go",
+    "planner/core/physical_plan_test.go",
+    "planner/core/rule_inject_extra_projection.go",
+    "planner/core/rule_topn_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select t1.a+t1.b as result from t1 left join t2 on 1 = 0 order by result limit 20;\").Check(testkit.Rows( (executor/join_test.go)",
+      "files: cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/topn_pushdown.result, cmd/explaintest/t/topn_pushdown.test, executor/join_test.go, planner/core/physical_plan_test.go, planner/core/rule_inject_extra_projection.go, planner/core/rule_topn_push_down.go"
+    ]
+  },
+  "analysis": "PR title: planner, executor: set new child after injecting Project operator\nPR url: https://github.com/pingcap/tidb/pull/9684\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select t1.a+t1.b as result from t1 left join t2 on 1 = 0 order by result limit 20;\").Check(testkit.Rows( (executor/join_test.go)\nChanged files (7): cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/topn_pushdown.result, cmd/explaintest/t/topn_pushdown.test, executor/join_test.go, planner/core/physical_plan_test.go, planner/core/rule_inject_extra_projection.go, planner/core/rule_topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/9684.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

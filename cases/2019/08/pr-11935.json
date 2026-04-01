@@ -1,0 +1,47 @@
+{
+  "id": "pr-11935",
+  "source_pr": {
+    "number": 11935,
+    "url": "https://github.com/pingcap/tidb/pull/11935",
+    "title": "planner: eliminate top level Sort in subquery",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nfix https://github.com/pingcap/tidb/issues/11881.\r\n\r\nThis PR eliminates top level Sort in subquery.\r\n\r\nBefore this PR:\r\n```\r\nmysql> explain select * from t1 where t1.a in (select t2.a from t2 where t2.b = t1.b order by t2.b);\r\n+--------------------------+----------+------+-------------------------------------------------------------+\r\n| id                       | count    | task | operator info                                               |\r\n+--------------------------+----------+------+-------------------------------------------------------------+\r\n| Apply_12                 | 9990.00  | root | semi join, inner:Sort_16, equal:[eq(test.t1.a, test.t2.a)]  |\r\n| ├─TableReader_15         | 9990.00  | root | data:Selection_14                                           |\r\n| │ └─Selection_14         | 9990.00  | cop  | not(isnull(test.t1.a))                                      |\r\n| │   └─TableScan_13       | 10000.00 | cop  | table:t1, range:[-inf,+inf], keep order:false, stats:pseudo |\r\n| └─Sort_16                | 9.99     | root | test.t2.b:asc                                               |\r\n|   └─TableReader_20       | 9.99     | root | data:Selection_19                                           |\r\n|     └─Selection_19       | 9.99     | cop  | eq(test.t2.b, test.t1.b), not(isnull(test.t2.a))            |\r\n|       └─TableScan_18     | 10000.00 | cop  | table:t2, range:[-inf,+inf], keep order:false, stats:pseudo |\r\n+--------------------------+----------+------+-------------------------------------------------------------+\r\n8 rows in set (0.02 sec)\r\n\r\nmysql> explain select * from t1 where t1.a in (select t2.a from t2 where t2.b = t1.b order by t1.b);\r\n+--------------------------+----------+------+-------------------------------------------------------------------+\r\n| id                       | count    | task | operator info                                                     |\r\n+--------------------------+----------+------+-------------------------------------------------------------------+\r\n| Apply_11                 | 9990.00  | root | semi join, inner:TableReader_19, equal:[eq(test.t1.a, test.t2.a)] |\r\n| ├─TableReader_14         | 9990.00  | root | data:Selection_13                                                 |\r\n| │ └─Selection_13         | 9990.00  | cop  | not(isnull(test.t1.a))                                            |\r\n| │   └─TableScan_12       | 10000.00 | cop  | table:t1, range:[-inf,+inf], keep order:false, stats:pseudo       |\r\n| └─TableReader_19         | 9.99     | root | data:Selection_18                                                 |\r\n|   └─Selection_18         | 9.99     | cop  | eq(test.t2.b, test.t1.b), not(isnull(test.t2.a))                  |\r\n|     └─TableScan_17       | 10000.00 | cop  | table:t2, range:[-inf,+inf], keep order:false, stats:pseudo       |\r\n+--------------------------+----------+------+-------------------------------------------------------------------+\r\n7 rows in set (0.00 sec)\r\n```\r\n\r\nAfter this PR:\r\n```\r\nmysql> explain select * from t1 where t1.a in (select t2.a from t2 where t2.b = t1.b order by t2.b);\r\n+--------------------------+----------+------+--------------------------------------------------------------------------------------------+\r\n| id                       | count    | task | operator info                                                                              |\r\n+--------------------------+----------+------+--------------------------------------------------------------------------------------------+\r\n| HashLeftJoin_11          | 7984.01  | root | semi join, inner:TableReader_17, equal:[eq(test.t1.b, test.t2.b) eq(test.t1.a, test.t2.a)] |\r\n| ├─TableReader_14         | 9980.01  | root | data:Selection_13                                                                          |\r\n| │ └─Selection_13         | 9980.01  | cop  | not(isnull(test.t1.a)), not(isnull(test.t1.b))                                             |\r\n| │   └─TableScan_12       | 10000.00 | cop  | table:t1, range:[-inf,+inf], keep order:false, stats:pseudo                                |\r\n| └─TableReader_17         | 9980.01  | root | data:Selection_16                                                                          |\r\n|   └─Selection_16         | 9980.01  | cop  | not(isnull(test.t2.a)), not(isnull(test.t2.b))                                             |\r\n|     └─TableScan_15       | 10000.00 | cop  | table:t2, range:[-inf,+inf], keep order:false, stats:pseudo                                |\r\n+--------------------------+----------+------+--------------------------------------------------------------------------------------------+\r\n7 rows in set (0.00 sec)\r\n\r\nmysql> explain select * from t1 where t1.a in (select t2.a from t2 where t2.b = t1.b order by t1.b);\r\n+--------------------------+----------+------+--------------------------------------------------------------------------------------------+\r\n| id                       | count    | task | operator info                                                                              |\r\n+--------------------------+----------+------+--------------------------------------------------------------------------------------------+\r\n| HashLeftJoin_10          | 7984.01  | root | semi join, inner:TableReader_16, equal:[eq(test.t1.b, test.t2.b) eq(test.t1.a, test.t2.a)] |\r\n| ├─TableReader_13         | 9980.01  | root | data:Selection_12                                                                          |\r\n| │ └─Selection_12         | 9980.01  | cop  | not(isnull(test.t1.a)), not(isnull(test.t1.b))                                             |\r\n| │   └─TableScan_11       | 10000.00 | cop  | table:t1, range:[-inf,+inf], keep order:false, stats:pseudo                                |\r\n| └─TableReader_16         | 9980.01  | root | data:Selection_15                                                                          |\r\n|   └─Selection_15         | 9980.01  | cop  | not(isnull(test.t2.a)), not(isnull(test.t2.b))                                             |\r\n|     └─TableScan_14       | 10000.00 | cop  | table:t2, range:[-inf,+inf], keep order:false, stats:pseudo                                |\r\n+--------------------------+----------+------+--------------------------------------------------------------------------------------------+\r\n7 rows in set (0.00 sec)\r\n```\r\n### What is changed and how it works?\r\n\r\nIn the rule `decorrelate`, this PR matches the top level `Sort`, and eliminate it.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n - Unit test\r\n\r\n"
+  },
+  "pr_merged_at": "2019-08-30T10:01:49+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select t1.b from t t1 where t1.b = (select max(t2.a) from t t2 where t1.b=t2.b order by t1.a)\", (planner/core/logical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select t1.b from t t1 where t1.b = (select max(t2.a) from t t2 where t1.b=t2.b order by t1.a)\", (planner/core/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/11935",
+    "https://github.com/pingcap/tidb/pull/11935.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/11935.patch",
+  "changed_files": [
+    "cmd/explaintest/r/select.result",
+    "planner/core/logical_plan_test.go",
+    "planner/core/rule_decorrelate.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select t1.b from t t1 where t1.b = (select max(t2.a) from t t2 where t1.b=t2.b order by t1.a)\", (planner/core/logical_plan_test.go)",
+      "files: cmd/explaintest/r/select.result, planner/core/logical_plan_test.go, planner/core/rule_decorrelate.go"
+    ]
+  },
+  "analysis": "PR title: planner: eliminate top level Sort in subquery\nPR url: https://github.com/pingcap/tidb/pull/11935\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select t1.b from t t1 where t1.b = (select max(t2.a) from t t2 where t1.b=t2.b order by t1.a)\", (planner/core/logical_plan_test.go)\nChanged files (3): cmd/explaintest/r/select.result, planner/core/logical_plan_test.go, planner/core/rule_decorrelate.go\nPatch url: https://github.com/pingcap/tidb/pull/11935.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
+}

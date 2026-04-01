@@ -1,0 +1,45 @@
+{
+  "id": "pr-9676",
+  "source_pr": {
+    "number": 9676,
+    "url": "https://github.com/pingcap/tidb/pull/9676",
+    "title": "executor: fix data race in testChunkSizeControlSuite",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nData race problem in `testChunkSizeControlSuite`.\r\n```\r\nWARNING: DATA RACE\r\nWrite at 0x00c00027b3b0 by goroutine 154:\r\n  runtime.mapassign_fast64()\r\n      /usr/local/go/src/runtime/map_fast64.go:92 +0x0\r\n  github.com/pingcap/tidb/executor_test.(*testChunkSizeControlSuite).TestLimitAndIndexScan()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/chunk_size_control_test.go:55 +0x4f9\r\n  runtime.call32()\r\n      /usr/local/go/src/runtime/asm_amd64.s:519 +0x3a\r\n  reflect.Value.Call()\r\n      /usr/local/go/src/reflect/value.go:308 +0xc0\r\n  github.com/pingcap/check.(*suiteRunner).forkTest.func1()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:836 +0x9fc\r\n  github.com/pingcap/check.(*suiteRunner).forkCall.func1()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:730 +0xb7\r\n\r\nPrevious read at 0x00c00027b3b0 by goroutine 150:\r\n  runtime.mapaccess1_fast64()\r\n      /usr/local/go/src/runtime/map_fast64.go:12 +0x0\r\n  github.com/pingcap/tidb/executor_test.(*testSlowClient).SendRequest()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/chunk_size_control_test.go:48 +0x19e\r\n  github.com/pingcap/tidb/store/tikv.(*RegionRequestSender).sendReqToRegion()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/store/tikv/region_request.go:136 +0x193\r\n  github.com/pingcap/tidb/store/tikv.(*RegionRequestSender).SendReqCtx()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/store/tikv/region_request.go:107 +0x1cd\r\n  github.com/pingcap/tidb/store/tikv.(*copIteratorWorker).handleTaskOnce()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/store/tikv/coprocessor.go:618 +0x6f3\r\n  github.com/pingcap/tidb/store/tikv.(*copIteratorWorker).handleTask()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/store/tikv/coprocessor.go:578 +0x114\r\n  github.com/pingcap/tidb/store/tikv.(*copIteratorWorker).run()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/store/tikv/coprocessor.go:427 +0x257\r\n```\r\n\r\n### What is changed and how it works?\r\nIntroduce a `RWMutex`.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test"
+  },
+  "pr_merged_at": "2019-03-12T17:52:25+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/chunk_size_control_test.go",
+    "name": "chunk_size_control_test"
+  },
+  "symptoms": [
+    "executor: fix data race in testChunkSizeControlSuite"
+  ],
+  "failure_signature": "executor: fix data race in testChunkSizeControlSuite",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "executor: fix data race in testChunkSizeControlSuite",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9676",
+    "https://github.com/pingcap/tidb/pull/9676.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9676.patch",
+  "changed_files": [
+    "executor/chunk_size_control_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: executor: fix data race in testChunkSizeControlSuite",
+      "files: executor/chunk_size_control_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix data race in testChunkSizeControlSuite\nPR url: https://github.com/pingcap/tidb/pull/9676\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: executor: fix data race in testChunkSizeControlSuite\nChanged files (1): executor/chunk_size_control_test.go\nPatch url: https://github.com/pingcap/tidb/pull/9676.patch\nPicked test: type=unit path=executor/chunk_size_control_test.go name=chunk_size_control_test"
+}

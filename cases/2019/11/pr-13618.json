@@ -1,0 +1,47 @@
+{
+  "id": "pr-13618",
+  "source_pr": {
+    "number": 13618,
+    "url": "https://github.com/pingcap/tidb/pull/13618",
+    "title": "executor, test: copy the index join tests for index hash join and index merge join",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\ncopy the index join tests for index hash join and index merge join.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n"
+  },
+  "pr_merged_at": "2019-11-25T21:27:30+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select /*+ INL_JOIN(t1) */ * from t join t1 on t.a=t1.a order by t.b\").Sort().Check(testkit.Rows(\"1 3 1 2\", \"1 3 1 3\", \"3 1 3 4\")) (executor/join_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select /*+ INL_JOIN(t1) */ * from t join t1 on t.a=t1.a order by t.b\").Sort().Check(testkit.Rows(\"1 3 1 2\", \"1 3 1 3\", \"3 1 3 4\")) (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13618",
+    "https://github.com/pingcap/tidb/pull/13618.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13618.patch",
+  "changed_files": [
+    "executor/explain_test.go",
+    "executor/index_lookup_join_test.go",
+    "executor/join_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select /*+ INL_JOIN(t1) */ * from t join t1 on t.a=t1.a order by t.b\").Sort().Check(testkit.Rows(\"1 3 1 2\", \"1 3 1 3\", \"3 1 3 4\")) (executor/join_test.go)",
+      "files: executor/explain_test.go, executor/index_lookup_join_test.go, executor/join_test.go"
+    ]
+  },
+  "analysis": "PR title: executor, test: copy the index join tests for index hash join and index merge join\nPR url: https://github.com/pingcap/tidb/pull/13618\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select /*+ INL_JOIN(t1) */ * from t join t1 on t.a=t1.a order by t.b\").Sort().Check(testkit.Rows(\"1 3 1 2\", \"1 3 1 3\", \"3 1 3 4\")) (executor/join_test.go)\nChanged files (3): executor/explain_test.go, executor/index_lookup_join_test.go, executor/join_test.go\nPatch url: https://github.com/pingcap/tidb/pull/13618.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

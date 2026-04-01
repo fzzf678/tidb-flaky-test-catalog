@@ -1,0 +1,50 @@
+{
+  "id": "pr-8661",
+  "source_pr": {
+    "number": 8661,
+    "url": "https://github.com/pingcap/tidb/pull/8661",
+    "title": "executor: support index nested loop hash join",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nhttps://github.com/pingcap/tidb/issues/8470\r\n\r\n### What is changed and how it works?\r\nWe'll split index_lookup_join into index_hash_join and index_merge_join.\r\nThis PR only adds the implementation for **index_hash_join**.\r\nIf we do not need to keep the result order as the outer plan, we'll build an index_hash_join executor. Otherwise, we use the old index_lookup_join executor.\r\n\r\nIndexNestedLoopHashJoin employs one outer worker and N inner workers to\r\nexecute concurrently. The output order is not promised.\r\n\r\nThe execution flow is very similar to IndexLookUpReader:\r\n1. The outer worker reads N outer rows, builds a task and sends it to the\r\ninner worker channel.\r\n2. The inner worker receives the tasks and does 3 things for every task:\r\n   1. builds hash table from the outer rows\r\n   2. builds key ranges from outer rows and fetches inner rows\r\n   3. probes the hash table and sends the join result to the main thread channel.\r\n   Note: `step i` and `step ii` runs concurrently.\r\n3. The main thread receives the join results.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\nExisting test case.\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n - Has exported variable/fields change\r\n - Has interface methods change\r\n\r\nSide effects\r\n1. The current implementation of tryToMatch uses an inner iterator and one outer row, this commit will cause performance reduction.\r\n2. After adding a new joiner function trytoMatch(outerIterator, innerRow)/onMissMatch(https://github.com/pingcap/tidb/pull/9286), performance can be recovered.\r\n3. After https://github.com/pingcap/tidb/pull/11832 is merged, the hashtable can be optimized further. **[DONE]**\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8661)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2019-09-03T13:45:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "fix data race"
+  ],
+  "failure_signature": "fix data race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "executor: support index nested loop hash join",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8661",
+    "https://github.com/pingcap/tidb/pull/8661.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8661.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/index_lookup_hash_join.go",
+    "executor/index_lookup_join.go",
+    "executor/join_test.go",
+    "planner/core/exhaust_physical_plans.go",
+    "planner/core/physical_plans.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix data race",
+      "files: cmd/importer/parser.go, executor/builder.go, executor/index_lookup_hash_join.go, executor/index_lookup_join.go, executor/join_test.go, executor/show.go, go.mod, go.sum, infoschema/tables.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plans.go"
+    ]
+  },
+  "analysis": "PR title: executor: support index nested loop hash join\nPR url: https://github.com/pingcap/tidb/pull/8661\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (6): executor/builder.go, executor/index_lookup_hash_join.go, executor/index_lookup_join.go, executor/join_test.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/8661.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

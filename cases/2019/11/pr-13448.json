@@ -1,0 +1,46 @@
+{
+  "id": "pr-13448",
+  "source_pr": {
+    "number": 13448,
+    "url": "https://github.com/pingcap/tidb/pull/13448",
+    "title": "domain: fix data race in SchemaValidator",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n```\r\n[2019-11-11T09:27:10.013Z] WARNING: DATA RACE\r\n[2019-11-11T09:27:10.013Z] Read at 0x00c000022028 by goroutine 23:\r\n[2019-11-11T09:27:10.013Z]   github.com/pingcap/tidb/domain.(*testSuite).TestT()\r\n[2019-11-11T09:27:10.013Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain_test.go:106 +0xf1b\r\n[2019-11-11T09:27:10.013Z]   github.com/pingcap/tidb/domain.(*testSuite).TestT()\r\n[2019-11-11T09:27:10.013Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain_test.go:76 +0x631\r\n[2019-11-11T09:27:10.013Z]   runtime.call32()\r\n[2019-11-11T09:27:10.013Z]       /usr/local/go/src/runtime/asm_amd64.s:539 +0x3a\r\n[2019-11-11T09:27:10.013Z]   reflect.Value.Call()\r\n[2019-11-11T09:27:10.013Z]       /usr/local/go/src/reflect/value.go:321 +0xd3\r\n[2019-11-11T09:27:10.013Z]   github.com/pingcap/check.(*suiteRunner).forkTest.func1()\r\n[2019-11-11T09:27:10.013Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:836 +0x9aa\r\n[2019-11-11T09:27:10.013Z]   github.com/pingcap/check.(*suiteRunner).forkCall.func1()\r\n[2019-11-11T09:27:10.013Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:730 +0xc4\r\n[2019-11-11T09:27:10.013Z]\r\n[2019-11-11T09:27:10.013Z] Previous write at 0x00c000022028 by goroutine 78:\r\n[2019-11-11T09:27:10.013Z]   github.com/pingcap/tidb/domain.(*schemaValidator).Update()\r\n[2019-11-11T09:27:10.013Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/schema_validator.go:126 +0xca\r\n[2019-11-11T09:27:10.013Z]   github.com/pingcap/tidb/domain.(*Domain).Reload()\r\n[2019-11-11T09:27:10.013Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain.go:353 +0x618\r\n[2019-11-11T09:27:10.013Z]   github.com/pingcap/tidb/domain.(*Domain).loadSchemaInLoop()\r\n[2019-11-11T09:27:10.013Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain.go:449 +0xd15\r\n```\r\n\r\n### What is changed and how it works?\r\nAdd a lock to synchronize the access.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\nN/A\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n\r\nRelease note\r\n\r\nN/A\r\n"
+  },
+  "pr_merged_at": "2019-11-19T14:12:24+08:00",
+  "test": {
+    "type": "unit",
+    "path": "domain/domain_test.go",
+    "name": "domain_test"
+  },
+  "symptoms": [
+    "domain: fix data race in SchemaValidator"
+  ],
+  "failure_signature": "domain: fix data race in SchemaValidator",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "domain: fix data race in SchemaValidator",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13448",
+    "https://github.com/pingcap/tidb/pull/13448.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13448.patch",
+  "changed_files": [
+    "domain/domain_test.go",
+    "domain/schema_validator.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: domain: fix data race in SchemaValidator",
+      "files: domain/domain_test.go, domain/schema_validator.go"
+    ]
+  },
+  "analysis": "PR title: domain: fix data race in SchemaValidator\nPR url: https://github.com/pingcap/tidb/pull/13448\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: domain: fix data race in SchemaValidator\nChanged files (2): domain/domain_test.go, domain/schema_validator.go\nPatch url: https://github.com/pingcap/tidb/pull/13448.patch\nPicked test: type=unit path=domain/domain_test.go name=domain_test"
+}

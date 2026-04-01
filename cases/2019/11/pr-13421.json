@@ -1,0 +1,46 @@
+{
+  "id": "pr-13421",
+  "source_pr": {
+    "number": 13421,
+    "url": "https://github.com/pingcap/tidb/pull/13421",
+    "title": "table, executor: fix data race for the partition table's hash code",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n```\r\nWARNING: DATA RACE\r\nWrite at 0x00c000b7d2a8 by goroutine 115:\r\n  github.com/pingcap/tidb/expression.(*ScalarFunction).HashCode()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/expression/scalar_function.go:317 +0xe7\r\n  github.com/pingcap/tidb/expression.(*exprSet).Append()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/expression/constraint_propagation.go:40 +0x69\r\n  github.com/pingcap/tidb/expression.newExprSet()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/expression/constraint_propagation.go:80 +0x25f\r\n  github.com/pingcap/tidb/expression.constraintSolver.Solve()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/expression/constraint_propagation.go:100 +0x70\r\n  github.com/pingcap/tidb/planner/core.(*partitionProcessor).canBePruned()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/rule_partition_processor.go:195 +0x32c\r\n  github.com/pingcap/tidb/planner/core.(*partitionProcessor).prune()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/rule_partition_processor.go:144 +0x4b0\r\n  github.com/pingcap/tidb/planner/core.(*partitionProcessor).rewriteDataSource()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/rule_partition_processor.go:53 +0xa22\r\n  github.com/pingcap/tidb/planner/core.(*partitionProcessor).rewriteDataSource()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/rule_partition_processor.go:81 +0x130\r\n  github.com/pingcap/tidb/planner/core.(*partitionProcessor).optimize()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/rule_partition_processor.go:46 +0x56\r\n  github.com/pingcap/tidb/planner/core.logicalOptimize()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/optimizer.go:149 +0x1de\r\n...\r\n  github.com/pingcap/tidb/executor_test.(*testSuite1).TestPartitionHashCode.func1()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/executor/executor_test.go:5080 +0x150\r\n\r\nPrevious read at 0x00c000b7d2a8 by goroutine 103:\r\n  github.com/pingcap/tidb/expression.(*ScalarFunction).HashCode()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/expression/scalar_function.go:314 +0x5e\r\n  github.com/pingcap/tidb/expression.(*exprSet).Append()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/expression/constraint_propagation.go:40 +0x69\r\n  github.com/pingcap/tidb/expression.newExprSet()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/expression/constraint_propagation.go:80 +0x25f\r\n  github.com/pingcap/tidb/expression.constraintSolver.Solve()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/expression/constraint_propagation.go:100 +0x70\r\n  github.com/pingcap/tidb/planner/core.(*partitionProcessor).canBePruned()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/rule_partition_processor.go:195 +0x32c\r\n  github.com/pingcap/tidb/planner/core.(*partitionProcessor).prune()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/rule_partition_processor.go:144 +0x4b0\r\n  github.com/pingcap/tidb/planner/core.(*partitionProcessor).rewriteDataSource()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/rule_partition_processor.go:53 +0xa22\r\n  github.com/pingcap/tidb/planner/core.(*partitionProcessor).rewriteDataSource()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/rule_partition_processor.go:81 +0x130\r\n  github.com/pingcap/tidb/planner/core.(*partitionProcessor).optimize()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/rule_partition_processor.go:46 +0x56\r\n  github.com/pingcap/tidb/planner/core.logicalOptimize()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/optimizer.go:149 +0x1de\r\n  github.com/pingcap/tidb/planner/core.DoOptimize()\r\n      /Users/xia/workspace/src/github.com/pingcap/tidb/planner/core/optimizer.go:119 +0x84\r\n```\r\n\r\n### What is changed and how it works?\r\nGet a hash code in advance to prevent data race afterward when generating partition expressions.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n\r\nRelease note\r\n\r\n - Get a hash code in advance to prevent data race afterward when generating partition expressions.\r\n"
+  },
+  "pr_merged_at": "2019-11-15T00:08:25+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "table, executor: fix data race for the partition table's hash code"
+  ],
+  "failure_signature": "table, executor: fix data race for the partition table's hash code",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "table, executor: fix data race for the partition table's hash code",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13421",
+    "https://github.com/pingcap/tidb/pull/13421.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13421.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "table/tables/partition.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: table, executor: fix data race for the partition table's hash code",
+      "files: executor/executor_test.go, table/tables/partition.go"
+    ]
+  },
+  "analysis": "PR title: table, executor: fix data race for the partition table's hash code\nPR url: https://github.com/pingcap/tidb/pull/13421\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: table, executor: fix data race for the partition table's hash code\nChanged files (2): executor/executor_test.go, table/tables/partition.go\nPatch url: https://github.com/pingcap/tidb/pull/13421.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

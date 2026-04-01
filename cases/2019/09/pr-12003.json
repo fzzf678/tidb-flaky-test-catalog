@@ -1,0 +1,56 @@
+{
+  "id": "pr-12003",
+  "source_pr": {
+    "number": 12003,
+    "url": "https://github.com/pingcap/tidb/pull/12003",
+    "title": "*: add max/avg cop response time for TableReader, IndexReader and IndexLookupReader.",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nfix #12148 \r\n\r\nWhen `explain analyze` only shows the running time in coprocessor, but it doesn't consider the network trans time, encode time in coprocessor and decode time in tidb. So this PR adds a max coprocessor response time to fetch more information. \r\n\r\n```sql\r\ntidb(localhost:4000) > desc analyze select /*+ TIDB_INLJ(t, s) */ t.a from t left join s on t.a = s.a order by t.a desc;\r\n+--------------------------+-------+------+----------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+----------------+\r\n| id                       | count | task | operator info                                                                                | execution info                                                                                                                 | memory         |\r\n+--------------------------+-------+------+----------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+----------------+\r\n| Projection_16            | 3.75  | root | test.t.a                                                                                     | time:778.424µs, loops:2, rows:5                                                                                                | N/A            |\r\n| └─IndexJoin_21           | 3.75  | root | left outer join, inner:IndexReader_20, outer key:test.t.a, inner key:test.s.a                | time:776.036µs, loops:2, rows:5                                                                                                | 21.19140625 KB |\r\n|   ├─IndexReader_23       | 3.00  | root | index:IndexScan_22                                                                           | time:18.45µs, loops:3, rows:3, cop resp time max:213.883µs, min:213.883µs, avg:213.883µs, p80:213.883µs, p95:213.883µs         | 155 Bytes      |\r\n|   │ └─IndexScan_22       | 3.00  | cop  | table:t, index:a, range:[NULL,+inf], keep order:true, desc                                   | time:131.697µs, loops:4, rows:3                                                                                                | N/A            |\r\n|   └─IndexReader_20       | 0.01  | root | index:Selection_19                                                                           | time:312.121µs, loops:2, rows:4, cop resp time max:248.136µs, min:248.136µs, avg:248.136µs, p80:248.136µs, p95:248.136µs       | 190 Bytes      |\r\n|     └─Selection_19       | 0.01  | cop  | not(isnull(test.s.a))                                                                        | time:107.07µs, loops:5, rows:4                                                                                                 | N/A            |\r\n|       └─IndexScan_18     | 0.01  | cop  | table:s, index:a, range: decided by [eq(test.s.a, test.t.a)], keep order:false, stats:pseudo | time:95.173µs, loops:5, rows:4                                                                                                 | N/A            |\r\n+--------------------------+-------+------+----------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+----------------+\r\n7 rows in set (0.02 sec)\r\n```\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n - Has exported variable/fields change\r\n - Has interface methods change\r\n - Has persistent data change\r\n\r\nSide effects\r\n\r\n - Possible performance regression\r\n - Increased code complexity\r\n\r\n"
+  },
+  "pr_merged_at": "2019-09-11T20:36:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "distsql/distsql_test.go",
+    "name": "distsql_test"
+  },
+  "symptoms": [
+    "fix data race"
+  ],
+  "failure_signature": "fix data race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: add max/avg cop response time for TableReader, IndexReader and IndexLookupReader.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/12003",
+    "https://github.com/pingcap/tidb/pull/12003.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/12003.patch",
+  "changed_files": [
+    "distsql/distsql.go",
+    "distsql/distsql_test.go",
+    "distsql/select_result.go",
+    "distsql/select_result_test.go",
+    "executor/builder.go",
+    "executor/distsql.go",
+    "executor/join_test.go",
+    "executor/table_reader.go",
+    "kv/kv.go",
+    "planner/core/common_plans.go",
+    "store/tikv/coprocessor.go",
+    "util/execdetails/execdetails.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix data race",
+      "files: distsql/distsql.go, distsql/distsql_test.go, distsql/select_result.go, distsql/select_result_test.go, executor/builder.go, executor/distsql.go, executor/join_test.go, executor/table_reader.go, kv/kv.go, planner/core/cbo_test.go, planner/core/common_plans.go, store/tikv/coprocessor.go, util/execdetails/execdetails.go"
+    ]
+  },
+  "analysis": "PR title: *: add max/avg cop response time for TableReader, IndexReader and IndexLookupReader.\nPR url: https://github.com/pingcap/tidb/pull/12003\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (12): distsql/distsql.go, distsql/distsql_test.go, distsql/select_result.go, distsql/select_result_test.go, executor/builder.go, executor/distsql.go, executor/join_test.go, executor/table_reader.go, kv/kv.go, planner/core/common_plans.go, store/tikv/coprocessor.go, util/execdetails/execdetails.go\nPatch url: https://github.com/pingcap/tidb/pull/12003.patch\nPicked test: type=unit path=distsql/distsql_test.go name=distsql_test"
+}

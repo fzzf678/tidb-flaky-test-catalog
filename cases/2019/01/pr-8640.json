@@ -1,0 +1,46 @@
+{
+  "id": "pr-8640",
+  "source_pr": {
+    "number": 8640,
+    "url": "https://github.com/pingcap/tidb/pull/8640",
+    "title": "expression: constraint propagate for '>' and monotonous function",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nPropagate some thing like:\r\n\r\n```\r\nTO_DAYS(col) < TO_DAYS('2001-01-01') && col > '2009-04-03'  => false\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\nAdd a propagate rule `ruleColumnGTConst` leverage this PR https://github.com/pingcap/tidb/pull/7643\r\n\r\nSome simple rules:\r\n\r\n```\r\n\tcol > c1, col > c2, c1 > c2 => col > c1\r\n        col > c1, col < c2, c1 >= c2 => false\r\n```\r\n\r\nA more complicate rule:\r\n\r\n```\r\n\tcol > c1, f(col) < c2, f is monotonous, f(c1) <= c2 => false\r\n```\r\n\r\nProve:\r\n\r\n```\r\n        col > c1, f is monotonous => f(col) > f(c1)\r\n        f(col) > f(c1), f(col) < c2, f(c1) >= c2 => false\r\n```\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nRelated changes\r\n\r\nRef https://github.com/pingcap/tidb/issues/7516\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8640)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2019-01-04T14:06:52+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/constant_test.go",
+    "name": "constant_test"
+  },
+  "symptoms": [
+    "sort.Strings(result) (expression/constant_test.go)"
+  ],
+  "failure_signature": "sort.Strings(result) (expression/constant_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8640",
+    "https://github.com/pingcap/tidb/pull/8640.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8640.patch",
+  "changed_files": [
+    "expression/constant_test.go",
+    "expression/constraint_propagation.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Strings(result) (expression/constant_test.go)",
+      "files: expression/constant_test.go, expression/constraint_propagation.go, go.mod, go.sum"
+    ]
+  },
+  "analysis": "PR title: expression: constraint propagate for '>' and monotonous function\nPR url: https://github.com/pingcap/tidb/pull/8640\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Strings(result) (expression/constant_test.go)\nChanged files (2): expression/constant_test.go, expression/constraint_propagation.go\nPatch url: https://github.com/pingcap/tidb/pull/8640.patch\nPicked test: type=unit path=expression/constant_test.go name=constant_test"
+}

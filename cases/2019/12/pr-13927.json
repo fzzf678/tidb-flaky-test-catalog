@@ -1,0 +1,46 @@
+{
+  "id": "pr-13927",
+  "source_pr": {
+    "number": 13927,
+    "url": "https://github.com/pingcap/tidb/pull/13927",
+    "title": "executor: trace the memory usage of Selection executors",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nTrace the memory usage of Selection executors and display the result in `Explain Analyze`.\r\nWait for #13914.\r\n\r\n### What is changed and how it works?\r\nIntroduce a `memtracker` into `SelectionExec` and use it to trace the memory usage.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\n"
+  },
+  "pr_merged_at": "2019-12-23T11:18:03+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/explain_test.go",
+    "name": "explain_test"
+  },
+  "symptoms": [
+    "s.checkMemoryInfo(c, tk, \"explain analyze select * from t order by v\", false) (executor/explain_test.go)"
+  ],
+  "failure_signature": "s.checkMemoryInfo(c, tk, \"explain analyze select * from t order by v\", false) (executor/explain_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13927",
+    "https://github.com/pingcap/tidb/pull/13927.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13927.patch",
+  "changed_files": [
+    "executor/executor.go",
+    "executor/explain_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: s.checkMemoryInfo(c, tk, \"explain analyze select * from t order by v\", false) (executor/explain_test.go)",
+      "files: executor/adapter.go, executor/executor.go, executor/explain_test.go, executor/projection.go"
+    ]
+  },
+  "analysis": "PR title: executor: trace the memory usage of Selection executors\nPR url: https://github.com/pingcap/tidb/pull/13927\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: s.checkMemoryInfo(c, tk, \"explain analyze select * from t order by v\", false) (executor/explain_test.go)\nChanged files (2): executor/executor.go, executor/explain_test.go\nPatch url: https://github.com/pingcap/tidb/pull/13927.patch\nPicked test: type=unit path=executor/explain_test.go name=explain_test"
+}

@@ -1,0 +1,45 @@
+{
+  "id": "pr-12845",
+  "source_pr": {
+    "number": 12845,
+    "url": "https://github.com/pingcap/tidb/pull/12845",
+    "title": "store/tikv: tiny refactoring, change `twoPhaseCommitAction` to interface",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nWe define ` type twoPhaseCommitAction int` and use `switch case` on them.\r\n\r\n```\r\nfunc (ca twoPhaseCommitAction) String() string {\r\n\tswitch ca {\r\n\tcase actionPrewrite:\r\n\t\treturn \"prewrite\"\r\n\tcase actionCommit:\r\n\t\treturn \"commit\"\r\n\tcase actionCleanup:\r\n\t\treturn \"cleanup\"\r\n\tcase actionPessimisticLock:\r\n\t\treturn \"pessimistic_lock\"\r\n\tcase actionPessimisticRollback:\r\n\t\treturn \"pessimistic_rollback\"\r\n\t}\r\n\treturn \"unknown\"\r\n}\r\n```\r\n\r\n```\r\nfunc (c *twoPhaseCommitter) getProcFuncByType(action twoPhaseCommitAction) (procOneBatchFn, error) {\r\n\tvar singleBatchActionFunc procOneBatchFn\r\n\tswitch action {\r\n\tcase actionPrewrite:\r\n\t\tsingleBatchActionFunc = c.prewriteSingleBatch\r\n\tcase actionCommit:\r\n\t\tsingleBatchActionFunc = c.commitSingleBatch\r\n\tcase actionCleanup:\r\n\t\tsingleBatchActionFunc = c.cleanupSingleBatch\r\n\tcase actionPessimisticLock:\r\n\t\tsingleBatchActionFunc = c.pessimisticLockSingleBatch\r\n\tcase actionPessimisticRollback:\r\n\t\tsingleBatchActionFunc = c.pessimisticRollbackSingleBatch\r\n\tdefault:\r\n\t\treturn nil, errors.Errorf(\"invalid action type=%v\", action)\r\n\t}\r\n\treturn singleBatchActionFunc, nil\r\n}\r\n```\r\n\r\nI need to closure some data on `pessimisticLockSingleBatch`, but I think it's improper to change the \r\n\r\n```\r\ntype procOneBatchFn func(bo *Backoffer, batch batchKeys) error\r\n```\r\n\r\nto something like \r\n\r\n```\r\nfunc(bo *Backoffer, killed *uint32, batch batchKeys) \r\n```\r\n\r\nso I think using interface is more flexible.\r\n\r\n### What is changed and how it works?\r\n\r\nchange `twoPhaseCommitAction` to interface. \r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - No code\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\nThis refactoring is prepared for an incoming bug-fix PR\r\n"
+  },
+  "pr_merged_at": "2019-10-21T18:08:19+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/2pc.go",
+    "name": "2pc"
+  },
+  "symptoms": [
+    "// potential data race in unit test since `CommitMaxBackoff` will be updated"
+  ],
+  "failure_signature": "// potential data race in unit test since `CommitMaxBackoff` will be updated",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "store/tikv: tiny refactoring, change `twoPhaseCommitAction` to interface",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/12845",
+    "https://github.com/pingcap/tidb/pull/12845.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/12845.patch",
+  "changed_files": [
+    "store/tikv/2pc.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: // potential data race in unit test since `CommitMaxBackoff` will be updated",
+      "files: store/tikv/2pc.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv: tiny refactoring, change `twoPhaseCommitAction` to interface\nPR url: https://github.com/pingcap/tidb/pull/12845\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // potential data race in unit test since `CommitMaxBackoff` will be updated\nChanged files (1): store/tikv/2pc.go\nPatch url: https://github.com/pingcap/tidb/pull/12845.patch\nPicked test: type=unit path=store/tikv/2pc.go name=2pc"
+}

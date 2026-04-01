@@ -1,0 +1,49 @@
+{
+  "id": "pr-9008",
+  "source_pr": {
+    "number": 9008,
+    "url": "https://github.com/pingcap/tidb/pull/9008",
+    "title": "*: create sql bind table during bootstrap",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nAssociated iusse: https://github.com/pingcap/tidb/issues/8935\r\n\r\n### What is changed and how it works?\r\nwhen tidb start up, create global binding table and start a new goroutine to check whether the table has new binding data.\r\n\r\nTable Structure：\r\n\r\ncolumn |  type | defaultValue|\r\n-- | -- | --\r\noriginal_sql | varchar(4096) |  not null\r\nbind_sql | varchar(4096) |  not null\r\ndefault_db | varchar(1024) |  empty string\r\nstatus | int(10) | 1\r\ncreate_time | timestamp | currenttime\r\nupdate_time | timestamp | currenttime\r\n\r\n- origin_sql：before binding sql\r\n- bind_sql: after binding sql\r\n- default_db: when origin sql has no database info,we will use default_db fill in.\r\nfor example:\r\n```\r\nuse test;\r\nselect * from t1  //default_db = \"test\"\r\nselect * from test.t1 //default_db=\"\"\r\n```\r\n- status: whether the bind info is valid\r\n- create_time: the bind info create time\r\n- update_time: the bind info last update time\r\n"
+  },
+  "pr_merged_at": "2019-03-15T14:37:37+08:00",
+  "test": {
+    "type": "unit",
+    "path": "bindinfo/bind_test.go",
+    "name": "bind_test"
+  },
+  "symptoms": [
+    "fix load bind data race condition"
+  ],
+  "failure_signature": "fix load bind data race condition",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: create sql bind table during bootstrap",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9008",
+    "https://github.com/pingcap/tidb/pull/9008.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9008.patch",
+  "changed_files": [
+    "bindinfo/bind_test.go",
+    "bindinfo/cache.go",
+    "domain/domain.go",
+    "session/bootstrap.go",
+    "session/session.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix load bind data race condition",
+      "files: bindinfo/bind_test.go, bindinfo/cache.go, ddl/column.go, ddl/ddl.go, ddl/index.go, ddl/reorg.go, ddl/table.go, domain/domain.go, executor/aggregate.go, go.mod, go.sum, infobind/bind.go, infobind/bind_test.go, infobind/cache.go, owner/manager.go, session/bootstrap.go, session/bootstrap_test.go, session/session.go, session/txn.go, store/mockstore/mocktikv/rpc.go, store/tikv/coprocessor.go, store/tikv/region_request.go, store/tikv/txn.go, util/codec/decimal.go"
+    ]
+  },
+  "analysis": "PR title: *: create sql bind table during bootstrap\nPR url: https://github.com/pingcap/tidb/pull/9008\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix load bind data race condition\nChanged files (5): bindinfo/bind_test.go, bindinfo/cache.go, domain/domain.go, session/bootstrap.go, session/session.go\nPatch url: https://github.com/pingcap/tidb/pull/9008.patch\nPicked test: type=unit path=bindinfo/bind_test.go name=bind_test"
+}

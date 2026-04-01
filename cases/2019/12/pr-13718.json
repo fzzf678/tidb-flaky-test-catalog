@@ -1,0 +1,46 @@
+{
+  "id": "pr-13718",
+  "source_pr": {
+    "number": 13718,
+    "url": "https://github.com/pingcap/tidb/pull/13718",
+    "title": "executor: implement disk-based sort (Part 1)",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\npart of #12431 \r\nThis introduces some ListInDisk field and function `readPartition` to Sort Executor. So that in further pull request, I can implement `externalSorting`.\r\n\r\n### What is changed and how it works?\r\n\r\nIn this pr, I do the following thins.\r\n1. Spill all data to disk.\r\n2. Implement `readPartition` function, and use it to read all data to memory.\r\n3. Use memory sorting algorithm to sort the data.\r\n4. Restore the data to disk. \r\n5. Read data from disk and return.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n - Has exported variable/fields change\r\n - Has interface methods change\r\n - Has persistent data change\r\n\r\nSide effects\r\n\r\n - Possible performance regression\r\n - Increased code complexity\r\n\r\nRelated changes\r\n\r\nRelease note\r\n\r\n - Write release note for bug-fix or new feature.\r\n\r\nSupport external_sorting.\r\n"
+  },
+  "pr_merged_at": "2019-12-18T14:52:18+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/explain_test.go",
+    "name": "explain_test"
+  },
+  "symptoms": [
+    "\"select v from t order by v\"} (executor/explain_test.go)"
+  ],
+  "failure_signature": "\"select v from t order by v\"} (executor/explain_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13718",
+    "https://github.com/pingcap/tidb/pull/13718.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13718.patch",
+  "changed_files": [
+    "executor/explain_test.go",
+    "executor/sort.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: \"select v from t order by v\"} (executor/explain_test.go)",
+      "files: executor/explain_test.go, executor/sort.go"
+    ]
+  },
+  "analysis": "PR title: executor: implement disk-based sort (Part 1)\nPR url: https://github.com/pingcap/tidb/pull/13718\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"select v from t order by v\"} (executor/explain_test.go)\nChanged files (2): executor/explain_test.go, executor/sort.go\nPatch url: https://github.com/pingcap/tidb/pull/13718.patch\nPicked test: type=unit path=executor/explain_test.go name=explain_test"
+}

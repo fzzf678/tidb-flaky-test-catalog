@@ -1,0 +1,52 @@
+{
+  "id": "pr-11839",
+  "source_pr": {
+    "number": 11839,
+    "url": "https://github.com/pingcap/tidb/pull/11839",
+    "title": "expression: fix constItem() and column-pruning in `order by` clause",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nhttps://github.com/pingcap/tidb/pull/10064 Change the semantics of constItem().\r\nA const item can be eval() when build a plan, and it shouldn't contain `correlated column`.\r\n \r\nColumn-pruning in `order by` clause, however, need to identify a \"const item\" in execute stage. And `IsMutableEffectsExpr` should be enough.\r\n\r\n### What is changed and how it works?\r\nChange back constItem() and use `IsMutableEffectsExpr`. And export `isMutableEffectsExpr` as `IsMutableEffectsExpr`\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\nPass the test add by #10064.\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch \r\n"
+  },
+  "pr_merged_at": "2019-08-28T16:59:36+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/sort_test.go",
+    "name": "sort_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"explain select * from t1 where t1.a in (select t2.a as a from t2 where t2.b > t1.b order by t1.b);\").Check(testkit.Rows( (executor/sort_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"explain select * from t1 where t1.a in (select t2.a as a from t2 where t2.b > t1.b order by t1.b);\").Check(testkit.Rows( (executor/sort_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/11839",
+    "https://github.com/pingcap/tidb/pull/11839.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/11839.patch",
+  "changed_files": [
+    "cmd/explaintest/r/select.result",
+    "cmd/explaintest/t/select.test",
+    "executor/sort_test.go",
+    "expression/column.go",
+    "expression/column_test.go",
+    "expression/expression.go",
+    "expression/util.go",
+    "planner/core/rule_column_pruning.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"explain select * from t1 where t1.a in (select t2.a as a from t2 where t2.b > t1.b order by t1.b);\").Check(testkit.Rows( (executor/sort_test.go)",
+      "files: a, cmd/explaintest/r/select.result, cmd/explaintest/t/select.test, executor/explain_test.go, executor/sort_test.go, expression/column.go, expression/column_test.go, expression/expression.go, expression/util.go, planner/core/rule_column_pruning.go"
+    ]
+  },
+  "analysis": "PR title: expression: fix constItem() and column-pruning in `order by` clause\nPR url: https://github.com/pingcap/tidb/pull/11839\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"explain select * from t1 where t1.a in (select t2.a as a from t2 where t2.b > t1.b order by t1.b);\").Check(testkit.Rows( (executor/sort_test.go)\nChanged files (8): cmd/explaintest/r/select.result, cmd/explaintest/t/select.test, executor/sort_test.go, expression/column.go, expression/column_test.go, expression/expression.go, expression/util.go, planner/core/rule_column_pruning.go\nPatch url: https://github.com/pingcap/tidb/pull/11839.patch\nPicked test: type=unit path=executor/sort_test.go name=sort_test"
+}

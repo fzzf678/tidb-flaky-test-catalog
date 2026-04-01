@@ -1,0 +1,46 @@
+{
+  "id": "pr-12090",
+  "source_pr": {
+    "number": 12090,
+    "url": "https://github.com/pingcap/tidb/pull/12090",
+    "title": "conn: fix lost connection when insert from select panic cause by out of memory quota",
+    "body": "\r\n\r\n<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nSet `oom-action = \"cancel\"` in the tidb config file.\r\n\r\n```sql\r\ndrop table if exists t,t1;\r\ncreate table t (a bigint);\r\ncreate table t1 (a bigint);\r\ninsert into t1 values (1),(2),(3),(4),(5);\r\nset @@tidb_mem_quota_query=200;\r\ninsert into t select a from t1 order by a desc;\r\nERROR 2013 (HY000): Lost connection to MySQL server during query\r\n```\r\n\r\nWhen `insert ... select` out of memory quota, TiDB should return error `Out Of Memory Quota`, instead of lost connection.\r\n\r\n### What is changed and how it works?\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Manual test (add detailed scripts or steps below)\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n\r\nRelease note\r\n\r\n - Fix the issue that lost connection when executing `insert from select` statement panic caused by out of memory quota.\r\n"
+  },
+  "pr_merged_at": "2019-09-10T15:10:04+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "_, err = tk.Exec(\"insert into t select a from t1 order by a desc;\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "_, err = tk.Exec(\"insert into t select a from t1 order by a desc;\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/12090",
+    "https://github.com/pingcap/tidb/pull/12090.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/12090.patch",
+  "changed_files": [
+    "executor/adapter.go",
+    "executor/executor_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: _, err = tk.Exec(\"insert into t select a from t1 order by a desc;\") (executor/executor_test.go)",
+      "files: executor/adapter.go, executor/executor_test.go, server/conn.go, session/session.go"
+    ]
+  },
+  "analysis": "PR title: conn: fix lost connection when insert from select panic cause by out of memory quota\nPR url: https://github.com/pingcap/tidb/pull/12090\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: _, err = tk.Exec(\"insert into t select a from t1 order by a desc;\") (executor/executor_test.go)\nChanged files (2): executor/adapter.go, executor/executor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/12090.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

@@ -1,0 +1,57 @@
+{
+  "id": "pr-13946",
+  "source_pr": {
+    "number": 13946,
+    "url": "https://github.com/pingcap/tidb/pull/13946",
+    "title": "executor: support merge join on disk",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nThis PR enables merge join to spill rows with same key to disk so that the tidb server won't go OOM if there are two many rows with the same key.\r\n\r\n### What is changed and how it works?\r\n\r\nCreated a `RowContainer` that handles rows in memory and also in disk.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\nNo user visible changes, however internally, `MergeJoinExec` and `innerJoinTable` has been changed.\r\n\r\nSide effects\r\n\r\n - Possible performance regression, the regression can be minor, see benchmark below.\r\n - Increased code complexity.\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch, should be included in release 4.0.\r\n\r\nRelease note\r\n\r\n- We now support spilling to disk during merge join if there are some key to be joined has too many rows that surpass the capacity of the memory."
+  },
+  "pr_merged_at": "2019-12-31T18:49:11+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/merge_join_test.go",
+    "name": "merge_join_test"
+  },
+  "symptoms": [
+    "result = checkMergeAndRun(tk, c, \"select /*+ TIDB_SMJ(t) */ * from t left outer join t1 on t.c1 = t1.c1 and t.c1 != 1 order by t1.c1\") (executor/merge_join_test.go)"
+  ],
+  "failure_signature": "result = checkMergeAndRun(tk, c, \"select /*+ TIDB_SMJ(t) */ * from t left outer join t1 on t.c1 = t1.c1 and t.c1 != 1 order by t1.c1\") (executor/merge_join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13946",
+    "https://github.com/pingcap/tidb/pull/13946.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13946.patch",
+  "changed_files": [
+    "executor/benchmark_test.go",
+    "executor/hash_table.go",
+    "executor/join.go",
+    "executor/joiner.go",
+    "executor/merge_join.go",
+    "executor/merge_join_test.go",
+    "util/chunk/disk.go",
+    "util/chunk/iterator.go",
+    "util/chunk/iterator_test.go",
+    "util/chunk/list.go",
+    "util/chunk/list_test.go",
+    "util/chunk/row_container.go",
+    "util/chunk/row_container_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = checkMergeAndRun(tk, c, \"select /*+ TIDB_SMJ(t) */ * from t left outer join t1 on t.c1 = t1.c1 and t.c1 != 1 order by t1.c1\") (executor/merge_join_test.go)",
+      "files: executor/benchmark_test.go, executor/hash_table.go, executor/join.go, executor/joiner.go, executor/merge_join.go, executor/merge_join_test.go, util/chunk/disk.go, util/chunk/disk_test.go, util/chunk/iterator.go, util/chunk/iterator_test.go, util/chunk/list.go, util/chunk/list_test.go, util/chunk/row_container.go, util/chunk/row_container_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: support merge join on disk\nPR url: https://github.com/pingcap/tidb/pull/13946\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = checkMergeAndRun(tk, c, \"select /*+ TIDB_SMJ(t) */ * from t left outer join t1 on t.c1 = t1.c1 and t.c1 != 1 order by t1.c1\") (executor/merge_join_test.go)\nChanged files (13): executor/benchmark_test.go, executor/hash_table.go, executor/join.go, executor/joiner.go, executor/merge_join.go, executor/merge_join_test.go, util/chunk/disk.go, util/chunk/iterator.go, util/chunk/iterator_test.go, util/chunk/list.go, util/chunk/list_test.go, util/chunk/row_container.go, util/chunk/row_container_test.go\nPatch url: https://github.com/pingcap/tidb/pull/13946.patch\nPicked test: type=unit path=executor/merge_join_test.go name=merge_join_test"
+}

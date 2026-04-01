@@ -1,0 +1,65 @@
+{
+  "id": "pr-10343",
+  "source_pr": {
+    "number": 10343,
+    "url": "https://github.com/pingcap/tidb/pull/10343",
+    "title": "*: Support LOCK/UNLOCK TABLES feature",
+    "body": "\r\n### What problem does this PR solve? \r\n\r\n# Background\r\n\r\nCurrently, we only support LOCK TABLES/UNLOCK TABLES syntax, but actually do nothing.\r\n\r\nTiDB only supports Optimistic Lock currently.  A large write transaction maybe failed caused by other transaction has 1 insert. Large transaction retries are expensive， so we want to use LOCK TABLES to avoid this expensive retry.\r\n\r\n\r\n\r\n# Proposal\r\n\r\n`LOCK TABLES` explicitly acquires table locks for the current client session. Table locks can be only acquired for base tables, not support for views. You must have the LOCK TABLES privilege, and the SELECT privilege for each table to be locked.\r\n\r\n`UNLOCK TABLES` explicitly releases any table locks held by the current session. \r\n\r\n`LOCK TABLES` implicitly releases any table locks held by the current session before acquiring new locks.\r\n\r\nWhile the locks thus obtained are held, the session can access only the locked tables. Tables in the `INFORMATION_SCHEMA` database are an exception. They can be accessed without being locked explicitly.\r\n\r\n```sql\r\ntidb > LOCK TABLES t WRITE;\r\nQuery OK, 0 rows affected (0.00 sec)\r\ntidb > SELECT COUNT(*) FROM t1;\r\nERROR 1100 (HY000): Table 't1' was not locked with LOCK TABLES\r\ntidb > select * from INFORMATION_SCHEMA.VIEWS;\r\nEmpty set (0.00 sec)\r\n```\r\n\r\nLOCK TABLES or UNLOCK TABLES, when applied to a partitioned table, always locks or unlocks the entire table; these statements do not support partition lock pruning.\r\n\r\n# Principles\r\n1. If a session issues a LOCK TABLES statement to acquire a lock while already holding locks, its existing locks are released implicitly before the new locks are granted.\r\n2. If a session begins a transaction (for example, with START TRANSACTION), an implicit UNLOCK TABLES is performed, which causes existing locks to be released. (**not implement currently**)\r\n\r\n\r\n# The Difference with Mysql `LOCK TABLE`\r\n\r\n1. You  can't implement transaction with `LOCK TABLES` and `UNLOCK TABLES` in TiDB. If you need transaction, you should also execute `begin`  after `LOCK TABLES`.\r\n\r\n   Table locks of mysql is [metadata locks](<https://dev.mysql.com/doc/refman/8.0/en/metadata-locking.html>), and user can use table locks to implement transaction when the mysql storage engine is nontransactional.  \r\n\r\n    Because MySQL execute `select/insert/update` will automatically  to acquire the related table locks first. If session 1 is executing a `select * from t1`, and session 2 execute `lock tables t1 write`,  then session 2 won't aquire the t1 table lock untill the session 1 execute finish. Details as follows chart:\r\n\r\n| Time | Session 1( In MySQL)        | Session 2 ( In MySQL)             |\r\n| ---- | --------------------------- | --------------------------------- |\r\n| t1   | `Select * from t1`          |                                   |\r\n| t2   | Acquire `t1` table lock.    |                                   |\r\n| t3   | doing                       | `Lock tables t1 write`            |\r\n| t4   | doing                       | waiting                           |\r\n| t5   | (`Select * from t1`) Finish | waiting                           |\r\n| t6   | Release t1 table lock.      | waiting                           |\r\n| t7   |                             | (`Lock tables t1 write` ) sucess. |\r\n\r\n   But in TiDB, session2 will aquire the t1 table lock soon.  Because session 1 won't acquire the `t1` table lock. In TiDB, It is very expensive to acquire the related table locks when execute DML like `select/insert`. Details in TiDB as follows chart:\r\n\r\n\r\n| Time | Session 1( In TiDB)         | Session 2 ( In TiDB)              |\r\n| ---- | --------------------------- | --------------------------------- |\r\n| t1   | `Select * from t1`          |                                   |\r\n| t2   | doing                       | `Lock tables t1 write`            |\r\n| t3   | doing                       | (`Lock tables t1 write` ) sucess. |\r\n| t4   | (`Select * from t1`) Finish |                                   |\r\n\r\n2. MySQL session1 execute `LOCK TABLES t1 write`, if other session2 obtains the lock of `t1`, session 1 will wait until the session2 release `t1` lock. In TiDB, session 1 will return error like: `Table 't1' was locked by server xx session xx.` \r\n\r\n   | Time | Session 1             | session 2 In MySQL             | Session 2 in TiDB                                     |\r\n   | ---- | --------------------- | ------------------------------ | ----------------------------------------------------- |\r\n   | t1   | `Lock tables t1 read` |                                |                                                       |\r\n   | t2   |                       | `Lock tables t1 write`         | `Lock tables t1 write`                                |\r\n   | t3   |                       | wait                           | `Error: Table 't1' was locked by server xx session 1` |\r\n   | t4   | Unlock tables.        | wait                           |                                                       |\r\n   | t5   |                       | `Lock tables t1 write` sucess. |                                                       |\r\n\r\n3. TiDB table lock not support `alias` name currently.  TiDB will lock the `table.ID` instead of `table.Name`\r\n\r\n\r\n### What is changed and how it works?\r\n1. Store `TableLockInfo` in `TableInfo`.\r\n2. Use DDL to implement `LOCK TABLES` and `UNLOCK TABLES`. So add 2 DDL job type: `ActionLockTable`, `ActionUnlockTable`.\r\n3. Store `lockedTables` map in `session`. `lockedTables` use to record the table locks hold by the session.\r\n4. Check the table locked before execute.  `CheckTableLock` will use the `visitInfo` to check table locked. This check was add after the `CheckPrivilege`.\r\n\r\nRelated parser PR: https://github.com/pingcap/parser/pull/305\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test( need more test, in doing )\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\n - Possible performance regression\r\n\r\n"
+  },
+  "pr_merged_at": "2019-06-18T15:38:05+08:00",
+  "test": {
+    "type": "unit",
+    "path": "config/config_test.go",
+    "name": "config_test"
+  },
+  "symptoms": [
+    "fix data race in test"
+  ],
+  "failure_signature": "fix data race in test",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: Support LOCK/UNLOCK TABLES feature",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/10343",
+    "https://github.com/pingcap/tidb/pull/10343.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/10343.patch",
+  "changed_files": [
+    "config/config.go",
+    "config/config.toml.example",
+    "config/config_test.go",
+    "ddl/db_test.go",
+    "ddl/ddl.go",
+    "ddl/ddl_api.go",
+    "ddl/ddl_worker.go",
+    "ddl/table.go",
+    "ddl/table_lock.go",
+    "ddl/table_test.go",
+    "executor/ddl.go",
+    "infoschema/infoschema.go",
+    "infoschema/perfschema/const.go",
+    "lock/lock.go",
+    "planner/core/optimizer.go",
+    "planner/core/planbuilder.go",
+    "planner/optimize.go",
+    "session/session.go",
+    "sessionctx/context.go",
+    "table/table.go",
+    "util/mock/context.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix data race in test",
+      "files: config/config.go, config/config.toml.example, config/config_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/table.go, ddl/table_lock.go, ddl/table_test.go, ddl/test.log], executor/ddl.go, go.mod, go.sum, infoschema/infoschema.go, infoschema/perfschema/const.go, lock/lock.go, planner/core/logical_plan_test.go, planner/core/optimizer.go, planner/core/planbuilder.go, planner/optimize.go, session/session.go, sessionctx/context.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, table/table.go, table/tables/tables.go, util/mock/context.go"
+    ]
+  },
+  "analysis": "PR title: *: Support LOCK/UNLOCK TABLES feature\nPR url: https://github.com/pingcap/tidb/pull/10343\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race in test\nChanged files (21): config/config.go, config/config.toml.example, config/config_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/table.go, ddl/table_lock.go, ddl/table_test.go, executor/ddl.go, infoschema/infoschema.go, infoschema/perfschema/const.go, lock/lock.go, planner/core/optimizer.go, planner/core/planbuilder.go, planner/optimize.go, session/session.go, sessionctx/context.go, table/table.go, util/mock/context.go\nPatch url: https://github.com/pingcap/tidb/pull/10343.patch\nPicked test: type=unit path=config/config_test.go name=config_test"
+}
