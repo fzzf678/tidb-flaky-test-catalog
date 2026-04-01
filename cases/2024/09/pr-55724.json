@@ -1,0 +1,57 @@
+{
+  "id": "pr-55724",
+  "source_pr": {
+    "number": 55724,
+    "url": "https://github.com/pingcap/tidb/pull/55724",
+    "title": "expression: let `cast` function supports explicit set charset",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #55677\r\n\r\nProblem Summary: Ref https://dev.mysql.com/doc/refman/8.4/en/cast-functions.html#cast-function-descriptions\r\n\r\n### What changed and how does it work?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-09-10T18:25:23+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/expression/cast.result",
+    "name": "cast"
+  },
+  "symptoms": [
+    "select * from test order by cast(update_user as char character set gbk) desc , id limit 3; (tests/integrationtest/r/expression/cast.result)"
+  ],
+  "failure_signature": "select * from test order by cast(update_user as char character set gbk) desc , id limit 3; (tests/integrationtest/r/expression/cast.result)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/55724",
+    "https://github.com/pingcap/tidb/pull/55724.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/55724.patch",
+  "changed_files": [
+    "pkg/expression/bench_test.go",
+    "pkg/expression/builtin.go",
+    "pkg/expression/builtin_cast.go",
+    "pkg/expression/builtin_cast_test.go",
+    "pkg/expression/collation.go",
+    "pkg/expression/scalar_function.go",
+    "pkg/expression/util.go",
+    "pkg/expression/util_test.go",
+    "pkg/planner/core/expression_rewriter.go",
+    "tests/integrationtest/r/executor/executor.result",
+    "tests/integrationtest/r/expression/cast.result",
+    "tests/integrationtest/t/executor/executor.test",
+    "tests/integrationtest/t/expression/cast.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: select * from test order by cast(update_user as char character set gbk) desc , id limit 3; (tests/integrationtest/r/expression/cast.result)",
+      "files: pkg/expression/bench_test.go, pkg/expression/builtin.go, pkg/expression/builtin_cast.go, pkg/expression/builtin_cast_test.go, pkg/expression/collation.go, pkg/expression/scalar_function.go, pkg/expression/util.go, pkg/expression/util_test.go, pkg/planner/core/expression_rewriter.go, tests/integrationtest/r/executor/executor.result, tests/integrationtest/r/expression/cast.result, tests/integrationtest/t/executor/executor.test, tests/integrationtest/t/expression/cast.test"
+    ]
+  },
+  "analysis": "PR title: expression: let `cast` function supports explicit set charset\nPR url: https://github.com/pingcap/tidb/pull/55724\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: select * from test order by cast(update_user as char character set gbk) desc , id limit 3; (tests/integrationtest/r/expression/cast.result)\nChanged files (13): pkg/expression/bench_test.go, pkg/expression/builtin.go, pkg/expression/builtin_cast.go, pkg/expression/builtin_cast_test.go, pkg/expression/collation.go, pkg/expression/scalar_function.go, pkg/expression/util.go, pkg/expression/util_test.go, pkg/planner/core/expression_rewriter.go, tests/integrationtest/r/executor/executor.result, tests/integrationtest/r/expression/cast.result, tests/integrationtest/t/executor/executor.test, tests/integrationtest/t/expression/cast.test\nPatch url: https://github.com/pingcap/tidb/pull/55724.patch\nPicked test: type=integration path=tests/integrationtest/r/expression/cast.result name=cast"
+}

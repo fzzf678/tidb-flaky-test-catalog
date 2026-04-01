@@ -1,0 +1,45 @@
+{
+  "id": "pr-54806",
+  "source_pr": {
+    "number": 54806,
+    "url": "https://github.com/pingcap/tidb/pull/54806",
+    "title": "tests: add tests for concurrent cursor fetch",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #54801\r\n\r\nProblem Summary:\r\n\r\nI left a comment to add tests for concurrent cursor fetch.\r\n\r\n### What changed and how does it work?\r\n\r\n In this PR, I added these tests to enrich the case about running normal statements while there is a cursor in the background at the same time.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-07-23T16:45:12+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/server/tests/cursor/cursor_test.go",
+    "name": "cursor_test"
+  },
+  "symptoms": [
+    "rawStmt, err := conn.Prepare(\"select * from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)"
+  ],
+  "failure_signature": "rawStmt, err := conn.Prepare(\"select * from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/54806",
+    "https://github.com/pingcap/tidb/pull/54806.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/54806.patch",
+  "changed_files": [
+    "pkg/server/tests/cursor/cursor_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rawStmt, err := conn.Prepare(\"select * from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)",
+      "files: pkg/server/tests/cursor/cursor_test.go"
+    ]
+  },
+  "analysis": "PR title: tests: add tests for concurrent cursor fetch\nPR url: https://github.com/pingcap/tidb/pull/54806\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rawStmt, err := conn.Prepare(\"select * from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)\nChanged files (1): pkg/server/tests/cursor/cursor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/54806.patch\nPicked test: type=unit path=pkg/server/tests/cursor/cursor_test.go name=cursor_test"
+}

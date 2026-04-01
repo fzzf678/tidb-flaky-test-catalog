@@ -1,0 +1,79 @@
+{
+  "id": "pr-56917",
+  "source_pr": {
+    "number": 56917,
+    "url": "https://github.com/pingcap/tidb/pull/56917",
+    "title": "Restore: refine split code for both compacted sst files and logs",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref https://github.com/pingcap/tidb/issues/56522\r\n\r\nThis is the first PR split from https://github.com/pingcap/tidb/pull/54813. \r\n\r\nProblem Summary:\r\nFocus on restore compacted sst files\r\n\r\n### What changed and how does it work?\r\n\r\nThis PR primarily makes the following adjustments:\r\n1. Removal of Log Split: The log splitting logic has been removed, simplifying the code structure and making future usage more convenient.\r\n\r\n2. Unified Split Logic: The splitting logic for SST files and log files has been unified, allowing both to share the same logic, reducing code duplication and improving maintainability.\r\n\r\n3. Facilitates Future Extensions: This unified approach makes it easier to extend and modify the handling of SST and log files in the future, enhancing the flexibility of the code.\r\n\r\nOverall, these changes lead to a cleaner codebase with clearer logic, laying a solid foundation for future development and maintenance.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-11-07T16:42:21+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/restore/split/split_test.go",
+    "name": "TestScanEmptyRegion"
+  },
+  "symptoms": [
+    "sort.Slice(splitKeys, func(i, j int) bool { (br/pkg/restore/split/split_test.go)"
+  ],
+  "failure_signature": "sort.Slice(splitKeys, func(i, j int) bool { (br/pkg/restore/split/split_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/56917",
+    "https://github.com/pingcap/tidb/pull/56917.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/56917.patch",
+  "changed_files": [
+    "br/pkg/conn/BUILD.bazel",
+    "br/pkg/conn/conn_test.go",
+    "br/pkg/restore/BUILD.bazel",
+    "br/pkg/restore/import_mode_switcher_test.go",
+    "br/pkg/restore/internal/log_split/BUILD.bazel",
+    "br/pkg/restore/internal/log_split/export_test.go",
+    "br/pkg/restore/internal/log_split/split.go",
+    "br/pkg/restore/internal/log_split/split_test.go",
+    "br/pkg/restore/internal/snap_split/BUILD.bazel",
+    "br/pkg/restore/internal/snap_split/split.go",
+    "br/pkg/restore/internal/snap_split/split_test.go",
+    "br/pkg/restore/log_client/BUILD.bazel",
+    "br/pkg/restore/log_client/client.go",
+    "br/pkg/restore/log_client/client_test.go",
+    "br/pkg/restore/log_client/import_retry_test.go",
+    "br/pkg/restore/misc_test.go",
+    "br/pkg/restore/snap_client/BUILD.bazel",
+    "br/pkg/restore/snap_client/client.go",
+    "br/pkg/restore/snap_client/client_test.go",
+    "br/pkg/restore/snap_client/import_test.go",
+    "br/pkg/restore/snap_client/placement_rule_manager_test.go",
+    "br/pkg/restore/snap_client/systable_restore_test.go",
+    "br/pkg/restore/snap_client/tikv_sender.go",
+    "br/pkg/restore/split/BUILD.bazel",
+    "br/pkg/restore/split/mock_pd_client.go",
+    "br/pkg/restore/split/split.go",
+    "br/pkg/restore/split/split_test.go",
+    "br/pkg/restore/split/sum_sorted.go",
+    "br/pkg/restore/split/sum_sorted_test.go",
+    "br/pkg/task/BUILD.bazel",
+    "br/pkg/task/restore_test.go",
+    "br/pkg/utiltest/BUILD.bazel",
+    "br/pkg/utiltest/fake.go",
+    "pkg/lightning/backend/local/BUILD.bazel",
+    "pkg/lightning/backend/local/local_check_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Slice(splitKeys, func(i, j int) bool { (br/pkg/restore/split/split_test.go)",
+      "files: br/pkg/conn/BUILD.bazel, br/pkg/conn/conn_test.go, br/pkg/restore/BUILD.bazel, br/pkg/restore/import_mode_switcher_test.go, br/pkg/restore/internal/log_split/BUILD.bazel, br/pkg/restore/internal/log_split/export_test.go, br/pkg/restore/internal/log_split/split.go, br/pkg/restore/internal/log_split/split_test.go, br/pkg/restore/internal/snap_split/BUILD.bazel, br/pkg/restore/internal/snap_split/split.go, br/pkg/restore/internal/snap_split/split_test.go, br/pkg/restore/log_client/BUILD.bazel, br/pkg/restore/log_client/client.go, br/pkg/restore/log_client/client_test.go, br/pkg/restore/log_client/import_retry_test.go, br/pkg/restore/misc_test.go, br/pkg/restore/snap_client/BUILD.bazel, br/pkg/restore/snap_client/client.go, br/pkg/restore/snap_client/client_test.go, br/pkg/restore/snap_client/import_test.go, br/pkg/restore/snap_client/placement_rule_manager_test.go, br/pkg/restore/snap_client/systable_restore_test.go, br/pkg/restore/snap_client/tikv_sender.go, br/pkg/restore/split/BUILD.bazel, br/pkg/restore/split/mock_pd_client.go, br/pkg/restore/split/split.go, br/pkg/restore/split/split_test.go, br/pkg/restore/split/sum_sorted.go, br/pkg/restore/split/sum_sorted_test.go, br/pkg/task/BUILD.bazel, br/pkg/task/restore_test.go, br/pkg/utiltest/BUILD.bazel, br/pkg/utiltest/fake.go, pkg/lightning/backend/local/BUILD.bazel, pkg/lightning/backend/local/local_check_test.go"
+    ]
+  },
+  "analysis": "PR title: Restore: refine split code for both compacted sst files and logs\nPR url: https://github.com/pingcap/tidb/pull/56917\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Slice(splitKeys, func(i, j int) bool { (br/pkg/restore/split/split_test.go)\nChanged files (35): br/pkg/conn/BUILD.bazel, br/pkg/conn/conn_test.go, br/pkg/restore/BUILD.bazel, br/pkg/restore/import_mode_switcher_test.go, br/pkg/restore/internal/log_split/BUILD.bazel, br/pkg/restore/internal/log_split/export_test.go, br/pkg/restore/internal/log_split/split.go, br/pkg/restore/internal/log_split/split_test.go, br/pkg/restore/internal/snap_split/BUILD.bazel, br/pkg/restore/internal/snap_split/split.go, br/pkg/restore/internal/snap_split/split_test.go, br/pkg/restore/log_client/BUILD.bazel, br/pkg/restore/log_client/client.go, br/pkg/restore/log_client/client_test.go, br/pkg/restore/log_client/import_retry_test.go, br/pkg/restore/misc_test.go, br/pkg/restore/snap_client/BUILD.bazel, br/pkg/restore/snap_client/client.go, br/pkg/restore/snap_client/client_test.go, br/pkg/restore/snap_client/import_test.go, br/pkg/restore/snap_client/placement_rule_manager_test.go, br/pkg/restore/snap_client/systable_restore_test.go, br/pkg/restore/snap_client/tikv_sender.go, br/pkg/restore/split/BUILD.bazel, br/pkg/restore/split/mock_pd_client.go, br/pkg/restore/split/split.go, br/pkg/restore/split/split_test.go, br/pkg/restore/split/sum_sorted.go, br/pkg/restore/split/sum_sorted_test.go, br/pkg/task/BUILD.bazel, br/pkg/task/restore_test.go, br/pkg/utiltest/BUILD.bazel, br/pkg/utiltest/fake.go, pkg/lightning/backend/local/BUILD.bazel, pkg/lightning/backend/local/local_check_test.go\nPatch url: https://github.com/pingcap/tidb/pull/56917.patch\nPicked test: type=unit path=br/pkg/restore/split/split_test.go name=TestScanEmptyRegion"
+}

@@ -1,0 +1,47 @@
+{
+  "id": "pr-57049",
+  "source_pr": {
+    "number": 57049,
+    "url": "https://github.com/pingcap/tidb/pull/57049",
+    "title": "planner: address collation ambiguity in scalar function construction during predicate simplification.",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #56479 \r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\nWe can simplify the sql as follows:\r\n\r\n```sql\r\nDROP TABLE t1;\r\n\r\nCREATE TABLE `t1` (\r\n  `c1` VARCHAR(175) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'asMF'\r\n);\r\n\r\nSELECT * \r\nFROM t1 \r\nWHERE c1 BETWEEN 'string1' AND 'string2' AND (c1 = 'string3' OR IsNull(c1));\r\n```\r\n\r\nWhen rewriting the BETWEEN and AND clause, the collations of string1 and string2 will be set to c1's collation—utf8mb4_unicode_ci rather than collation_connection.\r\n\r\nDuring predicate simplification, a scalar function 'ge' will be constructed using string1 and string3 as parameters. However, since string1 has a collation of utf8mb4_unicode_ci and string3 has a collation of utf8mb4_general_ci (collation_connection), and both of them have a coercibility of 4, there is ambiguity regarding which collation to use. This leads to an failure to construct a new scalar function, which will lead a panic.\r\n\r\nThere's an additional concern: if we replace \"BETWEEN and AND\" with \"<= and >=\", then both string1 and string3 have a collation of utf8mb4_general_ci(collation_connection), then during predicate simplification, string1 and string3 would be compared using the utf8mb4_general_ci collation. This might lead to potential incorrect results.\r\n\r\nMaybe we can:\r\n\r\nDuring predicate simplification, we could reset the collation of the constants (string1, string2, string3) to match the collation of the column c1 to address the problems.\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-11-18T12:46:11+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/planner/core/issuetest/planner_issue.result",
+    "name": "planner_issue"
+  },
+  "symptoms": [
+    "with cte_192 ( col_1101,col_1102,col_1103,col_1104 ) AS ( select /*+ use_index_merge( tl6e913fb9 ) */ replace( tl6e913fb9.col_36 , tl6e913fb9.col_36 , tl6e913fb9.col_36 ) as r0 , space( 0 ) as r1 , min( distinct tl6e913fb9.col_36 ) as r2 , count( distinct tl6e913fb9.col_36 ) as r3 from tl6e913fb9 where tl6e913fb9.col_36 between 'n92ok$B%W#UU%O' and '()c=K..."
+  ],
+  "failure_signature": "with cte_192 ( col_1101,col_1102,col_1103,col_1104 ) AS ( select /*+ use_index_merge( tl6e913fb9 ) */ replace( tl6e913fb9.col_36 , tl6e913fb9.col_36 , tl6e913fb9.col_36 ) as r0 , space( 0 ) as r1 , min( distinct tl6e913fb9.col_36 ) as r2 , count( distinct tl6e913fb9.col_36 ) as r3 from tl6e913fb9 where tl6e913fb9.col_36 between 'n92ok$B%W#UU%O' and '()c=K...",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/57049",
+    "https://github.com/pingcap/tidb/pull/57049.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/57049.patch",
+  "changed_files": [
+    "pkg/planner/core/rule_predicate_simplification.go",
+    "tests/integrationtest/r/planner/core/issuetest/planner_issue.result",
+    "tests/integrationtest/t/planner/core/issuetest/planner_issue.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: with cte_192 ( col_1101,col_1102,col_1103,col_1104 ) AS ( select /*+ use_index_merge( tl6e913fb9 ) */ replace( tl6e913fb9.col_36 , tl6e913fb9.col_36 , tl6e913fb9.col_36 ) as r0 , space( 0 ) as r1 , min( distinct tl6e913fb9.col_36 ) as r2 , count( distinct tl6e913fb9.col_36 ) as r3 from tl6e913fb9 where tl6e913fb9.col_36 between 'n92ok$B%W#UU%O' and '()c=K...",
+      "files: pkg/planner/core/rule_predicate_simplification.go, tests/integrationtest/r/planner/core/issuetest/planner_issue.result, tests/integrationtest/t/planner/core/issuetest/planner_issue.test"
+    ]
+  },
+  "analysis": "PR title: planner: address collation ambiguity in scalar function construction during predicate simplification.\nPR url: https://github.com/pingcap/tidb/pull/57049\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: with cte_192 ( col_1101,col_1102,col_1103,col_1104 ) AS ( select /*+ use_index_merge( tl6e913fb9 ) */ replace( tl6e913fb9.col_36 , tl6e913fb9.col_36 , tl6e913fb9.col_36 ) as r0 , space( 0 ) as r1 , min( distinct tl6e913fb9.col_36 ) as r2 , count( distinct tl6e913fb9.col_36 ) as r3 from tl6e913fb9 where tl6e913fb9.col_36 between 'n92ok$B%W#UU%O' and '()c=K...\nChanged files (3): pkg/planner/core/rule_predicate_simplification.go, tests/integrationtest/r/planner/core/issuetest/planner_issue.result, tests/integrationtest/t/planner/core/issuetest/planner_issue.test\nPatch url: https://github.com/pingcap/tidb/pull/57049.patch\nPicked test: type=integration path=tests/integrationtest/r/planner/core/issuetest/planner_issue.result name=planner_issue"
+}

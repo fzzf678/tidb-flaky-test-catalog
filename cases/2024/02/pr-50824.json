@@ -1,0 +1,50 @@
+{
+  "id": "pr-50824",
+  "source_pr": {
+    "number": 50824,
+    "url": "https://github.com/pingcap/tidb/pull/50824",
+    "title": "executor,bootstrap: add `tidb_index_usage` table and `cluster_tidb_index_usage` table",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #50823\r\n\r\n### What changed and how does it work?\r\n\r\n1. Create new tables `information_schema.tidb_index_usage` + `cluster_tidb_index_usage`\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n```release-note\r\nAdd new tables `information_schema.tidb_index_usage` and `information_schema.cluster_tidb_index_usage` to show the index usage statistics information.\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-02-04T20:55:14+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/infoschema/test/clustertablestest/cluster_tables_test.go",
+    "name": "TestIndexUsageTable"
+  },
+  "symptoms": [
+    "order by table_name, index_name;`, tableName)) (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)"
+  ],
+  "failure_signature": "order by table_name, index_name;`, tableName)) (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/50824",
+    "https://github.com/pingcap/tidb/pull/50824.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/50824.patch",
+  "changed_files": [
+    "pkg/executor/builder.go",
+    "pkg/executor/infoschema_reader.go",
+    "pkg/infoschema/cluster.go",
+    "pkg/infoschema/tables.go",
+    "pkg/infoschema/test/clustertablestest/BUILD.bazel",
+    "pkg/infoschema/test/clustertablestest/cluster_tables_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: order by table_name, index_name;`, tableName)) (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)",
+      "files: pkg/executor/builder.go, pkg/executor/infoschema_reader.go, pkg/infoschema/cluster.go, pkg/infoschema/tables.go, pkg/infoschema/test/clustertablestest/BUILD.bazel, pkg/infoschema/test/clustertablestest/cluster_tables_test.go"
+    ]
+  },
+  "analysis": "PR title: executor,bootstrap: add `tidb_index_usage` table and `cluster_tidb_index_usage` table\nPR url: https://github.com/pingcap/tidb/pull/50824\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: order by table_name, index_name;`, tableName)) (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)\nChanged files (6): pkg/executor/builder.go, pkg/executor/infoschema_reader.go, pkg/infoschema/cluster.go, pkg/infoschema/tables.go, pkg/infoschema/test/clustertablestest/BUILD.bazel, pkg/infoschema/test/clustertablestest/cluster_tables_test.go\nPatch url: https://github.com/pingcap/tidb/pull/50824.patch\nPicked test: type=unit path=pkg/infoschema/test/clustertablestest/cluster_tables_test.go name=TestIndexUsageTable"
+}

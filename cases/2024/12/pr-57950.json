@@ -1,0 +1,80 @@
+{
+  "id": "pr-57950",
+  "source_pr": {
+    "number": 57950,
+    "url": "https://github.com/pingcap/tidb/pull/57950",
+    "title": "statistics: move JSON* to statistics/util",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #57949\r\n\r\nProblem Summary:\r\n\r\nTo solve the cyclic import problem during refactoring `statistics.Column` and `statistics.Index`, we need to move the objects into a new place.\r\n\r\n### What changed and how does it work?\r\n\r\nTo make `MemoryUsage` safe to be `o(1)`. We need to make sure the Column/Index not changed by accident.\r\n\r\nThis pr is one step of make the important fields of them private.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-12-05T02:30:24+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/statistics/handle/storage/dump_test.go",
+    "name": "dump_test"
+  },
+  "symptoms": [
+    "-// Sort is used to sort the object in the JSONTable. it is used for testing to avoid flaky test. | slices.SortFunc(dumpJSONTable.PredicateColumns, func(a, b *statsutil.JSONPredicateColumn) int { (pkg/statistics/handle/storage/dump_test.go)"
+  ],
+  "failure_signature": "-// Sort is used to sort the object in the JSONTable. it is used for testing to avoid flaky test. | slices.SortFunc(dumpJSONTable.PredicateColumns, func(a, b *statsutil.JSONPredicateColumn) int { (pkg/statistics/handle/storage/dump_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/57950",
+    "https://github.com/pingcap/tidb/pull/57950.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/57950.patch",
+  "changed_files": [
+    "br/pkg/backup/BUILD.bazel",
+    "br/pkg/backup/schema.go",
+    "br/pkg/metautil/BUILD.bazel",
+    "br/pkg/metautil/load_test.go",
+    "br/pkg/metautil/metafile.go",
+    "br/pkg/metautil/statsfile.go",
+    "br/pkg/metautil/statsfile_test.go",
+    "br/pkg/task/BUILD.bazel",
+    "br/pkg/task/config_test.go",
+    "cmd/importer/BUILD.bazel",
+    "cmd/importer/stats.go",
+    "pkg/domain/BUILD.bazel",
+    "pkg/domain/plan_replayer_dump.go",
+    "pkg/executor/BUILD.bazel",
+    "pkg/executor/historical_stats_test.go",
+    "pkg/executor/load_stats.go",
+    "pkg/executor/plan_replayer.go",
+    "pkg/planner/core/casetest/cbotest/BUILD.bazel",
+    "pkg/planner/core/casetest/cbotest/cbo_test.go",
+    "pkg/server/handler/optimizor/BUILD.bazel",
+    "pkg/server/handler/optimizor/plan_replayer.go",
+    "pkg/server/handler/optimizor/plan_replayer_test.go",
+    "pkg/server/handler/optimizor/statistics_handler_test.go",
+    "pkg/statistics/handle/history/BUILD.bazel",
+    "pkg/statistics/handle/history/history_stats.go",
+    "pkg/statistics/handle/storage/BUILD.bazel",
+    "pkg/statistics/handle/storage/dump_test.go",
+    "pkg/statistics/handle/storage/json.go",
+    "pkg/statistics/handle/storage/stats_read_writer.go",
+    "pkg/statistics/handle/types/BUILD.bazel",
+    "pkg/statistics/handle/types/interfaces.go",
+    "pkg/statistics/handle/util/BUILD.bazel",
+    "pkg/statistics/handle/util/util.go",
+    "pkg/statistics/util/BUILD.bazel",
+    "pkg/statistics/util/json_objects.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: -// Sort is used to sort the object in the JSONTable. it is used for testing to avoid flaky test. | slices.SortFunc(dumpJSONTable.PredicateColumns, func(a, b *statsutil.JSONPredicateColumn) int { (pkg/statistics/handle/storage/dump_test.go)",
+      "files: br/pkg/backup/BUILD.bazel, br/pkg/backup/schema.go, br/pkg/metautil/BUILD.bazel, br/pkg/metautil/load_test.go, br/pkg/metautil/metafile.go, br/pkg/metautil/statsfile.go, br/pkg/metautil/statsfile_test.go, br/pkg/task/BUILD.bazel, br/pkg/task/config_test.go, cmd/importer/BUILD.bazel, cmd/importer/stats.go, pkg/domain/BUILD.bazel, pkg/domain/plan_replayer_dump.go, pkg/executor/BUILD.bazel, pkg/executor/historical_stats_test.go, pkg/executor/load_stats.go, pkg/executor/plan_replayer.go, pkg/planner/core/casetest/cbotest/BUILD.bazel, pkg/planner/core/casetest/cbotest/cbo_test.go, pkg/server/handler/optimizor/BUILD.bazel, pkg/server/handler/optimizor/plan_replayer.go, pkg/server/handler/optimizor/plan_replayer_test.go, pkg/server/handler/optimizor/statistics_handler_test.go, pkg/statistics/handle/history/BUILD.bazel, pkg/statistics/handle/history/history_stats.go, pkg/statistics/handle/storage/BUILD.bazel, pkg/statistics/handle/storage/dump_test.go, pkg/statistics/handle/storage/json.go, pkg/statistics/handle/storage/stats_read_writer.go, pkg/statistics/handle/types/BUILD.bazel, pkg/statistics/handle/types/interfaces.go, pkg/statistics/handle/util/BUILD.bazel, pkg/statistics/handle/util/util.go, pkg/statistics/util/BUILD.bazel, pkg/statistics/util/json_objects.go"
+    ]
+  },
+  "analysis": "PR title: statistics: move JSON* to statistics/util\nPR url: https://github.com/pingcap/tidb/pull/57950\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: -// Sort is used to sort the object in the JSONTable. it is used for testing to avoid flaky test. | slices.SortFunc(dumpJSONTable.PredicateColumns, func(a, b *statsutil.JSONPredicateColumn) int { (pkg/statistics/handle/storage/dump_test.go)\nChanged files (35): br/pkg/backup/BUILD.bazel, br/pkg/backup/schema.go, br/pkg/metautil/BUILD.bazel, br/pkg/metautil/load_test.go, br/pkg/metautil/metafile.go, br/pkg/metautil/statsfile.go, br/pkg/metautil/statsfile_test.go, br/pkg/task/BUILD.bazel, br/pkg/task/config_test.go, cmd/importer/BUILD.bazel, cmd/importer/stats.go, pkg/domain/BUILD.bazel, pkg/domain/plan_replayer_dump.go, pkg/executor/BUILD.bazel, pkg/executor/historical_stats_test.go, pkg/executor/load_stats.go, pkg/executor/plan_replayer.go, pkg/planner/core/casetest/cbotest/BUILD.bazel, pkg/planner/core/casetest/cbotest/cbo_test.go, pkg/server/handler/optimizor/BUILD.bazel, pkg/server/handler/optimizor/plan_replayer.go, pkg/server/handler/optimizor/plan_replayer_test.go, pkg/server/handler/optimizor/statistics_handler_test.go, pkg/statistics/handle/history/BUILD.bazel, pkg/statistics/handle/history/history_stats.go, pkg/statistics/handle/storage/BUILD.bazel, pkg/statistics/handle/storage/dump_test.go, pkg/statistics/handle/storage/json.go, pkg/statistics/handle/storage/stats_read_writer.go, pkg/statistics/handle/types/BUILD.bazel, pkg/statistics/handle/types/interfaces.go, pkg/statistics/handle/util/BUILD.bazel, pkg/statistics/handle/util/util.go, pkg/statistics/util/BUILD.bazel, pkg/statistics/util/json_objects.go\nPatch url: https://github.com/pingcap/tidb/pull/57950.patch\nPicked test: type=unit path=pkg/statistics/handle/storage/dump_test.go name=dump_test"
+}

@@ -1,0 +1,50 @@
+{
+  "id": "pr-58257",
+  "source_pr": {
+    "number": 58257,
+    "url": "https://github.com/pingcap/tidb/pull/58257",
+    "title": "executor: fix the issue that the int primary key doesn't show in the index usage",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #58256\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\nIf the table only has an integer primary key, add a fake index entry to the index usage extractor to get it.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-12-23T15:19:30+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/infoschema/infoschema.result",
+    "name": "infoschema"
+  },
+  "symptoms": [
+    "sql := fmt.Sprintf(\"SELECT * FROM t use index(%s) ORDER BY a\", indexName) (pkg/executor/infoschema_reader_test.go)"
+  ],
+  "failure_signature": "sql := fmt.Sprintf(\"SELECT * FROM t use index(%s) ORDER BY a\", indexName) (pkg/executor/infoschema_reader_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/58257",
+    "https://github.com/pingcap/tidb/pull/58257.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/58257.patch",
+  "changed_files": [
+    "pkg/executor/BUILD.bazel",
+    "pkg/executor/infoschema_reader.go",
+    "pkg/executor/infoschema_reader_test.go",
+    "pkg/executor/internal/exec/indexusage.go",
+    "pkg/planner/core/memtable_infoschema_extractor.go",
+    "tests/integrationtest/r/infoschema/infoschema.result"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql := fmt.Sprintf(\"SELECT * FROM t use index(%s) ORDER BY a\", indexName) (pkg/executor/infoschema_reader_test.go)",
+      "files: pkg/executor/BUILD.bazel, pkg/executor/infoschema_reader.go, pkg/executor/infoschema_reader_test.go, pkg/executor/internal/exec/indexusage.go, pkg/planner/core/memtable_infoschema_extractor.go, tests/integrationtest/r/infoschema/infoschema.result"
+    ]
+  },
+  "analysis": "PR title: executor: fix the issue that the int primary key doesn't show in the index usage\nPR url: https://github.com/pingcap/tidb/pull/58257\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql := fmt.Sprintf(\"SELECT * FROM t use index(%s) ORDER BY a\", indexName) (pkg/executor/infoschema_reader_test.go)\nChanged files (6): pkg/executor/BUILD.bazel, pkg/executor/infoschema_reader.go, pkg/executor/infoschema_reader_test.go, pkg/executor/internal/exec/indexusage.go, pkg/planner/core/memtable_infoschema_extractor.go, tests/integrationtest/r/infoschema/infoschema.result\nPatch url: https://github.com/pingcap/tidb/pull/58257.patch\nPicked test: type=integration path=tests/integrationtest/r/infoschema/infoschema.result name=infoschema"
+}

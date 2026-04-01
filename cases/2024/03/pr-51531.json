@@ -1,0 +1,59 @@
+{
+  "id": "pr-51531",
+  "source_pr": {
+    "number": 51531,
+    "url": "https://github.com/pingcap/tidb/pull/51531",
+    "title": "statistics: split table analysis job into three different types of jobs",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref https://github.com/pingcap/tidb/issues/50132\r\n\r\nclose https://github.com/pingcap/tidb/issues/51534\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\nIn this PR, I only did some refactorings, I haven't changed any real logic.\r\n\r\nThe main change is, I split the job into three different jobs:\r\n1. NonPartitionedTableAnalysisJob for non-partitioned tables.\r\n2. DynamicPartitionedTableAnalysisJob for dynamic pruned tables.\r\n3. StaticPartitionedTableAnalysisJob for static pruned tables.\r\n\r\nSo you can focus on these three structures to review this PR.\r\n\r\nFor each job, you can focus on `Analyze` and `IsValidToAnalyze` APIs. \r\n\r\n`Analyze` will execute the different statements to do the analysis job.\r\n`IsValidToAnalyze` will check if the table analysis just failed a short period of time ago.\r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-03-07T13:45:35+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/statistics/handle/autoanalyze/refresher/refresher_test.go",
+    "name": "TestAnalyzeDynamicPartitionedTable"
+  },
+  "symptoms": [
+    "sort.Strings(tt.wantPartitions) (pkg/statistics/handle/autoanalyze/refresher/refresher_test.go)"
+  ],
+  "failure_signature": "sort.Strings(tt.wantPartitions) (pkg/statistics/handle/autoanalyze/refresher/refresher_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/51531",
+    "https://github.com/pingcap/tidb/pull/51531.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/51531.patch",
+  "changed_files": [
+    "pkg/statistics/handle/autoanalyze/priorityqueue/BUILD.bazel",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/calculator.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/calculator_test.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/dynamic_partitioned_table_analysis_job.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/dynamic_partitioned_table_analysis_job_test.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/job.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/job_test.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/non_partitioned_table_analysis_job.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/non_partitioned_table_analysis_job_test.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/queue.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/queue_test.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/static_partitioned_table_analysis_job.go",
+    "pkg/statistics/handle/autoanalyze/priorityqueue/static_partitioned_table_analysis_job_test.go",
+    "pkg/statistics/handle/autoanalyze/refresher/refresher.go",
+    "pkg/statistics/handle/autoanalyze/refresher/refresher_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Strings(tt.wantPartitions) (pkg/statistics/handle/autoanalyze/refresher/refresher_test.go)",
+      "files: pkg/statistics/handle/autoanalyze/priorityqueue/BUILD.bazel, pkg/statistics/handle/autoanalyze/priorityqueue/calculator.go, pkg/statistics/handle/autoanalyze/priorityqueue/calculator_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/dynamic_partitioned_table_analysis_job.go, pkg/statistics/handle/autoanalyze/priorityqueue/dynamic_partitioned_table_analysis_job_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/job.go, pkg/statistics/handle/autoanalyze/priorityqueue/job_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/non_partitioned_table_analysis_job.go, pkg/statistics/handle/autoanalyze/priorityqueue/non_partitioned_table_analysis_job_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/queue.go, pkg/statistics/handle/autoanalyze/priorityqueue/queue_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/static_partitioned_table_analysis_job.go, pkg/statistics/handle/autoanalyze/priorityqueue/static_partitioned_table_analysis_job_test.go, pkg/statistics/handle/autoanalyze/refresher/refresher.go, pkg/statistics/handle/autoanalyze/refresher/refresher_test.go"
+    ]
+  },
+  "analysis": "PR title: statistics: split table analysis job into three different types of jobs\nPR url: https://github.com/pingcap/tidb/pull/51531\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Strings(tt.wantPartitions) (pkg/statistics/handle/autoanalyze/refresher/refresher_test.go)\nChanged files (15): pkg/statistics/handle/autoanalyze/priorityqueue/BUILD.bazel, pkg/statistics/handle/autoanalyze/priorityqueue/calculator.go, pkg/statistics/handle/autoanalyze/priorityqueue/calculator_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/dynamic_partitioned_table_analysis_job.go, pkg/statistics/handle/autoanalyze/priorityqueue/dynamic_partitioned_table_analysis_job_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/job.go, pkg/statistics/handle/autoanalyze/priorityqueue/job_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/non_partitioned_table_analysis_job.go, pkg/statistics/handle/autoanalyze/priorityqueue/non_partitioned_table_analysis_job_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/queue.go, pkg/statistics/handle/autoanalyze/priorityqueue/queue_test.go, pkg/statistics/handle/autoanalyze/priorityqueue/static_partitioned_table_analysis_job.go, pkg/statistics/handle/autoanalyze/priorityqueue/static_partitioned_table_analysis_job_test.go, pkg/statistics/handle/autoanalyze/refresher/refresher.go, pkg/statistics/handle/autoanalyze/refresher/refresher_test.go\nPatch url: https://github.com/pingcap/tidb/pull/51531.patch\nPicked test: type=unit path=pkg/statistics/handle/autoanalyze/refresher/refresher_test.go name=TestAnalyzeDynamicPartitionedTable"
+}

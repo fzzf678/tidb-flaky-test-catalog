@@ -1,0 +1,54 @@
+{
+  "id": "pr-57114",
+  "source_pr": {
+    "number": 57114,
+    "url": "https://github.com/pingcap/tidb/pull/57114",
+    "title": "*: Reorg partition fix delete ranges and handling non-clustered tables with concurrent DML",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #56822 ref #45133 close #57510\r\n\r\nbased on #56974.\r\n\r\nProblem Summary:\r\nFirst the DeleteRange did not include the old replaced Global Indexes,\r\nThen I found an issue with non-clustered tables and reorganize partition,\r\nwhere double written records during StateWriteOnly/StateWriteReorganization would get Duplicate key errors, due to they would generate new _tidb_rowid in the new partition, making it impossible to detect if an index entry came from Backfilling or if it is new, when recreating the indexes.\r\n\r\n### What changed and how does it work?\r\nFixed the DeleteRange, by adding a list of TableID+IndexID ranges that should also be cleaned by DeleteRanges.\r\n\r\nInstead of first copy all records and then recreate the indexes, I now use AddRecord table interface, and created both the table record as well as all the index entries for that row. Note that AddRecord will also generate a new _tidb_rowid, so that part of the reorg code is removed as well.\r\n\r\nDrawbacks are:\r\n- I'm not sure if we can workaround an index lookup for each unique index entry needed to be written (i.e. if we can batch them instead of do one lookup at a time, or rely on optimistic commit).\r\n- Big change and little time to test it further, including performance difference (correctness is more important though).\r\n\r\nBenefits are:\r\n- Simpler code, just check if the record was written with the original handle (_tidb_rowid) and skip if so, otherwise use AddRecord.\r\n- Skipping reading the partitions twice, once for the 'table' records and once for generating the indexes.\r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nFix for REORGANIZE PARTITION to remove replaced Global Indexes and handle non-clustered tables unique indexes.\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-11-29T08:31:23+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/ddl/db_partition.result",
+    "name": "db_partition"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from test_global use index(idx_b) order by a\").Check(testkit.Rows(\"5 5 5\", \"6 6 6\", \"11 11 11\", \"12 12 12\", \"13 13 13\", \"14 14 14\", \"15 15 15\", \"16 16 16\")) (pkg/ddl/tests/partition/db_partition_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from test_global use index(idx_b) order by a\").Check(testkit.Rows(\"5 5 5\", \"6 6 6\", \"11 11 11\", \"12 12 12\", \"13 13 13\", \"14 14 14\", \"15 15 15\", \"16 16 16\")) (pkg/ddl/tests/partition/db_partition_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/57114",
+    "https://github.com/pingcap/tidb/pull/57114.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/57114.patch",
+  "changed_files": [
+    "pkg/ddl/delete_range.go",
+    "pkg/ddl/partition.go",
+    "pkg/ddl/sanity_check.go",
+    "pkg/ddl/tests/partition/BUILD.bazel",
+    "pkg/ddl/tests/partition/db_partition_test.go",
+    "pkg/ddl/tests/partition/multi_domain_test.go",
+    "pkg/ddl/tests/partition/reorg_partition_test.go",
+    "pkg/meta/model/job_args.go",
+    "pkg/table/tables/partition.go",
+    "tests/integrationtest/r/ddl/db_partition.result"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from test_global use index(idx_b) order by a\").Check(testkit.Rows(\"5 5 5\", \"6 6 6\", \"11 11 11\", \"12 12 12\", \"13 13 13\", \"14 14 14\", \"15 15 15\", \"16 16 16\")) (pkg/ddl/tests/partition/db_partition_test.go)",
+      "files: pkg/ddl/delete_range.go, pkg/ddl/partition.go, pkg/ddl/sanity_check.go, pkg/ddl/tests/partition/BUILD.bazel, pkg/ddl/tests/partition/db_partition_test.go, pkg/ddl/tests/partition/multi_domain_test.go, pkg/ddl/tests/partition/reorg_partition_test.go, pkg/meta/model/job_args.go, pkg/table/tables/partition.go, tests/integrationtest/r/ddl/db_partition.result"
+    ]
+  },
+  "analysis": "PR title: *: Reorg partition fix delete ranges and handling non-clustered tables with concurrent DML\nPR url: https://github.com/pingcap/tidb/pull/57114\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from test_global use index(idx_b) order by a\").Check(testkit.Rows(\"5 5 5\", \"6 6 6\", \"11 11 11\", \"12 12 12\", \"13 13 13\", \"14 14 14\", \"15 15 15\", \"16 16 16\")) (pkg/ddl/tests/partition/db_partition_test.go)\nChanged files (10): pkg/ddl/delete_range.go, pkg/ddl/partition.go, pkg/ddl/sanity_check.go, pkg/ddl/tests/partition/BUILD.bazel, pkg/ddl/tests/partition/db_partition_test.go, pkg/ddl/tests/partition/multi_domain_test.go, pkg/ddl/tests/partition/reorg_partition_test.go, pkg/meta/model/job_args.go, pkg/table/tables/partition.go, tests/integrationtest/r/ddl/db_partition.result\nPatch url: https://github.com/pingcap/tidb/pull/57114.patch\nPicked test: type=integration path=tests/integrationtest/r/ddl/db_partition.result name=db_partition"
+}

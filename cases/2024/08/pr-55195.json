@@ -1,0 +1,51 @@
+{
+  "id": "pr-55195",
+  "source_pr": {
+    "number": 55195,
+    "url": "https://github.com/pingcap/tidb/pull/55195",
+    "title": "planner: support generating `leading` and `hash_join_build` hint from physical plan",
+    "body": "### What problem does this PR solve?\r\n\r\n\r\nIssue Number: close #55280\r\n\r\n\r\n### What changed and how does it work?\r\n\r\nAs the title says.\r\n\r\nThe overall structure of methods in `hint_utils.go`:\r\n1. Methods for join method hints: `genJoinMethodHintForSinglePhysicalJoin()`\r\n2. Methods for join order hints: `genJoinOrderHintFromRootPhysicalJoin()`, `extractOrderedPhysicalJoinGroup()`\r\n3. Methods for extracting table names and QB names, which are common methods for both join method hints and join order hints: `genHintTblForJoinNodes()`, `genHintTblForSingleJoinNode()`, `extractTableAsName()`\r\n\r\nPlease see the comments for details since the changes involve many implementation details.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-08-10T00:20:12+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/planner/core/physical_plan.result",
+    "name": "physical_plan"
+  },
+  "symptoms": [
+    "{`select /*+ inl_join(t1) */ * from t1, t2 where t1.a=t2.a and t1.b<? and t2.b<? order by t1.a limit 5`, \"inl_join(`test`.`t1`), use_index(@`sel_1` `test`.`t1` `k_a`), no_order_index(@`sel_1` `test`.`t1` `k_a`), use_index(@`sel_1` `test`.`t2` )\", nil}, (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)"
+  ],
+  "failure_signature": "{`select /*+ inl_join(t1) */ * from t1, t2 where t1.a=t2.a and t1.b<? and t2.b<? order by t1.a limit 5`, \"inl_join(`test`.`t1`), use_index(@`sel_1` `test`.`t1` `k_a`), no_order_index(@`sel_1` `test`.`t1` `k_a`), use_index(@`sel_1` `test`.`t2` )\", nil}, (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/55195",
+    "https://github.com/pingcap/tidb/pull/55195.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/55195.patch",
+  "changed_files": [
+    "pkg/bindinfo/capture_test.go",
+    "pkg/infoschema/test/clustertablestest/cluster_tables_test.go",
+    "pkg/planner/core/casetest/cbotest/testdata/analyze_suite_out.json",
+    "pkg/planner/core/casetest/dag/testdata/plan_suite_out.json",
+    "pkg/planner/core/casetest/physicalplantest/testdata/plan_suite_out.json",
+    "pkg/planner/core/hint_utils.go",
+    "tests/integrationtest/r/planner/core/physical_plan.result"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: {`select /*+ inl_join(t1) */ * from t1, t2 where t1.a=t2.a and t1.b<? and t2.b<? order by t1.a limit 5`, \"inl_join(`test`.`t1`), use_index(@`sel_1` `test`.`t1` `k_a`), no_order_index(@`sel_1` `test`.`t1` `k_a`), use_index(@`sel_1` `test`.`t2` )\", nil}, (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)",
+      "files: pkg/bindinfo/capture_test.go, pkg/infoschema/test/clustertablestest/cluster_tables_test.go, pkg/planner/core/casetest/cbotest/testdata/analyze_suite_out.json, pkg/planner/core/casetest/dag/testdata/plan_suite_out.json, pkg/planner/core/casetest/physicalplantest/testdata/plan_suite_out.json, pkg/planner/core/hint_utils.go, tests/integrationtest/r/planner/core/physical_plan.result"
+    ]
+  },
+  "analysis": "PR title: planner: support generating `leading` and `hash_join_build` hint from physical plan\nPR url: https://github.com/pingcap/tidb/pull/55195\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: {`select /*+ inl_join(t1) */ * from t1, t2 where t1.a=t2.a and t1.b<? and t2.b<? order by t1.a limit 5`, \"inl_join(`test`.`t1`), use_index(@`sel_1` `test`.`t1` `k_a`), no_order_index(@`sel_1` `test`.`t1` `k_a`), use_index(@`sel_1` `test`.`t2` )\", nil}, (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)\nChanged files (7): pkg/bindinfo/capture_test.go, pkg/infoschema/test/clustertablestest/cluster_tables_test.go, pkg/planner/core/casetest/cbotest/testdata/analyze_suite_out.json, pkg/planner/core/casetest/dag/testdata/plan_suite_out.json, pkg/planner/core/casetest/physicalplantest/testdata/plan_suite_out.json, pkg/planner/core/hint_utils.go, tests/integrationtest/r/planner/core/physical_plan.result\nPatch url: https://github.com/pingcap/tidb/pull/55195.patch\nPicked test: type=integration path=tests/integrationtest/r/planner/core/physical_plan.result name=physical_plan"
+}

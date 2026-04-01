@@ -1,0 +1,45 @@
+{
+  "id": "pr-54695",
+  "source_pr": {
+    "number": 54695,
+    "url": "https://github.com/pingcap/tidb/pull/54695",
+    "title": "ddl: make test TestRenameTableAutoIDs more stable",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #53765\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\nThe root cause is the same with this one https://github.com/pingcap/tidb/pull/54447\r\nWhen we do ddl, wait ddl status change to finish is not enough.\r\nWe need to wait the infoschema reload finish, otherwise we may see the stale infoschema.\r\n\r\nHere the test code execute `renamte table  renametableautoids.t   to  renametableautoids2.t2`\r\nUsing the stale infoschema would get error :\r\n\r\n```\r\n        \tError:      \tReceived unexpected error:\r\n        \t            \t[schema:1146]Table 'renametableautoids2.t2' doesn't exist\r\n        \t            \tgithub.com/pingcap/errors.AddStack\r\n        \t            \t\texternal/com_github_pingcap_errors/errors.go:178\r\n```\r\n\r\nNOTE, rename table cross different DBs have known capatibility issue with  autoid.\r\nAnd even after this fix, the test may still be unstable by that capability issue.\r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [X] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-07-18T14:22:32+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/ddl/schema_test.go",
+    "name": "TestRenameTableAutoIDs"
+  },
+  "symptoms": [
+    "And even after this fix, the test may still be unstable by that capability issue."
+  ],
+  "failure_signature": "And even after this fix, the test may still be unstable by that capability issue.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: make test TestRenameTableAutoIDs more stable",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/54695",
+    "https://github.com/pingcap/tidb/pull/54695.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/54695.patch",
+  "changed_files": [
+    "pkg/ddl/schema_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: And even after this fix, the test may still be unstable by that capability issue.",
+      "files: pkg/ddl/schema_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl: make test TestRenameTableAutoIDs more stable\nPR url: https://github.com/pingcap/tidb/pull/54695\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: And even after this fix, the test may still be unstable by that capability issue.\nChanged files (1): pkg/ddl/schema_test.go\nPatch url: https://github.com/pingcap/tidb/pull/54695.patch\nPicked test: type=unit path=pkg/ddl/schema_test.go name=TestRenameTableAutoIDs"
+}

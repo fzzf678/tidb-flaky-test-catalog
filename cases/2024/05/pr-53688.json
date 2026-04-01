@@ -1,0 +1,45 @@
+{
+  "id": "pr-53688",
+  "source_pr": {
+    "number": 53688,
+    "url": "https://github.com/pingcap/tidb/pull/53688",
+    "title": "domain: fix unstable test TestRepairTable",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #53667 \r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\nThe DDL of 'admin repair table' works like this:\r\n\r\n- create a list of tables been repairing\r\n- ddl owner publish the ddl job\r\n- ddl worker receive ddl job, execute onRepairTable function\r\n- repairment done, update the table info, set the DDL state to public\r\n- remove the table from repair table list\r\n\r\nAfter we set the DDL state to public, and just before the table been removed from the list,\r\nIf we trigger a full reload of infoschema, we will goto this line:\r\n\r\nhttps://github.com/pingcap/tidb/blob/22c41d0e0c86ddb98dd029d49a2df038d7ac42bf/pkg/domain/domain.go#L437-L440\r\n\r\nAnd tidb will skip loading this table. (but the table is public, the repairment is done in fact)\r\n\r\nIn the past, the full reload in not triggered so the bug is not exposed.\r\nAfter we adding infoschema v2 to our CI, the v1 -> v2 switch could trigger a full reload, and expose this bug.\r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [X] Unit test\r\n\r\nAfter this fix, the unit test TestRepairTable become stable.\r\n\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-05-31T10:52:22+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/domain/domain.go",
+    "name": "TestRepairTable"
+  },
+  "symptoms": [
+    "domain: fix unstable test TestRepairTable"
+  ],
+  "failure_signature": "domain: fix unstable test TestRepairTable",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "domain: fix unstable test TestRepairTable",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/53688",
+    "https://github.com/pingcap/tidb/pull/53688.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/53688.patch",
+  "changed_files": [
+    "pkg/domain/domain.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: domain: fix unstable test TestRepairTable",
+      "files: pkg/domain/domain.go"
+    ]
+  },
+  "analysis": "PR title: domain: fix unstable test TestRepairTable\nPR url: https://github.com/pingcap/tidb/pull/53688\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: domain: fix unstable test TestRepairTable\nChanged files (1): pkg/domain/domain.go\nPatch url: https://github.com/pingcap/tidb/pull/53688.patch\nPicked test: type=unit path=pkg/domain/domain.go name=TestRepairTable"
+}

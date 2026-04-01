@@ -1,0 +1,52 @@
+{
+  "id": "pr-57522",
+  "source_pr": {
+    "number": 57522,
+    "url": "https://github.com/pingcap/tidb/pull/57522",
+    "title": "store/copr: optimize copIterator by avoid start new goroutine",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #56649\r\n\r\nProblem Summary: optimize cop iterator by avoid start new goroutine\r\n\r\n### What changed and how does it work?\r\n\r\nBefore this PR, `copIterator` always start at least 1 [copIteratorWorker goroutine](https://github.com/pingcap/tidb/blob/f347b9d334495c72d27c53532dfef522213dbaac/pkg/store/copr/coprocessor.go#L884) and 1 [copIteratorTaskSender goroutine](https://github.com/pingcap/tidb/blob/f347b9d334495c72d27c53532dfef522213dbaac/pkg/store/copr/coprocessor.go#L902). That's too wasteful for small queries.\r\n\r\nThis PR avoid start new goroutine for small queries, for better performance, following is the sysbench [oltp_index_scan](https://github.com/crazycs520/sysbench_lua) test, and the range size is 2:\r\n\r\n```sh\r\nsysbench --config-file=sysbench.conf oltp_index_scan --tables=16 --table-size=1000000 --threads=100 --range-size=2 run\r\n```\r\n\r\nThe example query is like this:\r\n\r\n```sql\r\nSELECT\r\n  k\r\nFROM\r\n  sbtest1\r\nWHERE\r\n  k BETWEEN ?\r\n  AND ? [arguments: (503925, 503926)]\r\n```\r\n\r\nWhich Plan is:\r\n\r\n```plan\r\n\r\n| id                 | estRows | estCost | actRows | task      | access object               | execution info                                                                                                                                                                                                                                                                                         | operator info                           | memory    | disk  |\r\n| IndexReader_6      | 2.07    | 31.20   | 2       | root      |                             | time:1.31ms, loops:2, cop_task: {num: 1, max: 1.15ms, proc_keys: 2, tot_proc: 81.2µs, tot_wait: 575.8µs, copr_cache: disabled, build_task_duration: 12.2µs, max_distsql_concurrency: 1}, rpc_info:{Cop:{num_rpc:1, total_time:1.12ms}}                                                                 | index:IndexRangeScan_5                  | 278 Bytes | N/A   |\r\n| └─IndexRangeScan_5 | 2.07    | 336.86  | 2       | cop[tikv] | table:sbtest1, index:k_1(k) | tikv_task:{time:0s, loops:1}, scan_detail: {total_process_keys: 2, total_process_keys_size: 92, total_keys: 3, get_snapshot_time: 539.6µs, rocksdb: {key_skipped_count: 2, block: {cache_hit_count: 6}}}, time_detail: {total_process_time: 81.2µs, total_wait_time: 575.8µs, tikv_wall_time: 751.3µs} | range:[503925,503926], keep order:false | N/A       | N/A   |\r\n```\r\n\r\nversion | workload | thread | QPS | QPS Increase\r\n-- | -- | -- | -- | --\r\nmaster | oltp_index_scan | 10 | 9224 |  \r\nThis PR | oltp_index_scan | 10 | 9471 | 2.6%\r\nmaster | oltp_index_scan | 50 | 36072 |  \r\nThis PR | oltp_index_scan | 50 | 37392 | 3.6%\r\nmaster | oltp_index_scan | 100 | 41977 |  \r\nThis PR | oltp_index_scan | 100 | 43554 | 3.7%\r\nmaster | oltp_index_scan | 150 | 42785 |  \r\nThis PR | oltp_index_scan | 150 | 46430 | 8.5%\r\n\r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-12-17T14:53:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/store/copr/copr_test/coprocessor_test.go",
+    "name": "TestIndexReaderDebug"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t2 where id >= 1 and id <= 18446744073709551615 order by id;\") (pkg/store/copr/copr_test/coprocessor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t2 where id >= 1 and id <= 18446744073709551615 order by id;\") (pkg/store/copr/copr_test/coprocessor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/57522",
+    "https://github.com/pingcap/tidb/pull/57522.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/57522.patch",
+  "changed_files": [
+    "pkg/distsql/context/context.go",
+    "pkg/distsql/context/context_test.go",
+    "pkg/distsql/distsql.go",
+    "pkg/kv/kv.go",
+    "pkg/store/copr/copr_test/BUILD.bazel",
+    "pkg/store/copr/copr_test/coprocessor_test.go",
+    "pkg/store/copr/coprocessor.go",
+    "pkg/store/mockstore/unistore/rpc.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t2 where id >= 1 and id <= 18446744073709551615 order by id;\") (pkg/store/copr/copr_test/coprocessor_test.go)",
+      "files: pkg/distsql/context/context.go, pkg/distsql/context/context_test.go, pkg/distsql/distsql.go, pkg/kv/kv.go, pkg/store/copr/copr_test/BUILD.bazel, pkg/store/copr/copr_test/coprocessor_test.go, pkg/store/copr/coprocessor.go, pkg/store/mockstore/unistore/rpc.go"
+    ]
+  },
+  "analysis": "PR title: store/copr: optimize copIterator by avoid start new goroutine\nPR url: https://github.com/pingcap/tidb/pull/57522\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t2 where id >= 1 and id <= 18446744073709551615 order by id;\") (pkg/store/copr/copr_test/coprocessor_test.go)\nChanged files (8): pkg/distsql/context/context.go, pkg/distsql/context/context_test.go, pkg/distsql/distsql.go, pkg/kv/kv.go, pkg/store/copr/copr_test/BUILD.bazel, pkg/store/copr/copr_test/coprocessor_test.go, pkg/store/copr/coprocessor.go, pkg/store/mockstore/unistore/rpc.go\nPatch url: https://github.com/pingcap/tidb/pull/57522.patch\nPicked test: type=unit path=pkg/store/copr/copr_test/coprocessor_test.go name=TestIndexReaderDebug"
+}

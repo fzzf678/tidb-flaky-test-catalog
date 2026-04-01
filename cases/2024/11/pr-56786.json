@@ -1,0 +1,53 @@
+{
+  "id": "pr-56786",
+  "source_pr": {
+    "number": 56786,
+    "url": "https://github.com/pingcap/tidb/pull/56786",
+    "title": "ddl: Corrected index management during REORGANIZE PARTITION",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #56634\r\n\r\nProblem Summary:\r\nissue triggered by injected error, resulting in rollback and panic\r\n\r\nUncovered issues:\r\n- Since Global Indexes needs to be replaced (copied with new references to the new partition ids, since we cannot reference two different partitions in the same unique index entry) both indexes were used during StateWriteOnly, StateWriteReorganization and StateDeleteReorganization, which would cause duplicate entry errors when trying to insert new values during those states for Global Indexes.\r\n\r\n### What changed and how does it work?\r\n\r\n- Avoiding to use StateDeleteReorganization as index state, since during that state, the global indexes may still be read or and should also be kept up-to-date in case of rollback.\r\n- Remove indexes that are not connected to the partition, like for new partitions it should not update indexes that will be removed, those indexes will be kept up-to-date by the old partitions. So double writing, including indexes, will be on partition level, where the data matching:\r\n  - the non-touched partitions should update:\r\n    - all original indexes\r\n    - new indexes\r\n    - So it needs to include all indexes!\r\n  - the old/reorganized partitions should update:\r\n    - all original indexes\r\n    - So it needs to skip new indexes!\r\n  - the new partitions should update:\r\n    - all non-changed indexes\r\n    - new indexes\r\n    - So it needs to skip old indexes that will be replaced with new indexes (All old Global Indexes, and all indexes that will be converted to Global indexes).\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nFixed an issue where REORGANIZE PARTITION block inserts during some states, as well as it could fail rollback, in case of internal errors.\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-11-15T20:46:17+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/globalindex/misc.result",
+    "name": "misc"
+  },
+  "symptoms": [
+    "res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)"
+  ],
+  "failure_signature": "res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/56786",
+    "https://github.com/pingcap/tidb/pull/56786.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/56786.patch",
+  "changed_files": [
+    "pkg/ddl/partition.go",
+    "pkg/ddl/rollingback.go",
+    "pkg/ddl/tests/partition/multi_domain_test.go",
+    "pkg/ddl/tests/partition/reorg_partition_test.go",
+    "pkg/meta/model/table.go",
+    "pkg/table/tables/partition.go",
+    "pkg/testkit/testkit.go",
+    "tests/integrationtest/r/globalindex/misc.result",
+    "tests/integrationtest/t/globalindex/misc.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)",
+      "files: pkg/ddl/partition.go, pkg/ddl/rollingback.go, pkg/ddl/tests/partition/multi_domain_test.go, pkg/ddl/tests/partition/reorg_partition_test.go, pkg/meta/model/table.go, pkg/table/tables/partition.go, pkg/testkit/testkit.go, tests/integrationtest/r/globalindex/misc.result, tests/integrationtest/t/globalindex/misc.test"
+    ]
+  },
+  "analysis": "PR title: ddl: Corrected index management during REORGANIZE PARTITION\nPR url: https://github.com/pingcap/tidb/pull/56786\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)\nChanged files (9): pkg/ddl/partition.go, pkg/ddl/rollingback.go, pkg/ddl/tests/partition/multi_domain_test.go, pkg/ddl/tests/partition/reorg_partition_test.go, pkg/meta/model/table.go, pkg/table/tables/partition.go, pkg/testkit/testkit.go, tests/integrationtest/r/globalindex/misc.result, tests/integrationtest/t/globalindex/misc.test\nPatch url: https://github.com/pingcap/tidb/pull/56786.patch\nPicked test: type=integration path=tests/integrationtest/r/globalindex/misc.result name=misc"
+}

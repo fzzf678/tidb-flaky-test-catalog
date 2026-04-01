@@ -1,0 +1,51 @@
+{
+  "id": "pr-54287",
+  "source_pr": {
+    "number": 54287,
+    "url": "https://github.com/pingcap/tidb/pull/54287",
+    "title": "test: use a mysql driver supporting cursor fetch to test the cursor fetch function",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #54286\r\n\r\nProblem Summary:\r\n\r\nI've extended the go mysql driver to support `fetchSize` argument (See the [commit](https://github.com/YangKeao/go-mysql-driver/commit/dd5589458cfa93737bab4038c769c3435053aa12)). Though it's not suitable to use it directly with `sql` standard library, we can use the function exposed by it directly to test TiDB now.\r\n\r\n### What changed and how does it work?\r\n\r\n1. Fork a go mysql driver and support cursor fetch.\r\n2. Add a test for cursor fetch function in TiDB with it.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-07-02T17:23:56+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/server/tests/cursor/cursor_test.go",
+    "name": "TestConcurrentExecuteAndFetch"
+  },
+  "symptoms": [
+    "rawStmt, err := conn.Prepare(\"select * from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)"
+  ],
+  "failure_signature": "rawStmt, err := conn.Prepare(\"select * from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/54287",
+    "https://github.com/pingcap/tidb/pull/54287.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/54287.patch",
+  "changed_files": [
+    "DEPS.bzl",
+    "go.mod",
+    "go.sum",
+    "pkg/server/internal/testserverclient/BUILD.bazel",
+    "pkg/server/internal/testserverclient/server_client.go",
+    "pkg/server/tests/cursor/BUILD.bazel",
+    "pkg/server/tests/cursor/cursor_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rawStmt, err := conn.Prepare(\"select * from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)",
+      "files: DEPS.bzl, go.mod, go.sum, pkg/server/internal/testserverclient/BUILD.bazel, pkg/server/internal/testserverclient/server_client.go, pkg/server/tests/cursor/BUILD.bazel, pkg/server/tests/cursor/cursor_test.go"
+    ]
+  },
+  "analysis": "PR title: test: use a mysql driver supporting cursor fetch to test the cursor fetch function\nPR url: https://github.com/pingcap/tidb/pull/54287\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rawStmt, err := conn.Prepare(\"select * from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)\nChanged files (7): DEPS.bzl, go.mod, go.sum, pkg/server/internal/testserverclient/BUILD.bazel, pkg/server/internal/testserverclient/server_client.go, pkg/server/tests/cursor/BUILD.bazel, pkg/server/tests/cursor/cursor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/54287.patch\nPicked test: type=unit path=pkg/server/tests/cursor/cursor_test.go name=TestConcurrentExecuteAndFetch"
+}

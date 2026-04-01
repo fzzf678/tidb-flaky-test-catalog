@@ -1,0 +1,55 @@
+{
+  "id": "pr-57274",
+  "source_pr": {
+    "number": 57274,
+    "url": "https://github.com/pingcap/tidb/pull/57274",
+    "title": "*: make `chunk.SwapColumn` private",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #55885\r\n\r\nProblem Summary:\r\nThe root cause is in Limit executor, it has an inline projection, but it use `chunk.SwapColumn` directly to do the projection, which will cause error if the `Limit`'s output contains multiple column that point to same shallow column in input Chunk\r\n### What changed and how does it work?\r\n\r\nThis pr\r\n1. make `chunk.SwapColumn` a private method, so it will not be used mistakenly\r\n2. Rename `ColumnEvaluator` to `ColumnSwapHelper` and move it from `expression` package to `chunk` package\r\n3. use `ColumnSwapHelper` to do the inline projection in `Limit` executor.\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-11-13T14:11:23+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/expression/integration_test/integration_test.go",
+    "name": "TestMergeInputIdxToOutputIdxes"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"SELECT subq_0.c3 as c1 FROM (select c_a90ol as c3, c_a90ol as c4, var_pop(cast(c__qy as double)) over (partition by c_a90ol, c_s order by c_z) as c5 from t_jg8o limit 65) as subq_0 LIMIT 37\") (pkg/expression/integration_test/integration_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"SELECT subq_0.c3 as c1 FROM (select c_a90ol as c3, c_a90ol as c4, var_pop(cast(c__qy as double)) over (partition by c_a90ol, c_s order by c_z) as c5 from t_jg8o limit 65) as subq_0 LIMIT 37\") (pkg/expression/integration_test/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/57274",
+    "https://github.com/pingcap/tidb/pull/57274.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/57274.patch",
+  "changed_files": [
+    "pkg/executor/builder.go",
+    "pkg/executor/select.go",
+    "pkg/expression/evaluator.go",
+    "pkg/expression/evaluator_test.go",
+    "pkg/expression/integration_test/BUILD.bazel",
+    "pkg/expression/integration_test/integration_test.go",
+    "pkg/util/chunk/BUILD.bazel",
+    "pkg/util/chunk/chunk.go",
+    "pkg/util/chunk/chunk_test.go",
+    "pkg/util/chunk/chunk_util.go",
+    "pkg/util/chunk/chunk_util_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"SELECT subq_0.c3 as c1 FROM (select c_a90ol as c3, c_a90ol as c4, var_pop(cast(c__qy as double)) over (partition by c_a90ol, c_s order by c_z) as c5 from t_jg8o limit 65) as subq_0 LIMIT 37\") (pkg/expression/integration_test/integration_test.go)",
+      "files: pkg/executor/builder.go, pkg/executor/select.go, pkg/expression/evaluator.go, pkg/expression/evaluator_test.go, pkg/expression/integration_test/BUILD.bazel, pkg/expression/integration_test/integration_test.go, pkg/util/chunk/BUILD.bazel, pkg/util/chunk/chunk.go, pkg/util/chunk/chunk_test.go, pkg/util/chunk/chunk_util.go, pkg/util/chunk/chunk_util_test.go"
+    ]
+  },
+  "analysis": "PR title: *: make `chunk.SwapColumn` private\nPR url: https://github.com/pingcap/tidb/pull/57274\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"SELECT subq_0.c3 as c1 FROM (select c_a90ol as c3, c_a90ol as c4, var_pop(cast(c__qy as double)) over (partition by c_a90ol, c_s order by c_z) as c5 from t_jg8o limit 65) as subq_0 LIMIT 37\") (pkg/expression/integration_test/integration_test.go)\nChanged files (11): pkg/executor/builder.go, pkg/executor/select.go, pkg/expression/evaluator.go, pkg/expression/evaluator_test.go, pkg/expression/integration_test/BUILD.bazel, pkg/expression/integration_test/integration_test.go, pkg/util/chunk/BUILD.bazel, pkg/util/chunk/chunk.go, pkg/util/chunk/chunk_test.go, pkg/util/chunk/chunk_util.go, pkg/util/chunk/chunk_util_test.go\nPatch url: https://github.com/pingcap/tidb/pull/57274.patch\nPicked test: type=unit path=pkg/expression/integration_test/integration_test.go name=TestMergeInputIdxToOutputIdxes"
+}

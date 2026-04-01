@@ -1,0 +1,51 @@
+{
+  "id": "pr-54864",
+  "source_pr": {
+    "number": 54864,
+    "url": "https://github.com/pingcap/tidb/pull/54864",
+    "title": "executor, expression: detach projection and selection operator",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #54863\r\n\r\nProblem Summary:\r\n\r\nThe lazy cursor fetch didn't support `Projection` and `Selection`. This PR enables it to handle most of the `Projection` and `Selection` operator.\r\n\r\n### What changed and how does it work?\r\n\r\nImplement the `Detach` function for these operators.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-08-01T15:04:21+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/server/tests/cursor/cursor_test.go",
+    "name": "TestDetachSelection"
+  },
+  "symptoms": [
+    "rawStmt, err := conn.Prepare(\"select id + v from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)"
+  ],
+  "failure_signature": "rawStmt, err := conn.Prepare(\"select id + v from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/54864",
+    "https://github.com/pingcap/tidb/pull/54864.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/54864.patch",
+  "changed_files": [
+    "pkg/executor/detach.go",
+    "pkg/executor/detach_integration_test.go",
+    "pkg/executor/projection.go",
+    "pkg/expression/evaluator.go",
+    "pkg/expression/evaluator_test.go",
+    "pkg/server/tests/cursor/BUILD.bazel",
+    "pkg/server/tests/cursor/cursor_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rawStmt, err := conn.Prepare(\"select id + v from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)",
+      "files: pkg/executor/detach.go, pkg/executor/detach_integration_test.go, pkg/executor/projection.go, pkg/expression/evaluator.go, pkg/expression/evaluator_test.go, pkg/server/tests/cursor/BUILD.bazel, pkg/server/tests/cursor/cursor_test.go"
+    ]
+  },
+  "analysis": "PR title: executor, expression: detach projection and selection operator\nPR url: https://github.com/pingcap/tidb/pull/54864\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rawStmt, err := conn.Prepare(\"select id + v from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)\nChanged files (7): pkg/executor/detach.go, pkg/executor/detach_integration_test.go, pkg/executor/projection.go, pkg/expression/evaluator.go, pkg/expression/evaluator_test.go, pkg/server/tests/cursor/BUILD.bazel, pkg/server/tests/cursor/cursor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/54864.patch\nPicked test: type=unit path=pkg/server/tests/cursor/cursor_test.go name=TestDetachSelection"
+}

@@ -1,0 +1,58 @@
+{
+  "id": "pr-56609",
+  "source_pr": {
+    "number": 56609,
+    "url": "https://github.com/pingcap/tidb/pull/56609",
+    "title": "planner, CTE, view: Fix default inline CTE which contains orderby/limit/distinct and inside of view | tidb-test=pr/2415",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #56603, close #56582\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\n1. If the CTE contain orderby/limit/distinct and CTE is referenced by another CTE recursive part, it cannot be inlined . Related issue #56603\r\n2. If the CTE inside of view, the consumerCount of CTE cannot be updated because the view skip the preprocessor phase in during optimizer, it also cannot judge the inline or not. So the CTE inside of view will always be not inlined. Related issue  #56582\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\n修复错误的 inline CTE，如果 CTE 包含 orderby/limit/distinct 子句并且被另外一个 CTE 的 recursive part 所引用。\r\n同时去除对 view 中的 CTE 进行是否默认 inline 的优化。\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-10-15T19:02:28+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/planner/core/casetest/physicalplantest/physical_plan.result",
+    "name": "physical_plan"
+  },
+  "symptoms": [
+    "explain WITH RECURSIVE CTE (x) AS (SELECT a FROM test order by a) , CTE1(x) AS (SELECT a FROM test UNION ALL select CTE.x from CTE join CTE1 on CTE.x=CTE1.x) SELECT * FROM CTE1; -- CTE contain order by and ref by CET1 recursive part cannot be inlined; (tests/integrationtest/r/planner/core/casetest/physicalplantest/physical_plan.result)"
+  ],
+  "failure_signature": "explain WITH RECURSIVE CTE (x) AS (SELECT a FROM test order by a) , CTE1(x) AS (SELECT a FROM test UNION ALL select CTE.x from CTE join CTE1 on CTE.x=CTE1.x) SELECT * FROM CTE1; -- CTE contain order by and ref by CET1 recursive part cannot be inlined; (tests/integrationtest/r/planner/core/casetest/physicalplantest/physical_plan.result)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/56609",
+    "https://github.com/pingcap/tidb/pull/56609.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/56609.patch",
+  "changed_files": [
+    "pkg/planner/core/casetest/flatplan/testdata/flat_plan_suite_out.json",
+    "pkg/planner/core/casetest/hint/testdata/integration_suite_out.json",
+    "pkg/planner/core/casetest/planstats/BUILD.bazel",
+    "pkg/planner/core/casetest/planstats/plan_stats_test.go",
+    "pkg/planner/core/casetest/planstats/testdata/plan_stats_suite_in.json",
+    "pkg/planner/core/casetest/planstats/testdata/plan_stats_suite_out.json",
+    "pkg/planner/core/casetest/rule/testdata/outer2inner_in.json",
+    "pkg/planner/core/casetest/rule/testdata/outer2inner_out.json",
+    "pkg/planner/core/logical_plan_builder.go",
+    "pkg/planner/core/planbuilder.go",
+    "pkg/planner/indexadvisor/BUILD.bazel",
+    "pkg/planner/indexadvisor/indexadvisor_test.go",
+    "tests/integrationtest/r/planner/core/casetest/physicalplantest/physical_plan.result",
+    "tests/integrationtest/t/planner/core/casetest/physicalplantest/physical_plan.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: explain WITH RECURSIVE CTE (x) AS (SELECT a FROM test order by a) , CTE1(x) AS (SELECT a FROM test UNION ALL select CTE.x from CTE join CTE1 on CTE.x=CTE1.x) SELECT * FROM CTE1; -- CTE contain order by and ref by CET1 recursive part cannot be inlined; (tests/integrationtest/r/planner/core/casetest/physicalplantest/physical_plan.result)",
+      "files: pkg/planner/core/casetest/flatplan/testdata/flat_plan_suite_out.json, pkg/planner/core/casetest/hint/testdata/integration_suite_out.json, pkg/planner/core/casetest/planstats/BUILD.bazel, pkg/planner/core/casetest/planstats/plan_stats_test.go, pkg/planner/core/casetest/planstats/testdata/plan_stats_suite_in.json, pkg/planner/core/casetest/planstats/testdata/plan_stats_suite_out.json, pkg/planner/core/casetest/rule/testdata/outer2inner_in.json, pkg/planner/core/casetest/rule/testdata/outer2inner_out.json, pkg/planner/core/logical_plan_builder.go, pkg/planner/core/planbuilder.go, pkg/planner/indexadvisor/BUILD.bazel, pkg/planner/indexadvisor/indexadvisor_test.go, tests/integrationtest/r/planner/core/casetest/physicalplantest/physical_plan.result, tests/integrationtest/t/planner/core/casetest/physicalplantest/physical_plan.test"
+    ]
+  },
+  "analysis": "PR title: planner, CTE, view: Fix default inline CTE which contains orderby/limit/distinct and inside of view | tidb-test=pr/2415\nPR url: https://github.com/pingcap/tidb/pull/56609\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: explain WITH RECURSIVE CTE (x) AS (SELECT a FROM test order by a) , CTE1(x) AS (SELECT a FROM test UNION ALL select CTE.x from CTE join CTE1 on CTE.x=CTE1.x) SELECT * FROM CTE1; -- CTE contain order by and ref by CET1 recursive part cannot be inlined; (tests/integrationtest/r/planner/core/casetest/physicalplantest/physical_plan.result)\nChanged files (14): pkg/planner/core/casetest/flatplan/testdata/flat_plan_suite_out.json, pkg/planner/core/casetest/hint/testdata/integration_suite_out.json, pkg/planner/core/casetest/planstats/BUILD.bazel, pkg/planner/core/casetest/planstats/plan_stats_test.go, pkg/planner/core/casetest/planstats/testdata/plan_stats_suite_in.json, pkg/planner/core/casetest/planstats/testdata/plan_stats_suite_out.json, pkg/planner/core/casetest/rule/testdata/outer2inner_in.json, pkg/planner/core/casetest/rule/testdata/outer2inner_out.json, pkg/planner/core/logical_plan_builder.go, pkg/planner/core/planbuilder.go, pkg/planner/indexadvisor/BUILD.bazel, pkg/planner/indexadvisor/indexadvisor_test.go, tests/integrationtest/r/planner/core/casetest/physicalplantest/physical_plan.result, tests/integrationtest/t/planner/core/casetest/physicalplantest/physical_plan.test\nPatch url: https://github.com/pingcap/tidb/pull/56609.patch\nPicked test: type=integration path=tests/integrationtest/r/planner/core/casetest/physicalplantest/physical_plan.result name=physical_plan"
+}
