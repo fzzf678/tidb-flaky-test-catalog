@@ -1,0 +1,47 @@
+{
+  "id": "pr-16478",
+  "source_pr": {
+    "number": 16478,
+    "url": "https://github.com/pingcap/tidb/pull/16478",
+    "title": "memdb: exclude random tests when race is enabled",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nFixes https://github.com/pingcap/tidb/issues/16471\r\n\r\nProblem Summary:\r\nThese tests have lots of memory write operations, has very high overhead when race detector is enabled.\r\n\r\n#### norace\r\n```\r\n❯ go test -v -count 1 -vet=off -p 10 -timeout 15m github.com/pingcap/tidb/kv/memdb -check.v -check.f=TestRandom\r\n=== RUN   TestT\r\nPASS: memdb_test.go:319: testMemDBSuite.TestRandom      9.404s\r\nPASS: memdb_test.go:348: testMemDBSuite.TestRandomDerive        16.059s\r\nOK: 2 passed\r\n--- PASS: TestT (25.46s)\r\n```\r\n\r\n#### race\r\n```\r\n❯ go test -v -count 1 -vet=off -race -p 10 -timeout 15m github.com/pingcap/tidb/kv/memdb -check.v -check.f=TestRandom\r\n=== RUN   TestT\r\nPASS: memdb_test.go:319: testMemDBSuite.TestRandom      53.560s\r\nPASS: memdb_test.go:348: testMemDBSuite.TestRandomDerive        111.311s\r\nOK: 2 passed\r\n--- PASS: TestT (164.87s)\r\n```\r\n\r\nWhat's Changed:\r\nExclude these tests when race detector is enabled. And make them run parallel.\r\n\r\n```\r\n❯ go test -v -count 1 -vet=off -p 10 -timeout 15m github.com/pingcap/tidb/kv/memdb -check.v -check.f=TestRandom\r\n=== RUN   TestT\r\nPASS: memdb_norace_test.go:28: testMemDBSuite.TestRandom        9.469s\r\nPASS: memdb_norace_test.go:59: testMemDBSuite.TestRandomDerive  17.161s\r\nOK: 2 passed\r\n--- PASS: TestT (17.16s)\r\n```"
+  },
+  "pr_merged_at": "2020-04-16T19:50:20+08:00",
+  "test": {
+    "type": "unit",
+    "path": "kv/memdb/memdb_norace_test.go",
+    "name": "memdb_norace_test"
+  },
+  "symptoms": [
+    "PR title: exclude random tests when race is enabled."
+  ],
+  "failure_signature": "PR title: exclude random tests when race is enabled.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "memdb: exclude random tests when race is enabled",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/16478",
+    "https://github.com/pingcap/tidb/pull/16478.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/16478.patch",
+  "changed_files": [
+    "kv/memdb/memdb_norace_test.go",
+    "kv/memdb/memdb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR title: exclude random tests when race is enabled.",
+      "evidence: moves long random tests into a new file with build tag '!race' so they won't run under race detector (kv/memdb/memdb_norace_test.go, kv/memdb/memdb_test.go).",
+      "files: kv/memdb/memdb_norace_test.go, kv/memdb/memdb_test.go"
+    ]
+  },
+  "analysis": "PR title: memdb: exclude random tests when race is enabled\nPR url: https://github.com/pingcap/tidb/pull/16478\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: exclude random tests when race is enabled.\nChanged files (2): kv/memdb/memdb_norace_test.go, kv/memdb/memdb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/16478.patch\nPicked test: type=unit path=kv/memdb/memdb_norace_test.go name=memdb_norace_test"
+}

@@ -1,0 +1,52 @@
+{
+  "id": "pr-19006",
+  "source_pr": {
+    "number": 19006,
+    "url": "https://github.com/pingcap/tidb/pull/19006",
+    "title": "transaction: fix union select for update race",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\n`union select for update` statements are executed concurrently, so `LockKeys` is executed concurrently too, but\r\n`LockKeys` is not thread-safe, cause unexpected result.\r\n\r\n### What is changed and how it works?\r\n\r\nLock the whole `LockKeys` method instead of map access.\r\n\r\n### Related changes\r\n\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- fix union select for update race\r\n"
+  },
+  "pr_merged_at": "2020-08-06T09:24:18+08:00",
+  "test": {
+    "type": "unit",
+    "path": "session/pessimistic_test.go",
+    "name": "pessimistic_test"
+  },
+  "symptoms": [
+    "PR title: fix union select for update race."
+  ],
+  "failure_signature": "PR title: fix union select for update race.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "transaction: fix union select for update race",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/19006",
+    "https://github.com/pingcap/tidb/pull/19006.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/19006.patch",
+  "changed_files": [
+    "executor/executor.go",
+    "kv/kv.go",
+    "session/pessimistic_test.go",
+    "session/session.go",
+    "sessionctx/stmtctx/stmtctx.go",
+    "sessionctx/variable/session.go",
+    "store/tikv/txn.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR title: fix union select for update race.",
+      "evidence: diff adjusts union/select-for-update and pessimistic txn handling to remove race condition (session/pessimistic_test.go, store/tikv/txn.go and related sessionctx files).",
+      "files: session/pessimistic_test.go, store/tikv/txn.go, session/session.go"
+    ]
+  },
+  "analysis": "PR title: transaction: fix union select for update race\nPR url: https://github.com/pingcap/tidb/pull/19006\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: fix union select for update race.\nChanged files (7): executor/executor.go, kv/kv.go, session/pessimistic_test.go, session/session.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session.go, store/tikv/txn.go\nPatch url: https://github.com/pingcap/tidb/pull/19006.patch\nPicked test: type=unit path=session/pessimistic_test.go name=pessimistic_test"
+}

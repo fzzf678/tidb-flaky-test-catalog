@@ -1,0 +1,46 @@
+{
+  "id": "pr-19256",
+  "source_pr": {
+    "number": 19256,
+    "url": "https://github.com/pingcap/tidb/pull/19256",
+    "title": "store/tikv: skip a test case to make race test more stable",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\n\r\nProblem Summary:\r\n\r\nMake the race test CI more stable.\r\nI meet this CI fail and there is no error information, no `FAIL:` keyword in the log.\r\n\r\nhttps://internal.pingcap.net/idc-jenkins/blue/organizations/jenkins/tidb_ghpr_unit_test/detail/tidb_ghpr_unit_test/46496/pipeline\r\n\r\n\r\n\r\n### What is changed and how it works?\r\n\r\nI manually run the command\r\n\r\n> go test -v -vet=off -p 10 -timeout 15m -race github.com/pingcap/tidb/store/tikv github.com/pingcap/tidb/store/tikv/gcworker github.com/pingcap/tidb/store/tikv/latch github.com/pingcap/tidb/store/tikv/oracle github.com/pingcap/tidb/store/tikv/oracle/oracles github.com/pingcap/tidb/store/tikv/tikvrpc\r\n\r\nand find `github.com/pingcap/tidb/store/tikv`  is easy to fail on my laptop.\r\nDue to the lack of memory, the test process is killed, and there is no `FAIL:` keywords.\r\n\r\nWhat's Changed:\r\n\r\nSkip `TestFailPrewriteRegionError` which use too much memory with `race` flag.\r\nOther TestFailXXX also require a large amount of memory, but not so much as `TestFailPrewriteRegionError`.\r\n\r\nHow it Works:\r\n\r\nReduce test program memory to avoid OOM and make CI more stable.\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- No code\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- <!-- Please write a release note here to describe the change you made when it is released to the users of TiDB. If your PR doesn't involve any change to TiDB(like test enhancements, RFC proposals...), you can write ``. --> No release note\r\n"
+  },
+  "pr_merged_at": "2020-08-19T12:20:34+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/2pc_fail_test.go",
+    "name": "2pc_fail_test"
+  },
+  "symptoms": [
+    "PR title: skip a test case to make race test more stable."
+  ],
+  "failure_signature": "PR title: skip a test case to make race test more stable.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "store/tikv: skip a test case to make race test more stable",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/19256",
+    "https://github.com/pingcap/tidb/pull/19256.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/19256.patch",
+  "changed_files": [
+    "store/tikv/2pc_fail_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR title: skip a test case to make race test more stable.",
+      "evidence: skips/fliters a flaky case under race detector in 2pc fail tests (store/tikv/2pc_fail_test.go).",
+      "files: store/tikv/2pc_fail_test.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv: skip a test case to make race test more stable\nPR url: https://github.com/pingcap/tidb/pull/19256\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: skip a test case to make race test more stable.\nChanged files (1): store/tikv/2pc_fail_test.go\nPatch url: https://github.com/pingcap/tidb/pull/19256.patch\nPicked test: type=unit path=store/tikv/2pc_fail_test.go name=2pc_fail_test"
+}

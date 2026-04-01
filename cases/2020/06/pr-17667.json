@@ -1,0 +1,49 @@
+{
+  "id": "pr-17667",
+  "source_pr": {
+    "number": 17667,
+    "url": "https://github.com/pingcap/tidb/pull/17667",
+    "title": "test: fix testleak in TestIntegration",
+    "body": "Signed-off-by: wjhuang2016 <huangwenjun1997@gmail.com>\r\n\r\n<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #14817  <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\n\r\nWe didn't close store and domain in TestIntegration.\r\nbesides, the testLeak is not accurate, consider the following function:\r\n// func loop() {\r\n//   for {\r\n//     select {\r\n//       case <-ticker.C:\r\n//         DoSomething()\r\n//     }\r\n//   }\r\n// }\r\nIf this loop step into DoSomething() during BeforeTest(), the stack for this goroutine will contain DoSomething().\r\nThen if this loop jumps out of DoSomething during AfterTest(), the stack for this goroutine will not contain DoSomething().\r\nResulting in false-positive leak reports.\r\n\r\n### What is changed and how it works?\r\n\r\nFix leak.\r\n\r\n### Related changes\r\n\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n\r\n- No code\r\n\r\nSide effects\r\n\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n- No release note\r\n <!-- Please write a release note here to describe the change you made when it is released to the users of TiDB. If your PR doesn't involve any change to TiDB(like test enhancements, RFC proposals...), you can write `No release note`. -->\r\n"
+  },
+  "pr_merged_at": "2020-06-04T17:34:50+08:00",
+  "test": {
+    "type": "unit",
+    "path": "domain/db_test.go",
+    "name": "TestIntegration"
+  },
+  "symptoms": [
+    "PR title: fix testleak in TestIntegration."
+  ],
+  "failure_signature": "PR title: fix testleak in TestIntegration.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test: fix testleak in TestIntegration",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/17667",
+    "https://github.com/pingcap/tidb/pull/17667.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/17667.patch",
+  "changed_files": [
+    "domain/db_test.go",
+    "domain/domain_test.go",
+    "expression/evaluator_test.go",
+    "util/testleak/leaktest.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR title: fix testleak in TestIntegration.",
+      "evidence: diff updates test leak infrastructure and related tests to avoid goroutine/resource leaks (util/testleak/leaktest.go and others).",
+      "files: util/testleak/leaktest.go, domain/db_test.go, domain/domain_test.go, expression/evaluator_test.go"
+    ]
+  },
+  "analysis": "PR title: test: fix testleak in TestIntegration\nPR url: https://github.com/pingcap/tidb/pull/17667\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: fix testleak in TestIntegration.\nChanged files (4): domain/db_test.go, domain/domain_test.go, expression/evaluator_test.go, util/testleak/leaktest.go\nPatch url: https://github.com/pingcap/tidb/pull/17667.patch\nPicked test: type=unit path=domain/db_test.go name=TestIntegration"
+}

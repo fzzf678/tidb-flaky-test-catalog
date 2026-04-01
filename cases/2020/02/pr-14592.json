@@ -1,0 +1,52 @@
+{
+  "id": "pr-14592",
+  "source_pr": {
+    "number": 14592,
+    "url": "https://github.com/pingcap/tidb/pull/14592",
+    "title": "test: fix a bug for leak check",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nfix a bug for leak check that failed to find leaked go routines and fix a bug in ddl test forgot to close mvccStore thast cause routine leak.\r\n\r\n\r\n### What is changed and how it works?\r\nIn the current leak check implement, `checkLeakAfterTest` will init the global variable `beforeTestGoroutines` if it is empty. In the common case, if we call `BeforeTest` explicitly, it's likely to be empty, then after TestT, we call `checkLeakAfterTest`, `beforeTestGoroutines` would be inited again, thus leaked go routines will be added in it, thus failed to be found.\r\n\r\nBTW, as the executor test case `TestVectorizedMergeJoin` is too slow, I reorganized executor test suites so the build time can reduce about 20 seconds.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n - Manual test (add detailed scripts or steps below)\r\n - No code\r\n\r\nCode changes\r\n\r\nSide effects\r\n\r\nRelated changes\r\n"
+  },
+  "pr_merged_at": "2020-02-05T14:15:24+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/serial_test.go",
+    "name": "serial_test"
+  },
+  "symptoms": [
+    "PR body mentions leak check \"failed to find leaked go routines\" and a ddl test \"forgot to close mvccStore\" causing goroutine leak."
+  ],
+  "failure_signature": "PR body mentions leak check \"failed to find leaked go routines\" and a ddl test \"forgot to close mvccStore\" causing goroutine leak.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test: fix a bug for leak check",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/14592",
+    "https://github.com/pingcap/tidb/pull/14592.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/14592.patch",
+  "changed_files": [
+    "ddl/serial_test.go",
+    "executor/join_test.go",
+    "executor/merge_join_test.go",
+    "executor/write_test.go",
+    "store/mockstore/mocktikv/rpc.go",
+    "util/testleak/leaktest.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body mentions leak check \"failed to find leaked go routines\" and a ddl test \"forgot to close mvccStore\" causing goroutine leak.",
+      "evidence: diff adds mvccStore.Close() via defer to avoid goroutine/resource leak in ddl test (ddl/serial_test.go).",
+      "evidence: diff fixes test leak infra to avoid re-init beforeTestGoroutines after BeforeTest(), using testGoroutinesInited flag (util/testleak/leaktest.go).",
+      "files: util/testleak/leaktest.go, ddl/serial_test.go, store/mockstore/mocktikv/rpc.go"
+    ]
+  },
+  "analysis": "PR title: test: fix a bug for leak check\nPR url: https://github.com/pingcap/tidb/pull/14592\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body mentions leak check \"failed to find leaked go routines\" and a ddl test \"forgot to close mvccStore\" causing goroutine leak.\nChanged files (6): ddl/serial_test.go, executor/join_test.go, executor/merge_join_test.go, executor/write_test.go, store/mockstore/mocktikv/rpc.go, util/testleak/leaktest.go\nPatch url: https://github.com/pingcap/tidb/pull/14592.patch\nPicked test: type=unit path=ddl/serial_test.go name=serial_test"
+}

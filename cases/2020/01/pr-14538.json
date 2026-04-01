@@ -1,0 +1,46 @@
+{
+  "id": "pr-14538",
+  "source_pr": {
+    "number": 14538,
+    "url": "https://github.com/pingcap/tidb/pull/14538",
+    "title": "test: add some goroutines to leak check white list",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nadd some go routines to the leak check white list to reduce the leak check failures caused by these routines\r\n\r\n### What is changed and how it works?\r\nSome go routines e.g. grpc/goleveldb have some backgroud go routines that are async terminated. So It is possible for them to live longer that the main routine, thus they will cause leak check failure even if there are acutally no go routine leak.\r\n\r\nI make a statistics about the latest 500 build (21935~22435) for `tidb_ghpr_unit_test` pipeline in our CI. There is totally 151 failed builds that contains go routine leaks. And if we exclude failed tests that contains routine created by tidb/tikv, there are 31 remains. So there are up to **20%** false positive failed leak check.\r\n\r\nroutines that cause the false positive failure are list below:\r\n\r\n| name | count |\r\n| ---- | ---- |\r\n| [google.golang.org/grpc.(*addrConn).resetTransport](https://github.com/grpc/grpc-go/blob/v1.25.1/clientconn.go#L800) |  29 |\r\n| [google.golang.org/grpc.(*ccBalancerWrapper).watcher](https://github.com/grpc/grpc-go/blob/v1.25.1/balancer_conn_wrappers.go#L59) | 14 |\r\n| [github.com/pingcap/goleveldb/leveldb.(*DB).compactionError](https://github.com/pingcap/goleveldb/blob/master/leveldb/db.go#L139) | 14 |\r\n| [github.com/pingcap/goleveldb/leveldb.(*DB).mpoolDrain](https://github.com/pingcap/goleveldb/blob/master/leveldb/db.go#L140) | 14 |\r\n| [google.golang.org/grpc.(*ccBalancerWrapper).watcher](https://github.com/pingcap/goleveldb/blob/master/leveldb/util/buffer_pool.go#L237) | 14 |\r\n| [github.com/pingcap/goleveldb/leveldb.(*DB).mCompaction](https://github.com/pingcap/goleveldb/blob/master/leveldb/db.go#L147) | 14 |\r\n| [github.com/pingcap/goleveldb/leveldb.(*DB).tCompaction](https://github.com/pingcap/goleveldb/blob/master/leveldb/db.go#L146) | 14 |\r\n\r\nNOTE: the `mCompaction` and `tCompaction` should be closed before leveldb is closed according to the implement , so there maybe be logic error in our test code that should be further invested.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n - Manual test (add detailed scripts or steps below)\r\n - No code\r\n\r\n"
+  },
+  "pr_merged_at": "2020-01-21T19:49:40+08:00",
+  "test": {
+    "type": "unit",
+    "path": "util/testleak/leaktest.go",
+    "name": "leaktest"
+  },
+  "symptoms": [
+    "PR body: reduce leak check failures by whitelisting async-terminated goroutines"
+  ],
+  "failure_signature": "PR body: reduce leak check failures by whitelisting async-terminated goroutines",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test: add some goroutines to leak check white list",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/14538",
+    "https://github.com/pingcap/tidb/pull/14538.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/14538.patch",
+  "changed_files": [
+    "util/testleak/leaktest.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body: reduce leak check failures by whitelisting async-terminated goroutines",
+      "evidence: leaktest ignores grpc/goleveldb background goroutine stacks (util/testleak/leaktest.go)",
+      "files: util/testleak/leaktest.go"
+    ]
+  },
+  "analysis": "PR title: test: add some goroutines to leak check white list\nPR url: https://github.com/pingcap/tidb/pull/14538\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body: reduce leak check failures by whitelisting async-terminated goroutines\nChanged files (1): util/testleak/leaktest.go\nPatch url: https://github.com/pingcap/tidb/pull/14538.patch\nPicked test: type=unit path=util/testleak/leaktest.go name=leaktest"
+}

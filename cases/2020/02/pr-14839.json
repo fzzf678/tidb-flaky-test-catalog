@@ -1,0 +1,48 @@
+{
+  "id": "pr-14839",
+  "source_pr": {
+    "number": 14839,
+    "url": "https://github.com/pingcap/tidb/pull/14839",
+    "title": "executor: fix the potential goroutine leak in cluster log retriever",
+    "body": "Signed-off-by: Lonng <heng@lonng.org>\r\n\r\n<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nThis PR will fix #14747.\r\n\r\nThere will be goroutine  leak in the following situation in `clusterLogRetriever`:\r\n\r\n1. Open a log search stream on a remote target and receive `SearchLogResponse` continuously.\r\n2. Executor receives a `SearchLogResponse` from the channel in one retrieval iteration.\r\n3. The retrieval iteration consumes part of lines in the `SearchLogResponse` (receive from channel again just if all lines in the `SearchLogResponse` be consumed).\r\n4. The `MemTableReaderExec`(`clusterLogRetriever`) be closed by parent.\r\n5. The stream receiver goroutine will be leaked.\r\n\r\n### What is changed and how it works?\r\n\r\nAdd a new `exit` channel and check whether is `exit` channel has been closed.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nRelease note\r\n\r\n - Fix the issue that potential goroutine leak in cluster log retriever"
+  },
+  "pr_merged_at": "2020-02-19T16:23:04+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/memtable_reader_test.go",
+    "name": "memtable_reader_test"
+  },
+  "symptoms": [
+    "PR body describes a potential goroutine leak in clusterLogRetriever when MemTableReaderExec is closed before SearchLogResponse is fully consumed."
+  ],
+  "failure_signature": "PR body describes a potential goroutine leak in clusterLogRetriever when MemTableReaderExec is closed before SearchLogResponse is fully consumed.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "executor: fix the potential goroutine leak in cluster log retriever",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/14839",
+    "https://github.com/pingcap/tidb/pull/14839.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/14839.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "executor/memtable_reader.go",
+    "executor/memtable_reader_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body describes a potential goroutine leak in clusterLogRetriever when MemTableReaderExec is closed before SearchLogResponse is fully consumed.",
+      "evidence: diff makes goroutine exit safe by selecting on ctx.Done() when sending logStreamResult into channel (executor/memtable_reader.go).",
+      "files: executor/memtable_reader.go, executor/memtable_reader_test.go, executor/executor_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix the potential goroutine leak in cluster log retriever\nPR url: https://github.com/pingcap/tidb/pull/14839\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body describes a potential goroutine leak in clusterLogRetriever when MemTableReaderExec is closed before SearchLogResponse is fully consumed.\nChanged files (3): executor/executor_test.go, executor/memtable_reader.go, executor/memtable_reader_test.go\nPatch url: https://github.com/pingcap/tidb/pull/14839.patch\nPicked test: type=unit path=executor/memtable_reader_test.go name=memtable_reader_test"
+}
