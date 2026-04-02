@@ -110,6 +110,8 @@ PREFIX_ALIAS_TO_MODULE: Dict[str, str] = {
     "transaction": "txn",
     "infoschema": "domain",
     "info schema": "domain",
+    "disttask": "domain",
+    "dxf": "domain",
     "bazel": "test_infra",
     "makefile": "test_infra",
     "ci": "test_infra",
