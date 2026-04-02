@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: random port to fix flaky test TestLoadRemote",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "external_dependency"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test was flaky because it relied on a fixed localhost port for a fake GCS server; the port could be occupied by other tests/processes, causing intermittent failures. This PR uses a random port (port 0) and derives the endpoint from the server URL to avoid port conflicts.",
   "module": "executor",
-  "fix_pattern": "executor: random port to fix flaky test TestLoadRemote",
+  "fix_pattern": "Use a random port for the fake GCS server (port 0) and build the endpoint from `server.URL()` instead of hardcoding a fixed port.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/61362",
     "https://github.com/pingcap/tidb/pull/61362.patch"

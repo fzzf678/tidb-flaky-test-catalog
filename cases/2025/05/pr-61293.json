@@ -13,19 +13,18 @@
     "name": "TestAddGlobalIndexInIngestWithUpdate"
   },
   "symptoms": [
-    "test: fix unstable test `TestAddGlobalIndexInIngestWithUpdate`"
+    "TestAddGlobalIndexInIngestWithUpdate used a failpoint callback that sometimes ran when the DDL job was already in JobStateSynced, making the test timing-dependent and unstable."
   ],
-  "failure_signature": "test: fix unstable test `TestAddGlobalIndexInIngestWithUpdate`",
+  "failure_signature": "afterWaitSchemaSynced failpoint callback executed after JobStateSynced, causing unexpected extra insert/update and unstable test results.",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "global_variable_mutation",
-    "shared_table_without_isolation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: test: fix unstable test `TestAddGlobalIndexInIngestWithUpdate`.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable test `TestAddGlobalIndexInIngestWithUpdate`",
+  "root_cause_explanation": "The test was flaky because a failpoint callback performed DML at an unexpected job state, so the outcome depended on timing (whether the callback fired before or after the job became JobStateSynced). This PR guards the callback to only run when the job is not yet synced, removing the timing-dependent behavior.",
+  "module": "ddl",
+  "fix_pattern": "Guard the afterWaitSchemaSynced failpoint callback to skip insert/update when job.State is JobStateSynced.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/61293",
     "https://github.com/pingcap/tidb/pull/61293.patch"
