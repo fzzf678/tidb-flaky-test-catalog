@@ -10,6 +10,13 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 
 ROOT_CAUSE_SENTENCE: Dict[str, str] = {
+    "unclassified": (
+        "The test was flaky, but the underlying root cause has not been classified yet from the available case data."
+    ),
+    "test_infra_migration": (
+        "The test was flaky due to instability introduced during test-infrastructure migration or refactoring "
+        "(framework changes, fixtures/setup/teardown, or helper updates)."
+    ),
     "nondeterministic_result_order": (
         "The test was flaky because it relied on nondeterministic result ordering "
         "(e.g., missing ORDER BY / unsorted assertions)."
@@ -38,6 +45,9 @@ SMELL_HINT: Dict[str, str] = {
     "missing_order_by": "Result ordering is not guaranteed unless explicitly enforced.",
     "unsorted_result_assertion": "Result ordering is not guaranteed unless explicitly enforced.",
     "relying_on_map_iteration_order": "Map/dict iteration order is not stable across runs.",
+    "incomplete_testify_migration": (
+        "Test-framework migrations can introduce subtle setup/teardown or helper mismatches that surface as flakiness."
+    ),
     "time_sleep_for_sync": "Fixed sleeps are brittle under CI timing jitter.",
     "async_wait_without_backoff": "Fixed waits without polling/backoff are brittle under CI timing jitter.",
     "race_condition_in_async_code": "Asynchronous state transitions need polling/Eventually-style checks.",
