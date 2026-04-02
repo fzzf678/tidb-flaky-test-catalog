@@ -13,18 +13,18 @@
     "name": "TestNextGenMetering"
   },
   "symptoms": [
-    "dxf: fix flaky test TestNextGenMetering"
+    "TestNextGenMetering was flaky because the disttask task executor could exit early when there were no subtasks, leading to multiple metering unregister/flush events."
   ],
-  "failure_signature": "dxf: fix flaky test TestNextGenMetering",
+  "failure_signature": "metering final flush/unregister is triggered more than once (test expects a single gotMeterData)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The disttask task executor has a time-based exit path when it sees no subtasks for a while. In this test, that timing can cause the metering recorder lifecycle to run more than once (multiple unregister/final flush callbacks), making assertions flaky. The fix adds a failpoint to keep the executor from exiting during the test, ensuring the metering callback happens exactly once.",
   "module": "domain",
-  "fix_pattern": "dxf: fix flaky test TestNextGenMetering",
+  "fix_pattern": "Stabilize async task-executor lifecycle in tests: enable a failpoint to prevent early exit when no subtasks, so metering flush/unregister occurs deterministically once.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66553",
     "https://github.com/pingcap/tidb/pull/66553.patch"

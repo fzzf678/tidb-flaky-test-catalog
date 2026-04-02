@@ -13,18 +13,19 @@
     "name": "TestResourceGroupRunaway"
   },
   "symptoms": [
-    "pkg/resourcegroup: fix unstable TestResourceGroupRunaway"
+    "TestResourceGroupRunaway could fail on slow/loaded CI because the test enforced a very small query elapsed limit (50ms) during setup/sanity queries."
   ],
-  "failure_signature": "pkg/resourcegroup: fix unstable TestResourceGroupRunaway",
+  "failure_signature": "TestResourceGroupRunaway: initial queries exceed EXEC_ELAPSED='50ms' and trigger runaway unexpectedly",
   "root_cause_categories": [
+    "async_timing_issue",
     "external_dependency"
   ],
   "review_smells": [
-    "hardcoded_port_or_resource"
+    "insufficient_timeout"
   ],
   "root_cause_explanation": "`TestResourceGroupRunaway` embedded a very small execution-time threshold (`EXEC_ELAPSED='50ms'`) directly in the resource-group creation, which can be exceeded on slow or contended CI machines and cause intermittent failures. The PR creates the groups without query limits first and then alters them to add the limits, removing the timing dependency during setup.",
   "module": "module_unknown",
-  "fix_pattern": "pkg/resourcegroup: fix unstable TestResourceGroupRunaway",
+  "fix_pattern": "Avoid tight timing thresholds during setup: create resource groups without query limits for initial sanity queries, then ALTER to apply strict limits before runaway assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65780",
     "https://github.com/pingcap/tidb/pull/65780.patch"
