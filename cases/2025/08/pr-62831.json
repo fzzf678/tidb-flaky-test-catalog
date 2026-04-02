@@ -9,22 +9,23 @@
   "pr_merged_at": "2025-08-06T17:18:15+08:00",
   "test": {
     "type": "unit",
-    "path": "pkg/ddl/column_change_test.go",
-    "name": "column_change_test"
+    "path": "pkg/ddl/tiflash_replica_test.go",
+    "name": "tiflash_replica_test"
   },
   "symptoms": [
-    "fix flaky test"
+    "TestTruncateTable2: waiting for background cleanup (old table data deletion) used a fixed sleep loop and could time out on CI (pkg/ddl/tiflash_replica_test.go)"
   ],
-  "failure_signature": "fix flaky test",
+  "failure_signature": "require.Eventually(t, func() bool { ... return !hasOldTableData }, 30*time.Second, 100*time.Millisecond) (pkg/ddl/tiflash_replica_test.go)",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: add a `assumed server` mechanism, which will be used in syncing cross keyspace info schema later.",
+  "root_cause_explanation": "The test was flaky because it waited for an asynchronous background cleanup (old table data deletion) using a fixed sleep loop and timeout window. On slower CI runs, cleanup could exceed the hardcoded rounds and cause intermittent failures. This PR stabilizes it by switching to require.Eventually with a 30s timeout and 100ms polling interval.",
   "module": "ddl",
-  "fix_pattern": "add a `assumed server` mechanism, which will be used in syncing cross keyspace info schema later. the `assumed server` is identified by `AssumedKeyspace` field in `ServerInfo` online schema change will consider `assumed server` if the DDL is related to system tables, otherwise we will filter them out. some refactor and add some comments to schema checker/validator support `crossKS` in server info syncer support `crossKS` in I_S syncer to only cares about system tables, and skip MDL check for user tables. skip loading unrelated diff for `crossKS`, and loading `mysql` db through the reserved ID. skip loading virtual tables for cross keyspace I_S",
+  "fix_pattern": "Replace the fixed sleep-loop with require.Eventually(30s timeout, 100ms interval) when waiting for background worker cleanup in TestTruncateTable2.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62831",
     "https://github.com/pingcap/tidb/pull/62831.patch"

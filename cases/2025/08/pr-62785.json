@@ -17,14 +17,14 @@
   ],
   "failure_signature": "testKit.MustQuery(`explain format='brief' SELECT table1 . pk AS field1 , table2 . col_int_not_null AS field2 , table1 . pk AS field3 , table1 . col_int_not_null AS field4 FROM A AS table1 LEFT JOIN G AS table2 INNER JOIN J AS table3 INNER JOIN J AS table4 RIGHT JOIN L AS table5 ON table4 . col_datetime = table5 . col_datetime_not_null ON table3 . col_int_...",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: testKit.MustQuery(`explain format='brief' SELECT table1 .",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
   "module": "planner",
-  "fix_pattern": "testKit.MustQuery(`explain format='brief' SELECT table1 . pk AS field1 , table2 . col_int_not_null AS field2 , table1 . pk AS field3 , table1 . col_int_not_null AS field4 FROM A AS table1 LEFT JOIN G AS table2 INNER JOIN J AS table3 INNER JOIN J AS table4 RIGHT JOIN L AS table5 ON table4 . col_datetime = table5 . col_datetime_not_null ON table3 . col_int_...",
+  "fix_pattern": "Run planner rule casetests under cascades mode (testkit.RunTestUnderCascades) and update/add xut testdata JSON for cascades coverage.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62785",
     "https://github.com/pingcap/tidb/pull/62785.patch"
