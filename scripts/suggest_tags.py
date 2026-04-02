@@ -403,6 +403,20 @@ def _suggest_tags_with_thresholds(
     
     # Sort by confidence
     cause_scores.sort(key=lambda x: x[1], reverse=True)
+
+    # If no causes matched, use a semantic fallback (instead of guessing).
+    if not cause_scores:
+        cause_scores = [(FALLBACK_CAUSE, 1.0, "no strong pattern match")]
+
+    # For fallback cases, keep smells consistent with the fallback as well.
+    # Otherwise generic keywords (e.g. "table") may produce misleading smell stats.
+    if cause_scores[0][0] == FALLBACK_CAUSE:
+        return Suggestion(
+            case_id=case_id,
+            case_path=Path("unknown"),
+            suggested_causes=cause_scores[: max(1, top_n_causes)],
+            suggested_smells=[(FALLBACK_SMELL, 1.0, "insufficient evidence")],
+        )
     
     # Get top causes for smell scoring
     top_causes = [c[0] for c in cause_scores[:3]]
@@ -419,10 +433,6 @@ def _suggest_tags_with_thresholds(
     
     # Sort by confidence
     smell_scores.sort(key=lambda x: x[1], reverse=True)
-    
-    # If no causes matched, use a semantic fallback (instead of guessing).
-    if not cause_scores:
-        cause_scores = [(FALLBACK_CAUSE, 1.0, "no strong pattern match")]
     
     # If no smells matched but we have causes, infer smells
     if not smell_scores and cause_scores[0][0] not in ("unclassified", FALLBACK_CAUSE):
@@ -552,7 +562,10 @@ def _main() -> int:
     parser.add_argument(
         "--apply-all",
         action="store_true",
-        help="Force-tag every case (no unclassified). Uses very low thresholds and may be noisy.",
+        help=(
+            "Force-tag every case (no unclassified) using conservative thresholds and "
+            "semantic fallbacks (e.g. insufficient_evidence / needs_more_evidence)."
+        ),
     )
     parser.add_argument(
         "--min-confidence",

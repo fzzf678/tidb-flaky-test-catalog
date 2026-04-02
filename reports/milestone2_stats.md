@@ -8,7 +8,7 @@ Generated from 2940 flaky test cases.
 - **Cases with unclassified root_cause**: 0 (0.0%)
 - **Cases with unclassified review_smells**: 0 (0.0%)
 - **Cases with insufficient_evidence root_cause**: 212 (7.2%)
-- **Cases with needs_more_evidence smell**: 105 (3.6%)
+- **Cases with needs_more_evidence smell**: 212 (7.2%)
 - **Cases with patches**: 2940
 
 ## Test Type Distribution
