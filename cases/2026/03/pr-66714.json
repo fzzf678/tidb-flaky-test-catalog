@@ -13,20 +13,19 @@
     "name": "TestParallelApplyPlan"
   },
   "symptoms": [
-    "tk.MustQuery(q3).Sort().Check(testkit.Rows(\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", \"9\")) (pkg/executor/parallel_apply_test.go)"
+    "Parallel Apply could emit results in a nondeterministic order under concurrent execution, forcing tests/queries that expect outer-row order to see unstable output and warnings about rejected order properties."
   ],
-  "failure_signature": "tk.MustQuery(q3).Sort().Check(testkit.Rows(\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", \"9\")) (pkg/executor/parallel_apply_test.go)",
+  "failure_signature": "Parallel Apply output order/warning behavior is nondeterministic under concurrency (order properties rejected / results not in outer-row order).",
   "root_cause_categories": [
     "nondeterministic_result_order",
-    "concurrency_data_race"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "assert_exact_plan_or_cost"
   ],
   "root_cause_explanation": "Parallel Apply runs inner work concurrently and, prior to this change, could emit results in a nondeterministic order even when the test expected a stable ordering. The PR introduces an order-preserving path (reorder buffer) and updates the test/assertions so result ordering is deterministic under parallel execution.",
   "module": "planner",
-  "fix_pattern": "tk.MustQuery(q3).Sort().Check(testkit.Rows(\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\", \"9\")) (pkg/executor/parallel_apply_test.go)",
+  "fix_pattern": "Introduce an order-preserving parallel apply path (reorder buffer) so ordered queries remain deterministic under parallel execution, and update tests to assert stable ordering without relying on `Sort()` or warning-based behavior.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66714",
     "https://github.com/pingcap/tidb/pull/66714.patch"
