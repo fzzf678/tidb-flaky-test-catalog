@@ -17,14 +17,14 @@
   ],
   "failure_signature": "sort.Strings(jobs) (pkg/executor/traffic_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Add privilege check in the planner Filter the results for show traffic jobs Add HTTP parameters for cancel traffic.",
-  "module": "planner",
-  "fix_pattern": "Add privilege check in the planner Filter the results for show traffic jobs Add HTTP parameters for cancel traffic",
+  "root_cause_explanation": "The test was flaky because it asserted on a list of traffic job types whose output order is not guaranteed (e.g., results returned from an external handler or built from unordered structures). The fix makes the assertion deterministic by sorting the collected job types (e.g., `sort.Strings(jobs)`) before comparing with the expected list.",
+  "module": "executor",
+  "fix_pattern": "Stabilize traffic job list assertions by sorting the collected job types (e.g., `sort.Strings(jobs)`) before comparison.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/59054",
     "https://github.com/pingcap/tidb/pull/59054.patch"

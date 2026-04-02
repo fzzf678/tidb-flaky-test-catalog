@@ -17,15 +17,14 @@
   ],
   "failure_signature": "rows := tk.MustQuery(\"select version from mysql.stats_meta_history where table_id = ? order by version desc limit 1\", tbl1.Meta().ID).Rows() (pkg/executor/historical_stats_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: In this PR, I changed RecordHistoricalStatsMeta to support multiple tables instead of only updating one table's history.",
+  "root_cause_explanation": "The test was flaky due to transactional concurrency: recording historical stats meta for multiple table IDs could deadlock when different goroutines/sessions locked rows in inconsistent order. The fix enforces a deterministic lock order by sorting the table IDs and locking rows one by one (e.g., via SELECT ... FOR UPDATE style locking), significantly reducing nondeterministic deadlock failures.",
   "module": "statistics",
-  "fix_pattern": "In this PR, I changed RecordHistoricalStatsMeta to support multiple tables instead of only updating one table's history. It would help us dump the historical stats meta to the system table.",
+  "fix_pattern": "Avoid deadlocks by sorting table IDs before recording historical stats meta and locking rows in a consistent order when updating stats history tables.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/59037",
     "https://github.com/pingcap/tidb/pull/59037.patch"

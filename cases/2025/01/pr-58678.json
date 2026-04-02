@@ -17,15 +17,14 @@
   ],
   "failure_signature": "select * from t use index (idx1) order by a desc, b; (tests/integrationtest/r/globalindex/insert.result)",
   "root_cause_categories": [
-    "shared_state_pollution",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: select * from t use index (idx1) order by a desc, b; (tests/integrationtest/r/globalindex/insert.result).",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
   "module": "ddl",
-  "fix_pattern": "select * from t use index (idx1) order by a desc, b; (tests/integrationtest/r/globalindex/insert.result)",
+  "fix_pattern": "Add/adjust global-index integration tests and make result checks deterministic when needed (e.g., by adding tie-breaker columns in ORDER BY such as `ORDER BY a DESC, b`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58678",
     "https://github.com/pingcap/tidb/pull/58678.patch"

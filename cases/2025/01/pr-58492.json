@@ -17,14 +17,14 @@
   ],
   "failure_signature": "+ // don't run too many manager, or the test will be unstable",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "1. Add a `-long` flag to the tests. 2. Modify the `ut` to support running these long tests. 3. Modify the log of TTL to have richer information.",
+  "root_cause_explanation": "The TTL job manager integration test was unstable because it spawned too many concurrent managers and relied on short Eventually deadlines, making it sensitive to CI scheduling/latency and leaving background managers not fully stopped. The fix makes the test opt-in via a `-long` flag, reduces the manager concurrency to a safer bound, increases Eventually timeouts, and adds explicit Stop/WaitStopped cleanup so the test no longer depends on a narrow timing window.",
+  "module": "domain",
+  "fix_pattern": "Mark the long-running TTL job manager test as `-long`, reduce manager concurrency, increase Eventually timeouts, and ensure all managers Stop()/WaitStopped() to avoid timing-sensitive flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58492",
     "https://github.com/pingcap/tidb/pull/58492.patch"
