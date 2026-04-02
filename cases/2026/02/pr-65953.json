@@ -13,18 +13,18 @@
     "name": "index_lookup_pushdown"
   },
   "symptoms": [
-    "to a future time ```  This makes related integration tests flaky.  ### What changed and how does it work?  - Increase the time offset used in st"
+    "Stale read / historical read integration tests intermittently fail with `Error 1105 (HY000): cannot set read timestamp to a future time` due to small clock skew / rounding between TiDB local time (`now(6)`) and PD/TSO."
   ],
-  "failure_signature": "to a future time ```  This makes related integration tests flaky.  ### What changed and how does it work?  - Increase the time offset used in st",
+  "failure_signature": "Error 1105 (HY000): cannot set read timestamp to a future time",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "external_dependency"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "Some stale read / historical read integration tests derive `readTS` from TiDB local time (`now(6)`). On CI, small clock skews and TSO millisecond granularity can make the derived `readTS` slightly larger than `currentTS`, triggering \"cannot set read timestamp to a future time\". The PR increases the time offset used in these statements (e.g., 0.05s → 0.1s) to provide enough margin while keeping the snapshot recent enough for fast test runs.",
   "module": "txn",
-  "fix_pattern": "to a future time ```  This makes related integration tests flaky.  ### What changed and how does it work?  - Increase the time offset used in st",
+  "fix_pattern": "Increase the time offset used when computing stale-read timestamps (e.g., from 0.05s to 0.1s) to tolerate CI clock skew/TSO rounding and avoid \"future time\" errors.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65953",
     "https://github.com/pingcap/tidb/pull/65953.patch"
