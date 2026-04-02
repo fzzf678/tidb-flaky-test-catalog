@@ -9,22 +9,22 @@
   "pr_merged_at": "2025-03-18T10:36:52+08:00",
   "test": {
     "type": "realtikv",
-    "path": "pkg/ddl/ddl_test.go",
-    "name": "ddl_test"
+    "path": "tests/realtikvtest/txntest/stale_read_test.go",
+    "name": "TestStaleReadAllCombinations"
   },
   "symptoms": [
-    "fix flaky test"
+    "tk.MustExec(\"set @@tidb_read_staleness='-2'\") (tests/realtikvtest/txntest/stale_read_test.go)"
   ],
-  "failure_signature": "fix flaky test",
+  "failure_signature": "tk.MustExec(\"set @@tidb_read_staleness='-2'\") (tests/realtikvtest/txntest/stale_read_test.go)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: Refactor the `ServerInfo` into static and dynamic sections and fix the data race by atomic operations.",
-  "module": "domain",
-  "fix_pattern": "Refactor the `ServerInfo` into static and dynamic sections and fix the data race by atomic operations.",
+  "root_cause_explanation": "The stale-read test was flaky due to a hardcoded staleness window (`-2s`) combined with timing variability in CI. Depending on how long it actually took between inserts, `now - staleness` could fall on the wrong side of the row1/row2 boundary, making the expected result nondeterministic. The fix computes the staleness value based on the actual elapsed time since row2 was inserted, ensuring the stale read timestamp falls between row1 and row2.",
+  "module": "txn",
+  "fix_pattern": "Compute staleness based on the elapsed time since row2 insert (instead of hardcoding -2 seconds) so the stale read timestamp reliably falls between row1 and row2.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58473",
     "https://github.com/pingcap/tidb/pull/58473.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "rows := getRows(t, tk, cnt, maxSecs, \"select instance_id, ts from \"+mysql.WorkloadSchema+\".hist_memory_usage where ts > '\"+lastRowTs.Format(\"2006-01-02 15:04:05\")+\"' order by ts asc\") (pkg/util/workloadrepo/worker_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: rows := getRows(t, tk, cnt, maxSecs, \"select instance_id, ts from \"+mysql.WorkloadSchema+\".hist_memory_usage where ts > '\"+lastRowTs.Format(\"2006-01-02 15:04:05\")+\"' order by ts asc\") (pkg/util/workloadrepo/worker_test.g….",
+  "root_cause_explanation": "This PR adds WORKLOAD_SCHEMA to BR's system schema handling/ignore list during restore. The case does not include a concrete flaky failure signature or a stabilization change tied to flakiness, so it is marked as insufficient_evidence for now.",
   "module": "br",
-  "fix_pattern": "rows := getRows(t, tk, cnt, maxSecs, \"select instance_id, ts from \"+mysql.WorkloadSchema+\".hist_memory_usage where ts > '\"+lastRowTs.Format(\"2006-01-02 15:04:05\")+\"' order by ts asc\") (pkg/util/workloadrepo/worker_test.go)",
+  "fix_pattern": "Add `workload_schema` to BR system schema handling so it is ignored/not recovered during restore.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58878",
     "https://github.com/pingcap/tidb/pull/58878.patch"

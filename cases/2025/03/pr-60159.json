@@ -17,15 +17,14 @@
   ],
   "failure_signature": "explain select * from (SELECT DISTINCT cc2 as a, cc2 as b, cc1 as c FROM t2 UNION ALL SELECT count(1) over (partition by cc1), cc2, cc1 FROM t1) x order by a,b,c; (tests/integrationtest/r/planner/core/issuetest/planner_issue.result)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: explain select * from (SELECT DISTINCT cc2 as a, cc2 as b, cc1 as c FROM t2 UNION ALL SELECT count(1) over (partition by cc1), cc2, cc1 FROM t1) x order by a,b,c; (tests/integrationtest/r/planner/core/issuetest/planner_i….",
+  "root_cause_explanation": "This PR enforces MySQL-compatible behavior that every derived table (including UNION/INTERSECT/EXCEPT set operations) must have an alias, and updates related tests/golden outputs. The case does not include evidence of intermittent/flaky behavior, so it is marked as insufficient_evidence for flakiness root-cause purposes.",
   "module": "planner",
-  "fix_pattern": "explain select * from (SELECT DISTINCT cc2 as a, cc2 as b, cc1 as c FROM t2 UNION ALL SELECT count(1) over (partition by cc1), cc2, cc1 FROM t1) x order by a,b,c; (tests/integrationtest/r/planner/core/issuetest/planner_issue.result)",
+  "fix_pattern": "Report an error for derived tables without aliases (including set operations) and update tests/golden outputs to add explicit aliases.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60159",
     "https://github.com/pingcap/tidb/pull/60159.patch"

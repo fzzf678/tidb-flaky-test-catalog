@@ -17,14 +17,14 @@
   ],
   "failure_signature": "try to stabilize test",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "Add a test to cover the combinations of {stale read methods} x {replica read settings} x {label settings}",
+  "root_cause_explanation": "The stale-read combination test is timing-sensitive: it relies on physical time gaps between row inserts and uses NOW()/AS OF TIMESTAMP/staleness settings to read only the first row. In CI, the hardcoded sleep/staleness windows can land on the wrong side of the row1/row2 boundary, making expected results flaky. This PR attempts to stabilize the test by increasing sleep buffers and adjusting timestamp/staleness settings to reduce boundary sensitivity.",
+  "module": "txn",
+  "fix_pattern": "Increase sleep buffers and adjust AS OF timestamp / tidb_read_staleness settings to make stale-read boundaries less sensitive to timing variability.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/59715",
     "https://github.com/pingcap/tidb/pull/59715.patch"
