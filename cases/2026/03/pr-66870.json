@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "pkg/expression/builtin_time_test.go",
-    "name": "TestUnregisterAfterPause"
+    "name": "TestStrDatetimeAddDurationFreezesWarningArg"
   },
   "symptoms": [
-    "`SUBTIME`/`ADDTIME` warning texts can become nondeterministic when the datetime input string comes from chunk-backed zero-copy memory. The warning message is formatted later, after chunk buffers may be reused, so the error argument can be corrupted and flaky tests appear as random warning values. | Subject: [PATCH 4/8] pkg/util/gctuner: stabilize TestIssue48741 polling | Subject: [PATCH 6/8] br/streamhelper: stabilize TestUnregisterAfterPause | runtime.GC()"
+    "`SUBTIME`/`ADDTIME` warning texts can become nondeterministic when the datetime input string comes from chunk-backed zero-copy memory. The warning message is formatted later, after chunk buffers may be reused, so the warning argument can be corrupted and tests may observe random warning values."
   ],
-  "failure_signature": "`SUBTIME`/`ADDTIME` warning texts can become nondeterministic when the datetime input string comes from chunk-backed zero-copy memory. The warning message is formatted later, after chunk buffers may be reused, so the error argument can be corrupted and flaky tests appear as random warning values. | Subject: [PATCH 4/8] pkg/util/gctuner: stabilize TestIssue48741 polling | Subject: [PATCH 6/8] br/streamhelper: stabilize TestUnregisterAfterPause | runtime.GC()",
+  "failure_signature": "Nondeterministic `SUBTIME`/`ADDTIME` warning text caused by chunk-backed string alias reuse (warning arg mutates after buffer rewrite).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsafe_zero_copy_alias"
   ],
   "root_cause_explanation": "Warnings for `SUBTIME`/`ADDTIME` were flaky because the datetime input string could come from chunk-backed zero-copy memory: warning arguments were formatted later, after the backing buffer was reused, so the warning text could be corrupted nondeterministically. The PR wraps/freezes unsafe string arguments so warning messages snapshot stable values.",
   "module": "expression",
-  "fix_pattern": "`SUBTIME`/`ADDTIME` warning texts can become nondeterministic when the datetime input string comes from chunk-backed zero-copy memory. The warning message is formatted later, after chunk buffers may be reused, so the error argument can be corrupted and flaky tests appear as random warning values. | Subject: [PATCH 4/8] pkg/util/gctuner: stabilize TestIssue48741 polling | Subject: [PATCH 6/8] br/streamhelper: stabilize TestUnregisterAfterPause | runtime.GC()",
+  "fix_pattern": "Freeze/copy potentially aliased datetime string arguments when producing warnings (e.g., route parsing through `ParseTimeWithString` with `types.HackedStr`) and add a regression test to ensure warning args do not mutate after backing-buffer reuse; bump `pingcap/errors` to support string-arg freezing.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66870",
     "https://github.com/pingcap/tidb/pull/66870.patch"
@@ -32,17 +32,13 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/66870.patch",
   "changed_files": [
     "DEPS.bzl",
-    "br/pkg/streamhelper/advancer_test.go",
     "go.mod",
     "go.sum",
-    "pkg/ddl/index.go",
     "pkg/expression/builtin_time.go",
     "pkg/expression/builtin_time_test.go",
-    "pkg/lightning/backend/local/region_job_test.go",
     "pkg/types/BUILD.bazel",
     "pkg/types/string.go",
-    "pkg/types/time.go",
-    "pkg/util/gctuner/memory_limit_tuner_test.go"
+    "pkg/types/time.go"
   ],
   "triage": {
     "sources": [
@@ -51,9 +47,9 @@
       "determinism_stabilization"
     ],
     "evidence": [
-      "evidence: `SUBTIME`/`ADDTIME` warning texts can become nondeterministic when the datetime input string comes from chunk-backed zero-copy memory. The warning message is formatted later, after chunk buffers may be reused, so the error argument can be corrupted and flaky tests appear as random warning values. | Subject: [PATCH 4/8] pkg/util/gctuner: stabilize TestIssue48741 polling | Subject: [PATCH 6/8] br/streamhelper: stabilize TestUnregisterAfterPause | runtime.GC()",
-      "files: pkg/expression/builtin_time_test.go, pkg/util/gctuner/memory_limit_tuner_test.go, br/pkg/streamhelper/advancer_test.go, pkg/lightning/backend/local/region_job_test.go"
+      "evidence: nondeterministic `SUBTIME`/`ADDTIME` warning text caused by chunk-backed string alias reuse (warning args formatted after backing buffer mutation).",
+      "files: pkg/expression/builtin_time.go, pkg/expression/builtin_time_test.go, pkg/types/string.go"
     ]
   },
-  "analysis": "PR title: expression, types: freeze unsafe datetime warning args\nPR url: https://github.com/pingcap/tidb/pull/66870\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: `SUBTIME`/`ADDTIME` warning texts can become nondeterministic when the datetime input string comes from chunk-backed zero-copy memory. The warning message is formatted later, after chunk buffers may be reused, so the error argument can be corrupted and flaky tests appear as random warning values. | Subject: [PATCH 4/8] pkg/util/gctuner: stabilize TestIssue48741 polling | Subject: [PATCH 6/8] br/streamhelper: stabilize TestUnregisterAfterPause | runtime.GC()\nChanged files (12): DEPS.bzl, br/pkg/streamhelper/advancer_test.go, go.mod, go.sum, pkg/ddl/index.go, pkg/expression/builtin_time.go, pkg/expression/builtin_time_test.go, pkg/lightning/backend/local/region_job_test.go, pkg/types/BUILD.bazel, pkg/types/string.go ...\nDiff highlights (excerpt):\n- go.uber.org/atomic v1.6.0/go.mod h1:sABNBOSYdrvTF6hTgEIbc7YasKWGhgEQZyfxyTvoXHQ=\n- require.Eventually(t, func() bool {\n- require.EventuallyWithT(t, func(c *assert.CollectT) {\n- // jobs[0], and the following assertions become flaky.\nFull patch analyzed; see patch_url."
+  "analysis": "PR title: expression, types: freeze unsafe datetime warning args\nPR url: https://github.com/pingcap/tidb/pull/66870\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: `SUBTIME`/`ADDTIME` warning args could alias chunk-backed memory and mutate after buffer reuse, making warning texts nondeterministic.\nChanged files (8): DEPS.bzl, go.mod, go.sum, pkg/expression/builtin_time.go, pkg/expression/builtin_time_test.go, pkg/types/BUILD.bazel, pkg/types/string.go, pkg/types/time.go\nDiff highlights (excerpt):\n- types.ParseTimeWithString(tc, types.HackedStr(d), ...)\n- TestStrDatetimeAddDurationFreezesWarningArg\nFull patch analyzed; see patch_url."
 }

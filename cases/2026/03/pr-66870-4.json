@@ -1,0 +1,46 @@
+{
+  "id": "pr-66870-4",
+  "source_pr": {
+    "number": 66870,
+    "url": "https://github.com/pingcap/tidb/pull/66870",
+    "title": "expression, types: freeze unsafe datetime warning args"
+  },
+  "pr_merged_at": "2026-03-14T10:37:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/lightning/backend/local/region_job_test.go",
+    "name": "mockWorkerReadJob"
+  },
+  "symptoms": [
+    "Lightning region job tests were flaky because the `Eventually` condition only checked `b.jobLen()==0`, which could pass before the first job was actually picked by the worker goroutine, making subsequent assertions timing-dependent."
+  ],
+  "failure_signature": "Eventually condition passes too early (job not fully picked), causing intermittent assertion failures in region job tests.",
+  "root_cause_categories": [
+    "async_timing_issue"
+  ],
+  "review_smells": [
+    "race_condition_in_async_code"
+  ],
+  "root_cause_explanation": "The test helper waited for `b.jobLen()==0` to infer the worker goroutine was blocked at sending, but that condition could become true before `jobs[0]` had actually been stored/picked, so follow-up assertions raced the worker state. The PR strengthens the `Eventually` predicate to also verify the first job has been picked (e.g., storeLoadMap entries are set), removing the timing window.",
+  "module": "lightning",
+  "fix_pattern": "Strengthen the `Eventually` predicate to verify not only `b.jobLen()==0` but also that the first job has been picked/recorded before proceeding, avoiding timing windows in async worker coordination.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66870",
+    "https://github.com/pingcap/tidb/pull/66870.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66870.patch",
+  "changed_files": [
+    "pkg/lightning/backend/local/region_job_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: `b.jobLen()==0` could pass before `jobs[0]` is picked; require additional picked-state checks in `Eventually` to avoid flaky assertions.",
+      "files: pkg/lightning/backend/local/region_job_test.go"
+    ]
+  },
+  "analysis": "PR title: expression, types: freeze unsafe datetime warning args\nPR url: https://github.com/pingcap/tidb/pull/66870\nSub-fix subject: [PATCH 8/8] fix flaky test\nChanged files (1): pkg/lightning/backend/local/region_job_test.go\nDiff highlights (excerpt):\n- Eventually only checked b.jobLen() == 0\n+ Eventually also checks `jobs[0]` is picked (storeLoadMap entries)\nFull patch analyzed; see patch_url."
+}
