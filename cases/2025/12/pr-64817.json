@@ -13,19 +13,18 @@
     "name": "queue_ddl_handler_test"
   },
   "symptoms": [
-    "t.Cleanup(func() { (pkg/statistics/handle/autoanalyze/priorityqueue/queue_ddl_handler_test.go)"
+    "Auto-analyze priority-queue tests were flaky when `tidb_enable_auto_analyze` was turned off: the DDL handler could keep the queue in an inconsistent state and block cleanup of the DDL notifier table, causing nondeterministic failures in later assertions/cleanup."
   ],
-  "failure_signature": "t.Cleanup(func() { (pkg/statistics/handle/autoanalyze/priorityqueue/queue_ddl_handler_test.go)",
+  "failure_signature": "statistics auto-analyze: intermittent failures when auto-analyze disabled leaves priority queue not initialized / DDL notifier cleanup blocked (e.g. unexpected `priority queue not initialized` or notifier table not cleared)",
   "root_cause_categories": [
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: 1.",
+  "root_cause_explanation": "The flaky behavior was driven by global/shared state: when `tidb_enable_auto_analyze` is disabled, the auto-analyze priority queue can remain in an inconsistent/unknown state. Subsequent DDL events can then hit the “queue not initialized / retry later” path and block cleanup of the DDL notifier (`mysql.tidb_ddl_notifier`), which makes tests nondeterministic (depending on ordering/timing of DDL events and cleanup). This PR fixes it by explicitly closing the priority queue when auto-analyze is off and by ignoring DDL-handler errors to avoid infinite retries and allow notifier cleanup.",
   "module": "statistics",
-  "fix_pattern": "1. If auto-analyze is disabled, we should close the priority queue and allow it to be re-enabled correctly later and also avoid to return retry later error here. 2. I also ignored errors that occur during handling DDL events to prevent them from blocking the ddl_notifier from being cleaned.",
+  "fix_pattern": "When global auto-analyze is disabled, close the analysis priority queue to reset state and allow re-initialization; additionally, log-and-ignore DDL-handler errors to avoid infinite retries that block cleanup of `mysql.tidb_ddl_notifier`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64817",
     "https://github.com/pingcap/tidb/pull/64817.patch"
@@ -50,5 +49,5 @@
       "files: pkg/statistics/handle/autoanalyze/priorityqueue/BUILD.bazel, pkg/statistics/handle/autoanalyze/priorityqueue/queue_ddl_handler.go, pkg/statistics/handle/autoanalyze/priorityqueue/queue_ddl_handler_test.go, pkg/statistics/handle/autoanalyze/refresher/BUILD.bazel, pkg/statistics/handle/autoanalyze/refresher/refresher.go, pkg/statistics/handle/autoanalyze/refresher/refresher_test.go, pkg/statistics/handle/ddl/ddl.go"
     ]
   },
-  "analysis": "PR title: stats: close the priority queue DDL handler when auto-analyze is disabled\nPR url: https://github.com/pingcap/tidb/pull/64817\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: t.Cleanup(func() { (pkg/statistics/handle/autoanalyze/priorityqueue/queue_ddl_handler_test.go)\nChanged files (7): pkg/statistics/handle/autoanalyze/priorityqueue/BUILD.bazel, pkg/statistics/handle/autoanalyze/priorityqueue/queue_ddl_handler.go, pkg/statistics/handle/autoanalyze/priorityqueue/queue_ddl_handler_test.go, pkg/statistics/handle/autoanalyze/refresher/BUILD.bazel, pkg/statistics/handle/autoanalyze/refresher/refresher.go, pkg/statistics/handle/autoanalyze/refresher/refresher_test.go, pkg/statistics/handle/ddl/ddl.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: stats: close the priority queue DDL handler when auto-analyze is disabled\nPR url: https://github.com/pingcap/tidb/pull/64817\nTriage sources: manual_triage, determinism_stabilization\nChanged files (7): pkg/statistics/handle/autoanalyze/priorityqueue/BUILD.bazel, pkg/statistics/handle/autoanalyze/priorityqueue/queue_ddl_handler.go, pkg/statistics/handle/autoanalyze/priorityqueue/queue_ddl_handler_test.go, pkg/statistics/handle/autoanalyze/refresher/BUILD.bazel, pkg/statistics/handle/autoanalyze/refresher/refresher.go, pkg/statistics/handle/autoanalyze/refresher/refresher_test.go, pkg/statistics/handle/ddl/ddl.go\nManual review: tests can flake when global auto-analyze is turned off and the priority queue/DDLEvent handler leaves internal state and `mysql.tidb_ddl_notifier` cleanup in a bad state. The fix closes the queue when disabled and avoids infinite retries by logging-and-ignoring handler errors.\nPatch series analyzed; see patch_url."
 }

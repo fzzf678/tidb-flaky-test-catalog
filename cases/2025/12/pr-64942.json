@@ -13,18 +13,18 @@
     "name": "TestPlanReplayerWithMultiForeignKey"
   },
   "symptoms": [
-    "server: fix flaky test TestPlanReplayerWithMultiForeignKey"
+    "Plan replayer binding tests were flaky because bindings loaded from a plan replayer package might not take effect immediately; the test could check `@@last_plan_from_binding` before bindings were reloaded."
   ],
-  "failure_signature": "server: fix flaky test TestPlanReplayerWithMultiForeignKey",
+  "failure_signature": "plan replayer: intermittent failure where binding is not applied right after `plan replayer load` (e.g. `@@last_plan_from_binding` not set as expected)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: server: fix flaky test TestPlanReplayerWithMultiForeignKey.",
+  "root_cause_explanation": "After `plan replayer load`, the binding information may not be immediately visible to subsequent statements until bindings are reloaded. The test checked whether a binding took effect (via `@@last_plan_from_binding`) without ensuring the reload happened, so it could fail nondeterministically depending on timing. This PR fixes the flakiness by explicitly running `admin reload bindings` before verifying the binding effect.",
   "module": "server",
-  "fix_pattern": "server: fix flaky test TestPlanReplayerWithMultiForeignKey",
+  "fix_pattern": "After loading a plan replayer package, ensure bindings are loaded before asserting binding effects (e.g. run `admin reload bindings` or wait until binding state is ready).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64942",
     "https://github.com/pingcap/tidb/pull/64942.patch"

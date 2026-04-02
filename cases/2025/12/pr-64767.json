@@ -13,18 +13,18 @@
     "name": "local_test"
   },
   "symptoms": [
-    "t.Cleanup(func() { (pkg/lightning/backend/local/local_test.go)"
+    "Local backend Lightning tests were flaky because some region jobs could finish before all jobs were reference-counted, causing shared ingest data to be cleaned too early and leading to nondeterministic data inconsistency."
   ],
-  "failure_signature": "t.Cleanup(func() { (pkg/lightning/backend/local/local_test.go)",
+  "failure_signature": "lightning local backend: intermittent failure when ingest data is cleaned early due to job ref-count race (empty region job finishes before other jobs ref it)",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "insufficient_cleanup_between_tests"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. This PR stabilizes it by: We modified the logic in generateAndSendJob to reference all jobs before sending them to jobToWorkerCh.",
-  "module": "ddl",
-  "fix_pattern": "We modified the logic in generateAndSendJob to reference all jobs before sending them to jobToWorkerCh. Specifically, we first call job.ref(jobWg) for all generated jobs in a loop, and then send them to the channel one by one in a separate loop.",
+  "root_cause_explanation": "The flaky behavior came from a logical race in Lightning local backend job scheduling: `generateAndSendJob` referenced one region job at a time and sent it immediately to `jobToWorkerCh`. If an (especially empty) job finished quickly, it could `done()` and drop the ref-count to 0, so the shared `memoryIngestData` got cleaned while other jobs were still being processed. That made later jobs observe missing data and produced nondeterministic failures. This PR fixes it by ref-counting *all* generated jobs first, and only then sending them to the worker channel, so ingest data is kept alive until all jobs complete.",
+  "module": "lightning",
+  "fix_pattern": "Prevent ingest-data premature cleanup by reference-counting all generated region jobs before sending them to the worker channel (`jobToWorkerCh`), so shared ingest data stays alive until all jobs complete.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64767",
     "https://github.com/pingcap/tidb/pull/64767.patch"
@@ -45,5 +45,5 @@
       "files: pkg/lightning/backend/external/engine.go, pkg/lightning/backend/local/local.go, pkg/lightning/backend/local/local_test.go"
     ]
   },
-  "analysis": "PR title: *: ref all the jobs before sending to jobToWorkerCh\nPR url: https://github.com/pingcap/tidb/pull/64767\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: t.Cleanup(func() { (pkg/lightning/backend/local/local_test.go)\nChanged files (3): pkg/lightning/backend/external/engine.go, pkg/lightning/backend/local/local.go, pkg/lightning/backend/local/local_test.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: *: ref all the jobs before sending to jobToWorkerCh\nPR url: https://github.com/pingcap/tidb/pull/64767\nTriage sources: manual_triage, determinism_stabilization\nChanged files (3): pkg/lightning/backend/external/engine.go, pkg/lightning/backend/local/local.go, pkg/lightning/backend/local/local_test.go\nManual review: Lightning local backend can clean shared ingest data too early if an empty region job finishes before all jobs are ref-counted. The fix ref-counts all jobs before publishing them to workers, avoiding this async race.\nPatch series analyzed; see patch_url."
 }

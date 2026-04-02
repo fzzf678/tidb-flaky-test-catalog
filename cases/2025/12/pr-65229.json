@@ -13,18 +13,21 @@
     "name": "TestIssue20236"
   },
   "symptoms": [
-    "tests: fix unstable `TestIssue20236` and `TestShowTableRegion`"
+    "Two tests were unstable: (1) `TestIssue20236` started an RPC/status server and queried cluster tables before the server was ready and without robust cleanup; (2) `TestShowTableRegion` used a global session variable (`tidb_scatter_region`) that only takes effect after recreating the session and did not wait for region split completion."
   ],
-  "failure_signature": "tests: fix unstable `TestIssue20236` and `TestShowTableRegion`",
+  "failure_signature": "executor tests: intermittent connection-refused/empty results due to server not ready; or region/show-table-region assertions failing due to global var/session timing and split not finished",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "time_sleep_for_sync",
+    "global_variable_mutation",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "tests: fix unstable `TestIssue20236` and `TestShowTableRegion`",
+  "root_cause_explanation": "`TestIssue20236` depended on asynchronous server startup and background readiness; without waiting for the RPC/status server to be reachable, the test could race and fail under load. It also needed safer cleanup of temp files/config even when the test fails. `TestShowTableRegion` used a global `tidb_scatter_region` setting which does not affect an already-created session, so behavior was nondeterministic; additionally, it needed to wait for split completion. The PR stabilizes these tests by dialing/waiting for server readiness, adding cleanup via `t.Cleanup`, switching to session-scoped variables, and enabling `tidb_wait_split_region_finish` to wait for region split completion.",
+  "module": "executor",
+  "fix_pattern": "For tests that depend on server readiness/region split completion, wait explicitly (dial/poll) before asserting; avoid mutating global session variables—use session scope; and ensure cleanup (temp files/config restore) runs via `t.Cleanup` even on failures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65229",
     "https://github.com/pingcap/tidb/pull/65229.patch"

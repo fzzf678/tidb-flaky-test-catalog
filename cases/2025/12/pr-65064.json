@@ -13,18 +13,19 @@
     "name": "agg_spill_test"
   },
   "symptoms": [
-    "These test cases read the same temp folder concurrently. so it will lead to the flaky test."
+    "Executor spill-related tests were flaky because multiple tests shared the same temp-storage folder: concurrent runs could create/read/delete files in the same directory, making file-leak checks nondeterministic."
   ],
-  "failure_signature": "These test cases read the same temp folder concurrently. so it will lead to the flaky test.",
+  "failure_signature": "executor spill tests: intermittent failures in temp-file leak checks due to shared temp-storage path collisions across concurrent tests",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: These test cases read the same temp folder concurrently.",
+  "root_cause_explanation": "The flakiness came from shared filesystem state: several spill tests used the same global temp-storage path and walked that directory to assert “no leaked files”. When tests run in parallel, they can observe each other’s temporary files (or race with cleanup), causing intermittent failures. This PR fixes it by isolating `TempStoragePath` per test using `t.TempDir()` (with proper restore) and by making the leak-check walk the per-test directory instead of a shared global path.",
   "module": "executor",
-  "fix_pattern": "These test cases read the same temp folder concurrently. so it will lead to the flaky test.",
+  "fix_pattern": "Avoid shared temp-storage paths in tests; set `TempStoragePath` to a per-test `t.TempDir()` (restore afterward) and scope leak checks to that directory to prevent cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65064",
     "https://github.com/pingcap/tidb/pull/65064.patch"

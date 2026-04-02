@@ -13,18 +13,19 @@
     "name": "TestTiFlashLateMaterialization"
   },
   "symptoms": [
-    "planner: fix the flaky test TestTiFlashLateMaterialization"
+    "`TestTiFlashLateMaterialization` was flaky because statistics were not fully flushed before `ANALYZE`, so the optimizer could see inconsistent/stale stats and produce different plans across runs."
   ],
-  "failure_signature": "planner: fix the flaky test TestTiFlashLateMaterialization",
+  "failure_signature": "TiFlash late-materialization casetest: intermittent plan mismatch due to stale/incomplete stats when `ANALYZE` runs before stats delta is dumped",
   "root_cause_categories": [
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
+    "statistics_sensitive_test",
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix the flaky test TestTiFlashLateMaterialization.",
+  "root_cause_explanation": "This casetest asserts planner behavior, which is statistics-sensitive. If table changes are not fully flushed from in-memory delta to KV before running `ANALYZE`, the collected stats can be inconsistent, and the optimizer may choose different plans nondeterministically. The PR stabilizes the test by explicitly dumping stats delta (`dom.StatsHandle().DumpStatsDeltaToKV(true)`) before `ANALYZE`, ensuring deterministic statistics and plan selection.",
   "module": "planner",
-  "fix_pattern": "planner: fix the flaky test TestTiFlashLateMaterialization",
+  "fix_pattern": "Before running `ANALYZE` in stats-sensitive planner tests, flush stats delta to KV (e.g. `dom.StatsHandle().DumpStatsDeltaToKV(true)`) to avoid stale/incomplete statistics affecting plan selection.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65119",
     "https://github.com/pingcap/tidb/pull/65119.patch"

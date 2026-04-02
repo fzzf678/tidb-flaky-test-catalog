@@ -13,19 +13,18 @@
     "name": "global_sort_test"
   },
   "symptoms": [
-    "t.Cleanup(func() { (tests/realtikvtest/importintotest4/global_sort_test.go)"
+    "ImportInto global-sort tests were flaky because cleanup runs asynchronously and may try to `ALTER TABLE ... MODE` after the table has been dropped/truncated, resulting in a transient `table not exists` error during cleanup."
   ],
-  "failure_signature": "t.Cleanup(func() { (tests/realtikvtest/importintotest4/global_sort_test.go)",
+  "failure_signature": "importinto cleanup: intermittent `infoschema.ErrTableNotExists` when altering table mode back to normal after the table was dropped/truncated during/after import",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "insufficient_cleanup_between_tests",
-    "global_variable_mutation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. This PR stabilizes it by: If we can't find the table during import cleanup, it means it must be dropped (either drop table/database), or truncated, which implies that this table has already being changed to \"normal\" mode.",
-  "module": "executor",
-  "fix_pattern": "If we can't find the table during import cleanup, it means it must be dropped (either drop table/database), or truncated, which implies that this table has already being changed to \"normal\" mode. So in such cases, we can skip table not found error by `ALTER TABLE MODE`.",
+  "root_cause_explanation": "The ImportInto pipeline performs cleanup steps (including altering table mode back to normal) after the import task completes. In real-TiKV tests, the table can be dropped/renamed/truncated around the same time (e.g., `DROP TABLE` happens before cleanup finishes). That creates a race where cleanup sees `infoschema.ErrTableNotExists` and fails nondeterministically. This PR makes cleanup robust by treating “table not exists” as a valid terminal state and skipping the `ALTER TABLE MODE` step when the table is already gone.",
+  "module": "domain",
+  "fix_pattern": "Make disttask/importinto cleanup resilient to concurrent DDL (drop/rename/truncate): if altering table mode fails with `ErrTableNotExists`, treat it as already-normal and skip instead of failing cleanup.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65258",
     "https://github.com/pingcap/tidb/pull/65258.patch"

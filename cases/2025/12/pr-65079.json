@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: fix flaky TestAddGlobalIndexInIngestWithUpdate",
   "root_cause_categories": [
-    "schema_change_race",
-    "shared_state_pollution"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: add index might slow on CI env, so transitOneJobStepAndWaitSync might be called >= 11 times, and cause the case fail, we enlarge the allowed count to 20.",
+  "root_cause_explanation": "This test was timing-sensitive: on slower CI environments, adding the global index can take more DDL “sync steps” than expected, making the test fail due to a too-strict progress/step threshold rather than a functional bug. The PR reduces this sensitivity by adjusting the update loop (making each update advance further) so the DDL finishes within the allowed step budget, stabilizing the test under timing jitter.",
   "module": "ddl",
-  "fix_pattern": "add index might slow on CI env, so transitOneJobStepAndWaitSync might be called >= 11 times, and cause the case fail, we enlarge the allowed count to 20",
+  "fix_pattern": "Reduce timing/step-count sensitivity in DDL ingest tests (CI may be slower); relax overly strict progress thresholds so the test doesn’t fail just because DDL needs more sync steps.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65079",
     "https://github.com/pingcap/tidb/pull/65079.patch"
