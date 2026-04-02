@@ -13,18 +13,18 @@
     "name": "TestStmtCtxStaleFlag"
   },
   "symptoms": [
-    "txntest: fix flaky TestStmtCtxStaleFlag by using TSO-derived timestamp"
+    "TestStmtCtxStaleFlag was flaky because it built the stale-read timestamp from Go wall clock time, which can skew vs PD TSO in real TiKV tests."
   ],
-  "failure_signature": "txntest: fix flaky TestStmtCtxStaleFlag by using TSO-derived timestamp",
+  "failure_signature": "stale-read snapshot timestamp can be too close to / ahead of PD TSO due to clock skew (intermittent stale read failures)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "external_dependency"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "clock_skew_dependency"
   ],
   "root_cause_explanation": "The stale-read test used `time.Now()` to build a timestamp, but PD TSO time can be ahead/behind the Go wall clock, so the derived snapshot boundary could be inconsistent and cause intermittent stale-read behavior. The PR switches to a TSO-derived timestamp (from the store oracle), aligning with TiKV/PD time and removing clock-skew flakiness.",
   "module": "kv",
-  "fix_pattern": "Avoid brittle fixed sleeps by tightening synchronization/wait conditions in the test.",
+  "fix_pattern": "Derive the stale-read timestamp from PD-aligned TSO (store oracle) instead of time.Now(), and subtract a safety margin (e.g., 1s) to avoid clock-skew flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66395",
     "https://github.com/pingcap/tidb/pull/66395.patch"

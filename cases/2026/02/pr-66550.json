@@ -13,18 +13,18 @@
     "name": "TestStaleReadKVRequest"
   },
   "symptoms": [
-    "*: Fix flaky test TestStaleReadKVRequest and TestSelectAsOf"
+    "Stale-read tests were flaky when using NOW() snapshots: depending on PD TSO progression, NOW() could be treated as a future timestamp and trigger errors."
   ],
-  "failure_signature": "*: Fix flaky test TestStaleReadKVRequest and TestSelectAsOf",
+  "failure_signature": "cannot set read timestamp to a future time (clock skew / TSO not advanced past NOW())",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "external_dependency"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "clock_skew_dependency"
   ],
   "root_cause_explanation": "The stale-read tests used `NOW()` snapshots and short sleeps, so depending on TSO progression the read timestamp could be considered a future time (triggering errors) or not stale enough. The PR waits for TSO time to advance past the captured wall-clock time and uses a safer `NOW() - INTERVAL 1 SECOND` (plus longer waits), making the timestamp consistently valid.",
-  "module": "module_unknown",
-  "fix_pattern": "Avoid brittle fixed sleeps by tightening synchronization/wait conditions in the test.",
+  "module": "txn",
+  "fix_pattern": "Wait for PD TSO to advance past the captured wall-clock time, and use `NOW() - INTERVAL 1 SECOND` for stale reads to avoid future-read errors caused by clock skew/TSO lag.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66550",
     "https://github.com/pingcap/tidb/pull/66550.patch"

@@ -13,18 +13,18 @@
     "name": "TestNewCompressReader"
   },
   "symptoms": [
-    "test: fix flaky test TestNewCompressReader"
+    "TestNewCompressReader was timing-sensitive: it asserted async decompression by comparing runtime.NumGoroutine counts, which can be racy if the internal goroutine starts late or exits early."
   ],
-  "failure_signature": "test: fix flaky test TestNewCompressReader",
+  "failure_signature": "require.Greater(currRoutineCnt, prevRoutineCnt) can fail due to goroutine scheduling",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix flaky test TestNewCompressReader",
+  "root_cause_explanation": "The test tried to prove the zstd reader was decoding asynchronously by checking that runtime.NumGoroutine increased. That assertion is flaky because goroutine scheduling is nondeterministic (the decoder goroutine may be created later or finish earlier). The fix uses synctest + io.Pipe and an explicit synctest.Wait() to synchronize with the internal goroutine and make the test deterministic.",
+  "module": "module_unknown",
+  "fix_pattern": "Use synctest + io.Pipe (and an explicit synctest.Wait) to deterministically observe the async decoder goroutine instead of relying on racy goroutine-count assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66548",
     "https://github.com/pingcap/tidb/pull/66548.patch"
@@ -44,5 +44,5 @@
       "files: pkg/objstore/objectio/BUILD.bazel, pkg/objstore/objectio/writer_test.go"
     ]
   },
-  "analysis": "PR title: test: fix flaky test TestNewCompressReader\nPR url: https://github.com/pingcap/tidb/pull/66548\nTriage summary: test: fix flaky test TestNewCompressReader\nChanged files (2): pkg/objstore/objectio/BUILD.bazel, pkg/objstore/objectio/writer_test.go\nFull patch analyzed; see patch_url."
+  "analysis": "PR title: test: fix flaky test TestNewCompressReader\nPR url: https://github.com/pingcap/tidb/pull/66548\nTriage summary: test: fix flaky test TestNewCompressReader\nChanged files (2): pkg/objstore/objectio/BUILD.bazel, pkg/objstore/objectio/writer_test.go\nFull patch analyzed; see patch_url.\n\nManual review: PR body/patch explicitly call out the async internal goroutine timing issue; the test now uses synctest + io.Pipe to avoid scheduling races."
 }

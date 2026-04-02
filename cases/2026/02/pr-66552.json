@@ -13,18 +13,18 @@
     "name": "TestAcquireDistributedLock"
   },
   "symptoms": [
-    "test: fix flaky test TestAcquireDistributedLock"
+    "TestAcquireDistributedLock intermittently fails to start the embedded etcd server due to port collisions when using a random port."
   ],
-  "failure_signature": "test: fix flaky test TestAcquireDistributedLock",
+  "failure_signature": "listen tcp 127.0.0.1:<port>: bind: address already in use (embedded etcd cannot start)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "external_dependency"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "Remove/contain randomness (rand) in tests or make it deterministic to avoid flaky outcomes.",
+  "root_cause_explanation": "The test picked a random client port (and used randPort+1 for the peer port) without checking availability. In CI this can collide with other processes/tests, causing the embedded etcd to fail to bind. The fix allocates truly free ports via net.Listen(\"127.0.0.1:0\") and uses distinct client/peer ports.",
+  "module": "domain",
+  "fix_pattern": "Stop using a random port (and randPort+1). Allocate free client/peer ports via net.Listen(\"127.0.0.1:0\") to avoid embedded etcd bind collisions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66552",
     "https://github.com/pingcap/tidb/pull/66552.patch"
@@ -44,5 +44,5 @@
       "files: pkg/owner/BUILD.bazel, pkg/owner/manager_test.go"
     ]
   },
-  "analysis": "PR title: test: fix flaky test TestAcquireDistributedLock\nPR url: https://github.com/pingcap/tidb/pull/66552\nTriage summary: test: fix flaky test TestAcquireDistributedLock\nChanged files (2): pkg/owner/BUILD.bazel, pkg/owner/manager_test.go\nFull patch analyzed; see patch_url."
+  "analysis": "PR title: test: fix flaky test TestAcquireDistributedLock\nPR url: https://github.com/pingcap/tidb/pull/66552\nTriage summary: test: fix flaky test TestAcquireDistributedLock\nChanged files (2): pkg/owner/BUILD.bazel, pkg/owner/manager_test.go\nFull patch analyzed; see patch_url.\n\nManual review: PR body/patch show the test used a random port for embedded etcd; the fix uses net.Listen(\"127.0.0.1:0\") to pick free ports and avoid bind collisions."
 }
