@@ -13,18 +13,18 @@
     "name": "ingest_test"
   },
   "symptoms": [
-    "defer config.RestoreFunc()() (tests/realtikvtest/addindextest3/ingest_test.go)"
+    "Index ingest tests could leave temporary local-backend engine/.sst files behind when an error occurs, polluting the TempDir and making subsequent runs flaky."
   ],
-  "failure_signature": "defer config.RestoreFunc()() (tests/realtikvtest/addindextest3/ingest_test.go)",
+  "failure_signature": "Temporary ingest engine files not cleaned up on error (leftover `.sst` files in TempDir).",
   "root_cause_categories": [
     "shared_state_pollution"
   ],
   "review_smells": [
     "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. This PR stabilizes it by: Move cleanup code to a defer function, to call `CleanupEngine` even if the engine fails to close.",
-  "module": "module_unknown",
-  "fix_pattern": "Move cleanup code to a defer function, to call `CleanupEngine` even if the engine fails to close.",
+  "root_cause_explanation": "When the ingest engine close path returns early on errors/context cancellation, temporary local-backend files may not be cleaned up. Leftover files in `TempDir` can affect later tests and cause flakiness. This PR ensures cleanup runs (via defer/CleanupEngine) even on failures and adds a regression test that injects an error in mergeSSTs and asserts `.sst` files are removed.",
+  "module": "ddl",
+  "fix_pattern": "Ensure CleanupEngine runs via defer even on failures so temp `.sst`/engine files are removed; add a regression test with injected mergeSSTs error.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64105",
     "https://github.com/pingcap/tidb/pull/64105.patch"

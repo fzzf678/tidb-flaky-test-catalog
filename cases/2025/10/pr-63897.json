@@ -13,18 +13,18 @@
     "name": "scheduler_manager_nokit_test"
   },
   "symptoms": [
-    "t.Cleanup(func() { (pkg/disttask/framework/scheduler/scheduler_manager_nokit_test.go)"
+    "The scheduler manager test modified the global `proto.MaxConcurrentTask` without reliably restoring it, which can leak into other tests and cause flaky behavior."
   ],
-  "failure_signature": "t.Cleanup(func() { (pkg/disttask/framework/scheduler/scheduler_manager_nokit_test.go)",
+  "failure_signature": "Global `proto.MaxConcurrentTask` mutation leaks across tests (requires cleanup via t.Cleanup).",
   "root_cause_categories": [
     "shared_state_pollution"
   ],
   "review_smells": [
-    "insufficient_cleanup_between_tests"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. This PR stabilizes it by: also query tasks that doesn't need resources to run when the active schedulers reach limit.",
+  "root_cause_explanation": "The test changes `proto.MaxConcurrentTask` (a package-level global) to simulate scheduler limits; if it isn't restored, later tests can observe the modified value and fail intermittently. This PR adds `t.Cleanup` to restore the original value and isolates the test's global state changes.",
   "module": "domain",
-  "fix_pattern": "also query tasks that doesn't need resources to run when the active schedulers reach limit",
+  "fix_pattern": "Restore global `proto.MaxConcurrentTask` in `t.Cleanup` after the test to avoid leaking global state between tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/63897",
     "https://github.com/pingcap/tidb/pull/63897.patch"

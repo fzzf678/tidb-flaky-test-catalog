@@ -13,18 +13,18 @@
     "name": "import_into_test"
   },
   "symptoms": [
-    "t.Cleanup(func() { (pkg/executor/import_into_test.go)"
+    "ImportInto SEM tests toggled global Security Enhanced Mode (SEM) state; leaking SEM state across subtests/tests can make the suite flaky."
   ],
-  "failure_signature": "t.Cleanup(func() { (pkg/executor/import_into_test.go)",
+  "failure_signature": "Global SEM enable/disable leaks across tests (requires cleanup via t.Cleanup).",
   "root_cause_categories": [
     "shared_state_pollution"
   ],
   "review_smells": [
-    "insufficient_cleanup_between_tests"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. This PR stabilizes it by: SEM v2 introduced in #61634, it changes some method calls, and cause some import-into related logic not working in SEM v2: fix the bug that `external-id` not set in SEM v2 fix import-into SEM related logic not tested wit….",
+  "root_cause_explanation": "Security Enhanced Mode (SEM) is global process-level state. If tests enable/disable SEM without strict scoping and cleanup, later tests can observe the wrong SEM mode and fail intermittently. This PR isolates SEM state per scenario by running cases as subtests and using `t.Cleanup` to reliably disable/restore SEM (v1/v2) after each subtest.",
   "module": "executor",
-  "fix_pattern": "SEM v2 introduced in #61634, it changes some method calls, and cause some import-into related logic not working in SEM v2: fix the bug that `external-id` not set in SEM v2 fix import-into SEM related logic not tested with SEM v2 fix `disallowedOptionsForSEM` not checked in SEM v2 some changes to SEM v2 to help tests.",
+  "fix_pattern": "Isolate global SEM state per subtest: enable/disable SEM in each `t.Run` and restore it via `t.Cleanup` to avoid cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64170",
     "https://github.com/pingcap/tidb/pull/64170.patch"
