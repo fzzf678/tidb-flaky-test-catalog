@@ -23,6 +23,7 @@
     "async_wait_without_backoff",
     "clock_skew_dependency"
   ],
+  "root_cause_explanation": "Audit retry reporting was unstable because the completed audit event for no-result statements could be emitted before retry bookkeeping finished, causing retry flags/counts to be associated with internal retries instead of the final user statement. The PR emits the completed event after retry bookkeeping and preserves the outer statement context/retry count, making the test deterministic without relying on timing.",
   "fix_pattern": "- make `TestAuditPluginRetrying` deterministic and assert the retry flag on the final user-visible statement path | // Usually the following retry-loop will succeed in the first try. However, if we are lucky | // enough, it might need more times to trigger the retry. | require.Eventually(t, func() bool {",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/67308",

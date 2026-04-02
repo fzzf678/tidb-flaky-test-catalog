@@ -22,6 +22,7 @@
   "review_smells": [
     "statistics_sensitive_test"
   ],
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: Range predicates outside of the histogram bucket range face a similar risk to ranges within a bucket, because we do not have collected stats we can rely on for the cardinality estimation.",
   "fix_pattern": "Range predicates outside of the histogram bucket range face a similar risk to ranges within a bucket, because we do not have collected stats we can rely on for the cardinality estimation. So, this change uses the tidb_opt_risk_range_skew_ratio variable to allow users or external processes to adjust how much skew is considered in out of range estimations. This also adjusts and simplifies the out of range estimation function to rely more on addedRows (the difference between realTimeRowCount and the histogram count) than histogram row count itself.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62363",

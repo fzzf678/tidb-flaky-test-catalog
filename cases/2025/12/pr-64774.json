@@ -22,6 +22,7 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Add a tie breaker to index cost in the range of 0 to 99 (based upon the last 2 digits of the index.ID) divided by 1,000,000.",
   "fix_pattern": "Add a tie breaker to index cost in the range of 0 to 99 (based upon the last 2 digits of the index.ID) divided by 1,000,000. This is to differentiate when 2 indexes are identical (based upon predicates and length) and costs are equal. The additional cost is so low that it should not otherwise influence the cost. This results in the index choice being more deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64774",

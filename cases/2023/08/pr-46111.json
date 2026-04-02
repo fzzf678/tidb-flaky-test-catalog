@@ -23,6 +23,7 @@
   "review_smells": [
     "missing_order_by"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: race = \"on\", | tk.MustExec(\"select /*+ USE_INDEX_MERGE(t, idx1, idx2) */ * from t where a = 1 or b = 1 order by c limit 1025\") (executor/test/executor/executor_test.go).",
   "fix_pattern": "race = \"on\", | tk.MustExec(\"select /*+ USE_INDEX_MERGE(t, idx1, idx2) */ * from t where a = 1 or b = 1 order by c limit 1025\") (executor/test/executor/executor_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46111",

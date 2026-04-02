@@ -23,6 +23,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select upper(group_concat(distinct value order by 1)) from test.t;\").Check(testkit.Rows(\"ABC,DEF\")) (executor/analyze_test.go).",
   "fix_pattern": "tk.MustQuery(\"select upper(group_concat(distinct value order by 1)) from test.t;\").Check(testkit.Rows(\"ABC,DEF\")) (executor/analyze_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27490",

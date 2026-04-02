@@ -24,6 +24,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"SELECT * FROM mysql.global_grants WHERE `Host` = '%' AND `User` = 'dyn' ORDER BY user,host,priv,with_grant_option\").Check(testkit.Rows(\"dyn % BACKUP_ADMIN N\")) (executor/grant_test.go).",
   "fix_pattern": "tk.MustQuery(\"SELECT * FROM mysql.global_grants WHERE `Host` = '%' AND `User` = 'dyn' ORDER BY user,host,priv,with_grant_option\").Check(testkit.Rows(\"dyn % BACKUP_ADMIN N\")) (executor/grant_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22778",

@@ -23,6 +23,7 @@
     "assert_exact_plan_or_cost",
     "plan_cache_dependency"
   ],
+  "root_cause_explanation": "Instance plan cache tests were flaky because randomized schemas could exceed index key-length limits (key too long), and concurrent DML workers could naturally deadlock. This PR bounds varchar length and treats deadlock errors as expected concurrency outcomes (skips those statements), keeping the test focused on plan-cache correctness.",
   "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65619",

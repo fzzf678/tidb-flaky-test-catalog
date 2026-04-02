@@ -24,6 +24,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: + race = \"on\", | tk.MustQuery(\"SELECT (SELECT tt.a FROM t1 tt ORDER BY a ASC LIMIT 1) aa, COUNT(DISTINCT b) FROM t1 GROUP BY aa\").Check(testkit.Rows()) // work fine without any error (planner/core/partition_pruner_test.g….",
   "fix_pattern": "+ race = \"on\", | tk.MustQuery(\"SELECT (SELECT tt.a FROM t1 tt ORDER BY a ASC LIMIT 1) aa, COUNT(DISTINCT b) FROM t1 GROUP BY aa\").Check(testkit.Rows()) // work fine without any error (planner/core/partition_pruner_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41615",

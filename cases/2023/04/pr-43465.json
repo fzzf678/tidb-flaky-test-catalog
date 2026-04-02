@@ -23,6 +23,7 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: + race = \"on\", | tk.MustExec(\"explain select /*+ use_index_merge( `aa311c3c` ) */ `aa311c3c`.`43b06e99` as r0 , `aa311c3c`.`6302d8ac` as r1 from `aa311c3c` where IsNull( `aa311c3c`.`b80b3746` ) or not( `aa311c3c`.`57fd8d….",
   "fix_pattern": "+ race = \"on\", | tk.MustExec(\"explain select /*+ use_index_merge( `aa311c3c` ) */ `aa311c3c`.`43b06e99` as r0 , `aa311c3c`.`6302d8ac` as r1 from `aa311c3c` where IsNull( `aa311c3c`.`b80b3746` ) or not( `aa311c3c`.`57fd8d09` >= '2008' ) order by r0,r1 limit 95\") (planner/core/casetest/physical_plan_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43465",

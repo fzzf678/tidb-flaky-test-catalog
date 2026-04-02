@@ -23,6 +23,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"(select col_15 from tbl_23) union all (select col_15 from tbl_3 for update) order by col_15\").Check(testkit.Rows(\"\\x00\\x00\\x0F\", \"\\x00\\x00\\xFF\", \"\\x00\\xFF\\xFF\")) (executor/executor_test.go).",
   "fix_pattern": "tk.MustQuery(\"(select col_15 from tbl_23) union all (select col_15 from tbl_3 for update) order by col_15\").Check(testkit.Rows(\"\\x00\\x00\\x0F\", \"\\x00\\x00\\xFF\", \"\\x00\\xFF\\xFF\")) (executor/executor_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25617",

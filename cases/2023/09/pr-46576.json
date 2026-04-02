@@ -23,6 +23,7 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: race = \"on\", | \"select /*+ use_index_merge( tbl_39) */ col_239 from tbl_39 where not( tbl_39.col_239 not in ( '1994' ) ) and tbl_39.col_239 not in ( '2004' , '2010' , '2010' ) or not( tbl_39.col_239 <= '1996' ) and not(….",
   "fix_pattern": "race = \"on\", | \"select /*+ use_index_merge( tbl_39) */ col_239 from tbl_39 where not( tbl_39.col_239 not in ( '1994' ) ) and tbl_39.col_239 not in ( '2004' , '2010' , '2010' ) or not( tbl_39.col_239 <= '1996' ) and not( tbl_39.col_239 between '2026' and '2011' ) order by tbl_39.col_239 limit 382\", (planner/core/issuetest/planner_issue_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46576",

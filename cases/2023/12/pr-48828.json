@@ -22,6 +22,7 @@
   "review_smells": [
     "missing_order_by"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: err := tk.QueryToErr(\"SELECT SUM(i) OVER W FROM t1 WINDOW w AS (PARTITION BY j ORDER BY i) ORDER BY 1+SUM(i) OVER w;\") (pkg/executor/executor_failpoint_test.go).",
   "fix_pattern": "err := tk.QueryToErr(\"SELECT SUM(i) OVER W FROM t1 WINDOW w AS (PARTITION BY j ORDER BY i) ORDER BY 1+SUM(i) OVER w;\") (pkg/executor/executor_failpoint_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48828",

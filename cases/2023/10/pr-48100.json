@@ -23,6 +23,7 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(`select * from t1 group by t1.c1 having count(1) > 1 order by count(1) limit 10`).Check(testkit.Rows()) // no error (pkg/planner/core/integration_test.go).",
   "fix_pattern": "tk.MustQuery(`select * from t1 group by t1.c1 having count(1) > 1 order by count(1) limit 10`).Check(testkit.Rows()) // no error (pkg/planner/core/integration_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48100",

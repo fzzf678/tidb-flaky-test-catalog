@@ -23,6 +23,7 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: rs := testKit.MustQuery(`SELECT v2.c0 FROM (select rand() as c0 from t3) v2 order by v2.c0 limit 10`).Rows() (pkg/planner/core/integration_test.go).",
   "fix_pattern": "rs := testKit.MustQuery(`SELECT v2.c0 FROM (select rand() as c0 from t3) v2 order by v2.c0 limit 10`).Rows() (pkg/planner/core/integration_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62819",

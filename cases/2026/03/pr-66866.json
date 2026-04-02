@@ -24,6 +24,7 @@
     "t_parallel_with_shared_state",
     "race_condition_in_async_code"
   ],
+  "root_cause_explanation": "The TTL worker tests were timing- and concurrency-sensitive: shared worker state and background scheduling could race with assertions, and small sleeps/timeouts made failures dependent on CI scheduling. The PR reorganizes the tests into a dedicated integration suite and improves isolation/cleanup/timeouts (including Bazel target settings), reducing reliance on fragile timing.",
   "fix_pattern": "* Reorganized TTL worker tests into a dedicated integration suite with increased parallelism, race detection, and flaky handling. | time.Sleep(10 * time.Millisecond) | // Stop TTLJobManager to avoid unnecessary job schedule and make test stable. | ctx, cancel := context.WithTimeout(context.TODO(), time.Minute)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66866",

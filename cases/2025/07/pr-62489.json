@@ -22,6 +22,7 @@
   "review_smells": [
     "async_wait_without_backoff"
   ],
+  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). Fixed waits without polling/backoff are brittle under CI timing jitter. This PR stabilizes it by: after we continue all running subtasks, they finish, and scheduler will try to schedule left subtasks immediately, so the active running subtask count might be in range `[0, 4]`, `c.waitTotalSubtaskCount(0)` night not ho….",
   "fix_pattern": "after we continue all running subtasks, they finish, and scheduler will try to schedule left subtasks immediately, so the active running subtask count might be in range `[0, 4]`, `c.waitTotalSubtaskCount(0)` night not hold, so change to another way to check",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62489",

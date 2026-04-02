@@ -24,6 +24,7 @@
     "async_wait_without_backoff",
     "clock_skew_dependency"
   ],
+  "root_cause_explanation": "The memory-tuner test was flaky because it waited for GC-driven state transitions without deterministically driving GC, so state could fail to advance/reset under CI timing. The PR triggers `runtime.GC()` while polling and waits for in-flight tuner work before teardown checks, making state transitions deterministic for assertions.",
   "fix_pattern": "`TestGlobalMemoryTuner` is flaky because it waits on GC-driven tuner state transitions without deterministically driving the GC boundary that advances and resets those states. | runtime.GC()",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/67377",

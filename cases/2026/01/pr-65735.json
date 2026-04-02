@@ -24,6 +24,7 @@
     "shared_table_without_isolation",
     "t_parallel_with_shared_state"
   ],
+  "root_cause_explanation": "Plan replayer handler tests were flaky due to shared global server state (`RunInGoTestChan`), async binding/baseline reload, and interference from leftover global bindings. This PR recreates the global channel, serializes DB connections, cleans up bindings, and waits with `Eventually` for binding effects, making results stable.",
   "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65735",

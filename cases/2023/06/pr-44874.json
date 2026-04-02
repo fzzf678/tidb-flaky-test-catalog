@@ -23,6 +23,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: // tk.MustQuery(\"select id, a, b from t2 order by id\").Check(testkit.Rows(\"1 101 201\", \"2 1102 2202\", \"3 1003 2003\", \"4 1004 2004\")) (executor/union_scan_test.go).",
   "fix_pattern": "// tk.MustQuery(\"select id, a, b from t2 order by id\").Check(testkit.Rows(\"1 101 201\", \"2 1102 2202\", \"3 1003 2003\", \"4 1004 2004\")) (executor/union_scan_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44874",

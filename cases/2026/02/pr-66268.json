@@ -23,6 +23,7 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
+  "root_cause_explanation": "The partial-order matching logic could index into pruned/nil index columns (or include appended handle columns), leading to panics or inconsistent planning decisions. This PR adds defensive checks and uses the correct full index column metadata when matching ORDER BY, preventing out-of-range errors and making the integration-test plan output stable.",
   "fix_pattern": "diff shows determinism stabilization in tests/integrationtest/r/planner/core/partial_order_topn.result, tests/integrationtest/t/planner/core/partial_order_topn.test",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66268",

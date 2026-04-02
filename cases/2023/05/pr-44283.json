@@ -24,6 +24,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select * from t use index(idx_b) order by b, _tidb_rowid limit 10;\").Check(testkit.Rows(\"2 -1 3\", \"1 1 1\", \"3 2 2\")) (executor/partition_table_test.go).",
   "fix_pattern": "tk.MustQuery(\"select * from t use index(idx_b) order by b, _tidb_rowid limit 10;\").Check(testkit.Rows(\"2 -1 3\", \"1 1 1\", \"3 2 2\")) (executor/partition_table_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44283",

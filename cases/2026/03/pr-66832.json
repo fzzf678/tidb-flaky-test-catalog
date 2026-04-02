@@ -22,6 +22,7 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
+  "root_cause_explanation": "The cross-keyspace manager test was flaky because it asserted an exact internal-session count (`== 1`) while background workers can borrow internal sessions concurrently, transiently increasing the count (e.g., to 2). The PR relaxes the assertion to stable invariants and uses `Eventually` for post-transaction cleanup expectations.",
   "fix_pattern": "pkg/domain/crossks: fix flaky TestManager coordinator session count check | `TestManager/check_cross_keyspace_session_are_recorded_in_coordinator_and_contains_related_tables` in `pkg/domain/crossks/cross_ks_test.go` is flaky in CI. The subtest asserted an exact `coordinator.InternalSessionCount() == 1` while cross-keyspace background workers can borrow internal sessions concurrently from the same pool, causing transient count `2`. | require.Eventually(t, func() bool {",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66832",

@@ -22,6 +22,7 @@
   "review_smells": [
     "real_tikv_dependency"
   ],
+  "root_cause_explanation": "The staleness transaction test used `NOW()` directly for AS OF timestamps; depending on TSO progression this can be too close to now and intermittently invalid/future. This PR uses a buffered expression (`NOW(3) - INTERVAL 5 SECOND`), making the timestamp safely in the past on real TiKV.",
   "fix_pattern": "1  Problem Summary:  `TestValidateReadOnlyInStalenessTransaction` was flaky because `AS OF TIMESTAMP NOW()` can be too new under safeTS / scheduling lag.  ### What c",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65737",

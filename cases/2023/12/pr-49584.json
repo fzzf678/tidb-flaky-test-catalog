@@ -23,6 +23,7 @@
     "plan_cache_dependency",
     "assert_exact_plan_or_cost"
   ],
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: 1.",
   "fix_pattern": "1. Add `CtxID` to `StatementContext` to return a unique ID for statement context. 2. Introduce `builtinFuncCache` to provide a cache mechanism for built function. It uses context ID to separate cache between different statements so that we can still cache some immediate states even if plan cache is enabled now. 3. Introduce `regexpNewBaseFuncSig` as a new base for regex related functions. We'll use `regexpNewBaseFuncSig` to replace the old `regexpBaseFuncSig` in the next several PRs. 4. refactor `builtinRegexpSubstrFuncSig` to use `regexpNewBaseFuncSig` to manage the cache, so that: It's implement can decouple with plan cache It can still cache the parsed `*regexp.Regexp` when plan cache is on and regex pattern is read from a variable",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49584",

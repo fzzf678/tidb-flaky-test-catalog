@@ -23,6 +23,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: result := tk.MustQuery(\"select * from (select count(*) over (partition by ref_0.c_0b6nxb order by ref_0.c_3pcik) as c0 from t_tir89b as ref_0) as subq_0 where subq_0.c0 <> 1;\") (executor/window_test.go).",
   "fix_pattern": "result := tk.MustQuery(\"select * from (select count(*) over (partition by ref_0.c_0b6nxb order by ref_0.c_3pcik) as c0 from t_tir89b as ref_0) as subq_0 where subq_0.c0 <> 1;\") (executor/window_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30265",

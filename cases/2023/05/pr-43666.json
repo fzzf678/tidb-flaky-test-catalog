@@ -24,6 +24,7 @@
     "ddl_without_wait",
     "async_schema_propagation"
   ],
+  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: make data race happy | sql := \"select job_meta, processing from mysql.tidb_ddl_job where job_id in (select min(job_id) from mysql.tidb_ddl_job group by schema_ids, table_ids, processing) order by processing desc, jo….",
   "fix_pattern": "ddl: make data race happy | sql := \"select job_meta, processing from mysql.tidb_ddl_job where job_id in (select min(job_id) from mysql.tidb_ddl_job group by schema_ids, table_ids, processing) order by processing desc, job_id\" (session/bootstraptest/bootstrap_upgrade_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43666",

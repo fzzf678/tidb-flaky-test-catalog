@@ -23,6 +23,7 @@
     "missing_order_by",
     "relying_on_map_iteration_order"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Implement new merge step.",
   "fix_pattern": "Implement new merge step. In new implementation, mergeIter is abandoned. The new merge step process data from startKey to endKey, using datas and stats. 1. use rangeSplitter to split range groups to read data. 2. read range data then sort them. 3. write all data to only one file.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49474",

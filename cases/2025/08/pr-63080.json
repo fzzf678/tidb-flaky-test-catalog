@@ -22,6 +22,7 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Add a new explain format option that is intended to ignore the estimated rows, so that it can be used in testcases that only need to test the plan choice or query rewrite.",
   "fix_pattern": "Add a new explain format option that is intended to ignore the estimated rows, so that it can be used in testcases that only need to test the plan choice or query rewrite. This can reduce the need for such tests to be regenerated if minor changes in row estimates occur. The goal is to reduce the overall flakiness of tests, and reduce the burden on engineers in regenerating a large number of new plans for optimizer tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/63080",

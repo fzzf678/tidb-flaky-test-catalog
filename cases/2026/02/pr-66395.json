@@ -22,6 +22,7 @@
   "review_smells": [
     "t_parallel_with_shared_state"
   ],
+  "root_cause_explanation": "The stale-read test used `time.Now()` to build a timestamp, but PD TSO time can be ahead/behind the Go wall clock, so the derived snapshot boundary could be inconsistent and cause intermittent stale-read behavior. The PR switches to a TSO-derived timestamp (from the store oracle), aligning with TiKV/PD time and removing clock-skew flakiness.",
   "fix_pattern": "Avoid brittle fixed sleeps by tightening synchronization/wait conditions in the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66395",

@@ -22,6 +22,7 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Renamed previous CorrCountAfterAccess to MaxCountAfterAccess for more general use and added MinCountAfterAccess variable.",
   "fix_pattern": "Renamed previous CorrCountAfterAccess to MaxCountAfterAccess for more general use and added MinCountAfterAccess variable. These two variables correlate to CountAfterAccess, where MaxCountAfterAccess estimates the potential upper bound for the actual row count and MinCountAfterAccess estimates the potential lower bound for the actual row count. MaxCountAfterAccess is currently used in skylinePruning, and MinCountAfterAccess also can be used in the future to improve plan comparisons there.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62910",

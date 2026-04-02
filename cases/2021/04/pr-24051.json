@@ -23,6 +23,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select * from t1 x cross join t1 y on x.a>y.b order by x.a, x.b, y.a, y.b\").Check(testkit.Rows(\"2002-10-03 04:28:53 2000 <nil> 2002\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2000\", \"2002-10-03 04:28:5….",
   "fix_pattern": "tk.MustQuery(\"select * from t1 x cross join t1 y on x.a>y.b order by x.a, x.b, y.a, y.b\").Check(testkit.Rows(\"2002-10-03 04:28:53 2000 <nil> 2002\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2000\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2002\", \"2002-10-03 04:28:53 2002 <nil> 2002\", \"2002-10-03 04:28:53 2002 2002-10-03 04:28:53 2000\", \"2002-10-03...",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24051",
