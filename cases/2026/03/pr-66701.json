@@ -25,6 +25,7 @@
     "global_variable_mutation"
   ],
   "root_cause_explanation": "This real-TiKV IMPORT INTO test was flaky because async cleanup after an import task (e.g., task removal/table-mode reset) could lag behind the test flow, so follow-up steps ran before cleanup completed. The PR captures the task ID and waits (with `Eventually`) for cleanup to finish before truncating/re-running, making the sequence deterministic.",
+  "module": "executor",
   "fix_pattern": "Capture the import task ID via failpoint and wait for async task cleanup with `Eventually` before truncating and rerunning import, making the test deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66701",

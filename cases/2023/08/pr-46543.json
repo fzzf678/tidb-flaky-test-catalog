@@ -24,6 +24,7 @@
     "unsorted_result_assertion"
   ],
   "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"(select 'a' as c, id, v from t1 for update) union all (select 'b', id, v from t1) order by c\").Check(testkit.Rows(\"a 1 11\", \"b 1 10\")) (executor/test/issuetest/executor_issue_test.go).",
+  "module": "executor",
   "fix_pattern": "tk.MustQuery(\"(select 'a' as c, id, v from t1 for update) union all (select 'b', id, v from t1) order by c\").Check(testkit.Rows(\"a 1 11\", \"b 1 10\")) (executor/test/issuetest/executor_issue_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46543",

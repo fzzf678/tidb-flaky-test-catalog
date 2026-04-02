@@ -24,6 +24,7 @@
     "assert_exact_plan_or_cost"
   ],
   "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: race = \"on\", | tk.MustQuery(\"SELECT one.a, one.b as b2 FROM t1 one ORDER BY (SELECT two.b FROM t2 two WHERE two.a = one.b)\").Check(testkit.Rows(\"1 1\")) (planner/core/issuetest/planner_issue_test.go).",
+  "module": "planner",
   "fix_pattern": "race = \"on\", | tk.MustQuery(\"SELECT one.a, one.b as b2 FROM t1 one ORDER BY (SELECT two.b FROM t2 two WHERE two.a = one.b)\").Check(testkit.Rows(\"1 1\")) (planner/core/issuetest/planner_issue_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45003",

@@ -24,6 +24,7 @@
     "missing_order_by"
   ],
   "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: s.mockDB.ExpectQuery(\"\\\\QSELECT table_name, column_name, column_type, generation_expression, extra FROM information_schema.columns WHERE table_schema = ?.",
+  "module": "lightning",
   "fix_pattern": "s.mockDB.ExpectQuery(\"\\\\QSELECT table_name, column_name, column_type, generation_expression, extra FROM information_schema.columns WHERE table_schema = ? ORDER BY table_name, ordinal_position;\\\\E\"). (br/pkg/lightning/backend/tidb/tidb_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27850",

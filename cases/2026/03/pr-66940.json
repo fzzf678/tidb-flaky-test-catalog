@@ -24,6 +24,7 @@
     "assert_exact_plan_or_cost"
   ],
   "root_cause_explanation": "The EnforceMPP test was flaky because predicate-group ordering could change across runs when selectivity/size ties occurred; the final order depended on Go map iteration order and the test masked this with `require.Eventually`. The PR adds a stable tie-breaker to make ordering deterministic and replaces the Eventually-based check with a direct assertion.",
+  "module": "planner",
   "fix_pattern": "planner: stabilize TestEnforceMPP predicate ordering | `TestEnforceMPP` was flaky because TiFlash predicate-group ordering could change across runs. When two predicate groups had the same selectivity and size, their final order depended on Go map iteration order. The test used `require.Eventually` to hide that nondeterminism, so the failure still surfaced intermittently. | Subject: [PATCH 1/2] pkg/planner: stabilize TestEnforceMPP predicate ordering | require.Eventually(t,",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66940",

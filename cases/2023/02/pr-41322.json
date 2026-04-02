@@ -24,6 +24,7 @@
     "time_sleep_for_sync"
   ],
   "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). Fixed sleeps are brittle under CI timing jitter. This PR stabilizes it by: When `Batcher.Len` reaches the threshold, it will call `asyncSend`, then call `Send` in `sendWorker`, and then call `RestoreBatch` to append `*ranges.RewriteRules` to `sender.rewriteRules`, the whole process may not be c….",
+  "module": "br",
   "fix_pattern": "When `Batcher.Len` reaches the threshold, it will call `asyncSend`, then call `Send` in `sendWorker`, and then call `RestoreBatch` to append `*ranges.RewriteRules` to `sender.rewriteRules`, the whole process may not be completed within 10ms, forming a flaky test(`require.True(t, sender.HasRewriteRuleOfKey(\"a\"))` should be true, but false), so we need to i...",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41322",

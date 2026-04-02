@@ -24,6 +24,7 @@
     "plan_cache_dependency"
   ],
   "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: This pull request: * enables the non-prepared plan cache for queries with all hint types except for RESOURCE_GROUP and SET_VAR, * disables prepared plan cache for queries with the RESOURCE_GROUP hints, * disables the cac….",
+  "module": "planner",
   "fix_pattern": "This pull request: * enables the non-prepared plan cache for queries with all hint types except for RESOURCE_GROUP and SET_VAR, * disables prepared plan cache for queries with the RESOURCE_GROUP hints, * disables the caching of queries with bindings that use SET_VAR hints. * makes minor improvements to TestPlanCacheRandomCases in pkg/planner/core/plan_cache_test.go * adds a test (TestNonPreparedPlanSupportsHints) to validate that SELECT queries with hints are cached. * and patches the tests in plan_cacheable_checker_test.go for the changes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60952",

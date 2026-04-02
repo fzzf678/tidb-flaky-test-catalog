@@ -23,6 +23,7 @@
     "race_condition_in_async_code"
   ],
   "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: Change UpdateLockForRead(ctx sessionctx.Context, ts uint64) to UpdateLockForRead(store kv.Storage, ts uint64) to avoid misuse for sessionctx.Context that can cause data race.",
+  "module": "txn",
   "fix_pattern": "Change UpdateLockForRead(ctx sessionctx.Context, ts uint64) to UpdateLockForRead(store kv.Storage, ts uint64) to avoid misuse for sessionctx.Context that can cause data race.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29575",

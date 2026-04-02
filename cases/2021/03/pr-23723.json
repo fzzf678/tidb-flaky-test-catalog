@@ -24,6 +24,7 @@
     "assert_exact_plan_or_cost"
   ],
   "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(\"select /*+ nth_plan(2) */ t1.c1 from t t1 join t t2 on t1.c1 = t2.c3 order by t1.c1\").Check(testkit.Rows(\"1.00000\", \"1.00000\", \"1.00010\")) (executor/tiflash_test.go).",
+  "module": "planner",
   "fix_pattern": "tk.MustQuery(\"select /*+ nth_plan(2) */ t1.c1 from t t1 join t t2 on t1.c1 = t2.c3 order by t1.c1\").Check(testkit.Rows(\"1.00000\", \"1.00000\", \"1.00010\")) (executor/tiflash_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23723",

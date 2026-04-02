@@ -24,6 +24,7 @@
     "unsorted_result_assertion"
   ],
   "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select /*+ agg_to_cop(), hash_agg()*/ count(*) from x1 where a >= any (select a from x2 where x1.a = x2.a) order by 1;\").Check(testkit.Rows(\"3\")) (executor/tiflash_test.go).",
+  "module": "planner",
   "fix_pattern": "tk.MustQuery(\"select /*+ agg_to_cop(), hash_agg()*/ count(*) from x1 where a >= any (select a from x2 where x1.a = x2.a) order by 1;\").Check(testkit.Rows(\"3\")) (executor/tiflash_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23509",

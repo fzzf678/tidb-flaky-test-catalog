@@ -24,6 +24,7 @@
     "missing_order_by"
   ],
   "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: {`select /*+ limit_to_cop(), use_index(t1, k_a) */ * from t1 where a < ?.",
+  "module": "planner",
   "fix_pattern": "{`select /*+ limit_to_cop(), use_index(t1, k_a) */ * from t1 where a < ? order by a limit 100`, \"use_index(@`sel_1` `test`.`t1` `k_a`), limit_to_cop(@`sel_1`)\", nil}, (infoschema/test/clustertablestest/cluster_tables_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44611",

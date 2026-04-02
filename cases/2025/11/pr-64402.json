@@ -23,6 +23,7 @@
     "missing_order_by"
   ],
   "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: previously, we basically based on the formula `total file size / part-size + 2` to estimate the PUT API call count, and use reader reload as the timing to get the GET request call count, so it's not accurate, and make th….",
+  "module": "domain",
   "fix_pattern": "previously, we basically based on the formula `total file size / part-size + 2` to estimate the PUT API call count, and use reader reload as the timing to get the GET request call count, so it's not accurate, and make the UT hard to check the count. and previous way pollute normal code too much, we have to pass many params into the `external`/`local` pkg to instruct where we read/write to get the request count. and some PUT/GET is not collected, such as subtask meta file read/write. so we change to counting the API call directly by intercepting those request call. and revert the old logic introduced in https://github.com/pingcap/tidb/pull/63431. for S3/KS3, we use it's `Send` handlers for GCS, we use a wrapped round tripper.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64402",

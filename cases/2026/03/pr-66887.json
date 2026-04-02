@@ -23,6 +23,7 @@
     "t_parallel_with_shared_state"
   ],
   "root_cause_explanation": "A merge/conflict mistake caused parallel-apply workers to use the wrong (non-cancelable) context, so in-flight inner work was not reliably canceled when LIMIT terminated the query. This made the cancellation test timing-dependent (passes on idle machines, fails on busy CI). The PR fixes the context propagation so cancellation reliably stops workers and the test becomes stable.",
+  "module": "executor",
   "fix_pattern": "This caused TestParallelApplyCancelInflight to become flaky. Where, due to timing, it can succeed on a local system or when CI resources are available, but fail on a busy CI system. | The first priority is to fix the context to reduce the flaky test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66887",

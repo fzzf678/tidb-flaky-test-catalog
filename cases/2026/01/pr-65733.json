@@ -23,6 +23,7 @@
     "race_condition_in_async_code"
   ],
   "root_cause_explanation": "GC tuner updates and `debug.SetMemoryLimit` changes happen asynchronously, but the test used tight polling windows and direct equality checks, which can race on slow CI. This PR relaxes timeouts and uses `require.Eventually` to wait until the memory limit is actually applied.",
+  "module": "gc",
   "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65733",
