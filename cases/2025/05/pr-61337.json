@@ -13,18 +13,18 @@
     "name": "insert"
   },
   "symptoms": [
-    "SELECT * FROM t ORDER BY id; (tests/integrationtest/r/executor/insert.result)"
+    "Inserting explicit TIMESTAMP values that fall into a DST transition could yield invalid/zero dates (`0000-00-00`) depending on timezone/DST rules."
   ],
-  "failure_signature": "SELECT * FROM t ORDER BY id; (tests/integrationtest/r/executor/insert.result)",
+  "failure_signature": "Insert TIMESTAMP during DST transition produced invalid/zero date output (e.g., `0000-00-00`), causing test/result mismatch.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: SELECT * FROM t ORDER BY id; (tests/integrationtest/r/executor/insert.result).",
-  "module": "module_unknown",
-  "fix_pattern": "SELECT * FROM t ORDER BY id; (tests/integrationtest/r/executor/insert.result)",
+  "root_cause_explanation": "insufficient_evidence: This PR fixes TIMESTAMP insert semantics for DST transition times (and adds/updates tests), but the case does not provide enough evidence that the original failures were intermittent flakiness rather than a deterministic correctness bug. We avoid guessing a flaky root cause category.",
+  "module": "expression",
+  "fix_pattern": "Handle TIMESTAMP inserts that fall into DST transitions (avoid producing zero dates) and add/update regression tests for timezone/DST behavior.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/61337",
     "https://github.com/pingcap/tidb/pull/61337.patch"

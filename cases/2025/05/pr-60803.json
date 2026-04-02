@@ -17,14 +17,14 @@
   ],
   "failure_signature": "explain analyze select /*+ set_var(tidb_distsql_scan_concurrency=5)*/ * from t order by id; (tests/integrationtest/r/executor/issues.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: In https://github.com/pingcap/tidb/pull/35975, distsql scan concurrency is set to 2 for keep order query.",
-  "module": "module_unknown",
-  "fix_pattern": "In https://github.com/pingcap/tidb/pull/35975, distsql scan concurrency is set to 2 for keep order query. And later, the PR is partly reset in https://github.com/pingcap/tidb/pull/55196, concurrency is change to 2 only in limited cases.",
+  "root_cause_explanation": "insufficient_evidence: This PR adjusts how distsql scan concurrency is rewritten for keep-order queries (respecting user-set `tidb_distsql_scan_concurrency`) and adds integration coverage. The patch does not provide a concrete flaky symptom with a targeted stabilization fix, so we avoid guessing a root cause.",
+  "module": "executor",
+  "fix_pattern": "Only rewrite keep-order scan concurrency to 2 when `tidb_distsql_scan_concurrency` is still the default; otherwise respect the user-set value. Add integration test coverage to assert `max_distsql_concurrency`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60803",
     "https://github.com/pingcap/tidb/pull/60803.patch"

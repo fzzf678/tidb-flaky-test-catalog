@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: The different coprocessor iterator should run on different KV requests, the share usage can cause data race.",
+  "root_cause_explanation": "The test was flaky due to a real data race: multiple coprocessor iterators shared and mutated the same KV request/builder state concurrently. This PR ensures each iterator builds and uses its own KV request (and adds a guard against reusing a RequestBuilder), eliminating the shared-state race.",
   "module": "executor",
-  "fix_pattern": "The different coprocessor iterator should run on different KV requests, the share usage can cause data race.",
+  "fix_pattern": "Avoid sharing KV requests/builders across coprocessor iterators; build a fresh request per iterator to prevent concurrent mutation/data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/61376",
     "https://github.com/pingcap/tidb/pull/61376.patch"

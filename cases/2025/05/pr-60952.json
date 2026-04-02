@@ -17,13 +17,12 @@
   ],
   "failure_signature": "\"select * from test.t order by a\", // order by (pkg/planner/core/plan_cacheable_checker_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost",
-    "plan_cache_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: This pull request: * enables the non-prepared plan cache for queries with all hint types except for RESOURCE_GROUP and SET_VAR, * disables prepared plan cache for queries with the RESOURCE_GROUP hints, * disables the cac….",
+  "root_cause_explanation": "insufficient_evidence: This PR enables non-prepared plan cache for queries with most hints and adjusts related tests. The patch does not provide a concrete flaky symptom with a targeted stabilization fix, so we avoid guessing a root cause.",
   "module": "planner",
   "fix_pattern": "This pull request: * enables the non-prepared plan cache for queries with all hint types except for RESOURCE_GROUP and SET_VAR, * disables prepared plan cache for queries with the RESOURCE_GROUP hints, * disables the caching of queries with bindings that use SET_VAR hints. * makes minor improvements to TestPlanCacheRandomCases in pkg/planner/core/plan_cache_test.go * adds a test (TestNonPreparedPlanSupportsHints) to validate that SELECT queries with hints are cached. * and patches the tests in plan_cacheable_checker_test.go for the changes.",
   "evidence_links": [

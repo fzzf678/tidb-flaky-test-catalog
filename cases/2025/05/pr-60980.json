@@ -17,15 +17,14 @@
   ],
   "failure_signature": "explain format='brief' with recursive cte1 as (select c1 from tt union select c1 from cte1 where exists (select /*+ no_decorrelate() */ c1 from tt1 where tt1.c2 = cte1.c1)) select c1 from tt2 where exists (select /*+ no_decorrelate() */ * from cte1 where cte1.c1 = tt2.c1) order by 1; (tests/integrationtest/r/cte.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by"
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: explain format='brief' with recursive cte1 as (select c1 from tt union select c1 from cte1 where exists (select /*+ no_decorrelate() */ c1 from tt1 where tt1.c2 = cte1.c1)) select c1 from tt2 where exists (select /*+ no_….",
+  "root_cause_explanation": "Flakiness came from asserting exact EXPLAIN output in golden files; operator IDs/suffixes (e.g., `HashAgg_11`) and some formatting can vary and cause intermittent diffs. This PR switches these tests to `EXPLAIN format='brief'` and updates the expected results to remove the unstable parts.",
   "module": "planner",
-  "fix_pattern": "explain format='brief' with recursive cte1 as (select c1 from tt union select c1 from cte1 where exists (select /*+ no_decorrelate() */ c1 from tt1 where tt1.c2 = cte1.c1)) select c1 from tt2 where exists (select /*+ no_decorrelate() */ * from cte1 where cte1.c1 = tt2.c1) order by 1; (tests/integrationtest/r/cte.result)",
+  "fix_pattern": "Use `EXPLAIN format='brief'` in integration tests and update golden `.result` files to avoid unstable operator IDs/suffixes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60980",
     "https://github.com/pingcap/tidb/pull/60980.patch"

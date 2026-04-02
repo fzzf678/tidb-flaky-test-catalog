@@ -9,24 +9,22 @@
   "pr_merged_at": "2025-05-21T13:57:25+08:00",
   "test": {
     "type": "realtikv",
-    "path": "pkg/lightning/common/retry_test.go",
+    "path": "tests/realtikvtest/addindextest2/global_sort_test.go",
     "name": "TestGlobalSortBasic"
   },
   "symptoms": [
-    "- fix flaky case `TestGlobalSortBasic`, add a wait to cleanup to make sure the check works"
+    "TestGlobalSortBasic sometimes checked external files cleanup before disttask cleanup finished, causing intermittent failures in the cleanup assertions."
   ],
-  "failure_signature": "- fix flaky case `TestGlobalSortBasic`, add a wait to cleanup to make sure the check works",
+  "failure_signature": "TestGlobalSortBasic: cleanup assertion ran before disttask cleanup finished (async), leaving files behind intermittently.",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: handle the case that nextgen writeClient might not return the correct error make url.Error on EOF retryable, it happens when TiKV panic, connection closed and tidb is reading add `testutil.ReduceCheckInterval(t)` to add….",
-  "module": "kv",
-  "fix_pattern": "handle the case that nextgen writeClient might not return the correct error make url.Error on EOF retryable, it happens when TiKV panic, connection closed and tidb is reading add `testutil.ReduceCheckInterval(t)` to add index cases to run faster skip some cases for nextgen, as it might ingest overlapped SST which nextgen tikv doesn't support right now fix flaky case `TestGlobalSortBasic`, add a wait to cleanup to make sure the check works",
+  "root_cause_explanation": "The test was flaky because disttask cleanup is asynchronous, but the test only waited for a single cleanup signal before checking that files were removed. Sometimes the second cleanup phase had not finished yet, so the cleanup check failed. This PR wires an additional cleanup hook and waits for both signals before asserting files are cleaned.",
+  "module": "domain",
+  "fix_pattern": "Wait for disttask cleanup to finish (both cleanup signals) before checking that external files are removed in TestGlobalSortBasic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/61207",
     "https://github.com/pingcap/tidb/pull/61207.patch"

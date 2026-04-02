@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: stabilize flaky test TestInfoschemaTablesSpecialOptimizationCovered",
   "root_cause_categories": [
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: The root cause is that the optimize only works on infoschema v2 https://github.com/pingcap/tidb/pull/55574 While the test may run with either v1 or v2 https://github.com/pingcap/tidb/blob/e315cff6509f0a1d1666cea7236868d6….",
+  "root_cause_explanation": "The test was flaky because its behavior depends on whether infoschema v1 or v2 is used; the optimization only applies to infoschema v2, but the test environment could run with either. This PR stabilizes the test by resetting `@@global.tidb_schema_cache_size` to default at the start, ensuring a consistent infoschema mode.",
   "module": "executor",
-  "fix_pattern": "The root cause is that the optimize only works on infoschema v2 https://github.com/pingcap/tidb/pull/55574 While the test may run with either v1 or v2 https://github.com/pingcap/tidb/blob/e315cff6509f0a1d1666cea7236868d6fb5f3eb5/pkg/testkit/testkit.go#L131",
+  "fix_pattern": "Reset `@@global.tidb_schema_cache_size` to default before running the test to ensure consistent infoschema behavior.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/61400",
     "https://github.com/pingcap/tidb/pull/61400.patch"
