@@ -81,6 +81,8 @@ def _analyze_cases(cases: List[Dict[str, Any]]) -> Dict[str, Any]:
         "combined_keywords": Counter(),
         "root_cause_unclassified": 0,
         "review_smells_unclassified": 0,
+        "root_cause_insufficient_evidence": 0,
+        "review_smells_needs_more_evidence": 0,
         "cases_with_patches": 0,
     }
     
@@ -122,10 +124,14 @@ def _analyze_cases(cases: List[Dict[str, Any]]) -> Dict[str, Any]:
         root_causes = case.get("root_cause_categories", [])
         if "unclassified" in root_causes:
             stats["root_cause_unclassified"] += 1
+        if "insufficient_evidence" in root_causes:
+            stats["root_cause_insufficient_evidence"] += 1
         
         smells = case.get("review_smells", [])
         if "unclassified" in smells:
             stats["review_smells_unclassified"] += 1
+        if "needs_more_evidence" in smells:
+            stats["review_smells_needs_more_evidence"] += 1
         
         # Patch availability
         if case.get("patch_url"):
@@ -151,6 +157,8 @@ def _generate_report(stats: Dict[str, Any]) -> str:
         f"- **Total cases**: {stats['total_cases']}",
         f"- **Cases with unclassified root_cause**: {stats['root_cause_unclassified']} ({stats['root_cause_unclassified']/stats['total_cases']*100:.1f}%)",
         f"- **Cases with unclassified review_smells**: {stats['review_smells_unclassified']} ({stats['review_smells_unclassified']/stats['total_cases']*100:.1f}%)",
+        f"- **Cases with insufficient_evidence root_cause**: {stats['root_cause_insufficient_evidence']} ({stats['root_cause_insufficient_evidence']/stats['total_cases']*100:.1f}%)",
+        f"- **Cases with needs_more_evidence smell**: {stats['review_smells_needs_more_evidence']} ({stats['review_smells_needs_more_evidence']/stats['total_cases']*100:.1f}%)",
         f"- **Cases with patches**: {stats['cases_with_patches']}",
         "",
         "## Test Type Distribution",

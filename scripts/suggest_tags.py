@@ -21,6 +21,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 
+FALLBACK_CAUSE = "insufficient_evidence"
+FALLBACK_SMELL = "needs_more_evidence"
+
+
 @dataclass
 class Suggestion:
     case_id: str
@@ -110,6 +114,11 @@ PATTERNS = {
 
 # Smell patterns mapping
 SMELL_PATTERNS = {
+    "needs_more_evidence": {
+        "causes": [FALLBACK_CAUSE],
+        "keywords": [],
+        "context": [],
+    },
     "missing_order_by": {
         "causes": ["nondeterministic_result_order"],
         "keywords": ["order by", "ordering", "sort"],
@@ -383,12 +392,13 @@ def _suggest_tags_with_thresholds(
     path_text = test.get("path", "") if isinstance(test, dict) else ""
     
     # Score each cause
+    min_cause_score = cause_threshold if cause_threshold > 0 else 1e-9
     cause_scores = []
     for cause_key in PATTERNS.keys():
         score, reason = _score_cause(
             cause_key, case, symptoms_text, fix_text, title_text, path_text
         )
-        if score >= cause_threshold:  # Threshold for suggestion
+        if score >= min_cause_score:  # Threshold for suggestion (exclude 0.0 score in forcing mode)
             cause_scores.append((cause_key, score, reason))
     
     # Sort by confidence
@@ -398,23 +408,24 @@ def _suggest_tags_with_thresholds(
     top_causes = [c[0] for c in cause_scores[:3]]
     
     # Score each smell
+    min_smell_score = smell_threshold if smell_threshold > 0 else 1e-9
     smell_scores = []
     for smell_key in SMELL_PATTERNS.keys():
         score, reason = _score_smell(
             smell_key, case, symptoms_text, fix_text, title_text, top_causes
         )
-        if score >= smell_threshold:  # Threshold for suggestion
+        if score >= min_smell_score:  # Threshold for suggestion (exclude 0.0 score in forcing mode)
             smell_scores.append((smell_key, score, reason))
     
     # Sort by confidence
     smell_scores.sort(key=lambda x: x[1], reverse=True)
     
-    # If no causes matched, keep unclassified
+    # If no causes matched, use a semantic fallback (instead of guessing).
     if not cause_scores:
-        cause_scores = [("unclassified", 1.0, "no strong pattern match")]
+        cause_scores = [(FALLBACK_CAUSE, 1.0, "no strong pattern match")]
     
     # If no smells matched but we have causes, infer smells
-    if not smell_scores and cause_scores[0][0] != "unclassified":
+    if not smell_scores and cause_scores[0][0] not in ("unclassified", FALLBACK_CAUSE):
         # Find smells related to top cause
         top_cause = cause_scores[0][0]
         for smell_key, patterns in SMELL_PATTERNS.items():
@@ -424,7 +435,7 @@ def _suggest_tags_with_thresholds(
                     break
     
     if not smell_scores:
-        smell_scores = [("unclassified", 1.0, "no strong pattern match")]
+        smell_scores = [(FALLBACK_SMELL, 1.0, "no strong pattern match")]
 
     return Suggestion(
         case_id=case_id,
@@ -506,6 +517,12 @@ def _apply_suggestions(
         if force_all:
             # Force-tag: pick smells related to the chosen root cause first.
             chosen_cause = case["root_cause_categories"][0]
+            if chosen_cause == FALLBACK_CAUSE:
+                # For semantic fallback cases, keep smells consistent with the fallback,
+                # instead of matching generic keywords (e.g. "table") that can be noisy.
+                case["review_smells"] = [FALLBACK_SMELL]
+                _write_json(path, case)
+                continue
             related = []
             for key, conf, _reason in s.suggested_smells:
                 if chosen_cause in (SMELL_PATTERNS.get(key, {}).get("causes") or []):
@@ -557,8 +574,11 @@ def _main() -> int:
     
     # Generate suggestions
     suggestions = []
-    cause_threshold = 0.0 if args.apply_all else 0.3
-    smell_threshold = 0.0 if args.apply_all else 0.3
+    # Keep conservative thresholds even in --apply-all and rely on semantic
+    # fallback tags (insufficient_evidence / needs_more_evidence) for 100%
+    # coverage without hard-guessing.
+    cause_threshold = 0.3
+    smell_threshold = 0.3
     top_n_smells = 10 if args.apply_all else 3
     for path, case in cases:
         s = _suggest_tags_with_thresholds(

@@ -15,6 +15,28 @@
       "status": "active"
     },
     {
+      "key": "needs_more_evidence",
+      "title": "Insufficient evidence / missing root cause explanation",
+      "description": "The change claims to fix flakiness, but the PR and/or the case lacks enough concrete evidence (failure signature, repro hints, CI links, or a clear explanation) to confidently determine the root cause.",
+      "why_risky": "Without evidence, reviewers cannot validate the fix, and the change may only mask the problem (e.g., by increasing timeouts/retries) or introduce new flakiness. It also prevents the team from learning reusable patterns for future reviews.",
+      "review_questions": [
+        "What is the failure signature (logs/assertion/stack) and how often does it happen?",
+        "How does this change address the root cause, not just mitigate symptoms (sleep/timeout/retry/skip)?",
+        "Can we link to CI logs/issues or add minimal repro steps for future reference?",
+        "If we are quarantining (skip/mark flaky), is there a follow-up plan to root-cause it?"
+      ],
+      "suggested_fixes": [
+        "Add evidence links (CI logs/issues) and a short explanation of the root cause and why the fix works",
+        "Prefer deterministic synchronization/ordering over pure sleeps or large timeout increases",
+        "If only mitigation is possible, quarantine explicitly and file a follow-up issue to root-cause",
+        "Improve failure signature collection (assertions/logs) so the case can be re-triaged later"
+      ],
+      "related_root_causes": ["insufficient_evidence"],
+      "applies_to": ["unit", "integration", "realtikv"],
+      "severity": 1,
+      "status": "active"
+    },
+    {
       "key": "missing_order_by",
       "title": "Missing ORDER BY in SELECT queries",
       "description": "SELECT queries without explicit ORDER BY may return results in non-deterministic order, causing assertions to fail intermittently.",
