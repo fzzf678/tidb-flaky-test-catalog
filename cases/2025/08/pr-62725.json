@@ -22,6 +22,7 @@
   "review_smells": [
     "statistics_sensitive_test"
   ],
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: Previously, if there weren't valid statistics on an index, we would use pseudo-estimation for the cardinality.",
   "fix_pattern": "Previously, if there weren't valid statistics on an index, we would use pseudo-estimation for the cardinality. However, there are cases where we could make a more accurate estimation because we have statistics on the underlying columns, but we didn't make use of this information. With this change, if our index stats are invalid it checks for valid column statistics and uses those that are available.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62725",

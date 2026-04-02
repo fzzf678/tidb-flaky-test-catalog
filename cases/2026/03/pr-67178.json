@@ -24,6 +24,7 @@
     "assert_exact_plan_or_cost",
     "statistics_sensitive_test"
   ],
+  "root_cause_explanation": "Analyze/plan-stats tests were flaky because dynamic partition analyze could mix legacy (v1) persisted stats with session-selected analyze version, leading to nondeterministic global-stats rebuilds and EXPLAIN/assertion drift. The PR rewrites the analyze flow to expand partitions and handle version mismatches deterministically, and adds regressions to lock the behavior.",
   "fix_pattern": "Rewrite dynamic partition analyze flow for legacy stats and add tests that simulate persisted v1 stats, improving determinism of analyze/plan-stats assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/67178",

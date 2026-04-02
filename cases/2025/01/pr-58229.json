@@ -23,6 +23,7 @@
     "async_schema_propagation",
     "ddl_without_wait"
   ],
+  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Reverted the use of table.AddRecord() for non-clustered tables and added the old row into the batch transaction, so the transaction would fail if the old row have been touched (if it already has been copied/double writte….",
   "fix_pattern": "Reverted the use of table.AddRecord() for non-clustered tables and added the old row into the batch transaction, so the transaction would fail if the old row have been touched (if it already has been copied/double written and has not been touched, it will be skipped from being copied).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58229",

@@ -23,6 +23,7 @@
     "real_tikv_dependency",
     "hardcoded_port_or_resource"
   ],
+  "root_cause_explanation": "In classic-mode `IMPORT INTO`, the target-table-emptiness check was performed again in later executor steps, so executor recreation/restart could re-run the check after partial import and fail intermittently. The PR moves the check to the task-start boundary (run once per task) and adds coverage for executor recreation, removing the restart-related race.",
   "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65970",

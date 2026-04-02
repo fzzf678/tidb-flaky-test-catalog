@@ -22,6 +22,7 @@
   "review_smells": [
     "missing_order_by"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: select /*+ TIDB_HJ(t1, t2) */ t1.a, t1.b from t t1, t t2 where t1.b=t2.b order by t1.a; (tests/integrationtest/r/expression/charset_and_collation.result).",
   "fix_pattern": "select /*+ TIDB_HJ(t1, t2) */ t1.a, t1.b from t t1, t t2 where t1.b=t2.b order by t1.a; (tests/integrationtest/r/expression/charset_and_collation.result)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46944",

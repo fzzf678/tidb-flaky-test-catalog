@@ -23,6 +23,7 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(`explain format='brief' select row_number() over(order by a.k) from (select * from sbtest where id<10) a`).Check(testkit.Rows( (pkg/planner/core/integration_test.go).",
   "fix_pattern": "tk.MustQuery(`explain format='brief' select row_number() over(order by a.k) from (select * from sbtest where id<10) a`).Check(testkit.Rows( (pkg/planner/core/integration_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48186",

@@ -23,6 +23,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select /*+ use_index_merge(t1, primary, t1a) */ * from t1 where id < 2 or a > 4 order by id\").Check(testkit.Rows(\"1 1 1 1 1\", (executor/index_merge_reader_test.go).",
   "fix_pattern": "tk.MustQuery(\"select /*+ use_index_merge(t1, primary, t1a) */ * from t1 where id < 2 or a > 4 order by id\").Check(testkit.Rows(\"1 1 1 1 1\", (executor/index_merge_reader_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40904",

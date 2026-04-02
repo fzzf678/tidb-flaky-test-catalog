@@ -22,6 +22,7 @@
   "review_smells": [
     "relying_on_map_iteration_order"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Map/dict iteration order is not stable across runs. This PR stabilizes it by: Because the result of ```ExtractColumnsMapFromExpressions``` is a map, and the traversal order of a map may be random, it could lead to the order of ```col1=col2``` also being random.",
   "fix_pattern": "Because the result of ```ExtractColumnsMapFromExpressions``` is a map, and the traversal order of a map may be random, it could lead to the order of ```col1=col2``` also being random. Therefore, when replacing constants, we should ensure that the final result is `col=value`, which can avoid unstable tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64927",

@@ -22,6 +22,7 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
+  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: The SysVar struct is not entirely immutable, since SEM (in tests) and server startup may modify the .Value for certain sysvars.",
   "fix_pattern": "The SysVar struct is not entirely immutable, since SEM (in tests) and server startup may modify the .Value for certain sysvars. This causes a data race because callers of `GetSysVar`/`GetSysVars` previously did not hold deep copied of the sysvars.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24732",

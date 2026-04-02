@@ -23,6 +23,7 @@
     "ddl_without_wait",
     "async_schema_propagation"
   ],
+  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Before removing public columns/indexes, we should follow the path `public` -> `write-only` -> `delete-only` -> `none`.",
   "fix_pattern": "Before removing public columns/indexes, we should follow the path `public` -> `write-only` -> `delete-only` -> `none`. In the above case, **owner TiDB is still aware of the old index** (which is in `write-only` state). As long as it maintains the old index mutations, there is no data inconsistent issue.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62549",

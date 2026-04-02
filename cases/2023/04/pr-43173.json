@@ -22,6 +22,7 @@
   "review_smells": [
     "missing_order_by"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: queryCommonHash := fmt.Sprintf(\"select /*+ use_index_merge(tcommonhash, primary, idx_bc) */ * from tcommonhash where a = %v or b = %v order by c limit %v\", a, b, limit) (executor/index_merge_reader_test.go).",
   "fix_pattern": "queryCommonHash := fmt.Sprintf(\"select /*+ use_index_merge(tcommonhash, primary, idx_bc) */ * from tcommonhash where a = %v or b = %v order by c limit %v\", a, b, limit) (executor/index_merge_reader_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43173",

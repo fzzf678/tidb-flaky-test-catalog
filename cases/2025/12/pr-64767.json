@@ -22,6 +22,7 @@
   "review_smells": [
     "insufficient_cleanup_between_tests"
   ],
+  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. This PR stabilizes it by: We modified the logic in generateAndSendJob to reference all jobs before sending them to jobToWorkerCh.",
   "fix_pattern": "We modified the logic in generateAndSendJob to reference all jobs before sending them to jobToWorkerCh. Specifically, we first call job.ref(jobWg) for all generated jobs in a loop, and then send them to the channel one by one in a separate loop.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64767",

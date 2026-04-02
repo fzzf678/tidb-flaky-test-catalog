@@ -23,6 +23,7 @@
     "shared_table_without_isolation",
     "t_parallel_with_shared_state"
   ],
+  "root_cause_explanation": "The TLS tests were flaky because they depended on global HTTP mux state and on an unstable client-side TLS error string. This PR uses a per-test `ServeMux` (avoiding shared global handler state) and asserts against the server-side error log with `require.Eventually`, making the failure signal stable across runs.",
   "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65734",

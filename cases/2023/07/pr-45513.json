@@ -23,6 +23,7 @@
     "missing_order_by",
     "relying_on_map_iteration_order"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: It will change to `b = 1127`.",
   "fix_pattern": "It will change to `b = 1127`. Sometimes we have more than 1 line equal to 1127, so the result is unstable. | queryRangePartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from trange use index(idx_a) where a > %v and a < %v order by a limit %v\", x, maxEle, y) (executor/partition_table_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45513",

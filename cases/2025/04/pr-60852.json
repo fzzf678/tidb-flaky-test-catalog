@@ -22,6 +22,7 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: The \"indexjoin + streamagg + indexlookup + nocommonhandle\" will trigger a panic in ISSUE.",
   "fix_pattern": "The \"indexjoin + streamagg + indexlookup + nocommonhandle\" will trigger a panic in ISSUE. The root cause is that when building the stream agg and push it into coptask, tidb miss the handlecolumns on the coptask and double read tablescan side.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60852",

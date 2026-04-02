@@ -22,6 +22,7 @@
   "review_smells": [
     "missing_order_by"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: 1.",
   "fix_pattern": "1. TiDB hold mpp result for n*MaxChunkSize rows 2. During holding result, if got mem limit error, will send recovery http request to AutoScaler(with ori CN cnt, and AutoScaler will check ori CN count to scale out new CN) 3. For now, I didn't add sys var, instead use hard code value. Because for master, mpp recovery will not take effccts. It only works for Serverless Tier(or with AutoScaler). So no need to ask PM to add new sys var, and I will add sys var when cherry pick to Serverless Tier repo 4. AutoScaler changes: https://github.com/tidbcloud/tiflash-autoscale/pull/33",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49401",

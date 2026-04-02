@@ -23,6 +23,7 @@
   "review_smells": [
     "missing_order_by"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: {`select /*+ inl_join(t1) */ * from t1, t2 where t1.a=t2.a and t1.b<?.",
   "fix_pattern": "{`select /*+ inl_join(t1) */ * from t1, t2 where t1.a=t2.a and t1.b<? and t2.b<? order by t1.a limit 5`, \"inl_join(@`sel_1` `test`.`t1`), use_index(@`sel_1` `test`.`t1` `k_a`), no_order_index(@`sel_1` `test`.`t1` `k_a`), use_index(@`sel_1` `test`.`t2` )\", nil}, (infoschema/test/clustertablestest/cluster_tables_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44670",

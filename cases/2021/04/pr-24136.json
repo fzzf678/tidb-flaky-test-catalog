@@ -24,6 +24,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: + c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go).",
   "fix_pattern": "+ c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24136",

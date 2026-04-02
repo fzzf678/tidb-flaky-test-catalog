@@ -23,6 +23,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select t1.c1 from t t1 join t t2 on t1.c1 = t2.c1 order by t1.c1\").Check(testkit.Rows(\"1.00000\", \"1.00001\", \"1.00010\")) (executor/tiflash_test.go).",
   "fix_pattern": "tk.MustQuery(\"select t1.c1 from t t1 join t t2 on t1.c1 = t2.c1 order by t1.c1\").Check(testkit.Rows(\"1.00000\", \"1.00001\", \"1.00010\")) (executor/tiflash_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23191",

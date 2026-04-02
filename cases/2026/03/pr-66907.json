@@ -23,6 +23,7 @@
     "t_parallel_with_shared_state",
     "race_condition_in_async_code"
   ],
+  "root_cause_explanation": "The test was flaky under `-race` because it used `assert.NoError` inside `require.Eventually`: early transient failures called `t.Errorf()` and permanently marked the test failed even if later retries would succeed. The PR changes the condition to a pure boolean (`err == nil`) / `EventuallyWithT`, making early races harmless and the eventual condition deterministic.",
   "fix_pattern": "br/streamhelper: fix flaky TestCheckPointLagged | `TestCheckPointLagged` is flaky under race detector (`-race`) with parallel test shards. It fails with: | Subject: [PATCH] br/streamhelper: fix flaky TestCheckPointLagged | require.Eventually(t, func() bool {",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66907",

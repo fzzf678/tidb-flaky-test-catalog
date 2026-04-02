@@ -22,6 +22,7 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
+  "root_cause_explanation": "The concurrent-map memory-usage tests were flaky because they asserted exact memory usage while the underlying `MemAwareMap` layout depends on Go map seed randomness, making the baseline footprint nondeterministic. The PR fixes the seed in test mode so the map layout (and memory usage) becomes deterministic for assertions.",
   "fix_pattern": "executor/join, util/hack: stabilize concurrent map memory usage tests | `TestConcurrentMapHashTableMemoryUsage` in `pkg/executor/join` is flaky because the test asserts exact memory usage, while the underlying `MemAwareMap` layout depends on Go map seed randomness. That makes the initial memory footprint nondeterministic in test runs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66803",

@@ -23,6 +23,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select *, ((1 << (64-5-1)) - 1) & _tidb_rowid from t order by a;\").Check(testkit.Rows(\"1 1\")) (executor/rowid_test.go).",
   "fix_pattern": "tk.MustQuery(\"select *, ((1 << (64-5-1)) - 1) & _tidb_rowid from t order by a;\").Check(testkit.Rows(\"1 1\")) (executor/rowid_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22062",

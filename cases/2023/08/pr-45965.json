@@ -23,6 +23,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: rs, err := tk.ExecWithContext(context.Background(), fmt.Sprintf(\"select %s over (partition by p order by o rows between 1 preceding and 1 following) as a from agg;\", funcName)) (executor/window_test.go).",
   "fix_pattern": "rs, err := tk.ExecWithContext(context.Background(), fmt.Sprintf(\"select %s over (partition by p order by o rows between 1 preceding and 1 following) as a from agg;\", funcName)) (executor/window_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45965",

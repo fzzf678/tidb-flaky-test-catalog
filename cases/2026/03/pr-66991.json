@@ -22,6 +22,7 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
+  "root_cause_explanation": "The GC worker test was flaky due to a race between leaderTick updating the PD txn safe point and a background safe-point updater polling on a 10s interval: the test's snapshot read could become older than the updated safe point and fail. The PR disables the background updater via failpoint during this test, removing the timing contention and making reads deterministic.",
   "fix_pattern": "* Enhanced oracle timestamp handling in concurrent test scenarios to ensure deterministic behavior and prevent timing contention issues.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66991",

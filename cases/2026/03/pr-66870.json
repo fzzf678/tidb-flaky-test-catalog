@@ -22,6 +22,7 @@
   "review_smells": [
     "missing_order_by"
   ],
+  "root_cause_explanation": "Warnings for `SUBTIME`/`ADDTIME` were flaky because the datetime input string could come from chunk-backed zero-copy memory: warning arguments were formatted later, after the backing buffer was reused, so the warning text could be corrupted nondeterministically. The PR wraps/freezes unsafe string arguments so warning messages snapshot stable values.",
   "fix_pattern": "`SUBTIME`/`ADDTIME` warning texts can become nondeterministic when the datetime input string comes from chunk-backed zero-copy memory. The warning message is formatted later, after chunk buffers may be reused, so the error argument can be corrupted and flaky tests appear as random warning values. | Subject: [PATCH 4/8] pkg/util/gctuner: stabilize TestIssue48741 polling | Subject: [PATCH 6/8] br/streamhelper: stabilize TestUnregisterAfterPause | runtime.GC()",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66870",

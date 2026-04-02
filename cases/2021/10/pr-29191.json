@@ -23,6 +23,7 @@
   "review_smells": [
     "missing_order_by"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: GO111MODULE=on go test -p 1 -race -covermode=atomic -coverprofile=coverage.txt -coverpkg=./...",
   "fix_pattern": "GO111MODULE=on go test -p 1 -race -covermode=atomic -coverprofile=coverage.txt -coverpkg=./... ./... | runNodeRestoreTest(t, testCases, \"select * from t order by %s\", extractNodeFunc) (parser/ast/dml_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29191",

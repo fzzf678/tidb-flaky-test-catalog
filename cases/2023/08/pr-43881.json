@@ -24,6 +24,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: race = \"on\", | maxEle := tk.MustQuery(fmt.Sprintf(\"select ifnull(max(c), 100) from (select c from t use index(idx3) where (a = %d or b = %d) and c >= %d order by c limit %d) t\", valA, valB, valC, offset)).Rows()[0][0] (e….",
   "fix_pattern": "race = \"on\", | maxEle := tk.MustQuery(fmt.Sprintf(\"select ifnull(max(c), 100) from (select c from t use index(idx3) where (a = %d or b = %d) and c >= %d order by c limit %d) t\", valA, valB, valC, offset)).Rows()[0][0] (executor/test/indexmergereadtest/index_merge_reader_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43881",
