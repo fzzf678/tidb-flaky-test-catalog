@@ -17,15 +17,14 @@
   ],
   "failure_signature": "rs := testKit.MustQuery(`SELECT v2.c0 FROM (select rand() as c0 from t3) v2 order by v2.c0 limit 10`).Rows() (pkg/planner/core/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: rs := testKit.MustQuery(`SELECT v2.c0 FROM (select rand() as c0 from t3) v2 order by v2.c0 limit 10`).Rows() (pkg/planner/core/integration_test.go).",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
   "module": "planner",
-  "fix_pattern": "rs := testKit.MustQuery(`SELECT v2.c0 FROM (select rand() as c0 from t3) v2 order by v2.c0 limit 10`).Rows() (pkg/planner/core/integration_test.go)",
+  "fix_pattern": "Run planner core casetests under cascades mode via testkit.RunTestUnderCascades.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62819",
     "https://github.com/pingcap/tidb/pull/62819.patch"
