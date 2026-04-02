@@ -17,12 +17,10 @@
   ],
   "failure_signature": "Timing-sensitive import task cleanup (task still present / table mode not reset) causing nondeterministic follow-up steps.",
   "root_cause_categories": [
-    "concurrency_data_race",
     "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code",
-    "global_variable_mutation"
+    "async_wait_without_backoff"
   ],
   "root_cause_explanation": "This real-TiKV IMPORT INTO test was flaky because async cleanup after an import task (e.g., task removal/table-mode reset) could lag behind the test flow, so follow-up steps ran before cleanup completed. The PR captures the task ID and waits (with `Eventually`) for cleanup to finish before truncating/re-running, making the sequence deterministic.",
   "module": "executor",

@@ -13,9 +13,9 @@
     "name": "TestEnforceMPPWarning1"
   },
   "symptoms": [
-    "planner: make enforcempp tests ignore plan id with explain format as brief"
+    "EnforceMPP casetests were flaky because golden EXPLAIN outputs included plan/operator IDs (e.g., `TableFullScan_10`) whose allocation/order is not stable, causing intermittent diffs."
   ],
-  "failure_signature": "planner: make enforcempp tests ignore plan id with explain format as brief",
+  "failure_signature": "Golden EXPLAIN mismatch due to unstable plan/operator IDs embedded in output (plan-id suffixes).",
   "root_cause_categories": [
     "nondeterministic_plan_selection"
   ],
@@ -24,7 +24,7 @@
   ],
   "root_cause_explanation": "The EnforceMPP casetests were flaky because the recorded EXPLAIN output included plan/operator IDs whose allocation/order is not stable across optimization changes, making the golden assertions overly strict. The PR switches to a brief format / normalization so the tests ignore unstable plan-id details and only assert on stable plan content.",
   "module": "planner",
-  "fix_pattern": "planner: make enforcempp tests ignore plan id with explain format as brief",
+  "fix_pattern": "Use a brief/normalized EXPLAIN format in casetests to ignore unstable plan-id/operator-id details and assert only on stable plan content.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66202",
     "https://github.com/pingcap/tidb/pull/66202.patch"

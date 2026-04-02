@@ -9,22 +9,22 @@
   "pr_merged_at": "2026-03-11T08:34:59+08:00",
   "test": {
     "type": "unit",
-    "path": "pkg/executor/parallel_apply.go",
+    "path": "pkg/executor/parallel_apply_test.go",
     "name": "TestParallelApplyCancelInflight"
   },
   "symptoms": [
-    "This caused TestParallelApplyCancelInflight to become flaky. Where, due to timing, it can succeed on a local system or when CI resources are available, but fail on a busy CI system. | The first priority is to fix the context to reduce the flaky test."
+    "`TestParallelApplyCancelInflight` became flaky because a merge/conflict mistake caused workers to use a non-cancelable context, so in-flight inner work was not reliably canceled when LIMIT terminated the query (timing-dependent under CI load)."
   ],
-  "failure_signature": "This caused TestParallelApplyCancelInflight to become flaky. Where, due to timing, it can succeed on a local system or when CI resources are available, but fail on a busy CI system. | The first priority is to fix the context to reduce the flaky test.",
+  "failure_signature": "Timing-dependent failures in `TestParallelApplyCancelInflight` when in-flight inner workers are not canceled correctly under CI load.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "race_condition_in_async_code"
   ],
   "root_cause_explanation": "A merge/conflict mistake caused parallel-apply workers to use the wrong (non-cancelable) context, so in-flight inner work was not reliably canceled when LIMIT terminated the query. This made the cancellation test timing-dependent (passes on idle machines, fails on busy CI). The PR fixes the context propagation so cancellation reliably stops workers and the test becomes stable.",
   "module": "executor",
-  "fix_pattern": "This caused TestParallelApplyCancelInflight to become flaky. Where, due to timing, it can succeed on a local system or when CI resources are available, but fail on a busy CI system. | The first priority is to fix the context to reduce the flaky test.",
+  "fix_pattern": "Fix parallel-apply worker context propagation so cancel-in-flight reliably stops inner workers when LIMIT terminates the query, stabilizing `TestParallelApplyCancelInflight`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66887",
     "https://github.com/pingcap/tidb/pull/66887.patch"
