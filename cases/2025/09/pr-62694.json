@@ -13,18 +13,16 @@
     "name": "grouped_ranges_order_by"
   },
   "symptoms": [
-    "explain format = 'brief' select /*+ order_index(t2,iabc) */ a,c from t2 where a = 3 and b in (1, 3, 5) order by a desc, c desc; (tests/integrationtest/r/planner/core/grouped_ranges_order_by.result)"
+    "Insufficient evidence in PR description/diff to classify a flaky root cause; this PR primarily implements keep-order support for IN conditions and adds new integration tests."
   ],
-  "failure_signature": "explain format = 'brief' select /*+ order_index(t2,iabc) */ a,c from t2 where a = 3 and b in (1, 3, 5) order by a desc, c desc; (tests/integrationtest/r/planner/core/grouped_ranges_order_by.result)",
+  "failure_signature": "Insufficient evidence: no explicit flaky failure signature described; needs CI logs or a reliable repro.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost",
-    "plan_cache_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner As mentioned in the issue, new fields `GroupedRanges` and `GroupByColIdxs` are added to `AccessPath`, `PhysicalIndexScan`, and `PhysicalTableScan`.",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
   "module": "planner",
   "fix_pattern": "planner As mentioned in the issue, new fields `GroupedRanges` and `GroupByColIdxs` are added to `AccessPath`, `PhysicalIndexScan`, and `PhysicalTableScan`. (`pkg/planner/core/operator/physicalop/*`) `matchProperty()` (`pkg/planner/core/find_best_task.go`) Add the new logic to match the sort property as described in the issue. Due to changes in `matchProperty()`, the names and data types of several other fields and the function return value are also modified correspondingly, like `candidatePath.isMatchProp`, `matchPropForIndexMergeAlternatives()`. The checking logic is also updated correspondingly. (`pkg/planner/core/find_best_task.go`) When it's `PropMatchedNeedMergeSort`, set up `ByItems`, `GroupedRanges`, and `GroupByColIdxs` for `PhysicalIndexScan` and `PhysicalTableScan`. (`convertToIndexScan()`, `convertToTableScan()`) New function `GroupRangesByCols()` that builds/rebuilds the `GroupedRanges` from the `GroupByColIdxs` and `ranges`. (`pkg/planner/core/find_best_task.go`) Enum `PhysicalPropMatchResult` (`pkg/planner/property/physical_property.go`) `PropMatchedNeedMergeSort`: means the newly introduced enhancement. When rebuilding ranges for the plan cache, also rebuild the `GroupedRanges`. (`pkg/planner/core/plan_cache_rebuild.go`) executor In `Open()` of the 3 executors, when there are correlated columns, also use `GroupRangesByCols` to rebuild grouped ranges after rebuilding ranges. `IndexReaderExecutor` New field `groupedRanges [][]*ranger.Range`, directly comes from `PhysicalIndexScan`. Update `Open()` to consider the new case when building kv ranges. `IndexLookUpExecutor` New field `groupedRanges [][]*ranger.Range`, directly comes from `PhysicalIndexScan`. New field `groupedKVRanges []*kvRangesWithPhysicalTblID` as a unified place to store the kv ranges. It replaces the previous `partitionKVRanges` and `kvRanges` field. Update `buildTableKeyRanges()` to consider the new case when building kv ranges. `TableReaderExecutor` New field `groupedRanges` and `groupByColIdxs`, directly come from `PhysicalTableScan`. Update `Open()` to consider the new case when building kv ranges. `buildResp()` is updated and renamed to `buildRespForGroupedRanges()` as a unified method to handle ranges and grouped ranges. `mem*Reader` Correctly set up `usedIndex` for the extra sorting (mem reader doesn't support merge sort). (`pkg/executor/mem_reader.go`) When `usedIndex` is set, it means we need extra sorting. (`pkg/executor/mem_reader.go`) `memIndexLookUpReader` New field `groupedKVRanges []*kvRangesWithPhysicalTblID` as a unified place to store the kv ranges. It replaces the previous `partitionKVRanges`, `partitionTables`, and `partitionMode` fields. It corresponds to the changes in `IndexLookUpExecutor`.",
   "evidence_links": [

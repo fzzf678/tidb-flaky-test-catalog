@@ -17,15 +17,13 @@
   ],
   "failure_signature": "planner: flaky test cleanup3",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "shared_state_pollution"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost",
     "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: There is a plan to deprecate stats version 1 in 9.0 release.",
-  "module": "planner",
+  "root_cause_explanation": "This PR notes that stats version 1 is planned to be deprecated and that stats-v1 assertions were a top source of flakiness (e.g., TestNewCollationStatsWithPrefixIndex). The flakiness comes from brittle expectations on statistics outputs that can change across versions/implementations. The PR stabilizes by removing stats-v1 test coverage and switching remaining checks to stats version 2, reducing sensitivity to unstable stats-v1 behavior.",
+  "module": "statistics",
   "fix_pattern": "There is a plan to deprecate stats version 1 in 9.0 release. Therefore, I have removed the test for stats version 1 in test \"TestNewCollationStatsWithPrefixIndex\" - since this is ranked number 1 on the weekly flaky test report. Also changed \"TestEstimationForUnknownValues\" to use stats version 2.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/63702",
