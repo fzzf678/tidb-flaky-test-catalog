@@ -23,6 +23,7 @@
     "ddl_without_wait"
   ],
   "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: add a `assumed server` mechanism, which will be used in syncing cross keyspace info schema later.",
+  "module": "ddl",
   "fix_pattern": "add a `assumed server` mechanism, which will be used in syncing cross keyspace info schema later. the `assumed server` is identified by `AssumedKeyspace` field in `ServerInfo` online schema change will consider `assumed server` if the DDL is related to system tables, otherwise we will filter them out. some refactor and add some comments to schema checker/validator support `crossKS` in server info syncer support `crossKS` in I_S syncer to only cares about system tables, and skip MDL check for user tables. skip loading unrelated diff for `crossKS`, and loading `mysql` db through the reserved ID. skip loading virtual tables for cross keyspace I_S",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62831",

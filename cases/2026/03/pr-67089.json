@@ -23,6 +23,7 @@
     "relying_on_map_iteration_order"
   ],
   "root_cause_explanation": "The TopRU pipeline tests were flaky because RU record/item ordering and attribution depended on Go map iteration order and asynchronous draining of queued records, so assertions on Top-N ranking could drift. The PR drains queued RU into the aggregator and normalizes/sorts items before asserting, making the reported order deterministic.",
+  "module": "server",
   "fix_pattern": "require.Eventually(t, func() bool { | // Drain queued RU into aggregator to make the attribution deterministic in UT. | // Normalize record/item order so assertions are stable across map iteration order. | TotalRU:      float64(250 - i), // keep deterministic ranking",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/67089",

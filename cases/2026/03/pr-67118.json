@@ -24,6 +24,7 @@
     "assert_exact_plan_or_cost"
   ],
   "root_cause_explanation": "The checksum-cancellation test was flaky because the cancellation branch accidentally checksummed the wrong table/plan (`db.tb`) which could finish around the timeout boundary, sometimes returning mismatch before interruption. The PR uses the intended slow table/plan (`db.tb2`), ensuring the timeout/interruption path is consistently exercised.",
+  "module": "executor",
   "fix_pattern": "executor/importer: fix flaky TestVerifyChecksum cancellation path | `TestVerifyChecksum` is flaky because the cancel-check branch accidentally checksums `db.tb` (`plan`) instead of the intended slow table `db.tb2` (`plan2`). When `db.tb` is used, checksum can complete around the timeout boundary and return checksum mismatch before interruption, making the assertion nondeterministic. | Subject: [PATCH] executor/importer: fix flaky TestVerifyChecksum cancellation",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/67118",

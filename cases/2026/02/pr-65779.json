@@ -23,6 +23,7 @@
     "race_condition_in_async_code"
   ],
   "root_cause_explanation": "The query-watch quarantine/removal effect is asynchronous, but the test previously used a fixed 1-second sleep and then asserted a specific error, which can race on slow/loaded CI. This PR switches to `require.Eventually` and checks the returned SQL error code, so the test waits until the expected quarantine error is actually observable.",
+  "module": "executor",
   "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65779",

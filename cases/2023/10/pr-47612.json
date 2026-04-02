@@ -24,6 +24,7 @@
     "unsorted_result_assertion"
   ],
   "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"SELECT\\n repo_id, GROUP_CONCAT(\\n DISTINCT actor_login\\n ORDER BY cnt DESC\\n SEPARATOR ','\\n ) AS actor_logins\\nFROM (\\n SELECT\\n ge.repo_id AS repo_id,\\n ge.actor_login AS actor_login,\\n COUNT(*) AS cnt\\n….",
+  "module": "planner",
   "fix_pattern": "tk.MustQuery(\"SELECT\\n repo_id, GROUP_CONCAT(\\n DISTINCT actor_login\\n ORDER BY cnt DESC\\n SEPARATOR ','\\n ) AS actor_logins\\nFROM (\\n SELECT\\n ge.repo_id AS repo_id,\\n ge.actor_login AS actor_login,\\n COUNT(*) AS cnt\\n FROM github_events ge\\n WHERE\\n type = 'PullRequestEvent' AND action = 'opened'\\n AND (ge.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY) A...",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47612",

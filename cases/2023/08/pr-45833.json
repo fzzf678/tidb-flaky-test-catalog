@@ -25,6 +25,7 @@
     "unsorted_result_assertion"
   ],
   "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: race = \"on\", | tk.MustQuery(\"select /*+ use_index_merge(t1, primary, t1a) */ * from t1 where id < 2 or a > 4 order by a\").Check(testkit.Rows(\"1 1 1 1 1\", \"5 5 5 5 5\")) (session/sessiontest/variable/variable_test.go).",
+  "module": "session",
   "fix_pattern": "race = \"on\", | tk.MustQuery(\"select /*+ use_index_merge(t1, primary, t1a) */ * from t1 where id < 2 or a > 4 order by a\").Check(testkit.Rows(\"1 1 1 1 1\", \"5 5 5 5 5\")) (session/sessiontest/variable/variable_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45833",

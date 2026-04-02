@@ -24,6 +24,7 @@
     "t_parallel_with_shared_state"
   ],
   "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: Increase the usability for the latest parallel restore feature User often retry restore without specifying restoredTS, it will result in an error that might be confusing to user.",
+  "module": "br",
   "fix_pattern": "Increase the usability for the latest parallel restore feature User often retry restore without specifying restoredTS, it will result in an error that might be confusing to user. Now we will auto detect such cases and potentially reuse task by doing following things: 1. if user specify a restoredTS, we will directly use that ts 2. if not, we will try to find the task that only differs in restoredTS in the registry. 2.1 if the task if pasued, use the restoreTS in this task and try to resume it (in transaction will make sure task has not changed) 2.2 if task is running, it could potentially be a orphan task, we wait for 5 minutes to see if its heartbeat changed, if not we pause it, use its restoreTS and goes to the normal flow of resuming it. If heartbeat changed, we directly go to the next step and will bail out because filter matches.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/61610",

@@ -24,6 +24,7 @@
     "assert_exact_plan_or_cost"
   ],
   "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(\"select *, first_value(v) over (partition by p order by o range between 3 preceding and 2.9 following) as a from test.first_range;\") (planner/core/integration_test.go).",
+  "module": "executor",
   "fix_pattern": "tk.MustQuery(\"select *, first_value(v) over (partition by p order by o range between 3 preceding and 2.9 following) as a from test.first_range;\") (planner/core/integration_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46927",

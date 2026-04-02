@@ -24,6 +24,7 @@
     "race_condition_in_async_code"
   ],
   "root_cause_explanation": "The test was flaky because a WaitGroup accounting race in the helper allowed a worker to call `Done()` before the test called `Add(1)`, causing `sync: negative WaitGroup counter` intermittently. The PR fixes the ordering by calling `jobWg.Add(1)` before enqueueing the job to workers.",
+  "module": "lightning",
   "fix_pattern": "Move `jobWg.Add(1)` before `jobInCh <- job` in the test helper to prevent `sync: negative WaitGroup counter` (waitgroup race) and stabilize `TestRegionJobBaseWorker`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66703",

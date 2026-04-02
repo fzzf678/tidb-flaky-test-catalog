@@ -23,6 +23,7 @@
     "real_tikv_dependency"
   ],
   "root_cause_explanation": "The TTL HTTP handler test counted jobs from a shared history table and assumed immediate visibility/finish, which races with background TTL execution and unrelated jobs. This PR scopes counts to the target table, uses a baseline count, and waits with `require.Eventually` for the expected job count.",
+  "module": "server",
   "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65784",
