@@ -13,19 +13,18 @@
     "name": "global_sort_test"
   },
   "symptoms": [
-    "slices.Sort(allData) (tests/realtikvtest/importintotest4/global_sort_test.go)"
+    "duplicate key found: ... (pkg/lightning/backend/external/engine.go)"
   ],
-  "failure_signature": "slices.Sort(allData) (tests/realtikvtest/importintotest4/global_sort_test.go)",
+  "failure_signature": "duplicate key found: ... (pkg/lightning/backend/external/engine.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "shared_state_pollution"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: server side may return duplicate key error in IMPORT INTO + UK use case, but it's better to handle them at client side.",
-  "module": "server",
-  "fix_pattern": "server side may return duplicate key error in IMPORT INTO + UK use case, but it's better to handle them at client side",
+  "root_cause_explanation": "This PR improves IMPORT INTO/global sort behavior by detecting duplicate keys on the client side (during sorting/loading) and returning a clearer error earlier. The case does not include evidence that this was an intermittent/flaky test failure (vs a deterministic bug), so it is marked as insufficient_evidence for flakiness root-cause purposes.",
+  "module": "lightning",
+  "fix_pattern": "Detect duplicate keys during client-side sort/load and return `duplicate key found: ...` deterministically instead of relying on server-side duplicate errors.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/59659",
     "https://github.com/pingcap/tidb/pull/59659.patch"

@@ -10,21 +10,21 @@
   "test": {
     "type": "realtikv",
     "path": "tests/realtikvtest/txntest/stale_read_test.go",
-    "name": "stale_read_test"
+    "name": "TestStalePrepare"
   },
   "symptoms": [
     "stmtID, _, _, err := tk.Session().PrepareStmt(\"select * from t as of timestamp now(3) - interval 100000 microsecond order by id asc\") (tests/realtikvtest/txntest/stale_read_test.go)"
   ],
   "failure_signature": "stmtID, _, _, err := tk.Session().PrepareStmt(\"select * from t as of timestamp now(3) - interval 100000 microsecond order by id asc\") (tests/realtikvtest/txntest/stale_read_test.go)",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: 1.",
-  "module": "kv",
-  "fix_pattern": "1. Migrate tests from `stale_txn_test.go` to real tikv tests. 2. Add a new case to reproduce #59402",
+  "root_cause_explanation": "The stale-read prepared-statement test is timing-sensitive: it relies on `NOW(3) - INTERVAL ...` and sleeps to ensure the staleness read timestamp is greater than commit timestamps. In CI, too-small intervals/sleeps can make `staleread_ts` fall before/at the commit timestamp, causing nondeterministic results. The fix increases the time buffers (interval and sleeps) to make the boundary deterministic.",
+  "module": "txn",
+  "fix_pattern": "Increase the staleness interval and sleep buffers (e.g., 1ms→100ms interval, 2ms→200ms sleeps) so stale-read timestamps reliably exceed commit timestamps during the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/59589",
     "https://github.com/pingcap/tidb/pull/59589.patch"
