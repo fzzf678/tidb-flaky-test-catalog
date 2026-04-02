@@ -13,18 +13,18 @@
     "name": "stale_txn"
   },
   "symptoms": [
-    "82  Problem Summary: - Integration test case `executor/stale_txn` was unstable due to stale-txn output mismatches.  ### What changed and how does it work? - Update the"
+    "Integration test `executor/stale_txn` was unstable because `AS OF TIMESTAMP now()` can produce invalid or boundary timestamps (too new / pre-bootstrap) depending on timing, leading to output mismatches."
   ],
-  "failure_signature": "82  Problem Summary: - Integration test case `executor/stale_txn` was unstable due to stale-txn output mismatches.  ### What changed and how does it work? - Update the",
+  "failure_signature": "executor/stale_txn integration test: intermittent errors/output mismatches when AS OF TIMESTAMP uses an unsafe now() boundary",
   "root_cause_categories": [
     "external_dependency"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "clock_skew_dependency"
   ],
   "root_cause_explanation": "The stale transaction integration test used `AS OF TIMESTAMP now()` without a safe buffer, which can become invalid (future or bootstrap-boundary) depending on timing. This PR uses `now(6) - interval 1 microsecond` so the snapshot is deterministically in the past.",
   "module": "txn",
-  "fix_pattern": "82  Problem Summary: - Integration test case `executor/stale_txn` was unstable due to stale-txn output mismatches.  ### What changed and how does it work? - Update the",
+  "fix_pattern": "Use a buffered `AS OF TIMESTAMP` expression (e.g., `now(6) - interval 1 microsecond`) instead of raw `now()` to avoid too-new/pre-bootstrap snapshot boundaries.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65788",
     "https://github.com/pingcap/tidb/pull/65788.patch"

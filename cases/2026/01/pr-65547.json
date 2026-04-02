@@ -13,18 +13,19 @@
     "name": "TestPlanReplayerDumpSingle"
   },
   "symptoms": [
-    "planner: use temp dir to fix flaky test TestPlanReplayerDumpSingle"
+    "`TestPlanReplayerDumpSingle` was flaky due to shared filesystem artifacts (log/plan replayer output) and cleanup interfering across runs; isolating outputs to a per-test temp dir makes the test deterministic."
   ],
-  "failure_signature": "planner: use temp dir to fix flaky test TestPlanReplayerDumpSingle",
+  "failure_signature": "TestPlanReplayerDumpSingle: intermittent failure reading plan-replayer artifacts due to shared log/artifact paths and cross-test cleanup",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "global_variable_mutation",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The plan replayer dump test used global/default log and artifact paths, so runs could interfere via shared files and cleanup. This PR redirects the log path to a per-test `t.TempDir()` (isolating side effects), eliminating filesystem-related flakiness.",
+  "root_cause_explanation": "The plan replayer dump test relied on shared/default log or artifact paths, so concurrent/adjacent runs could interfere via shared files and cleanup. This PR redirects logging to a per-test `t.TempDir()` and avoids deleting shared output directories unexpectedly, reducing cross-test filesystem interference.",
   "module": "planner",
-  "fix_pattern": "planner: use temp dir to fix flaky test TestPlanReplayerDumpSingle",
+  "fix_pattern": "Isolate log/artifact paths to a per-test temp directory to avoid shared filesystem state and cleanup races between tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65547",
     "https://github.com/pingcap/tidb/pull/65547.patch"

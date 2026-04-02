@@ -13,19 +13,18 @@
     "name": "TestIndexAdvisorTPCH*"
   },
   "symptoms": [
-    "er: close #62455  Problem Summary: - `TestIndexAdvisorTPCH*` could be flaky on slow CI due to advisor timeouts.  ### What changed and how does it work? - Pass an exp"
+    "`TestIndexAdvisorTPCH*` could be flaky on slow CI due to index advisor operations timing out under load."
   ],
-  "failure_signature": "er: close #62455  Problem Summary: - `TestIndexAdvisorTPCH*` could be flaky on slow CI due to advisor timeouts.  ### What changed and how does it work? - Pass an exp",
+  "failure_signature": "TestIndexAdvisorTPCH*: intermittent timeout failures in index advisor on slow CI",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by"
+    "insufficient_timeout"
   ],
   "root_cause_explanation": "Index advisor TPCH tests could time out under CI load because the advisor performs expensive analysis with a default timeout. This PR sets an explicit longer timeout option (2m) for `AdviseIndexes`, preventing timing-related flakes.",
   "module": "planner",
-  "fix_pattern": "er: close #62455  Problem Summary: - `TestIndexAdvisorTPCH*` could be flaky on slow CI due to advisor timeouts.  ### What changed and how does it work? - Pass an exp",
+  "fix_pattern": "Pass an explicit, longer timeout option (e.g., `timeout=2m`) to index advisor calls in TPCH tests to tolerate slow CI environments.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65783",
     "https://github.com/pingcap/tidb/pull/65783.patch"

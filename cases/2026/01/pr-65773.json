@@ -13,18 +13,18 @@
     "name": "TestConnectThrough636"
   },
   "symptoms": [
-    "pkg/privilege: fix flaky ldap TLS tests"
+    "LDAP TLS tests were flaky because they picked ports manually (via random selection), which can collide or race with other processes/tests when binding/listening."
   ],
-  "failure_signature": "pkg/privilege: fix flaky ldap TLS tests",
+  "failure_signature": "LDAP TLS tests: intermittent listen/connect failures due to random/manual port selection (port collision/listen race)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "external_dependency"
   ],
   "review_smells": [
-    "missing_order_by"
+    "hardcoded_port_or_resource"
   ],
   "root_cause_explanation": "LDAP TLS tests previously picked random ports, which can conflict with other processes and fail intermittently. This PR binds to `localhost:0` (OS-assigned free port), propagates listener startup errors, and reads back the chosen port, eliminating port-collision flakiness.",
   "module": "security",
-  "fix_pattern": "Fix test synchronization ordering (WaitGroup/channel/goroutine timing) to eliminate race-driven flakes.",
+  "fix_pattern": "Bind to `localhost:0` (OS-assigned free port) and derive the actual port from the listener instead of choosing random/manual ports in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65773",
     "https://github.com/pingcap/tidb/pull/65773.patch"

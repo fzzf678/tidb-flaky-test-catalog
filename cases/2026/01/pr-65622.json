@@ -13,18 +13,19 @@
     "name": "TestStalenessAndHistoryRead"
   },
   "symptoms": [
-    "PR solve?\r \r \r Issue Number: close #65621\r \r Problem Summary: \r \r Fix flaky `TestStalenessAndHistoryRead` by eliminating reliance on local wall-clock time when asser"
+    "`TestStalenessAndHistoryRead` was flaky because it derived snapshot timestamps from local wall-clock time, which can drift relative to PD TSO and vary under CI load (clock skew / same-millisecond races)."
   ],
-  "failure_signature": "PR solve?\r \r \r Issue Number: close #65621\r \r Problem Summary: \r \r Fix flaky `TestStalenessAndHistoryRead` by eliminating reliance on local wall-clock time when asser",
+  "failure_signature": "TestStalenessAndHistoryRead: stale-read snapshot boundary assertions flake when using time.Now() instead of PD TSO-driven timestamps",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "external_dependency"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "real_tikv_dependency",
+    "clock_skew_dependency"
   ],
   "root_cause_explanation": "The staleness/history-read test derived timestamps from `time.Now()` plus fixed sleeps, which can drift relative to PD TSO and vary under CI load, producing inconsistent snapshot boundaries. This PR derives times from `@@tidb_current_ts`/last commit TS and waits for TSO time to advance, removing clock/timing flakiness.",
-  "module": "test_infra",
-  "fix_pattern": "Avoid brittle fixed sleeps by tightening synchronization/wait conditions in the test.",
+  "module": "txn",
+  "fix_pattern": "Avoid local wall-clock timestamps in stale-read assertions; use PD TSO-driven timestamps (current TS / commit TS) and wait for TSO to advance past DDL commit before validating snapshot schema versions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65622",
     "https://github.com/pingcap/tidb/pull/65622.patch"

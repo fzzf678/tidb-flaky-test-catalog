@@ -13,18 +13,19 @@
     "name": "TestValidateReadOnlyInStalenessTransaction"
   },
   "symptoms": [
-    "1  Problem Summary:  `TestValidateReadOnlyInStalenessTransaction` was flaky because `AS OF TIMESTAMP NOW()` can be too new under safeTS / scheduling lag.  ### What c"
+    "`TestValidateReadOnlyInStalenessTransaction` was flaky because `AS OF TIMESTAMP NOW()` can be too new under safeTS / scheduling lag in real TiKV, making the snapshot timestamp intermittently invalid."
   ],
-  "failure_signature": "1  Problem Summary:  `TestValidateReadOnlyInStalenessTransaction` was flaky because `AS OF TIMESTAMP NOW()` can be too new under safeTS / scheduling lag.  ### What c",
+  "failure_signature": "AS OF TIMESTAMP NOW() is too new under safeTS / scheduling lag (future/invalid timestamp for staleness transaction)",
   "root_cause_categories": [
     "external_dependency"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "real_tikv_dependency",
+    "clock_skew_dependency"
   ],
   "root_cause_explanation": "The staleness transaction test used `NOW()` directly for AS OF timestamps; depending on TSO progression this can be too close to now and intermittently invalid/future. This PR uses a buffered expression (`NOW(3) - INTERVAL 5 SECOND`), making the timestamp safely in the past on real TiKV.",
-  "module": "module_unknown",
-  "fix_pattern": "1  Problem Summary:  `TestValidateReadOnlyInStalenessTransaction` was flaky because `AS OF TIMESTAMP NOW()` can be too new under safeTS / scheduling lag.  ### What c",
+  "module": "txn",
+  "fix_pattern": "Avoid using NOW() directly for staleness snapshots; use a buffered expression like `NOW(3) - INTERVAL 5 SECOND` so the AS OF timestamp is safely in the past.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65737",
     "https://github.com/pingcap/tidb/pull/65737.patch"
@@ -39,9 +40,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: 1  Problem Summary:  `TestValidateReadOnlyInStalenessTransaction` was flaky because `AS OF TIMESTAMP NOW()` can be too new under safeTS / scheduling lag.  ### What c",
+      "evidence: PR body states AS OF TIMESTAMP NOW() can be too new under safeTS/scheduling lag; patch uses NOW(3) - INTERVAL 5 SECOND",
       "files: tests/realtikvtest/txntest/stale_read_test.go"
     ]
   },
-  "analysis": "PR title: tests/realtikvtest/txntest: stabilize staleness txn test\nPR url: https://github.com/pingcap/tidb/pull/65737\nTriage summary: 1  Problem Summary:  `TestValidateReadOnlyInStalenessTransaction` was flaky because `AS OF TIMESTAMP NOW()` can be too new under safeTS / scheduling lag.  ### What c\nChanged files (1): tests/realtikvtest/txntest/stale_read_test.go\nFull patch analyzed; see patch_url."
+  "analysis": "PR title: tests/realtikvtest/txntest: stabilize staleness txn test\nPR url: https://github.com/pingcap/tidb/pull/65737\nTriage summary: AS OF TIMESTAMP NOW() too new under safeTS/scheduling lag; use buffered timestamp expression\nChanged files (1): tests/realtikvtest/txntest/stale_read_test.go\nFull patch analyzed; see patch_url."
 }

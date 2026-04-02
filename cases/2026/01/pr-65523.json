@@ -13,9 +13,9 @@
     "name": "TestAuditPluginRetrying"
   },
   "symptoms": [
-    "test: stabilize `TestAuditPluginRetrying`"
+    "`TestAuditPluginRetrying` was flaky because audit-plugin callbacks appended to a shared slice from many goroutines while the test goroutine concurrently reset/read it without synchronization, so the retry-count predicate could be missed under load."
   ],
-  "failure_signature": "test: stabilize `TestAuditPluginRetrying`",
+  "failure_signature": "TestAuditPluginRetrying: Eventually predicate based on len(testResults) can fail due to unsynchronized concurrent appends/resets",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
@@ -23,8 +23,8 @@
     "race_condition_in_async_code"
   ],
   "root_cause_explanation": "`TestAuditPluginRetrying` appends results from many concurrent audit-plugin callbacks into a shared slice, but the slice reset/append was not synchronized, causing data races and nondeterministic counts. This PR adds mutex-protected helpers, tightens the concurrency harness (connection limits + error collection), and makes the assertions stable.",
-  "module": "test_infra",
-  "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
+  "module": "server",
+  "fix_pattern": "Make shared result collection thread-safe (mutex + snapshot helpers) and make the concurrency harness deterministic (bounded pool + main-goroutine error collection).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65523",
     "https://github.com/pingcap/tidb/pull/65523.patch"

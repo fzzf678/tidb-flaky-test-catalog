@@ -13,18 +13,20 @@
     "name": "TestTTL"
   },
   "symptoms": [
-    "pkg/server: fix unstable TestTTL"
+    "`TestTTL` was unstable because it counted jobs from the global TTL job history table and assumed immediate visibility, which races with async TTL job execution and unrelated jobs."
   ],
-  "failure_signature": "pkg/server: fix unstable TestTTL",
+  "failure_signature": "TestTTL: intermittent TTL job-history count assertions due to shared history table and async updates",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution",
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "shared_table_without_isolation",
+    "time_sleep_for_sync"
   ],
   "root_cause_explanation": "The TTL HTTP handler test counted jobs from a shared history table and assumed immediate visibility/finish, which races with background TTL execution and unrelated jobs. This PR scopes counts to the target table, uses a baseline count, and waits with `require.Eventually` for the expected job count.",
   "module": "server",
-  "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
+  "fix_pattern": "Scope job-history queries to the target table and use a baseline count + Eventually-style polling to tolerate async TTL job-history updates.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65784",
     "https://github.com/pingcap/tidb/pull/65784.patch"

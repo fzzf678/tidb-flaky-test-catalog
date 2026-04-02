@@ -13,18 +13,18 @@
     "name": "TestIssue48741"
   },
   "symptoms": [
-    "Issue Number: close #65727  Problem Summary:  `TestIssue48741` was flaky because GC triggering and `debug.SetMemoryLimit` updates are not strictly synchronous, an"
+    "`TestIssue48741` was flaky because GC triggering and `debug.SetMemoryLimit` updates are not strictly synchronous, so tight polling windows and direct equality assertions can race on loaded CI."
   ],
-  "failure_signature": "Issue Number: close #65727  Problem Summary:  `TestIssue48741` was flaky because GC triggering and `debug.SetMemoryLimit` updates are not strictly synchronous, an",
+  "failure_signature": "TestIssue48741: debug.SetMemoryLimit(-1) temporarily differs from expected value due to async GC/tuner updates",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
   "root_cause_explanation": "GC tuner updates and `debug.SetMemoryLimit` changes happen asynchronously, but the test used tight polling windows and direct equality checks, which can race on slow CI. This PR relaxes timeouts and uses `require.Eventually` to wait until the memory limit is actually applied.",
   "module": "gc",
-  "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
+  "fix_pattern": "Use `require.Eventually` (with relaxed timeouts) to wait for async GC/tuner updates to apply before asserting on debug.SetMemoryLimit.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65733",
     "https://github.com/pingcap/tidb/pull/65733.patch"
@@ -39,9 +39,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: Issue Number: close #65727  Problem Summary:  `TestIssue48741` was flaky because GC triggering and `debug.SetMemoryLimit` updates are not strictly synchronous, an",
+      "evidence: PR body states TestIssue48741 is flaky due to async GC/tuner updates; patch replaces require.Equal with require.Eventually and relaxes timeouts",
       "files: pkg/util/gctuner/memory_limit_tuner_test.go"
     ]
   },
-  "analysis": "PR title: pkg/util/gctuner: stabilize TestIssue48741\nPR url: https://github.com/pingcap/tidb/pull/65733\nTriage summary: Issue Number: close #65727  Problem Summary:  `TestIssue48741` was flaky because GC triggering and `debug.SetMemoryLimit` updates are not strictly synchronous, an\nChanged files (1): pkg/util/gctuner/memory_limit_tuner_test.go\nFull patch analyzed; see patch_url."
+  "analysis": "PR title: pkg/util/gctuner: stabilize TestIssue48741\nPR url: https://github.com/pingcap/tidb/pull/65733\nTriage summary: GC/tuner updates are async; use Eventually and relaxed timeouts instead of immediate equality assertions\nChanged files (1): pkg/util/gctuner/memory_limit_tuner_test.go\nFull patch analyzed; see patch_url."
 }

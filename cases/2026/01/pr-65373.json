@@ -13,18 +13,18 @@
     "name": "TestRestoreEngineFailed"
   },
   "symptoms": [
-    "importer: fix flaky test"
+    "`TestRestoreEngineFailed` was flaky because a gomock expectation returned the same encoder instance across calls, causing shared mutable state when multiple chunk processors used it concurrently (hard to repro without adding artificial sleeps)."
   ],
-  "failure_signature": "importer: fix flaky test",
+  "failure_signature": "TestRestoreEngineFailed: intermittent failures due to shared mock encoder instance reused across processors (state bleed/concurrency)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "importer: fix flaky test",
+  "root_cause_explanation": "The test's mock encoder builder returned the same encoder instance for different chunk processors, so state could be shared across concurrent code paths and lead to nondeterministic behavior. This PR changes the expectation to return a fresh encoder instance on each `NewEncoder` call, eliminating shared state and stabilizing the test.",
+  "module": "lightning",
+  "fix_pattern": "Avoid sharing stateful mock return values across concurrent callers; return a fresh encoder per `NewEncoder` call (gomock `DoAndReturn`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65373",
     "https://github.com/pingcap/tidb/pull/65373.patch"

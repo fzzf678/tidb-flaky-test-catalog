@@ -13,18 +13,18 @@
     "name": "TestIssue20779"
   },
   "symptoms": [
-    "pkg/executor: fix unstable TestIssue20779"
+    "`TestIssue20779` was unstable because the optimizer could choose a different plan/index-join path and bypass the intended failpoint, so the test sometimes didn't exercise the target code path."
   ],
-  "failure_signature": "pkg/executor: fix unstable TestIssue20779",
+  "failure_signature": "TestIssue20779: failpoint not triggered / assertions fail when a different join plan is chosen",
   "root_cause_categories": [
-    "external_dependency"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "assert_exact_plan_or_cost"
   ],
   "root_cause_explanation": "The test relies on a specific index-join execution path to trigger a failpoint, but optimizer/index selection could vary and bypass the intended code path. This PR adds `use index(idx)` hints to force a stable plan so the failpoint is consistently triggered.",
   "module": "executor",
-  "fix_pattern": "pkg/executor: fix unstable TestIssue20779",
+  "fix_pattern": "Add `use index(...)` hints to force a stable plan so the test deterministically exercises the intended index-join path/failpoint.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65770",
     "https://github.com/pingcap/tidb/pull/65770.patch"
