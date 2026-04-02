@@ -13,18 +13,18 @@
     "name": "buffer_test"
   },
   "symptoms": [
-    "rnd := rand2.New(rand2.NewSource(6716)) (pkg/lightning/membuf/buffer_test.go)"
+    "This PR is primarily a performance/heap-escape optimization in Lightning external writer sorting logic; a concrete flaky-test failure signature is not evident from the PR description alone."
   ],
-  "failure_signature": "rnd := rand2.New(rand2.NewSource(6716)) (pkg/lightning/membuf/buffer_test.go)",
+  "failure_signature": "no clear flaky signature in PR context (change focuses on allocation/escape behavior in Lightning external writer sort)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: During sorting, `i` would be moved to heap, which is caused by `dupLoc`.",
-  "module": "module_unknown",
-  "fix_pattern": "During sorting, `i` would be moved to heap, which is caused by `dupLoc`.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky-test root cause: the change description focuses on performance/escape analysis rather than a reproducible nondeterministic failure. If there is a specific CI failure or flaky signature tied to this PR, it should be added as evidence to classify it more precisely.",
+  "module": "lightning",
+  "fix_pattern": "Performance optimization: avoid unexpected heap escapes/allocations in Lightning external writer sorting (e.g., avoid taking pointers to `SliceLocation` and optimize compare by prefix).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65316",
     "https://github.com/pingcap/tidb/pull/65316.patch"

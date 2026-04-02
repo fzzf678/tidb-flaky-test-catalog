@@ -13,18 +13,18 @@
     "name": "TestIssue57531"
   },
   "symptoms": [
-    "server/tests: fix flaky test TestIssue57531"
+    "`TestIssue57531` was flaky because it used a fixed short `time.Sleep(10ms)` to wait for a killed session to disappear from `show processlist`, which is not reliable under CPU/load jitter."
   ],
-  "failure_signature": "server/tests: fix flaky test TestIssue57531",
+  "failure_signature": "TestIssue57531: intermittent failure where `show processlist` still shows the killed session (row count != 1) after a fixed short sleep",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test depended on timing: it killed a `select sleep(300)` session and then slept for only 10ms before asserting the killed session was no longer in `show processlist`. Under load, session termination and processlist updates are not guaranteed to complete within 10ms, so the assertion could fail nondeterministically. The PR fixes the flakiness by replacing the fixed sleep with `require.Eventually(...)` (up to 5s with polling), which waits until the processlist reflects the killed session state.",
   "module": "server",
-  "fix_pattern": "In [TestIssue57531](https://github.com/pingcap/tidb/blob/c51109cbbdec00619066e8afaf5347f926d77eea/pkg/server/tests/commontest/tidb_test.go#L3441), a time-based assertion was introduced to check if the killed session is not shown:",
+  "fix_pattern": "Replace fixed `time.Sleep(...)` synchronization in tests with `require.Eventually(...)`/polling and a reasonable timeout to handle load-dependent timing jitter (e.g., wait for `show processlist` to reflect killed sessions).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65330",
     "https://github.com/pingcap/tidb/pull/65330.patch"

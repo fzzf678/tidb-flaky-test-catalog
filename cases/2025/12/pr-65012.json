@@ -13,18 +13,20 @@
     "name": "TestIndexNestedLoopHashJoin"
   },
   "symptoms": [
-    "planner: flaky test TestIndexNestedLoopHashJoin"
+    "`TestIndexNestedLoopHashJoin` was flaky because it (1) mutated `SessionVars` fields directly while other goroutines could read them, and (2) asserted an exact plan tree which can vary across runs."
   ],
-  "failure_signature": "planner: flaky test TestIndexNestedLoopHashJoin",
+  "failure_signature": "executor hash join tests: intermittent failure due to SessionVars race / overly strict exact plan assertions (plan shape varies)",
   "root_cause_categories": [
+    "concurrency_data_race",
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
+    "race_condition_in_async_code",
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Reduced flakyness of this test in 2 ways: 1.",
-  "module": "planner",
-  "fix_pattern": "Reduced flakyness of this test in 2 ways: 1. Claude code's recommendation for resolving the race condition (see below) to \"set\" the variables using SQL rather than directly assign the variable in the code. 2. Changed the plan comparison to only look for the existence of IndexHashJoin rather than comparing the entire plan.",
+  "root_cause_explanation": "Two issues made this test flaky: (1) it directly wrote to `SessionVars` fields (like `InitChunkSize`/`MaxChunkSize`/clustered-index mode) while join workers or background goroutines could concurrently read them, creating a race window; (2) it compared full `DESC/EXPLAIN` output, which is brittle when the optimizer produces equivalent but slightly different plan trees across runs. This PR reduces flakiness by setting variables via SQL (`SET @@...`) to go through the normal variable-setting path, and by relaxing plan assertions to only require that `IndexHashJoin` appears in the plan tree.",
+  "module": "executor",
+  "fix_pattern": "Avoid direct mutation of `SessionVars` fields in tests; use SQL `SET @@...` as a synchronization barrier, and avoid asserting exact full plan trees—check key operators (e.g. `IndexHashJoin`) instead.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65012",
     "https://github.com/pingcap/tidb/pull/65012.patch"

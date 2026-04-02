@@ -13,18 +13,18 @@
     "name": "TestAuditPluginRetrying"
   },
   "symptoms": [
-    "test: fix the flaky test TestAuditPluginRetrying"
+    "`TestAuditPluginRetrying` was flaky because the test expected the retry mechanism to be triggered by a single high-concurrency run, but sometimes the workload succeeded without retries (i.e., “too lucky”), making the assertion fail intermittently."
   ],
-  "failure_signature": "test: fix the flaky test TestAuditPluginRetrying",
+  "failure_signature": "TestAuditPluginRetrying: intermittent assertion failure when retry is not triggered (e.g. `len(testResults) > concurrency` not satisfied)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "Add an internal retry for the trigger of `retry` mechanism. Sometimes we are too lucky to actually trigger the retry.",
+  "root_cause_explanation": "This test validates an audit plugin retry behavior by launching a highly concurrent UPDATE workload and then asserting that retries occurred. However, depending on timing/locking and the scheduler, that single run may complete without triggering retries, so the assertion can fail nondeterministically. The PR fixes the flakiness by wrapping the workload in `require.Eventually(...)`: it repeats the workload until the retry signal is observed (or times out), making the test robust against timing jitter.",
+  "module": "security",
+  "fix_pattern": "Avoid “one-shot” assertions for timing-dependent retry behavior; use `require.Eventually`/polling with a reasonable timeout to ensure the retry condition is actually triggered before asserting.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65114",
     "https://github.com/pingcap/tidb/pull/65114.patch"

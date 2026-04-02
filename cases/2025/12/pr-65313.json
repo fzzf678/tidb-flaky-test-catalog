@@ -13,18 +13,19 @@
     "name": "TestMemTracker4InsertAndReplaceExec"
   },
   "symptoms": [
-    "executor: fix flaky test TestMemTracker4InsertAndReplaceExec"
+    "OOM/memory-tracker tests were flaky because the OOM capture message filter is shared state: if it isn't cleared between test sections, later assertions can observe stale filter behavior and miss/incorrectly capture tracker messages."
   ],
-  "failure_signature": "executor: fix flaky test TestMemTracker4InsertAndReplaceExec",
+  "failure_signature": "oomtest: intermittent assertion failures where OOM tracker/message capture does not match expectation due to stale message filter state",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "global_variable_mutation",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test uses an OOM capture helper with a mutable `messageFilter` to decide which log entries to record. That filter is shared state across the test’s steps (and potentially across tests if reused), so if it isn’t cleared, later steps can inherit stale filtering and behave nondeterministically. This PR fixes the flakiness by clearing the message filter before setting the expected filter for each step (`oom.ClearMessageFilter()`), and by treating an empty filter as “no filtering” so the capture logic is consistent.",
   "module": "executor",
-  "fix_pattern": "executor: fix flaky test TestMemTracker4InsertAndReplaceExec",
+  "fix_pattern": "Reset/clear shared OOM-capture filter state between test steps (`ClearMessageFilter`) so later assertions don’t depend on stale global filter configuration; make empty-filter semantics consistent.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65313",
     "https://github.com/pingcap/tidb/pull/65313.patch"

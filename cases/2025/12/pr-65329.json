@@ -13,18 +13,18 @@
     "name": "TestIndexUsageWithData"
   },
   "symptoms": [
-    "executor: flaky test TestIndexUsageWithData"
+    "`TestIndexUsageWithData` was flaky because index-usage reporting depends on table statistics: if the table still has pseudo stats (or stats aren’t loaded yet), secondary/nonclustered index usage may not be recorded, so assertions can fail nondeterministically."
   ],
-  "failure_signature": "executor: flaky test TestIndexUsageWithData",
+  "failure_signature": "index usage tests: intermittent mismatch when expected index-usage samples are missing because statistics are pseudo/not loaded yet",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: While investigating a flaky test failure for TestIndexUsageWithData - it uncovered that index usage is not reported for secondary indexes or nonclustered PK indexes if there are no statistics on the table (that is - if t….",
+  "root_cause_explanation": "This test checks index-usage reporting, but the reporter relies on table statistics. When stats are pseudo or not yet loaded into memory, usage for some index types may not be recorded (by design), causing the test to fail intermittently depending on timing. The PR stabilizes the test by priming/stat-loading after `ANALYZE` (a small query to force synchronous stats load) and by clarifying/adjusting the reporting behavior and comments to match the intended design.",
   "module": "executor",
-  "fix_pattern": "While investigating a flaky test failure for TestIndexUsageWithData - it uncovered that index usage is not reported for secondary indexes or nonclustered PK indexes if there are no statistics on the table (that is - if there are pseudo stats). Pointget is recorded - even without statistics. This is a design decision from the original implementation.",
+  "fix_pattern": "For stats-sensitive tests, ensure statistics are loaded (not pseudo) before asserting index-usage reporting (e.g. run `ANALYZE` then execute a priming query to force sync load), and avoid assertions that depend on whether pseudo stats are present.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65329",
     "https://github.com/pingcap/tidb/pull/65329.patch"

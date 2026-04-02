@@ -13,18 +13,18 @@
     "name": "TestIssue31129"
   },
   "symptoms": [
-    "executor: fix flaky test TestIssue31129"
+    "Index lookup hash join was flaky when the hash-table build runs in a separate goroutine and panics: the error could be lost, and the outer workflow might continue in an inconsistent state."
   ],
-  "failure_signature": "executor: fix flaky test TestIssue31129",
+  "failure_signature": "index lookup hash join: intermittent failures when build-hash-table goroutine panics but the error is not propagated to the main task handler",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The join implementation builds the hash table for outer results in a goroutine wrapped by a panic-recovery helper. Previously, if that goroutine panicked, the error information was not reliably surfaced back to the main `handleTask` flow, so the join could proceed and fail nondeterministically. This PR makes the panic/error observable by storing it in a shared variable and explicitly returning it in the main path, so failures become deterministic and correctly reported.",
   "module": "executor",
-  "fix_pattern": "executor: fix flaky test TestIssue31129",
+  "fix_pattern": "When running critical work (like building a hash table) in a goroutine, capture panic/error results and propagate them back to the main control flow so the task can fail deterministically instead of continuing in a corrupted state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65328",
     "https://github.com/pingcap/tidb/pull/65328.patch"

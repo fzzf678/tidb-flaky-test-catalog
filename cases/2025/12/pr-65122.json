@@ -13,18 +13,19 @@
     "name": "statistics_handler_test"
   },
   "symptoms": [
-    "planner: use TempDir to fix the flaky test"
+    "Statistics handler API tests were flaky because they used hardcoded `/tmp` paths for Unix sockets and JSON files, which can collide across concurrent runs or leave stale files."
   ],
-  "failure_signature": "planner: use TempDir to fix the flaky test",
+  "failure_signature": "stats handler tests: intermittent failures due to shared `/tmp` socket/file path collisions (stale files or concurrent tests)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "hardcoded_port_or_resource",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: use TempDir to fix flaky test.",
-  "module": "planner",
-  "fix_pattern": "use TempDir to fix flaky test",
+  "root_cause_explanation": "The tests created Unix sockets and wrote stats JSON files under fixed `/tmp/...` paths. On CI (or when tests run in parallel), those shared paths can collide or reuse stale files, causing nondeterministic failures. This PR switches to per-test `t.TempDir()` paths for sockets and output files, isolating filesystem side effects and stabilizing the tests.",
+  "module": "server",
+  "fix_pattern": "Avoid hardcoded shared filesystem paths in tests; use `t.TempDir()`/per-test paths for sockets and temp files to prevent collisions and stale-file interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65122",
     "https://github.com/pingcap/tidb/pull/65122.patch"

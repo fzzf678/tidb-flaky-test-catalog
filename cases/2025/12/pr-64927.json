@@ -13,16 +13,16 @@
     "name": "agg_predicate_pushdown"
   },
   "symptoms": [
-    "Because the result of ```ExtractColumnsMapFromExpressions``` is a map, and the traversal order of a map may be random, it could lead to the order of ```col1=col2``` also being random. Therefore, when replacing constants, we should ensure..."
+    "Integration tests were flaky because constant propagation could build equivalent predicates with nondeterministic argument order (due to Go map iteration), causing unstable output (e.g. `1=a` vs `a=1`) and test expectation mismatches."
   ],
-  "failure_signature": "Because the result of ```ExtractColumnsMapFromExpressions``` is a map, and the traversal order of a map may be random, it could lead to the order of ```col1=col2``` also being random. Therefore, when replacing constants, we should ensure...",
+  "failure_signature": "expression constant propagation: nondeterministic predicate arg order from map iteration causes unstable test output (e.g. `1=a` vs `a=1`)",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
     "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Map/dict iteration order is not stable across runs. This PR stabilizes it by: Because the result of ```ExtractColumnsMapFromExpressions``` is a map, and the traversal order of a map may be random, it could lead to the order of ```col1=col2``` also being random.",
+  "root_cause_explanation": "The flakiness came from nondeterministic ordering produced by map iteration: when extracting columns/expressions into a Go map, traversal order is not stable, so equivalent predicates could be rewritten with different argument order across runs (for example `1=a` vs `a=1`). Tests that compare canonicalized output (plans/results files) can then fail intermittently. This PR stabilizes behavior by rewriting compare-constant predicates into a consistent `col=value` form during constant propagation.",
   "module": "expression",
   "fix_pattern": "Because the result of ```ExtractColumnsMapFromExpressions``` is a map, and the traversal order of a map may be random, it could lead to the order of ```col1=col2``` also being random. Therefore, when replacing constants, we should ensure that the final result is `col=value`, which can avoid unstable tests.",
   "evidence_links": [

@@ -13,18 +13,19 @@
     "name": "TestNewCollationStatsWithPrefixIndex"
   },
   "symptoms": [
-    "stats: fix flaky TestNewCollationStatsWithPrefixIndex"
+    "Real TiKV stats tests were flaky because assertions queried `mysql.stats_histograms` without scoping to the test table, so leftover rows from other tests could inflate the result set and break length/exact-row checks."
   ],
-  "failure_signature": "stats: fix flaky TestNewCollationStatsWithPrefixIndex",
+  "failure_signature": "TestNewCollationStatsWithPrefixIndex: expected 4 histogram rows but got many (contaminated by other tables' stats in `mysql.stats_histograms`)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
+    "shared_table_without_isolation",
     "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: This test sometimes failed at:.",
+  "root_cause_explanation": "The test relied on a shared system table (`mysql.stats_histograms`) and queried it without restricting to the specific test table. In the real-TiKV test suite, other tests can leave histogram rows behind, so the query result size/content becomes nondeterministic and can cause intermittent failures (e.g., expecting 4 rows but seeing dozens). This PR fixes the flakiness by looking up the test table ID and adding `WHERE table_id = ?` filters so assertions only inspect stats belonging to the test table.",
   "module": "statistics",
-  "fix_pattern": "This test sometimes failed at:",
+  "fix_pattern": "When asserting statistics in shared system tables, scope queries to the test table (e.g. filter by `table_id`) to avoid cross-test contamination from other tables' stats.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65098",
     "https://github.com/pingcap/tidb/pull/65098.patch"

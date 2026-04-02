@@ -13,18 +13,18 @@
     "name": "import_mode_switcher_test"
   },
   "symptoms": [
-    "br: use random port to avoid flaky test"
+    "BR restore/import client tests were flaky because they attempted to bind to a fixed port range; on busy CI hosts the ports could already be in use, causing nondeterministic listen failures."
   ],
-  "failure_signature": "br: use random port to avoid flaky test",
+  "failure_signature": "br tests: intermittent `listen tcp :51111+...: bind: address already in use` / port allocation failure",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "external_dependency"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The tests bound mock gRPC servers to a fixed port range (51111+N). In CI environments with resource contention or parallel test runs, that range can be occupied, so `net.Listen` fails intermittently and makes the test flaky. This PR fixes it by listening on `:0` (random free port) and using the actual bound address, eliminating port-collision flakiness.",
   "module": "br",
-  "fix_pattern": "use random port to avoid flaky test",
+  "fix_pattern": "Avoid hardcoded ports in tests; listen on `:0` (random free port) and use the actual listener address to prevent port-collision flakiness on CI.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65186",
     "https://github.com/pingcap/tidb/pull/65186.patch"

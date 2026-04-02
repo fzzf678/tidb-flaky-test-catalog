@@ -13,19 +13,18 @@
     "name": "TestInstancePlanCacheConcurrencySysbench"
   },
   "symptoms": [
-    "planner: fix the flaky test TestInstancePlanCacheConcurrencySysbench"
+    "`TestInstancePlanCacheConcurrencySysbench` was flaky because the randomized concurrent DML generator could pick the same row ID repeatedly within a transaction, increasing the chance of deadlocks under concurrent workers."
   ],
-  "failure_signature": "planner: fix the flaky test TestInstancePlanCacheConcurrencySysbench",
+  "failure_signature": "instance plan cache concurrency test: intermittent deadlock/txn conflict failures caused by randomized concurrent updates/deletes on the same row IDs",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "plan_cache_dependency",
-    "assert_exact_plan_or_cost"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: planner: fix the flaky test TestInstancePlanCacheConcurrencySysbench.",
+  "root_cause_explanation": "The test runs concurrent workers executing randomized update/delete statements. Previously, the statement generator could return duplicated row IDs (e.g., updating the same `id` twice in the sequence), which increases lock contention and can trigger deadlocks nondeterministically depending on concurrency scheduling. The PR stabilizes the test by skipping nil/duplicate-id statements so it avoids generating obvious duplicate row-id operations that lead to deadlocks, reducing timing-dependent flakiness.",
   "module": "planner",
-  "fix_pattern": "planner: fix the flaky test TestInstancePlanCacheConcurrencySysbench",
+  "fix_pattern": "In randomized concurrency tests, avoid generating duplicate operations on the same row IDs within the same transaction/sequence; skip/guard duplicate IDs to reduce nondeterministic deadlocks under concurrent workers.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65284",
     "https://github.com/pingcap/tidb/pull/65284.patch"

@@ -13,17 +13,17 @@
     "name": "TestFlightRecorder"
   },
   "symptoms": [
-    "This PR just fix the flaky test, later I should do some refactor."
+    "`TestFlightRecorder` was flaky because it depended on a global enablement function (`IsEnabled(category)` / tracing categories) that could be mutated by other tests, leading to nondeterministic enable/disable behavior."
   ],
-  "failure_signature": "This PR just fix the flaky test, later I should do some refactor.",
+  "failure_signature": "traceevent flight recorder tests: intermittent failures due to global tracing-category enablement being modified by other tests",
   "root_cause_categories": [
     "shared_state_pollution"
   ],
   "review_smells": [
     "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: The test use global variable `IsEnabled(category)` and other tests also update that variable, so the test is unstable.",
-  "module": "session",
+  "root_cause_explanation": "The flakiness came from shared global state: the test relied on a global category-enablement path (`IsEnabled(category)` / tracing categories), but other tests can update that global variable/state concurrently or in different order, making `TestFlightRecorder` nondeterministic. This PR stabilizes the test by moving enabled-category configuration into the `FlightRecorder` instance (`GetFlightRecorder().enabledCategories`) instead of using the shared global enablement state.",
+  "module": "module_unknown",
   "fix_pattern": "The test use global variable `IsEnabled(category)` and other tests also update that variable,  so the test is unstable. I just moving category to `GetFlightRecorder().enabledCategories` to avoid conflict, no other tests in this package are updating the same FlightRecorder structure at the same time.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65317",

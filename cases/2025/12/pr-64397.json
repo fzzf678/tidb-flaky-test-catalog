@@ -13,19 +13,19 @@
     "name": "TestColumnAdd"
   },
   "symptoms": [
-    "ddl: fix flaky test TestColumnAdd"
+    "`TestColumnAdd` was flaky because the `afterWaitSchemaSynced` failpoint hook could be triggered before the intended `ADD COLUMN` job step, so the test observed the wrong schema state and failed intermittently."
   ],
-  "failure_signature": "ddl: fix flaky test TestColumnAdd",
+  "failure_signature": "TestColumnAdd: intermittent assertion failures due to `afterWaitSchemaSynced` failpoint being triggered on the wrong DDL job/state (schema sync timing/order race)",
   "root_cause_categories": [
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
+    "schema_version_race",
     "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Skip synced state in failpoint, so the check of `first` is also unecessary.",
+  "root_cause_explanation": "`TestColumnAdd` uses a DDL failpoint hook (`afterWaitSchemaSynced` in `transitOneJobStepAndWaitSync`) to validate intermediate schema states. In practice, the hook could be entered before the intended `ADD COLUMN` step runs (or in the synced state), so the test sometimes captured the wrong schema state and became flaky. This PR fixes it by skipping the synced state in the failpoint and removing the brittle `first` gating, so the assertions run only on the intended schema-state transitions.",
   "module": "ddl",
-  "fix_pattern": "Skip synced state in failpoint, so the check of `first` is also unecessary.",
+  "fix_pattern": "When using DDL failpoint hooks to assert schema transitions, ignore synced-state callbacks and avoid one-off gating like `first`; only assert on the intended intermediate DDL states.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64397",
     "https://github.com/pingcap/tidb/pull/64397.patch"
