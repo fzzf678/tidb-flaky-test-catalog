@@ -13,20 +13,21 @@
     "name": "TestGlobalStatsAndSQLBindingWithConcurrency"
   },
   "symptoms": [
-    "planner: Fix flaky TestGlobalStatsAndSQLBindingWithConcurrency"
+    "TestGlobalStatsAndSQLBindingWithConcurrency becomes flaky when auto-analyze runs before the test's manual ANALYZE, changing statistics and breaking plan assertions."
   ],
-  "failure_signature": "planner: Fix flaky TestGlobalStatsAndSQLBindingWithConcurrency",
+  "failure_signature": "TestGlobalStatsAndSQLBindingWithConcurrency: plan assertions break when auto-analyze collects stats earlier than expected.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "shared_state_pollution"
+    "shared_state_pollution",
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+    "assert_exact_plan_or_cost",
+    "test_suite_setup_issue"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: Disabled auto_analyze in test because it can accidentally break the test if auto analyze executes before the manual analyze.",
-  "module": "planner",
-  "fix_pattern": "Disabled auto_analyze in test because it can accidentally break the test if auto analyze executes before the manual analyze. The test first requires plans to be chosen without statistics, and then later executes ANALYZE to test plans with statistics. Auto analyze can therefore disrupt this test and make it unpredictable.",
+  "root_cause_explanation": "The test asserts plan choices before/after manual ANALYZE. Auto-analyze can run in the background and collect stats earlier than the test expects, causing nondeterministic plan selection and flaky assertions. The PR stabilizes the test by turning off `@@global.tidb_enable_auto_analyze` during the test and resetting it afterward.",
+  "module": "statistics",
+  "fix_pattern": "Disable `@@global.tidb_enable_auto_analyze` during the test and reset it after, so background auto-analyze cannot change stats before the manual ANALYZE steps.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/61902",
     "https://github.com/pingcap/tidb/pull/61902.patch"

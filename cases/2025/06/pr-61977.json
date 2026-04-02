@@ -8,9 +8,9 @@
   },
   "pr_merged_at": "2025-06-30T11:03:00+08:00",
   "test": {
-    "type": "unit",
-    "path": "br/cmd/br/BUILD.bazel",
-    "name": "br: add tool to clean up registry and checkpoints"
+    "type": "integration",
+    "path": "br/tests/br_parallel_restore/run.sh",
+    "name": "test_restore_abort"
   },
   "symptoms": [
     "task_info=$(run_sql \"SELECT id, status FROM mysql.tidb_restore_registry WHERE filter_strings = '$DB.*' AND status = 'paused' ORDER BY id DESC LIMIT 1;\" 2>/dev/null || echo \"\") (br/tests/br_parallel_restore/run.sh)"
@@ -20,9 +20,9 @@
     "shared_state_pollution"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Running in parallel with shared state can introduce races. This PR stabilizes it by: Add a abort command that aborts different kind of restore tasks, it will clean up the relevant entry in the registry and delete checkpoint db if exists.",
+  "root_cause_explanation": "The test was flaky due to leaked shared state between runs (restore registry entries and checkpoint databases). The PR stabilizes the test/flow by adding an abort command to clean up registry entries and related checkpoint DBs and updating the BR integration tests to use it.",
   "module": "br",
   "fix_pattern": "Add a abort command that aborts different kind of restore tasks, it will clean up the relevant entry in the registry and delete checkpoint db if exists.",
   "evidence_links": [
