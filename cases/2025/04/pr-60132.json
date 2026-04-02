@@ -17,10 +17,11 @@
   ],
   "failure_signature": "sort.Slice(globalIndexes, func(i, j int) bool { return globalIndexes[i] < globalIndexes[j] }) (pkg/ddl/tests/partition/multi_domain_test.go)",
   "root_cause_categories": [
-    "unclassified"
+    "schema_change_race"
   ],
   "review_smells": [
-    "unclassified"
+    "ddl_without_wait",
+    "async_schema_propagation"
   ],
   "fix_pattern": "Original issue was #53385. After trying both \"Always generate a new _tidb_rowid\", (#53770, leading to #57510) and \"using AddRecord\", to generate new _tidb_rowid's (#57114, leading to #59680) and having the indexes up-to-date (for the currently used set of partition), there will always be issues between the original set of partitions and the reorganized set of partitions, due to not being in sync / having the same _tidb_rowid.",
   "evidence_links": [

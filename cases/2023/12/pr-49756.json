@@ -17,10 +17,11 @@
   ],
   "failure_signature": "prepare stmt1 from 'select a, hex(aes_encrypt(a, ?)) from t1 order by a asc'; (tests/integrationtest/r/expression/plan_cache.result)",
   "root_cause_categories": [
-    "unclassified"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "unclassified"
+    "assert_exact_plan_or_cost",
+    "plan_cache_dependency"
   ],
   "fix_pattern": "We use `ConstItem(false)` to check that `APPROX_PERCENTILE` should be a constant. It is to make sure its behaviors are the same when in or not in the plan cache. We use `ConstItem(true)` in `WrapWithCastAsDecimal` to do some find-grained precision optimization in the expression's build phase. We use `ConstItem(false)` in the vector evaluation implement of function `aes_encrypt`/`aes_decrypt` to do optimize  when key constant. the pattern of `ilike` should be a constant so we use `ConstItem(true)` to check it.",
   "evidence_links": [

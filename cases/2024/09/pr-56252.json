@@ -17,10 +17,11 @@
   ],
   "failure_signature": "tk.MustQuery(\"select value, (select t1.id from t1 join t2 on t1.id = t2.id and t1.value < t2.value - t3.value + 3) d from t3 order by value\").Check(testkit.Rows(\"10 1\", \"20 <nil>\")) (pkg/executor/test/jointest/hashjoin/hash_join_test.go)",
   "root_cause_categories": [
-    "unclassified"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "unclassified"
+    "missing_order_by",
+    "unsorted_result_assertion"
   ],
   "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
   "evidence_links": [

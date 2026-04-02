@@ -17,10 +17,10 @@
   ],
   "failure_signature": "t.Cleanup(func() { (tests/realtikvtest/addindextest2/global_sort_test.go)",
   "root_cause_categories": [
-    "unclassified"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "unclassified"
+    "missing_order_by"
   ],
   "fix_pattern": "previously, we basically based on the formula `total file size / part-size + 2` to estimate the PUT API call count, and use reader reload as the timing to get the GET request call count, so it's not accurate, and make the UT hard to check the count. and previous way pollute normal code too much, we have to pass many params into the `external`/`local` pkg to instruct where we read/write to get the request count. and some PUT/GET is not collected, such as subtask meta file read/write. so we change to counting the API call directly by intercepting those request call. and revert the old logic introduced in https://github.com/pingcap/tidb/pull/63431. for S3/KS3, we use it's `Send` handlers for GCS, we use a wrapped round tripper.",
   "evidence_links": [

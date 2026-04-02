@@ -17,10 +17,11 @@
   ],
   "failure_signature": "sql: \"SELECT FIRST_VALUE(a) RESPECT NULLS OVER (w1 PARTITION BY b ORDER BY b ASC, a DESC ROWS 2 PRECEDING) AS 'first_value', a, b FROM ( SELECT a, b FROM `t` ) as t WINDOW w1 AS (PARTITION BY b ORDER BY b ASC, a ASC );\", (planner/core/logical_plan_test.go)",
   "root_cause_categories": [
-    "unclassified"
+    "nondeterministic_plan_selection",
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "unclassified"
+    "assert_exact_plan_or_cost"
   ],
   "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
   "evidence_links": [
