@@ -17,10 +17,11 @@
   ],
   "failure_signature": "run_sql \"SELECT id, status, filter_strings FROM mysql.tidb_restore_registry WHERE filter_strings = '$DB.*' ORDER BY id DESC LIMIT 1;\" || { (br/tests/br_parallel_restore/run.sh)",
   "root_cause_categories": [
-    "unclassified"
+    "concurrency_data_race",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "unclassified"
+    "t_parallel_with_shared_state"
   ],
   "fix_pattern": "Increase the usability for the latest parallel restore feature User often retry restore without specifying restoredTS, it will result in an error that might be confusing to user. Now we will auto detect such cases and potentially reuse task by doing following things: 1. if user specify a restoredTS, we will directly use that ts 2. if not, we will try to find the task that only differs in restoredTS in the registry. 2.1 if the task if pasued, use the restoreTS in this task and try to resume it (in transaction will make sure task has not changed) 2.2 if task is running, it could potentially be a orphan task, we wait for 5 minutes to see if its heartbeat changed, if not we pause it, use its restoreTS and goes to the normal flow of resuming it. If heartbeat changed, we directly go to the next step and will bail out because filter matches.",
   "evidence_links": [

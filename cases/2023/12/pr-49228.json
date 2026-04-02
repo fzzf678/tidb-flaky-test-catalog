@@ -17,10 +17,10 @@
   ],
   "failure_signature": "select id, a, \"1900-01-01 00:00:00\" + INTERVAL a MICROSECOND as result from t order by id ASC; (tests/integrationtest/r/expression/time.result)",
   "root_cause_categories": [
-    "unclassified"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "unclassified"
+    "missing_order_by"
   ],
   "fix_pattern": "`date + interval X uint` when X is a big value, we should get `NULL` Fix some other interval cases to keep the same behavior with MySQL 8.0: `date + interval \"true\" DAY` should not add one day, only `date + interval true DAY` should be seen as add 1 time unit. `date + interval \"xxx1\" uint`, if an interval string does not start with +/- or a digit, it should be truncated as 0, not 1. The unit `SECOND` is special, it should accept string in in exponential format, for example:  `select \"1900-01-01 00:00:00\" + INTERVAL \"1e2\" second;` should add 100 seconds. If the unit is `SECOND` , the interval string should be regarded as float, other units should be regarded as int.",
   "evidence_links": [
