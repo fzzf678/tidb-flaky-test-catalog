@@ -20,11 +20,11 @@
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Add a global variable \"cost factor\" to the more common optimizer physical operators.",
+  "root_cause_explanation": "The integration test was flaky because its golden EXPLAIN output depended on statistics load status (e.g., `missing` vs `unInitialized`), which can vary across runs. The fix stabilizes the result by reverting/adjusting the expected output to the stable form instead of asserting an unstable stats-sensitive string.",
   "module": "planner",
-  "fix_pattern": "Add a global variable \"cost factor\" to the more common optimizer physical operators. This allows an ability to externally control the optimizer's plan choice(s) - by either increasing the cost factor for one operation (to discourage that plan choice), or decreasing the cost factor of an operation (to encourage that plan choice).",
+  "fix_pattern": "Stabilize EXPLAIN golden output by avoiding assertions that depend on nondeterministic statistics load status (`missing` vs `unInitialized`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60333",
     "https://github.com/pingcap/tidb/pull/60333.patch"

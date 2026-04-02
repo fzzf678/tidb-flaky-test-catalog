@@ -17,14 +17,14 @@
   ],
   "failure_signature": "br: fix flaky test TestGCServiceSafePoint",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test was flaky due to a timestamp boundary/ordering assumption: it subtracted 1 from a checkpoint TS unconditionally. When the checkpoint TS can be 0 (or smaller than the hardcoded start), TS-1 underflows in uint64 and breaks the GC safepoint logic intermittently. The fix makes safeTS() handle TS==0 and updates the test start TS accordingly.",
   "module": "br",
-  "fix_pattern": "test will fail if when try to advance the new TS is less than hardcoded 5, make it 0",
+  "fix_pattern": "Avoid timestamp underflow by guarding safeTS() for TS==0, and update the test env start TS to 0 so checkpoint advancement is valid.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58628",
     "https://github.com/pingcap/tidb/pull/58628.patch"

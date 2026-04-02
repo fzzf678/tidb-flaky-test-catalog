@@ -17,14 +17,14 @@
   ],
   "failure_signature": "explain format='brief' select /*+ inl_join(st_475) */ ucase( st_475.r4 ) as r0 , concat_ws(',', t1.col_6 , t1.col_3 ) as r1 , lower( t1.col_3 ) as r2 , ucase( st_475.r4 ) as r3 from t1 left join (select /*+ stream_agg() */ t2.col_4 as r0 , max( t2.col_4 ) as r1 , t2.col_4 as r2 , count( t2.col_4 ) as r3 , min( t2.col_3 ) as r4 from t2 where IsNull( t2.col...",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: The \"indexjoin + streamagg + indexlookup + nocommonhandle\" will trigger a panic in ISSUE.",
+  "root_cause_explanation": "This PR fixes a planner panic triggered by a specific plan shape (index join + stream agg + index lookup). However, the case does not capture CI logs or an intermittent failure signature explaining when/why this becomes flaky in tests. Marked as insufficient_evidence until we add the panic stack/CI links.",
   "module": "planner",
-  "fix_pattern": "The \"indexjoin + streamagg + indexlookup + nocommonhandle\" will trigger a panic in ISSUE. The root cause is that when building the stream agg and push it into coptask, tidb miss the handlecolumns on the coptask and double read tablescan side.",
+  "fix_pattern": "Fix planner panic by ensuring handle columns are preserved when pushing StreamAgg into cop task for IndexJoin/IndexLookUp plan shapes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60852",
     "https://github.com/pingcap/tidb/pull/60852.patch"

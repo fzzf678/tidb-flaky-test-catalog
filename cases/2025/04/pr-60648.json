@@ -22,9 +22,9 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: This enhancement is controlled by a new global/session variable tidb_opt_risk_eq_skew_ratio - that is also eligible for query level SET_VAR hint.",
+  "root_cause_explanation": "The test was flaky because it asserted exact floating-point selectivity/row-count estimates. Due to floating-point rounding, the computed value can vary slightly across runs and environments. The fix makes the assertion tolerant by checking the result is within an acceptable range instead of requiring an exact float match.",
   "module": "planner",
-  "fix_pattern": "This enhancement is controlled by a new global/session variable tidb_opt_risk_eq_skew_ratio - that is also eligible for query level SET_VAR hint.",
+  "fix_pattern": "Replace exact float equality assertions with range/tolerance checks to avoid flakiness from floating-point rounding.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60648",
     "https://github.com/pingcap/tidb/pull/60648.patch"

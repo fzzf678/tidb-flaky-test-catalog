@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: analyze the tables to stabilize the flaky status of the columns",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "Based on the flaky test results, sometimes the column status is `missing`, and other times it’s `uninitialized`.",
+  "root_cause_explanation": "The integration test was flaky because the EXPLAIN output included column statistics load status that can vary between runs (`missing` vs `uninitialized`). This depended on whether the async DDL notifier had processed CREATE TABLE events and initialized histogram metadata. The fix explicitly runs ANALYZE to create histogram metadata for all columns, making the status consistent for the test.",
+  "module": "statistics",
+  "fix_pattern": "Run ANALYZE TABLE ... ALL COLUMNS in the integration test to ensure histogram metadata exists, avoiding nondeterministic `missing` vs `uninitialized` column status in EXPLAIN output.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60514",
     "https://github.com/pingcap/tidb/pull/60514.patch"
