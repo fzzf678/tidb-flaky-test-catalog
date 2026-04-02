@@ -10,12 +10,12 @@
   "test": {
     "type": "unit",
     "path": "pkg/server/handler/optimizor/statistics_handler_test.go",
-    "name": "server.RunInGoTestChan"
+    "name": "TestDumpStatsAPI"
   },
   "symptoms": [
-    "ber: close #65730  Problem Summary:  `TestDumpStatsAPI` was flaky because it relied on `server.RunInGoTestChan`, a global channel that is closed"
+    "`TestDumpStatsAPI` was flaky because it relied on `server.RunInGoTestChan`, a global channel that is closed after the first server starts in the same test binary."
   ],
-  "failure_signature": "ber: close #65730  Problem Summary:  `TestDumpStatsAPI` was flaky because it relied on `server.RunInGoTestChan`, a global channel that is closed",
+  "failure_signature": "server.RunInGoTestChan is closed after first server start; subsequent stats tests in same binary can race/fail during server startup",
   "root_cause_categories": [
     "shared_state_pollution"
   ],
@@ -24,7 +24,7 @@
   ],
   "root_cause_explanation": "`server.RunInGoTestChan` is a global channel that gets closed after the first server starts, so later server starts in the same test binary can race and fail. The PR recreates this global channel before starting each server in the stats handler tests, eliminating cross-test pollution.",
   "module": "server",
-  "fix_pattern": "ber: close #65730  Problem Summary:  `TestDumpStatsAPI` was flaky because it relied on `server.RunInGoTestChan`, a global channel that is closed",
+  "fix_pattern": "Reset the global `server.RunInGoTestChan` channel before starting each server in these tests, avoiding cross-test pollution from a closed channel.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65736",
     "https://github.com/pingcap/tidb/pull/65736.patch"
@@ -39,9 +39,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: ber: close #65730  Problem Summary:  `TestDumpStatsAPI` was flaky because it relied on `server.RunInGoTestChan`, a global channel that is closed",
+      "evidence: TestDumpStatsAPI relies on server.RunInGoTestChan (global channel) which can be closed after the first server start in the same test binary",
       "files: pkg/server/handler/optimizor/statistics_handler_test.go"
     ]
   },
-  "analysis": "PR title: pkg/server/handler/optimizor: stabilize stats handler test\nPR url: https://github.com/pingcap/tidb/pull/65736\nTriage summary: ber: close #65730  Problem Summary:  `TestDumpStatsAPI` was flaky because it relied on `server.RunInGoTestChan`, a global channel that is closed\nChanged files (1): pkg/server/handler/optimizor/statistics_handler_test.go\nFull patch analyzed; see patch_url."
+  "analysis": "PR title: pkg/server/handler/optimizor: stabilize stats handler test\nPR url: https://github.com/pingcap/tidb/pull/65736\nTriage summary: TestDumpStatsAPI relies on server.RunInGoTestChan (global channel) which can be closed after the first server start in the same test binary\nChanged files (1): pkg/server/handler/optimizor/statistics_handler_test.go\nFull patch analyzed; see patch_url."
 }

@@ -13,19 +13,18 @@
     "name": "partial_order_topn"
   },
   "symptoms": [
-    "diff shows determinism stabilization in tests/integrationtest/r/planner/core/partial_order_topn.result, tests/integrationtest/t/planner/core/partial_order_topn.test"
+    "Planner partial-order matching could panic with an out-of-range index when ORDER BY columns are matched against a pruned index-column list (idxcols), causing test failures."
   ],
-  "failure_signature": "diff shows determinism stabilization in tests/integrationtest/r/planner/core/partial_order_topn.result, tests/integrationtest/t/planner/core/partial_order_topn.test",
+  "failure_signature": "runtime error: index out of range in partial-order/index column mapping after column pruning",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
   "root_cause_explanation": "The partial-order matching logic could index into pruned/nil index columns (or include appended handle columns), leading to panics or inconsistent planning decisions. This PR adds defensive checks and uses the correct full index column metadata when matching ORDER BY, preventing out-of-range errors and making the integration-test plan output stable.",
   "module": "planner",
-  "fix_pattern": "diff shows determinism stabilization in tests/integrationtest/r/planner/core/partial_order_topn.result, tests/integrationtest/t/planner/core/partial_order_topn.test",
+  "fix_pattern": "Use full index column metadata (fullidxcols with nil placeholders) when matching ORDER BY columns after pruning, preventing out-of-range access and stabilizing planning for partial-order TopN.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66268",
     "https://github.com/pingcap/tidb/pull/66268.patch"
@@ -42,9 +41,9 @@
       "determinism_stabilization"
     ],
     "evidence": [
-      "evidence: diff shows determinism stabilization in tests/integrationtest/r/planner/core/partial_order_topn.result, tests/integrationtest/t/planner/core/partial_order_topn.test",
-      "files: tests/integrationtest/r/planner/core/partial_order_topn.result, tests/integrationtest/t/planner/core/partial_order_topn.test"
+      "evidence: runtime panic \"index out of range\" in partial-order/index-column mapping when columns are pruned",
+      "files: pkg/planner/core/find_best_task.go, tests/integrationtest/t/planner/core/partial_order_topn.test"
     ]
   },
-  "analysis": "PR title: planner, partial_order: fix index out of range error when query has pruned column\nPR url: https://github.com/pingcap/tidb/pull/66268\nTriage summary: diff shows determinism stabilization in tests/integrationtest/r/planner/core/partial_order_topn.result, tests/integrationtest/t/planner/core/partial_order_topn.test\nChanged files (3): pkg/planner/core/find_best_task.go, tests/integrationtest/r/planner/core/partial_order_topn.result, tests/integrationtest/t/planner/core/partial_order_topn.test\nFull patch analyzed; see patch_url."
+  "analysis": "PR title: planner, partial_order: fix index out of range error when query has pruned column\nPR url: https://github.com/pingcap/tidb/pull/66268\nTriage summary: Fix out-of-range panic in partial-order matching by using full index columns after pruning\nChanged files (3): pkg/planner/core/find_best_task.go, tests/integrationtest/r/planner/core/partial_order_topn.result, tests/integrationtest/t/planner/core/partial_order_topn.test\nFull patch analyzed; see patch_url."
 }

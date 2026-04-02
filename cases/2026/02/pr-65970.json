@@ -13,19 +13,18 @@
     "name": "TestSchedulerExtLocalSort"
   },
   "symptoms": [
-    "diff shows determinism stabilization in tests/realtikvtest/importintotest/import_into_test.go"
+    "`TestSchedulerExtLocalSort` (classic-mode `IMPORT INTO`) could fail intermittently because the target-table-empty precheck was executed again in later steps; executor recreation/restart could re-run the check after partial import."
   ],
-  "failure_signature": "diff shows determinism stabilization in tests/realtikvtest/importintotest/import_into_test.go",
+  "failure_signature": "IMPORT INTO classic mode: target table emptiness check is re-run after restart/recreate and fails because the table is no longer empty",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency",
-    "hardcoded_port_or_resource"
+    "real_tikv_dependency"
   ],
   "root_cause_explanation": "In classic-mode `IMPORT INTO`, the target-table-emptiness check was performed again in later executor steps, so executor recreation/restart could re-run the check after partial import and fail intermittently. The PR moves the check to the task-start boundary (run once per task) and adds coverage for executor recreation, removing the restart-related race.",
   "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Run the target-table-empty precheck once at the task start boundary (classic mode, StepInit) instead of repeating it in later step-specific logic, so executor recreation does not re-trigger the check mid-task.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65970",
     "https://github.com/pingcap/tidb/pull/65970.patch"
@@ -47,9 +46,9 @@
       "determinism_stabilization"
     ],
     "evidence": [
-      "evidence: diff shows determinism stabilization in tests/realtikvtest/importintotest/import_into_test.go",
-      "files: pkg/dxf/importinto/scheduler_testkit_test.go, tests/realtikvtest/importintotest/import_into_test.go"
+      "evidence: classic-mode IMPORT INTO table-empty precheck must run once per task (avoid re-check on executor recreation/restart)",
+      "files: pkg/dxf/importinto/scheduler.go, tests/realtikvtest/importintotest/import_into_test.go"
     ]
   },
-  "analysis": "PR title: dxf/importinto: run table-empty check once per task\nPR url: https://github.com/pingcap/tidb/pull/65970\nTriage summary: diff shows determinism stabilization in tests/realtikvtest/importintotest/import_into_test.go\nChanged files (8): pkg/ddl/index.go, pkg/dxf/importinto/scheduler.go, pkg/dxf/importinto/scheduler_testkit_test.go, pkg/dxf/importinto/task_executor.go, pkg/executor/importer/BUILD.bazel, pkg/executor/importer/job.go, pkg/executor/importer/job_test.go, tests/realtikvtest/importintotest/import_into_test.go\nFull patch analyzed; see patch_url."
+  "analysis": "PR title: dxf/importinto: run table-empty check once per task\nPR url: https://github.com/pingcap/tidb/pull/65970\nTriage summary: Move classic-mode IMPORT INTO table-empty precheck to task start (StepInit) to avoid restart/recreate re-check flakiness\nChanged files (8): pkg/ddl/index.go, pkg/dxf/importinto/scheduler.go, pkg/dxf/importinto/scheduler_testkit_test.go, pkg/dxf/importinto/task_executor.go, pkg/executor/importer/BUILD.bazel, pkg/executor/importer/job.go, pkg/executor/importer/job_test.go, tests/realtikvtest/importintotest/import_into_test.go\nFull patch analyzed; see patch_url."
 }

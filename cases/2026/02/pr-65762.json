@@ -13,19 +13,18 @@
     "name": "TestCalResourceParams"
   },
   "symptoms": [
-    "diff shows determinism stabilization in tests/realtikvtest/importintotest/import_into_test.go"
+    "`TestCalResourceParams` could be unstable because `IMPORT INTO` resource auto-calculation used the compressed file size instead of the real/uncompressed size, leading to inconsistent thread/max-node values for compressed inputs."
   ],
-  "failure_signature": "diff shows determinism stabilization in tests/realtikvtest/importintotest/import_into_test.go",
+  "failure_signature": "TestCalResourceParams: auto-calculated resource params (thread/maxNode) differ when using totalFileSize (compressed) vs totalRealSize (uncompressed)",
   "root_cause_categories": [
     "external_dependency"
   ],
   "review_smells": [
-    "real_tikv_dependency",
-    "hardcoded_port_or_resource"
+    "real_tikv_dependency"
   ],
-  "root_cause_explanation": "The resource-parameter calculation for `IMPORT INTO` relied on file-size signals that can differ for compressed inputs (file size vs real/uncompressed size), making the derived thread/max-node values unstable in tests. This PR tracks and uses total real size consistently (and adjusts tests accordingly), so the computed resource params and assertions become deterministic.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The `IMPORT INTO` resource-parameter calculation used file-size signals that differ for compressed inputs (compressed file size vs real/uncompressed size). That mismatch can make auto-calculated thread/max-node values differ from expectations in real TiKV tests. This PR tracks total real size and uses it consistently for resource calculation (while still logging both totalFileSize and totalRealSize), stabilizing the computed params and related assertions.",
+  "module": "executor",
+  "fix_pattern": "Use total real/uncompressed size (TotalRealSize) rather than total compressed file size to auto-calculate IMPORT INTO resource params for compressed inputs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65762",
     "https://github.com/pingcap/tidb/pull/65762.patch"
@@ -42,9 +41,9 @@
       "determinism_stabilization"
     ],
     "evidence": [
-      "evidence: diff shows determinism stabilization in tests/realtikvtest/importintotest/import_into_test.go",
+      "evidence: resource auto-calculation used totalRealSize for compressed data files to match expected thread/maxNode params",
       "files: pkg/executor/importer/importer_testkit_test.go, tests/realtikvtest/importintotest/import_into_test.go"
     ]
   },
-  "analysis": "PR title: importinto: use real file size when calculate resource\nPR url: https://github.com/pingcap/tidb/pull/65762\nTriage summary: diff shows determinism stabilization in tests/realtikvtest/importintotest/import_into_test.go\nChanged files (3): pkg/executor/importer/import.go, pkg/executor/importer/importer_testkit_test.go, tests/realtikvtest/importintotest/import_into_test.go\nFull patch analyzed; see patch_url."
+  "analysis": "PR title: importinto: use real file size when calculate resource\nPR url: https://github.com/pingcap/tidb/pull/65762\nTriage summary: Stabilize IMPORT INTO resource auto-calculation for compressed inputs by using totalRealSize (uncompressed) instead of totalFileSize (compressed)\nChanged files (3): pkg/executor/importer/import.go, pkg/executor/importer/importer_testkit_test.go, tests/realtikvtest/importintotest/import_into_test.go\nFull patch analyzed; see patch_url."
 }
