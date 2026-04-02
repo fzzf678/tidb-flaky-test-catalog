@@ -8,24 +8,23 @@
   },
   "pr_merged_at": "2025-07-03T21:35:00+08:00",
   "test": {
-    "type": "integration",
-    "path": "pkg/ddl/tiflash_replica_test.go",
-    "name": "tiflash_replica_test"
+    "type": "unit",
+    "path": "pkg/planner/core/integration_test.go",
+    "name": "integration_test"
   },
   "symptoms": [
     "{\" └─Window_23\", \"mpp[tiflash]\", \"sum(cast(test.t.v, decimal(10,0) BINARY))->Column#10, count(test.t.v)->Column#11, avg(cast(test.t.v, decimal(10,0) BINARY))->Column#12, min(test.t.v)->Column#13, max(test.t.v)->Column#14 over(partition by test.t.p order by test.t.o range between unbounded preceding and current row), stream_count: 8\"}, (pkg/planner/core/in..."
   ],
   "failure_signature": "{\" └─Window_23\", \"mpp[tiflash]\", \"sum(cast(test.t.v, decimal(10,0) BINARY))->Column#10, count(test.t.v)->Column#11, avg(cast(test.t.v, decimal(10,0) BINARY))->Column#12, min(test.t.v)->Column#13, max(test.t.v)->Column#14 over(partition by test.t.p order by test.t.o range between unbounded preceding and current row), stream_count: 8\"}, (pkg/planner/core/in...",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: {\" └─Window_23\", \"mpp[tiflash]\", \"sum(cast(test.t.v, decimal(10,0) BINARY))->Column#10, count(test.t.v)->Column#11, avg(cast(test.t.v, decimal(10,0) BINARY))->Column#12, min(test.t.v)->Column#13, max(test.t.v)->Column#14….",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
   "module": "planner",
-  "fix_pattern": "{\" └─Window_23\", \"mpp[tiflash]\", \"sum(cast(test.t.v, decimal(10,0) BINARY))->Column#10, count(test.t.v)->Column#11, avg(cast(test.t.v, decimal(10,0) BINARY))->Column#12, min(test.t.v)->Column#13, max(test.t.v)->Column#14 over(partition by test.t.p order by test.t.o range between unbounded preceding and current row), stream_count: 8\"}, (pkg/planner/core/in...",
+  "fix_pattern": "Lift can-push-to-cop checks for aggregation/projection and update affected planner/executor golden outputs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62068",
     "https://github.com/pingcap/tidb/pull/62068.patch"

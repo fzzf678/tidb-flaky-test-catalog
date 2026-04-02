@@ -8,22 +8,21 @@
   },
   "pr_merged_at": "2025-07-23T23:32:09+08:00",
   "test": {
-    "type": "unit",
-    "path": "br/pkg/task/restore.go",
-    "name": "br: fix pitr with filter drop db issue and adjust tests"
+    "type": "integration",
+    "path": "br/tests/br_pitr/run.sh",
+    "name": "br_pitr"
   },
   "symptoms": [
     "run_sql \"select count(*) DELETE_RANGE_CNT from (select * from mysql.gc_delete_range union all select * from mysql.gc_delete_range_done) del_range group by ts order by DELETE_RANGE_CNT desc limit 1;\" (br/tests/br_pitr/run.sh)"
   ],
   "failure_signature": "run_sql \"select count(*) DELETE_RANGE_CNT from (select * from mysql.gc_delete_range union all select * from mysql.gc_delete_range_done) del_range group by ts order by DELETE_RANGE_CNT desc limit 1;\" (br/tests/br_pitr/run.sh)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "relying_on_map_iteration_order"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Add a isRefreshMeta field in DDL schema diff.",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
   "module": "br",
   "fix_pattern": "Add a isRefreshMeta field in DDL schema diff. For table drop, if initiated by refreshMeta, don't check TiKV for old tableInfo as it doesn't make sense to BR case, and it will error out due to DB key not existed.",
   "evidence_links": [

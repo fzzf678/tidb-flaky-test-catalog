@@ -13,20 +13,18 @@
     "name": "enforce_mpp_test"
   },
   "symptoms": [
-    "- // Default RPC encoding may cause statistics explain result differ and then the test unstable. | err = testKit.ExecToErr(\"explain format = 'brief' SELECT country, product, SUM(profit) AS profit FROM sales GROUP BY country, country, product with rollup order by grouping(year);\") (pkg/planner/core/casetest/enforcempp/enforce_mpp_test.go)"
+    "No concrete flaky failure signature recorded in PR; this PR is primarily casetest coverage/refactor for cascades mode."
   ],
-  "failure_signature": "- // Default RPC encoding may cause statistics explain result differ and then the test unstable. | err = testKit.ExecToErr(\"explain format = 'brief' SELECT country, product, SUM(profit) AS profit FROM sales GROUP BY country, country, product with rollup order by grouping(year);\") (pkg/planner/core/casetest/enforcempp/enforce_mpp_test.go)",
+  "failure_signature": "No concrete flaky failure signature recorded in PR; this PR is primarily casetest coverage/refactor for cascades mode.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: - // Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "root_cause_explanation": "insufficient_evidence: This PR mainly ports/adds planner casetest coverage under cascades mode and refactors test helpers. The patch does not show a specific flaky symptom and a targeted stabilization fix, so we avoid guessing a root cause.",
   "module": "planner",
-  "fix_pattern": "- // Default RPC encoding may cause statistics explain result differ and then the test unstable. | err = testKit.ExecToErr(\"explain format = 'brief' SELECT country, product, SUM(profit) AS profit FROM sales GROUP BY country, country, product with rollup order by grouping(year);\") (pkg/planner/core/casetest/enforcempp/enforce_mpp_test.go)",
+  "fix_pattern": "Port/extend planner casetest `enforce_mpp_test` to run under cascades mode (new xut testdata), and allow `RunTestUnderCascades*` helpers to accept mockstore options.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62643",
     "https://github.com/pingcap/tidb/pull/62643.patch"

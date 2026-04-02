@@ -8,21 +8,21 @@
   },
   "pr_merged_at": "2025-07-25T10:13:13+08:00",
   "test": {
-    "type": "integration",
+    "type": "unit",
     "path": "pkg/planner/cardinality/selectivity_test.go",
     "name": "selectivity_test"
   },
   "symptoms": [
-    "+ // estimated row count without any changes, use range to reduce test flakiness"
+    "// estimated row count without any changes, use range/InDelta to reduce test flakiness"
   ],
-  "failure_signature": "+ // estimated row count without any changes, use range to reduce test flakiness",
+  "failure_signature": "// estimated row count without any changes, use range/InDelta to reduce test flakiness",
   "root_cause_categories": [
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: Range predicates outside of the histogram bucket range face a similar risk to ranges within a bucket, because we do not have collected stats we can rely on for the cardinality estimation.",
+  "root_cause_explanation": "The test was flaky because it asserted exact floating-point row-count estimates from statistics/cardinality logic. Small estimation/float variations could make strict equality assertions fail. This PR stabilizes it by using tolerant comparisons (range/InDelta) instead of exact float equality.",
   "module": "planner",
   "fix_pattern": "Range predicates outside of the histogram bucket range face a similar risk to ranges within a bucket, because we do not have collected stats we can rely on for the cardinality estimation. So, this change uses the tidb_opt_risk_range_skew_ratio variable to allow users or external processes to adjust how much skew is considered in out of range estimations. This also adjusts and simplifies the out of range estimation function to rely more on addedRows (the difference between realTimeRowCount and the histogram count) than histogram row count itself.",
   "evidence_links": [

@@ -9,23 +9,22 @@
   "pr_merged_at": "2025-07-18T15:16:24+08:00",
   "test": {
     "type": "realtikv",
-    "path": "pkg/executor/test/fktest/foreign_key_test.go",
-    "name": "foreign_key_test"
+    "path": "tests/realtikvtest/addindextest1/cross_ks_test.go",
+    "name": "cross_ks_test"
   },
   "symptoms": [
     "rs := tk.MustQuery(\"select * from mysql.tidb_global_task order by id desc\").Rows() (tests/realtikvtest/addindextest1/cross_ks_test.go)"
   ],
   "failure_signature": "rs := tk.MustQuery(\"select * from mysql.tidb_global_task order by id desc\").Rows() (tests/realtikvtest/addindextest1/cross_ks_test.go)",
   "root_cause_categories": [
-    "external_dependency",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: rs := tk.MustQuery(\"select * from mysql.tidb_global_task order by id desc\").Rows() (tests/realtikvtest/addindextest1/cross_ks_test.go).",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
   "module": "test_infra",
-  "fix_pattern": "rs := tk.MustQuery(\"select * from mysql.tidb_global_task order by id desc\").Rows() (tests/realtikvtest/addindextest1/cross_ks_test.go)",
+  "fix_pattern": "Add nextgen create-index realtikv tests (cross keyspace) and related testkit/failpoint plumbing.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62326",
     "https://github.com/pingcap/tidb/pull/62326.patch"
