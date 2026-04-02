@@ -13,20 +13,20 @@
     "name": "TestPlanCachePartitionSuite"
   },
   "symptoms": [
-    "oin-reorder-adds-selection` to key-fragment checks to avoid unstable plan id suffix dependencies. - In `TestPlanCachePartitionSuite`, reused setup w"
+    "Planner regression tests were brittle because `show warnings` checks could be polluted by `explain for connection` executed in the same session, and some EXPLAIN assertions depended on unstable plan-id/operator-id suffixes."
   ],
-  "failure_signature": "oin-reorder-adds-selection` to key-fragment checks to avoid unstable plan id suffix dependencies. - In `TestPlanCachePartitionSuite`, reused setup w",
+  "failure_signature": "Test-suite flakiness from shared session state (warnings polluted by `explain for connection`) and brittle EXPLAIN assertions (unstable plan-id suffixes).",
   "root_cause_categories": [
-    "nondeterministic_result_order",
+    "shared_state_pollution",
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "unsorted_result_assertion",
-    "missing_order_by"
+    "test_suite_setup_issue",
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "Several planner regression tests were brittle due to shared setup/state between subtests and due to unstable plan IDs or unordered result comparisons. This PR simplifies and centralizes the setup, removes the `t.Run` structure, and adds sorting/`EXPLAIN format='brief'` where appropriate, reducing nondeterministic diffs and cross-test interference.",
+  "root_cause_explanation": "Some planner regression tests were flaky due to shared session/test setup: `TestPlanCachePartitionSuite` checked `show warnings`, but `explain for connection` executed in the same session could overwrite the warning state and make assertions order-dependent. Separately, one EXPLAIN assertion was brittle because it depended on unstable plan-id/operator-id suffixes. The PR stabilizes the suite by refactoring setup, using a dedicated session for `explain for connection`, and relaxing the brittle EXPLAIN assertion to check stable fragments.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Reduce suite-level shared-state interference by using a dedicated session for `explain for connection` (so `show warnings` stays tied to the target session) and relax brittle EXPLAIN assertions that depend on unstable plan-id suffixes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66529",
     "https://github.com/pingcap/tidb/pull/66529.patch"
