@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tests: fix unstable test `TestTruncatePartitionWithGlobalIndex`",
   "root_cause_categories": [
-    "shared_state_pollution",
     "schema_change_race"
   ],
   "review_smells": [
-    "global_variable_mutation",
-    "shared_table_without_isolation"
+    "schema_version_race"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: tests: fix unstable test `TestTruncatePartitionWithGlobalIndex`.",
-  "module": "test_infra",
-  "fix_pattern": "tests: fix unstable test `TestTruncatePartitionWithGlobalIndex`",
+  "root_cause_explanation": "The test was flaky because it depended on DDL state transitions and infoschema reload timing during TRUNCATE PARTITION with global indexes. Without deterministic blocking/waiting, the DDL job state and schema version updates can advance differently across runs, making the assertions unstable. The fix begins a transaction to hold MDL at the right time and improves the schema meta version waiting logic so the test reliably observes the intended DDL states.",
+  "module": "ddl",
+  "fix_pattern": "Use a separate transaction to hold MDL and adjust the schema meta version wait loop (update the baseline schema version) to make DDL state transitions deterministic in the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/59974",
     "https://github.com/pingcap/tidb/pull/59974.patch"
