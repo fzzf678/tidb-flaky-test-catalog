@@ -13,19 +13,18 @@
     "name": "TestTaskRegisterFailedReput"
   },
   "symptoms": [
-    "skRegisterFailedGrant` / `TestTaskRegisterFailedReput` were flaky because they used fixed sleeps while etcd lease keepalive/retry is asynchronous"
+    "`TestTaskRegisterFailedGrant` / `TestTaskRegisterFailedReput` were flaky because they relied on fixed sleeps while etcd lease grant/keepalive/retry is asynchronous, and TTL queries can transiently fail during revoke/expiry."
   ],
-  "failure_signature": "skRegisterFailedGrant` / `TestTaskRegisterFailedReput` were flaky because they used fixed sleeps while etcd lease keepalive/retry is asynchronous",
+  "failure_signature": "TestTaskRegisterFailedGrant/TestTaskRegisterFailedReput: flaky assertions around etcd lease TTL/\"requested lease not found\" due to timing + fixed sleeps",
   "root_cause_categories": [
-    "concurrency_data_race",
     "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "These etcd-based task-register tests used fixed sleeps while lease grant/keepalive and retry logic are inherently asynchronous, so timing jitter could make the assertions fail. The PR replaces sleep-based checks with `require.Eventually`/polling and makes the retry interval controllable, so the tests wait for the system to reach the expected state deterministically.",
+  "root_cause_explanation": "These etcd-based task-register tests were flaky because they used fixed sleeps to wait for lease grant/keepalive/retry effects, but those effects are asynchronous and can be delayed on loaded CI. The PR replaces fixed sleeps with `require.Eventually` and makes the retry interval controllable, so the tests wait for the expected state deterministically and tolerate transient \"requested lease not found\" races during TTL queries.",
   "module": "br",
-  "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
+  "fix_pattern": "Replace fixed sleeps with `require.Eventually` for async lease state, and make retry intervals controllable/tolerant to transient \"requested lease not found\" during TTL queries.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65732",
     "https://github.com/pingcap/tidb/pull/65732.patch"

@@ -13,9 +13,9 @@
     "name": "index"
   },
   "symptoms": [
-    "diff shows determinism stabilization in tests/integrationtest/r/planner/core/indexjoin.result, tests/integrationtest/t/planner/core/indexjoin.test"
+    "Planner integration tests were unstable because their golden `EXPLAIN` outputs included plan/operator IDs, whose sequential allocation can vary when optimization flow changes."
   ],
-  "failure_signature": "diff shows determinism stabilization in tests/integrationtest/r/planner/core/indexjoin.result, tests/integrationtest/t/planner/core/indexjoin.test",
+  "failure_signature": "golden EXPLAIN mismatch due to plan-id/operator-id suffix differences (logical plan unchanged)",
   "root_cause_categories": [
     "nondeterministic_plan_selection"
   ],
@@ -24,7 +24,7 @@
   ],
   "root_cause_explanation": "Some planner integration tests compared `EXPLAIN` output that included plan-id/operator-id suffixes, which can vary between runs even when the logical plan is the same. The PR uses `EXPLAIN format='brief'` so the output no longer depends on unstable plan IDs, making the golden-file checks stable.",
   "module": "planner",
-  "fix_pattern": "diff shows determinism stabilization in tests/integrationtest/r/planner/core/indexjoin.result, tests/integrationtest/t/planner/core/indexjoin.test",
+  "fix_pattern": "Use `EXPLAIN format='brief'` in index-related tests so golden files do not depend on unstable plan/operator IDs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65825",
     "https://github.com/pingcap/tidb/pull/65825.patch"

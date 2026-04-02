@@ -13,19 +13,19 @@
     "name": "TestVerifyCommonNameAndRotate"
   },
   "symptoms": [
-    "#65728  Problem Summary:  TLS CN verify/rotation tests were flaky due to unstable client-side TLS error strings and shared global HTTP mux state."
+    "TLS CN verify/rotation tests were flaky due to unstable client-side TLS error strings and shared global HTTP mux state (http.DefaultServeMux)."
   ],
-  "failure_signature": "#65728  Problem Summary:  TLS CN verify/rotation tests were flaky due to unstable client-side TLS error strings and shared global HTTP mux state.",
+  "failure_signature": "TLS tests: assertions on client-side TLS error strings / shared http.DefaultServeMux cause intermittent failures",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "shared_state_pollution",
+    "async_timing_issue"
   ],
   "review_smells": [
-    "shared_table_without_isolation",
     "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The TLS tests were flaky because they depended on global HTTP mux state and on an unstable client-side TLS error string. This PR uses a per-test `ServeMux` (avoiding shared global handler state) and asserts against the server-side error log with `require.Eventually`, making the failure signal stable across runs.",
-  "module": "server",
-  "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
+  "root_cause_explanation": "These TLS tests were flaky because they depended on shared global HTTP mux state (http.DefaultServeMux) and asserted on client-side TLS error strings that can vary across environments. The fix switches to a per-test http.ServeMux and captures server-side handshake errors via http.Server.ErrorLog, then uses `require.Eventually` to wait for the error log entry deterministically.",
+  "module": "security",
+  "fix_pattern": "Avoid shared global http.DefaultServeMux in tests; assert on stable server-side TLS handshake errors (via ErrorLog) and use `require.Eventually` for async log emission.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65734",
     "https://github.com/pingcap/tidb/pull/65734.patch"

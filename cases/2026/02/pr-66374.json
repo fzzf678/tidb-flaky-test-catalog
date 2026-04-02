@@ -13,19 +13,18 @@
     "name": "explainfor"
   },
   "symptoms": [
-    "com> planner: scope CTE names by WITH query block  planner: stabilize CTE cacheable regression test  update bazel  planner: add set-op derived CTE sc"
+    "Prepared statements containing CTEs were incorrectly marked as uncacheable by the prepared plan cache checker, emitting a warning and preventing cache hits."
   ],
-  "failure_signature": "com> planner: scope CTE names by WITH query block  planner: stabilize CTE cacheable regression test  update bazel  planner: add set-op derived CTE sc",
+  "failure_signature": "skip prepared plan-cache: find table <db>.cte failed (CTE name treated as physical table)",
   "root_cause_categories": [
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost",
     "plan_cache_dependency"
   ],
   "root_cause_explanation": "The prepared plan-cacheability checker could mistakenly treat CTE names as physical tables during AST traversal, causing inconsistent cacheability decisions and test failures. The PR tracks visible CTE names and skips InfoSchema table checks for them, making the plan-cache checker behavior deterministic and adding regression coverage.",
   "module": "planner",
-  "fix_pattern": "com> planner: scope CTE names by WITH query block  planner: stabilize CTE cacheable regression test  update bazel  planner: add set-op derived CTE sc",
+  "fix_pattern": "Teach the plan cacheability checker to treat visible CTE names as non-physical tables (skip InfoSchema lookup) and add regression coverage to ensure PREPARE emits no warning and EXECUTE can hit the prepared plan cache.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66374",
     "https://github.com/pingcap/tidb/pull/66374.patch"
@@ -44,9 +43,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: com> planner: scope CTE names by WITH query block  planner: stabilize CTE cacheable regression test  update bazel  planner: add set-op derived CTE sc",
-      "files: tests/integrationtest/r/executor/explainfor.result"
+      "evidence: prepared plan cache checker treats CTE names as physical tables, causing warning and skipping cache",
+      "files: pkg/planner/core/plan_cacheable_checker.go, tests/integrationtest/r/executor/explainfor.result"
     ]
   },
-  "analysis": "PR title: planner: fix prepared plan cache checker for CTE names\nPR url: https://github.com/pingcap/tidb/pull/66374\nTriage summary: com> planner: scope CTE names by WITH query block  planner: stabilize CTE cacheable regression test  update bazel  planner: add set-op derived CTE sc\nChanged files (5): docs/note/planner/plan_cache_notes.md, pkg/planner/core/casetest/plancache/BUILD.bazel, pkg/planner/core/casetest/plancache/plan_cacheable_checker_test.go, pkg/planner/core/plan_cacheable_checker.go, tests/integrationtest/r/executor/explainfor.result\nFull patch analyzed; see patch_url."
+  "analysis": "PR title: planner: fix prepared plan cache checker for CTE names\nPR url: https://github.com/pingcap/tidb/pull/66374\nTriage summary: Fix prepared plan cache checker to handle CTE names (avoid false \"find table <db>.cte failed\" and allow cache hits)\nChanged files (5): docs/note/planner/plan_cache_notes.md, pkg/planner/core/casetest/plancache/BUILD.bazel, pkg/planner/core/casetest/plancache/plan_cacheable_checker_test.go, pkg/planner/core/plan_cacheable_checker.go, tests/integrationtest/r/executor/explainfor.result\nFull patch analyzed; see patch_url."
 }
