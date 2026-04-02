@@ -13,16 +13,16 @@
     "name": "TestRandomPanicConsume"
   },
   "symptoms": [
-    "executor: fix flaky test TestRandomPanicConsume"
+    "The test sometimes observed `context canceled` instead of the expected failpoint panic error due to cancellation timing under concurrent execution."
   ],
-  "failure_signature": "executor: fix flaky test TestRandomPanicConsume",
+  "failure_signature": "Failpoint panic path: error can be `context canceled` due to cancellation race/timing.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "When the failpoint panic is triggered, the context cancellation can race with error propagation, so the caller may see `context canceled` instead of the panic error. This PR makes the test robust by accepting either the failpoint panic error string or `context canceled`.",
   "module": "executor",
   "fix_pattern": "When panic is triggered, context's cancel function will be called and set context error with information \"context canceled\". After cancelled, fetchInnerResults may get error from ctx.Err() which returns \"context canceled\" caused by failpoint panic or failpoint panic error directly from exec.Next.",
   "evidence_links": [

@@ -13,18 +13,18 @@
     "name": "TestIndexJoin31494"
   },
   "symptoms": [
-    "executor: fix flaky test TestIndexJoin31494"
+    "When a join worker panicked, the code could cancel the context before recording the panic error, so callers might observe `context canceled` instead of the real error intermittently."
   ],
-  "failure_signature": "executor: fix flaky test TestIndexJoin31494",
+  "failure_signature": "Index lookup hash join: panic handling can surface `context canceled` instead of the real error due to cancellation order.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The join worker panic path cancelled other workers before recording the recovered panic error. Under concurrency, this can cause downstream code to return `context canceled` instead of the real panic error, making the test flaky. This PR records the panic error first and then cancels workers, ensuring stable error reporting.",
   "module": "executor",
-  "fix_pattern": "executor: fix flaky test TestIndexJoin31494",
+  "fix_pattern": "Record the recovered panic error before cancelling workers/context to avoid returning `context canceled` instead of the real error.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/63496",
     "https://github.com/pingcap/tidb/pull/63496.patch"

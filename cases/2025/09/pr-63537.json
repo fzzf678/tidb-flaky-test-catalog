@@ -13,17 +13,17 @@
     "name": "TestDMLWithLiteCopWorker"
   },
   "symptoms": [
-    "test: fix flaky test TestDMLWithLiteCopWorker"
+    "The test relied on elapsed-time thresholds under failpoint-injected delays; CI timing jitter made it flaky."
   ],
-  "failure_signature": "test: fix flaky test TestDMLWithLiteCopWorker",
+  "failure_signature": "Timing-based assertion in TestDMLWithLiteCopWorker is flaky under load.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
+  "root_cause_explanation": "TestDMLWithLiteCopWorker assumed a tight wall-clock bound (e.g., total latency < 800ms) when injecting delays via failpoints, which is brittle under CI load and scheduling jitter. This PR makes the test deterministic by asserting the intended behavior (lite worker fallback happens) via a dedicated test hook instead of relying on timing/clock.",
+  "module": "kv",
   "fix_pattern": "Do not rely on timing and clock in `TestDMLWithLiteCopWorker`",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/63537",
