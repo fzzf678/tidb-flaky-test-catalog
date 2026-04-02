@@ -17,10 +17,10 @@
   ],
   "failure_signature": "explain format='brief' select /*+ inl_join(st_475) */ ucase( st_475.r4 ) as r0 , concat_ws(',', t1.col_6 , t1.col_3 ) as r1 , lower( t1.col_3 ) as r2 , ucase( st_475.r4 ) as r3 from t1 left join (select /*+ stream_agg() */ t2.col_4 as r0 , max( t2.col_4 ) as r1 , t2.col_4 as r2 , count( t2.col_4 ) as r3 , min( t2.col_3 ) as r4 from t2 where IsNull( t2.col...",
   "root_cause_categories": [
-    "unclassified"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "unclassified"
+    "assert_exact_plan_or_cost"
   ],
   "fix_pattern": "The \"indexjoin + streamagg + indexlookup + nocommonhandle\" will trigger a panic in ISSUE. The root cause is that when building the stream agg and push it into coptask, tidb miss the handlecolumns on the coptask and double read tablescan side.",
   "evidence_links": [

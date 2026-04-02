@@ -17,10 +17,11 @@
   ],
   "failure_signature": "When `Batcher.Len` reaches the threshold, it will call `asyncSend`, then call `Send` in `sendWorker`, and then call `RestoreBatch` to append `*ranges.RewriteRules` to `sender.rewriteRules`, the whole process may not be completed within 10ms, forming a flaky test(`require.True(t, sender.HasRewriteRuleOfKey(\"a\"))` should be true, but false), so we need to i...",
   "root_cause_categories": [
-    "unclassified"
+    "async_timing_issue",
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "unclassified"
+    "time_sleep_for_sync"
   ],
   "fix_pattern": "When `Batcher.Len` reaches the threshold, it will call `asyncSend`, then call `Send` in `sendWorker`, and then call `RestoreBatch` to append `*ranges.RewriteRules` to `sender.rewriteRules`, the whole process may not be completed within 10ms, forming a flaky test(`require.True(t, sender.HasRewriteRuleOfKey(\"a\"))` should be true, but false), so we need to i...",
   "evidence_links": [
