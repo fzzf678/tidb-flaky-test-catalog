@@ -20,11 +20,11 @@
     "shared_state_pollution"
   ],
   "review_smells": [
-    "shared_table_without_isolation"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The TopSQL/TopRU state tests were unstable under Bazel CI due to shared/global state and asynchronous subscription/reporting goroutines that can update state timing-dependently, making strict assertions brittle. The PR improves test robustness (e.g., better cleanup/isolation and eventual assertions) and quarantines the Bazel target via `flaky = True` to avoid unstable CI signal.",
+  "root_cause_explanation": "The TopSQL/TopRU state tests interact with shared global state (enablement counters / intervals). Without strict cleanup/reset, that shared state can leak across test runs and make assertions timing- or order-dependent. This PR adds explicit cleanup/isolation (e.g., `t.Cleanup` + resets) around TopRU/TopSQL state transitions, and the Bazel target is marked `flaky = True` as a quarantine signal for CI stability.",
   "module": "module_unknown",
-  "fix_pattern": "Quarantine/mark Bazel test target as flaky (flaky = True) to avoid unstable CI signal; add/update related tests.",
+  "fix_pattern": "Add explicit cleanup/reset for TopRU/TopSQL shared state in tests (t.Cleanup + resets) and adjust lifecycle checks; Bazel target is also marked `flaky = True` as quarantine for CI stability.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66642",
     "https://github.com/pingcap/tidb/pull/66642.patch"

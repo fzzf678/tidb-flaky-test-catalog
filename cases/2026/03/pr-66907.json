@@ -13,19 +13,18 @@
     "name": "TestCheckPointLagged"
   },
   "symptoms": [
-    "br/streamhelper: fix flaky TestCheckPointLagged | `TestCheckPointLagged` is flaky under race detector (`-race`) with parallel test shards. It fails with: | Subject: [PATCH] br/streamhelper: fix flaky TestCheckPointLagged | require.Eventually(t, func() bool {"
+    "`TestCheckPointLagged` is flaky under `-race` because it uses `assert.NoError` inside `require.Eventually`, which permanently marks the test failed on transient errors."
   ],
-  "failure_signature": "br/streamhelper: fix flaky TestCheckPointLagged | `TestCheckPointLagged` is flaky under race detector (`-race`) with parallel test shards. It fails with: | Subject: [PATCH] br/streamhelper: fix flaky TestCheckPointLagged | require.Eventually(t, func() bool {",
+  "failure_signature": "Transient `OnTick` errors (e.g., \"check point lagged too large\") inside `require.Eventually` cause a permanent failure due to `assert.NoError` calling `t.Errorf()`.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state",
     "race_condition_in_async_code"
   ],
   "root_cause_explanation": "The test was flaky under `-race` because it used `assert.NoError` inside `require.Eventually`: early transient failures called `t.Errorf()` and permanently marked the test failed even if later retries would succeed. The PR changes the condition to a pure boolean (`err == nil`) / `EventuallyWithT`, making early races harmless and the eventual condition deterministic.",
   "module": "br",
-  "fix_pattern": "br/streamhelper: fix flaky TestCheckPointLagged | `TestCheckPointLagged` is flaky under race detector (`-race`) with parallel test shards. It fails with: | Subject: [PATCH] br/streamhelper: fix flaky TestCheckPointLagged | require.Eventually(t, func() bool {",
+  "fix_pattern": "Avoid `assert.*` inside `require.Eventually` (use a pure boolean or `EventuallyWithT`) so transient failures don't permanently fail the test under race/parallel scheduling.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66907",
     "https://github.com/pingcap/tidb/pull/66907.patch"
