@@ -17,11 +17,10 @@
   ],
   "failure_signature": "- re.once.Do(memorize) // Avoid data race | prepare stmt2 from 'select a, regexp_substr(a, ?) from t1 order by a asc'; (tests/integrationtest/r/expression/plan_cache.result)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "unclassified"
   ],
   "review_smells": [
-    "plan_cache_dependency",
-    "assert_exact_plan_or_cost"
+    "unclassified"
   ],
   "fix_pattern": "1. Add `CtxID` to `StatementContext` to return a unique ID for statement context. 2. Introduce `builtinFuncCache` to provide a cache mechanism for built function. It uses context ID to separate cache between different statements so that we can still cache some immediate states even if plan cache is enabled now. 3. Introduce `regexpNewBaseFuncSig` as a new base for regex related functions. We'll use `regexpNewBaseFuncSig` to replace the old `regexpBaseFuncSig` in the next several PRs. 4. refactor `builtinRegexpSubstrFuncSig` to use `regexpNewBaseFuncSig` to manage the cache, so that: It's implement can decouple with plan cache It can still cache the parsed `*regexp.Regexp` when plan cache is on and regex pattern is read from a variable",
   "evidence_links": [
