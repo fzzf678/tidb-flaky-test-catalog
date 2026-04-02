@@ -17,14 +17,14 @@
   ],
   "failure_signature": "importinto: fix flaky test TestConflictResolutionStepExecutor | Subject: [PATCH] importinto: fix flaky test TestConflictResolutionStepExecutor",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test was flaky because it did not properly isolate its temporary test data, so files/directories could collide across runs or under parallel execution. The PR uses `t.TempDir()` to create a per-test unique directory for the test data, making the test deterministic and isolated.",
   "module": "executor",
-  "fix_pattern": "importinto: fix flaky test TestConflictResolutionStepExecutor | Subject: [PATCH] importinto: fix flaky test TestConflictResolutionStepExecutor",
+  "fix_pattern": "Use `t.TempDir()` to store per-test data for `TestConflictResolutionStepExecutor`, ensuring test isolation and preventing flaky file collisions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66988",
     "https://github.com/pingcap/tidb/pull/66988.patch"
