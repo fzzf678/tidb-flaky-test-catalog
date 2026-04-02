@@ -13,20 +13,19 @@
     "name": "TestNewCollationStatsWithPrefixIndex"
   },
   "symptoms": [
-    "planner: Flaky test cleanup"
+    "The test asserted exact histogram statistics (including a floating correlation value) immediately after ANALYZE; stats persistence/loading is asynchronous and correlation can vary slightly, making the assertions flaky."
   ],
-  "failure_signature": "planner: Flaky test cleanup",
+  "failure_signature": "Statistics test: exact histogram/correlation assertion without waiting for stats to persist/load.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "shared_state_pollution"
+    "async_timing_issue",
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost",
     "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Improvements to TestNewCollationStatsWithPrefixIndex since this test is currently ranked number 1 as the most flaky test.",
+  "root_cause_explanation": "After `ANALYZE TABLE`, histogram stats may not be fully persisted/loaded yet, and the correlation value can have small variations. The test was flaky because it checked `mysql.stats_histograms` with exact values too early/too strictly. This PR forces a stats update/load (`h.Update(...)`) and relaxes the correlation assertion using a tolerance (`InDelta`).",
   "module": "planner",
-  "fix_pattern": "Improvements to TestNewCollationStatsWithPrefixIndex since this test is currently ranked number 1 as the most flaky test.",
+  "fix_pattern": "After ANALYZE, force stats to be persisted/loaded (h.Update) and avoid exact floating-point assertions by using a tolerance (InDelta) for correlation.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64119",
     "https://github.com/pingcap/tidb/pull/64119.patch"

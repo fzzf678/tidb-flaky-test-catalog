@@ -13,18 +13,18 @@
     "name": "TestIndexMergeLimitNotPushedOnPartialSideButKeepOrder"
   },
   "symptoms": [
-    "executor: fixed unstable test TestIndexMergeLimitNotPushedOnPartialSideButKeepOrder"
+    "The query was ordered by `c` only; when `c` contains duplicates and the test uses `LIMIT 1`, the chosen row can be non-deterministic, making the result unstable."
   ],
-  "failure_signature": "executor: fixed unstable test TestIndexMergeLimitNotPushedOnPartialSideButKeepOrder",
+  "failure_signature": "ORDER BY on non-unique key with LIMIT 1 yields unstable row selection (duplicates of `c`).",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "relying_on_map_iteration_order"
+    "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Map/dict iteration order is not stable across runs. This PR stabilizes it by: Increased the limit to minimum of 2.",
+  "root_cause_explanation": "The test assumed `ORDER BY c` would produce a stable single-row result, but duplicates of `c` make the row chosen under `LIMIT 1` non-deterministic. This PR avoids the unstable corner case by increasing the minimum limit to 2 (another option would be adding a deterministic tie-breaker in ORDER BY).",
   "module": "executor",
-  "fix_pattern": "Increased the limit to minimum of 2.",
+  "fix_pattern": "Avoid the unstable `LIMIT 1` case by increasing the minimum limit to 2 (or add a deterministic tie-breaker for ORDER BY when duplicates exist).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64083",
     "https://github.com/pingcap/tidb/pull/64083.patch"

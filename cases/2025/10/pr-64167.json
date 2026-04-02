@@ -13,18 +13,19 @@
     "name": "TestAnalyzeTimeout"
   },
   "symptoms": [
-    "fix unstable TestAnalyzeTimeout"
+    "The test simulated an ANALYZE timeout via long sleeps and timing-based polling, which is slow and sensitive to CI load, making it unstable."
   ],
-  "failure_signature": "fix unstable TestAnalyzeTimeout",
+  "failure_signature": "Timing-based analyze-timeout test (sleep + polling interval) is unstable.",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "network_without_retry"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: Show the failed analyze-status in `ADMIN SHOW`.",
+  "root_cause_explanation": "The test previously simulated an ANALYZE timeout by sleeping for a long duration and relying on a fixed 10s polling interval, which makes it slow and prone to timing variance. This PR makes the timeout path deterministic and fast by making the check interval configurable, shortening the sleep, and injecting a failpoint (`mockAnalyzeTimeout`) to force the cumulative-timeout behavior.",
   "module": "ddl",
-  "fix_pattern": "Show the failed analyze-status in `ADMIN SHOW`.",
+  "fix_pattern": "Make the analyze-timeout test deterministic: use a small check interval, short sleep, and failpoint `mockAnalyzeTimeout` instead of long time.Sleep-based timing.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64167",
     "https://github.com/pingcap/tidb/pull/64167.patch"
