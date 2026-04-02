@@ -13,17 +13,16 @@
     "name": "merge_test"
   },
   "symptoms": [
-    "t.Cleanup(func() { ingest.LitInitialized = origLit }) (pkg/ddl/tests/indexmerge/merge_test.go)"
+    "A next-gen DDL/DML concurrency scenario was unstable: during `ADD INDEX` backfill (temporary index keys), concurrent pessimistic DML could proceed without locking temp index keys, leading to nondeterministic conflicts/failures under next-gen’s stricter conflict checks."
   ],
-  "failure_signature": "t.Cleanup(func() { ingest.LitInitialized = origLit }) (pkg/ddl/tests/indexmerge/merge_test.go)",
+  "failure_signature": "next-gen add-index + pessimistic txn: intermittent conflict/commit failures caused by missing locks on temporary index keys during backfill",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Force DMLs to lock temporary index keys.",
+  "root_cause_explanation": "In next-gen, conflict checking applies to more keys (including non-unique index keys). During add-index backfill, temporary index keys can be involved; if DML does not lock those temp index keys, DDL and concurrent pessimistic transactions may observe inconsistent conflict behavior and fail nondeterministically depending on timing. This PR fixes the instability by forcing DML to lock all temporary index keys in next-gen, making the DDL/DML interaction deterministic and preventing spurious conflicts.",
   "module": "txn",
   "fix_pattern": "Force DMLs to lock temporary index keys. See the issue for details",
   "evidence_links": [

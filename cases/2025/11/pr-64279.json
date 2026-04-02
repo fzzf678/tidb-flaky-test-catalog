@@ -13,18 +13,18 @@
     "name": "executor_test"
   },
   "symptoms": [
-    "planner: Flaky test 48756"
+    "A unit test query used `GROUP BY` without `ORDER BY` but asserted row order, making the result ordering nondeterministic and the test flaky."
   ],
-  "failure_signature": "planner: Flaky test 48756",
+  "failure_signature": "TestIssue48756: intermittent mismatch due to unordered `GROUP BY` result (expected stable row order without `ORDER BY`)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: Flaky test 48756.",
-  "module": "planner",
-  "fix_pattern": "planner: Flaky test 48756",
+  "root_cause_explanation": "The flakiness was caused by relying on implicit row order: the test queried `... GROUP BY id` and checked rows in a fixed order, but SQL does not guarantee ordering without `ORDER BY`. Depending on execution, the grouped rows can be returned in different orders. The PR fixes this by adding `ORDER BY id` so the test result order is deterministic.",
+  "module": "executor",
+  "fix_pattern": "When tests assert row order, add an explicit `ORDER BY` to queries (especially with `GROUP BY`) instead of relying on implicit ordering or post-hoc sorting.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64279",
     "https://github.com/pingcap/tidb/pull/64279.patch"
