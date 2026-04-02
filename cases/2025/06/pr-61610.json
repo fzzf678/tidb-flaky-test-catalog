@@ -8,24 +8,23 @@
   },
   "pr_merged_at": "2025-06-17T07:20:12+08:00",
   "test": {
-    "type": "realtikv",
-    "path": "tests/realtikvtest/brietest/registry_test.go",
-    "name": "registry_test"
+    "type": "integration",
+    "path": "br/tests/br_parallel_restore/run.sh",
+    "name": "test_auto_restored_ts_conflict"
   },
   "symptoms": [
-    "run_sql \"SELECT id, status, filter_strings FROM mysql.tidb_restore_registry WHERE filter_strings = '$DB.*' ORDER BY id DESC LIMIT 1;\" || { (br/tests/br_parallel_restore/run.sh)"
+    "No concrete flaky failure signature recorded in PR; this PR primarily changes BR restore registry/resume behavior (RestoredTS resolution) and updates related tests."
   ],
-  "failure_signature": "run_sql \"SELECT id, status, filter_strings FROM mysql.tidb_restore_registry WHERE filter_strings = '$DB.*' ORDER BY id DESC LIMIT 1;\" || { (br/tests/br_parallel_restore/run.sh)",
+  "failure_signature": "No concrete flaky failure signature recorded in PR; this PR primarily changes BR restore registry/resume behavior (RestoredTS resolution) and updates related tests.",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "shared_state_pollution"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: Increase the usability for the latest parallel restore feature User often retry restore without specifying restoredTS, it will result in an error that might be confusing to user.",
+  "root_cause_explanation": "insufficient_evidence: This PR changes BR restore registry/resume logic (RestoredTS resolution and stale task handling) and updates the integration tests. The patch does not provide a concrete flaky symptom with a targeted stabilization fix, so we avoid guessing a root cause.",
   "module": "br",
-  "fix_pattern": "Increase the usability for the latest parallel restore feature User often retry restore without specifying restoredTS, it will result in an error that might be confusing to user. Now we will auto detect such cases and potentially reuse task by doing following things: 1. if user specify a restoredTS, we will directly use that ts 2. if not, we will try to find the task that only differs in restoredTS in the registry. 2.1 if the task if pasued, use the restoreTS in this task and try to resume it (in transaction will make sure task has not changed) 2.2 if task is running, it could potentially be a orphan task, we wait for 5 minutes to see if its heartbeat changed, if not we pause it, use its restoreTS and goes to the normal flow of resuming it. If heartbeat changed, we directly go to the next step and will bail out because filter matches.",
+  "fix_pattern": "Resolve RestoredTS when retrying PiTR without an explicit restored-ts: reuse the matching paused task (or handle potentially orphan running tasks), and update registry-related integration tests accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/61610",
     "https://github.com/pingcap/tidb/pull/61610.patch"

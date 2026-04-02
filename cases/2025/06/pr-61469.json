@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "pkg/planner/core/casetest/tpch/tpch_test.go",
-    "name": "tpch_test"
+    "name": "BenchmarkTPCHQ21"
   },
   "symptoms": [
-    "tk.MustQuery(\"explain format='cost_trace' SELECT o_orderpriority, COUNT(*) AS order_count FROM orders WHERE o_orderdate >= '1995-01-01' AND o_orderdate < DATE_ADD('1995-01-01', INTERVAL '3' MONTH) AND EXISTS (SELECT * FROM lineitem WHERE l_orderkey = o_orderkey AND l_commitdate < l_receiptdate) GROUP BY o_orderpriority ORDER BY o_orderpriority;\") (pkg/pla..."
+    "No concrete flaky failure signature recorded in PR; this PR adds a new TPCH benchmark (Q21) to the benchdaily suite."
   ],
-  "failure_signature": "tk.MustQuery(\"explain format='cost_trace' SELECT o_orderpriority, COUNT(*) AS order_count FROM orders WHERE o_orderdate >= '1995-01-01' AND o_orderdate < DATE_ADD('1995-01-01', INTERVAL '3' MONTH) AND EXISTS (SELECT * FROM lineitem WHERE l_orderkey = o_orderkey AND l_commitdate < l_receiptdate) GROUP BY o_orderpriority ORDER BY o_orderpriority;\") (pkg/pla...",
+  "failure_signature": "No concrete flaky failure signature recorded in PR; this PR adds a new TPCH benchmark (Q21) to the benchdaily suite.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: add tpch Q21 into bench daily.",
+  "root_cause_explanation": "insufficient_evidence: This PR adds a new TPCH benchmark (Q21) to benchdaily and adjusts the existing benchmark to use cost_trace EXPLAIN output. The patch does not provide a concrete flaky symptom with a targeted stabilization fix, so we avoid guessing a root cause.",
   "module": "planner",
-  "fix_pattern": "add tpch Q21 into bench daily",
+  "fix_pattern": "Add `BenchmarkTPCHQ21` to `benchdaily` and load table stats for TPCH tables; rename/adjust the existing TPCH Q4 benchmark to use cost_trace EXPLAIN.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/61469",
     "https://github.com/pingcap/tidb/pull/61469.patch"
