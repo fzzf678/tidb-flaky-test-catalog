@@ -17,10 +17,11 @@
   ],
   "failure_signature": "t.Cleanup(func() { (pkg/disttask/framework/metering/metering_test.go)",
   "root_cause_categories": [
-    "unclassified"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "unclassified"
+    "insufficient_cleanup_between_tests",
+    "global_variable_mutation"
   ],
   "fix_pattern": "depends on https://github.com/pingcap/metering_sdk/pull/13 fix the issue that if we failed to write the data, previous data will be lost as we always cleanup existing data previously move meter recorder register/unregister into DXF framework, we do it when create the step executor, so the DXF app can use it directly reset the global metering instance when shutdown refactor metering and recording part, not we always accumulate data inside the recorder, and let the meter to calculate the delta when flush decouple meter write/flush part and recording part, so later we can choose directly write some metering data without go through recorder. log the total metered data when we unregister the recorder, to help diagnose",
   "evidence_links": [

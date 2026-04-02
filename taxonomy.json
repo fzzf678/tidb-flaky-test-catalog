@@ -6,6 +6,239 @@
       "name": "Unclassified (Needs triage)",
       "definition": "Temporary bucket for cases whose root cause is not yet confidently classified. Cases should be re-triaged later and moved to a specific category once enough evidence exists.",
       "status": "active"
+    },
+    {
+      "key": "nondeterministic_result_order",
+      "name": "Non-deterministic Result Order",
+      "definition": "Test failures caused by assuming implicit ordering of results without explicit ORDER BY clause, or relying on container/map iteration order which is not guaranteed in Go. This is the most common source of flakiness in TiDB tests.",
+      "symptoms": [
+        "Query results match in content but fail in order",
+        "Intermittent failures with MustQuery().Check()",
+        "Flakiness in SELECT without ORDER BY"
+      ],
+      "common_triggers": [
+        "Missing ORDER BY in SELECT queries",
+        "Using map[string]X and assuming iteration order",
+        "Parallel execution affecting result ordering",
+        "Chunk/batch processing order variations"
+      ],
+      "fix_patterns": [
+        "Add .Sort() before .Check()",
+        "Add explicit ORDER BY in queries",
+        "Use ordered containers or sort before comparison",
+        "Use testkit.Rows() with sorted expectations"
+      ],
+      "related_smells": [
+        "missing_order_by",
+        "relying_on_map_iteration_order",
+        "unsorted_result_assertion"
+      ],
+      "status": "active"
+    },
+    {
+      "key": "concurrency_data_race",
+      "name": "Concurrency / Data Race",
+      "definition": "Flakiness caused by concurrent access to shared state without proper synchronization, leading to race conditions. Common in tests involving parallel execution, background goroutines, or shared test fixtures.",
+      "symptoms": [
+        "Go race detector warnings",
+        "Intermittent failures under -race flag",
+        "Different results on consecutive runs",
+        "c.Skip() due to race detected"
+      ],
+      "common_triggers": [
+        "Parallel test execution (t.Parallel()) with shared state",
+        "Global variables modified concurrently",
+        "Background goroutines not properly synchronized",
+        "Test isolation failures between test cases"
+      ],
+      "fix_patterns": [
+        "Remove t.Parallel() or isolate shared state",
+        "Use sync.Mutex or atomic operations",
+        "Proper cleanup and reset of global state",
+        "Migrate to testify with proper test isolation"
+      ],
+      "related_smells": [
+        "t_parallel_with_shared_state",
+        "global_variable_mutation",
+        "insufficient_cleanup_between_tests",
+        "race_condition_in_async_code"
+      ],
+      "status": "active"
+    },
+    {
+      "key": "nondeterministic_plan_selection",
+      "name": "Non-deterministic Plan Selection",
+      "definition": "Flakiness caused by optimizer choosing different execution plans across runs, often due to statistics variations, tie-breaking behavior, or plan cache issues. Test assertions on plan structure or cost may fail intermittently.",
+      "symptoms": [
+        "EXPLAIN output differs between runs",
+        "Plan ID or cost assertion failures",
+        "Plan cache related flakiness",
+        "Statistics-based test instability"
+      ],
+      "common_triggers": [
+        "Stale or incomplete statistics",
+        "Plan cache key changes",
+        "Cost estimation variations",
+        "Bind info or plan guide changes"
+      ],
+      "fix_patterns": [
+        "Use plan hints to stabilize plan",
+        "Update statistics before test",
+        "Avoid asserting on exact plan IDs",
+        "Clear plan cache between tests"
+      ],
+      "related_smells": [
+        "assert_exact_plan_or_cost",
+        "plan_cache_dependency",
+        "statistics_sensitive_test"
+      ],
+      "status": "active"
+    },
+    {
+      "key": "schema_change_race",
+      "name": "Schema / DDL Change Race",
+      "definition": "Flakiness related to DDL operations and schema changes, including timing issues between schema update and subsequent queries, schema version synchronization, or metadata caching problems.",
+      "symptoms": [
+        "DDL-related test failures",
+        "Schema version mismatch errors",
+        "Information schema staleness",
+        "Partition table related flakiness"
+      ],
+      "common_triggers": [
+        "DDL execution not waited for completion",
+        "Schema lease/cache timing issues",
+        "Concurrent DDL and DML operations",
+        "Partition table dynamic pruning issues"
+      ],
+      "fix_patterns": [
+        "Wait for DDL completion before querying",
+        "Sync schema version explicitly",
+        "Handle async schema propagation",
+        "Use serial test suite for DDL tests"
+      ],
+      "related_smells": [
+        "ddl_without_wait",
+        "schema_version_race",
+        "async_schema_propagation"
+      ],
+      "status": "active"
+    },
+    {
+      "key": "test_infra_migration",
+      "name": "Test Infrastructure Migration",
+      "definition": "Flakiness arising from migration between testing frameworks (e.g., old check suite to testify), test suite refactoring, or changes to test helpers/fixtures. Often manifests as test setup/teardown issues.",
+      "symptoms": [
+        "Migration-related test failures",
+        "Test suite setup issues",
+        "Test helper function failures",
+        "Flakiness after testify migration"
+      ],
+      "common_triggers": [
+        "Incompatible test framework changes",
+        "Missing testify migration steps",
+        "Test suite inheritance changes",
+        "Fixture setup/teardown ordering"
+      ],
+      "fix_patterns": [
+        "Complete testify migration properly",
+        "Fix test suite setup/teardown",
+        "Update test helpers for new framework",
+        "Use testify's require/assert properly"
+      ],
+      "related_smells": [
+        "incomplete_testify_migration",
+        "test_suite_setup_issue",
+        "deprecated_test_framework_usage"
+      ],
+      "status": "active"
+    },
+    {
+      "key": "async_timing_issue",
+      "name": "Async / Timing / Eventual Consistency",
+      "definition": "Flakiness caused by asynchronous operations, timing-dependent logic, or insufficient waiting for eventual consistency. Includes issues with time.Sleep(), timeouts, and async task completion.",
+      "symptoms": [
+        "Intermittent timeouts",
+        "Async task completion race",
+        "Eventual consistency issues",
+        "Sleep-based synchronization failures"
+      ],
+      "common_triggers": [
+        "Fixed time.Sleep() durations",
+        "Insufficient timeout values",
+        "Async tasks not awaited properly",
+        "Clock skew or time-based logic"
+      ],
+      "fix_patterns": [
+        "Replace sleep with proper synchronization",
+        "Use wait loops with backoff",
+        "Increase timeout for slow operations",
+        "Use event/callback-based waiting"
+      ],
+      "related_smells": [
+        "time_sleep_for_sync",
+        "insufficient_timeout",
+        "async_wait_without_backoff",
+        "clock_skew_dependency"
+      ],
+      "status": "active"
+    },
+    {
+      "key": "external_dependency",
+      "name": "External Dependency / Environment",
+      "definition": "Flakiness caused by dependencies on external systems (TiKV, PD, network) or environment-specific factors. Includes real TiKV tests, network-dependent tests, and resource availability issues.",
+      "symptoms": [
+        "RealTiKV test failures",
+        "Network-related errors",
+        "Resource exhaustion errors",
+        "Environment-specific failures"
+      ],
+      "common_triggers": [
+        "Real TiKV/PD cluster dependencies",
+        "Network latency variations",
+        "Port conflicts or resource limits",
+        "External service availability"
+      ],
+      "fix_patterns": [
+        "Use mock/store instead of real TiKV when possible",
+        "Add retry logic for network operations",
+        "Isolate external dependencies",
+        "Increase resource limits or handle gracefully"
+      ],
+      "related_smells": [
+        "real_tikv_dependency",
+        "network_without_retry",
+        "hardcoded_port_or_resource"
+      ],
+      "status": "active"
+    },
+    {
+      "key": "shared_state_pollution",
+      "name": "Shared State / Global State Pollution",
+      "definition": "Flakiness caused by tests polluting shared or global state that affects subsequent tests. Includes global variable modifications, shared database tables, and test isolation failures.",
+      "symptoms": [
+        "Test passes in isolation but fails in suite",
+        "Order-dependent test failures",
+        "Global configuration changes not restored",
+        "Shared table data between tests"
+      ],
+      "common_triggers": [
+        "Global variables modified without cleanup",
+        "Shared tables not cleaned between tests",
+        "System configuration changes",
+        "Registry or singleton state pollution"
+      ],
+      "fix_patterns": [
+        "Proper cleanup in defer/t.Cleanup()",
+        "Save and restore global state",
+        "Use unique table names per test",
+        "Reset singletons/registries between tests"
+      ],
+      "related_smells": [
+        "global_variable_mutation",
+        "insufficient_cleanup_between_tests",
+        "shared_table_without_isolation"
+      ],
+      "status": "active"
     }
   ]
 }

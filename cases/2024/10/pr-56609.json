@@ -17,10 +17,11 @@
   ],
   "failure_signature": "explain WITH RECURSIVE CTE (x) AS (SELECT a FROM test order by a) , CTE1(x) AS (SELECT a FROM test UNION ALL select CTE.x from CTE join CTE1 on CTE.x=CTE1.x) SELECT * FROM CTE1; -- CTE contain order by and ref by CET1 recursive part cannot be inlined; (tests/integrationtest/r/planner/core/casetest/physicalplantest/physical_plan.result)",
   "root_cause_categories": [
-    "unclassified"
+    "nondeterministic_result_order",
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "unclassified"
+    "missing_order_by"
   ],
   "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
   "evidence_links": [

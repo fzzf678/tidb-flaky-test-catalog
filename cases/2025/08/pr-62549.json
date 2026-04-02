@@ -17,10 +17,11 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from t order by id;\").Check(testkit.Rows( (pkg/ddl/modify_column_test.go)",
   "root_cause_categories": [
-    "unclassified"
+    "schema_change_race"
   ],
   "review_smells": [
-    "unclassified"
+    "ddl_without_wait",
+    "async_schema_propagation"
   ],
   "fix_pattern": "Before removing public columns/indexes, we should follow the path `public` -> `write-only` -> `delete-only` -> `none`. In the above case, **owner TiDB is still aware of the old index** (which is in `write-only` state). As long as it maintains the old index mutations, there is no data inconsistent issue.",
   "evidence_links": [

@@ -17,10 +17,11 @@
   ],
   "failure_signature": "res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)",
   "root_cause_categories": [
-    "unclassified"
+    "schema_change_race"
   ],
   "review_smells": [
-    "unclassified"
+    "async_schema_propagation",
+    "ddl_without_wait"
   ],
   "fix_pattern": "Reverted the use of table.AddRecord() for non-clustered tables and added the old row into the batch transaction, so the transaction would fail if the old row have been touched (if it already has been copied/double written and has not been touched, it will be skipped from being copied).",
   "evidence_links": [
