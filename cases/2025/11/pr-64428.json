@@ -13,18 +13,18 @@
     "name": "TestLoadNonExistentIndexStats"
   },
   "symptoms": [
-    "statistics: fix flaky TestLoadNonExistentIndexStats"
+    "`TestLoadNonExistentIndexStats` was flaky because it asserted an exact count of async-load items (`AsyncLoadHistogramNeededItems`), but the list contents can vary between mock-store and real-TiKV environments (sync-load behavior differs)."
   ],
-  "failure_signature": "statistics: fix flaky TestLoadNonExistentIndexStats",
+  "failure_signature": "stats async-load tests: intermittent assertion failure when `len(AsyncLoadHistogramNeededItems)` is not exactly expected in real TiKV CI",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "async_timing_issue"
   ],
   "review_smells": [
     "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: Just make sure it is not flaky anymore.",
+  "root_cause_explanation": "The test checked async histogram load bookkeeping by asserting an exact number of “needed items”. In real TiKV CI, sync-load/default behavior can change whether column stats are present in `AsyncLoadHistogramNeededItems`, so the list length can vary nondeterministically. The PR stabilizes the test by weakening the assertion: it checks that the target index item exists (and uses a `>=` bound in unit tests) instead of requiring an exact global count.",
   "module": "statistics",
-  "fix_pattern": "Just make sure it is not flaky anymore.",
+  "fix_pattern": "Avoid asserting exact global counts for async-load bookkeeping in environments with different sync-load behavior; assert presence of the expected item(s) and use tolerant bounds (e.g., `len(items) >= N`) when appropriate.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64428",
     "https://github.com/pingcap/tidb/pull/64428.patch"

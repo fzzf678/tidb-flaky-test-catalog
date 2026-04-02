@@ -13,16 +13,16 @@
     "name": "reporter_test"
   },
   "symptoms": [
-    "sort.Slice(data.DataRecords, func(i, j int) bool { (pkg/util/topsql/reporter/reporter_test.go)"
+    "TopSQL reporter tests were flaky because test data records were sorted with a comparator that did not provide a deterministic total order (ties could be ordered differently), so assertions depending on record order could fail intermittently."
   ],
-  "failure_signature": "sort.Slice(data.DataRecords, func(i, j int) bool { (pkg/util/topsql/reporter/reporter_test.go)",
+  "failure_signature": "topsql reporter tests: intermittent mismatch in expected ordering of `DataRecords` due to non-deterministic tie ordering in `sort.Slice` comparator",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: 1.",
+  "root_cause_explanation": "The flakiness came from nondeterministic ordering in test assertions: the code sorted `DataRecords` but the comparator only used a single key (like `StmtExecCount`) and did not break ties, so the final order of records with equal keys could vary across runs. The PR stabilizes tests by sorting with deterministic keys (including tie-breakers, e.g., combining exec count with cpu/network metrics) so the ordering is reproducible before asserting.",
   "module": "module_unknown",
   "fix_pattern": "1. Add two new session variable \"InPacketBytes\", \"OutPacketBytes\" to record the network traffic from/to clients. 2. When query finishes, record the network traffic info to topsql stmtstats 3. Pick topN query with highest network traffic.",
   "evidence_links": [

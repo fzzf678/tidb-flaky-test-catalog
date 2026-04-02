@@ -13,16 +13,16 @@
     "name": "recording_test"
   },
   "symptoms": [
-    "t.Cleanup(func() { (tests/realtikvtest/addindextest2/global_sort_test.go)"
+    "This change is about making object-storage API request metering/counting more accurate (intercepting real request calls) and adjusting related tests; a specific flaky-test failure signature is not captured in the case metadata."
   ],
-  "failure_signature": "t.Cleanup(func() { (tests/realtikvtest/addindextest2/global_sort_test.go)",
+  "failure_signature": "no concrete flaky signature recorded (changes primarily affect metering logic and request-count assertions)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: previously, we basically based on the formula `total file size / part-size + 2` to estimate the PUT API call count, and use reader reload as the timing to get the GET request call count, so it's not accurate, and make th….",
+  "root_cause_explanation": "Insufficient evidence to classify this as a particular flaky-test root cause from the case data: the PR narrative focuses on correcting metering instrumentation and updating tests to assert expected request counts. If there is a specific intermittent failure motivating the change (CI log / failing assertion), it should be captured in the case to enable a precise taxonomy classification.",
   "module": "domain",
   "fix_pattern": "previously, we basically based on the formula `total file size / part-size + 2` to estimate the PUT API call count, and use reader reload as the timing to get the GET request call count, so it's not accurate, and make the UT hard to check the count. and previous way pollute normal code too much, we have to pass many params into the `external`/`local` pkg to instruct where we read/write to get the request count. and some PUT/GET is not collected, such as subtask meta file read/write. so we change to counting the API call directly by intercepting those request call. and revert the old logic introduced in https://github.com/pingcap/tidb/pull/63431. for S3/KS3, we use it's `Send` handlers for GCS, we use a wrapped round tripper.",
   "evidence_links": [

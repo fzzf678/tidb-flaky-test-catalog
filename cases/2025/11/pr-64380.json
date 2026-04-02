@@ -13,18 +13,18 @@
     "name": "TestPrevTraceIDPersistence"
   },
   "symptoms": [
-    "Fix flaky test."
+    "`TestPrevTraceIDPersistence` was flaky because the trace/flight-recorder buffer can include `stmt.start` events from background operations; the test could pick the wrong event and fail nondeterministically."
   ],
-  "failure_signature": "Fix flaky test.",
+  "failure_signature": "traceevent integration test: intermittent mismatch/absence of expected `prev_trace_id` because the test matched a background `stmt.start` event",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "Fix flaky test.",
+  "root_cause_explanation": "The test iterated over recorded trace events and looked for a `stmt.start` event to validate `prev_trace_id`, but background statements can also emit `stmt.start` events into the same recorder. Without filtering, the test could validate the wrong event depending on timing/order, leading to flakiness. This PR fixes it by filtering `stmt.start` events by the expected `trace_id` (the second statement) before checking `prev_trace_id`.",
+  "module": "module_unknown",
+  "fix_pattern": "When asserting trace events in shared recorders, filter to the specific statement/event of interest (e.g., match `trace_id`) to avoid background-operation noise causing nondeterministic failures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64380",
     "https://github.com/pingcap/tidb/pull/64380.patch"
