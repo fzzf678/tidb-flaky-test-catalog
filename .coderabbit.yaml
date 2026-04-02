@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: "zh-CN"
+
+tone_instructions: |
+  用中文、简洁、可执行地给出 review 建议。
+  重点关注“测试改动是否引入 flaky 风险”，并尽量用本仓库的 key 命名（例如 `missing_order_by` / `race_condition_in_async_code`）。
+  输出结构建议：先列风险点（含 smell key），再给建议修复，最后给需要补充的证据/上下文（如适用）。
+
+reviews:
+  profile: "chill"
+  poem: false
+  walkthrough: false
+  review_status: false
+  commit_status: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+  # Avoid reviewing generated bulk data by default.
+  path_filters:
+    - "!cases/**"
+    - "!backlog/**"
+    - "!reports/tag_suggestions.json"
+
+  # Path-specific instructions for guardrails-style reviews.
+  path_instructions:
+    - path: "**/*_test.go"
+      instructions: |
+        你在这里扮演 “TiDB flaky-test guardrails reviewer”：
+        - 目标：在 code review 阶段提前发现容易引入 flaky 的写法，并给出可执行建议（不是泛泛而谈）。
+        - 参考依据：本仓库的 `review_smells.json`（smell 定义/问题/修复建议）与 `taxonomy.json`（根因分类）。
+        - 输出要求：
+          1) 若命中 smell：请在评论里明确写出 smell key（用反引号包裹），并尽量复用对应 `review_questions` / `suggested_fixes` 的表述。
+          2) 若证据不足（只看到“stabilize/unstable/timeout/retry”但看不出根因）：优先标记为 `needs_more_evidence`，并追问缺失的 failure signature / CI logs / repro。
+          3) 不要通过增加 sleep/timeout 来“掩盖”问题；优先建议确定性的同步/排序/隔离。
+          4) 关注典型高频风险：隐式顺序/缺 ORDER BY、并发竞态、共享状态污染、time.Sleep/等待不足、DDL/schema 异步传播等。
+    - path: "review_smells.json"
+      instructions: |
+        该文件是 checklist 的机读底座：
+        - 请把 `key` 视为稳定 API（避免改名；如必须改名，用 `replaced_by` 并保留兼容）。
+        - 新增 smell 时，必须包含可执行的 `review_questions` 与 `suggested_fixes`。
+        - 若修改 smell 的含义/边界，请同步更新 `docs/review_checklist.md`（通过 `scripts/gen_checklist.py` 生成）。
+    - path: "taxonomy.json"
+      instructions: |
+        该文件是 root cause taxonomy 的权威字典：
+        - 请把 `key` 视为稳定 API（避免改名；如必须改名，用 `replaced_by` 并保留兼容）。
+        - 对缺证据的 case，允许使用语义兜底 `insufficient_evidence`（不要硬猜）。
+
