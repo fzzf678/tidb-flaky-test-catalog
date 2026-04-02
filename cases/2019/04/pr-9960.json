@@ -1,0 +1,46 @@
+{
+  "id": "pr-9960",
+  "source_pr": {
+    "number": 9960,
+    "url": "https://github.com/pingcap/tidb/pull/9960",
+    "title": "ddl: fix data race of config.TreatOldVersionUTF8AsUTF8MB4",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n```\r\nWARNING: DATA RACE\r\nWrite at 0x000003d4eb51 by goroutine 66:\r\ngithub.com/pingcap/tidb/ddl_test.(*testIntegrationSuite).TestIgnoreColumnUTF8Charset()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/db_integration_test.go:1357 +0xdb0\r\ngithub.com/pingcap/tidb/ddl_test.(*testIntegrationSuite).TestIgnoreColumnUTF8Charset()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/db_integration_test.go:1349 +0xc6c\r\ngithub.com/pingcap/tidb/ddl_test.(*testIntegrationSuite).TestIgnoreColumnUTF8Charset()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/db_integration_test.go:1332 +0x925\r\ngithub.com/pingcap/tidb/ddl_test.(*testIntegrationSuite).TestIgnoreColumnUTF8Charset()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/db_integration_test.go:1322 +0x707\r\ngithub.com/pingcap/tidb/ddl_test.(*testIntegrationSuite).TestIgnoreColumnUTF8Charset()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/db_integration_test.go:1294 +0x2a8\r\nruntime.call32()\r\n/usr/local/go/src/runtime/asm_amd64.s:519 +0x3a\r\nreflect.Value.Call()\r\n/usr/local/go/src/reflect/value.go:308 +0xc0\r\ngithub.com/pingcap/check.(*suiteRunner).forkTest.func1()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:836 +0x9fc\r\ngithub.com/pingcap/check.(*suiteRunner).forkCall.func1()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:730 +0xb7\r\n\r\nPrevious read at 0x000003d4eb51 by goroutine 181:\r\ngithub.com/pingcap/tidb/infoschema.ConvertOldVersionUTF8ToUTF8MB4IfNeed()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/infoschema/builder.go:202 +0x3f\r\ngithub.com/pingcap/tidb/infoschema.(*Builder).applyCreateTable()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/infoschema/builder.go:175 +0xb5\r\ngithub.com/pingcap/tidb/infoschema.(*Builder).ApplyDiff()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/infoschema/builder.go:95 +0x3c5\r\ngithub.com/pingcap/tidb/domain.(*Domain).tryLoadSchemaDiffs()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain.go:245 +0x542\r\ngithub.com/pingcap/tidb/domain.(*Domain).loadInfoSchema()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain.go:109 +0x3dd\r\ngithub.com/pingcap/tidb/domain.(*Domain).Reload()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain.go:332 +0x1e5\r\ngithub.com/pingcap/tidb/domain.(*Domain).loadSchemaInLoop()\r\n/home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain.go:445 +0x8d8\r\n```\r\n\r\n### What is changed and how it works?\r\nThe variable of `TreatOldVersionUTF8AsUTF8MB4` only been changed in one test, so I don't want to use `mutex` or `atomic` to fix this race. I just reduce the probability of data race in this PR.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->"
+  },
+  "pr_merged_at": "2019-04-01T11:34:09+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_integration_test.go",
+    "name": "db_integration_test"
+  },
+  "symptoms": [
+    "ddl: fix data race of config.TreatOldVersionUTF8AsUTF8MB4"
+  ],
+  "failure_signature": "ddl: fix data race of config.TreatOldVersionUTF8AsUTF8MB4",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: fix data race of config.TreatOldVersionUTF8AsUTF8MB4",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9960",
+    "https://github.com/pingcap/tidb/pull/9960.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9960.patch",
+  "changed_files": [
+    "ddl/db_integration_test.go",
+    "infoschema/builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: ddl: fix data race of config.TreatOldVersionUTF8AsUTF8MB4",
+      "files: ddl/db_integration_test.go, infoschema/builder.go"
+    ]
+  },
+  "analysis": "PR title: ddl: fix data race of config.TreatOldVersionUTF8AsUTF8MB4\nPR url: https://github.com/pingcap/tidb/pull/9960\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix data race of config.TreatOldVersionUTF8AsUTF8MB4\nChanged files (2): ddl/db_integration_test.go, infoschema/builder.go\nPatch url: https://github.com/pingcap/tidb/pull/9960.patch\nPicked test: type=unit path=ddl/db_integration_test.go name=db_integration_test"
+}

@@ -1,0 +1,46 @@
+{
+  "id": "pr-9119",
+  "source_pr": {
+    "number": 9119,
+    "url": "https://github.com/pingcap/tidb/pull/9119",
+    "title": "store/tikv: use new backoffer for async commit batches",
+    "body": "Signed-off-by: disksing <i@disksing.com>\r\n\r\n<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nWhen we commit a txn, secondary keys are committed asynchronously. If user cancels the context soon after `Commit()` returns, the secondaries batches will be cancelled too.\r\n\r\n### What is changed and how it works?\r\nUse new `Backoffer` struct for async commit.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nSide effects\r\n\r\n - Possible performance regression\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n"
+  },
+  "pr_merged_at": "2019-01-21T14:55:58+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/2pc_test.go",
+    "name": "2pc_test"
+  },
+  "symptoms": [
+    "+ // potencial data race in unit test since `CommitMaxBackoff` will be updated"
+  ],
+  "failure_signature": "+ // potencial data race in unit test since `CommitMaxBackoff` will be updated",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "store/tikv: use new backoffer for async commit batches",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9119",
+    "https://github.com/pingcap/tidb/pull/9119.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9119.patch",
+  "changed_files": [
+    "store/tikv/2pc.go",
+    "store/tikv/2pc_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: + // potencial data race in unit test since `CommitMaxBackoff` will be updated",
+      "files: store/tikv/2pc.go, store/tikv/2pc_test.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv: use new backoffer for async commit batches\nPR url: https://github.com/pingcap/tidb/pull/9119\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + // potencial data race in unit test since `CommitMaxBackoff` will be updated\nChanged files (2): store/tikv/2pc.go, store/tikv/2pc_test.go\nPatch url: https://github.com/pingcap/tidb/pull/9119.patch\nPicked test: type=unit path=store/tikv/2pc_test.go name=2pc_test"
+}

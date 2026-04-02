@@ -1,0 +1,52 @@
+{
+  "id": "pr-35808",
+  "source_pr": {
+    "number": 35808,
+    "url": "https://github.com/pingcap/tidb/pull/35808",
+    "title": "sessionctx: support encoding and decoding prepared statements",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #35689\r\n\r\nProblem Summary:\r\nsupport encoding and decoding prepared statements\r\n\r\n### What is changed and how it works?\r\n\r\n- Register `TiDBContext` to `session.sessionStatesHandlers` to handle the encoding and decoding of prepared statements.\r\n- Encode and decode prepared statements in `TiDBContext`.\r\n- Remove `TiDBContext.currentDB` because it's not used now.\r\n\r\nNotice:\r\n- The prepared statement cannot be decoded if the table is dropped / current db is dropped / privilege is updated / sql_mode is updated after preparing. I filed another issue for this: https://github.com/pingcap/tidb/issues/35806. I'll address it in another PR with a lower priority.\r\n- I have added test cases for the scenarios above, except for the privilege, because I found another privilege bug of prepared statements: https://github.com/pingcap/tidb/issues/35784.\r\n- Encoding prepared statements should report an error when the statement is waiting for `COM_STMT_EXECUTE` (after `COM_STMT_SEND_LONG_DATA`) or `COM_STMT_FETCH` (in `useCursor` mode). I'll do it in another PR.\r\n- Metrics / slow log / statements_summary / audit log should not record the `PREPARE` statement when it's replayed. I'll check it in the future, with a lower priority.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-06-30T11:56:39+08:00",
+  "test": {
+    "type": "unit",
+    "path": "sessionctx/sessionstates/session_states_test.go",
+    "name": "session_states_test"
+  },
+  "symptoms": [
+    "tk.MustExec(\"prepare stmt from 'select * from test.t1 order by id'\") (sessionctx/sessionstates/session_states_test.go)"
+  ],
+  "failure_signature": "tk.MustExec(\"prepare stmt from 'select * from test.t1 order by id'\") (sessionctx/sessionstates/session_states_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/35808",
+    "https://github.com/pingcap/tidb/pull/35808.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/35808.patch",
+  "changed_files": [
+    "plugin/integration_test.go",
+    "server/driver_tidb.go",
+    "server/mock_conn.go",
+    "server/mock_conn_test.go",
+    "session/session.go",
+    "sessionctx/sessionstates/session_states.go",
+    "sessionctx/sessionstates/session_states_test.go",
+    "sessionctx/variable/session.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustExec(\"prepare stmt from 'select * from test.t1 order by id'\") (sessionctx/sessionstates/session_states_test.go)",
+      "files: plugin/integration_test.go, server/driver_tidb.go, server/mock_conn.go, server/mock_conn_test.go, session/session.go, sessionctx/sessionstates/session_states.go, sessionctx/sessionstates/session_states_test.go, sessionctx/variable/session.go"
+    ]
+  },
+  "analysis": "PR title: sessionctx: support encoding and decoding prepared statements\nPR url: https://github.com/pingcap/tidb/pull/35808\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustExec(\"prepare stmt from 'select * from test.t1 order by id'\") (sessionctx/sessionstates/session_states_test.go)\nChanged files (8): plugin/integration_test.go, server/driver_tidb.go, server/mock_conn.go, server/mock_conn_test.go, session/session.go, sessionctx/sessionstates/session_states.go, sessionctx/sessionstates/session_states_test.go, sessionctx/variable/session.go\nPatch url: https://github.com/pingcap/tidb/pull/35808.patch\nPicked test: type=unit path=sessionctx/sessionstates/session_states_test.go name=session_states_test"
+}

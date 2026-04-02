@@ -1,0 +1,56 @@
+{
+  "id": "pr-65569",
+  "source_pr": {
+    "number": 65569,
+    "url": "https://github.com/pingcap/tidb/pull/65569",
+    "title": "memory: fix data race & enhance behaviors in arbitrator",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: ref #58194 \r\n\r\nProblem Summary:\r\n\r\n- The statement tracker is cached and reset after each SQL execution. The session related root pool of the mem-arbitrator should NOT ref such tracker.\r\n\r\n### What changed and how does it work?\r\n\r\n- Remove `trackerArbitrateHelper` to decouple `*Tracker` and `ArbitrationContext`\r\n- Add a more efficient method `SampleRuntimeMemStats` to read runtime mem stats without STW (compare with `ForceReadMemStats`)\r\n- Enhance the mem arbitration by cleaning plan cache in time.\r\n\r\n### Test\r\n\r\n### tpcc\r\n\r\n- Env\r\n  - pd \r\n    - cpu: 4000m memory: 8Gi\r\n  - tidb\r\n    - cpu: 8000m memory: 16Gi\r\n  - tikv x 3\r\n    - cpu: 8000m memory: 32Gi\r\n\r\n```\r\nworkloadType:\r\n  type : [ 'tpcc' ]\r\n  db : tpcc\r\n  warehouse : 1000\r\n  threads : 3000\r\n  ignoreErrors : 'all'\r\nrunTime:\r\n  totalRunTime: 1h\r\n```\r\n\r\n<img width=\"2900\" height=\"1418\" alt=\"image\" src=\"https://github.com/user-attachments/assets/384285e8-b3f0-48cc-b1a7-779124c9050c\" />\r\n<img width=\"2902\" height=\"1416\" alt=\"image\" src=\"https://github.com/user-attachments/assets/b8e353bf-3a26-4740-8be3-f7126971a59e\" />\r\n\r\n### tpcc tidb x 2\r\n\r\n- Env\r\n  - pd \r\n    - cpu: 4000m memory: 8Gi\r\n  - tidb x 2\r\n    - cpu: 8000m memory: 16Gi\r\n  - tikv x 3\r\n    - cpu: 8000m memory: 32Gi\r\n\r\n```\r\nworkloadType:\r\n  type : [ 'tpcc' ]\r\n  db : tpcc\r\n  warehouse : 1000\r\n  threads : 6000\r\n  ignoreErrors : 'all'\r\nrunTime:\r\n  totalRunTime: 1h\r\n```\r\n\r\n<img width=\"2874\" height=\"1420\" alt=\"image\" src=\"https://github.com/user-attachments/assets/36dd1c80-ce49-4f48-8852-baad99bce4a2\" />\r\n<img width=\"2878\" height=\"1416\" alt=\"image\" src=\"https://github.com/user-attachments/assets/7af91e6d-130d-4015-a5c2-f325f17b12ce\" />\r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2026-02-03T11:24:48+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/executor/test/memtest/mem_test.go",
+    "name": "TestBench"
+  },
+  "symptoms": [
+    "Signed-off-by: Zhigao TONG <tongzhigao@pingcap.com> 3: fix unstable test since pr 65503 Signed-off-by: Zhigao TONG <tongzhigao@pingcap.com> 4: runt"
+  ],
+  "failure_signature": "Signed-off-by: Zhigao TONG <tongzhigao@pingcap.com> 3: fix unstable test since pr 65503 Signed-off-by: Zhigao TONG <tongzhigao@pingcap.com> 4: runt",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Avoid brittle fixed sleeps by tightening synchronization/wait conditions in the test.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/65569",
+    "https://github.com/pingcap/tidb/pull/65569.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/65569.patch",
+  "changed_files": [
+    "pkg/executor/test/memtest/mem_test.go",
+    "pkg/session/session.go",
+    "pkg/session/session_test.go",
+    "pkg/util/memory/arbitrator.go",
+    "pkg/util/memory/arbitrator_test.go",
+    "pkg/util/memory/global_arbitrator.go",
+    "pkg/util/memory/pool.go",
+    "pkg/util/memory/pool_test.go",
+    "pkg/util/memory/tracker.go",
+    "pkg/util/memory/tracker_test.go",
+    "pkg/util/memory/utils.go",
+    "pkg/util/servermemorylimit/servermemorylimit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: Signed-off-by: Zhigao TONG <tongzhigao@pingcap.com> 3: fix unstable test since pr 65503 Signed-off-by: Zhigao TONG <tongzhigao@pingcap.com> 4: runt",
+      "files: pkg/executor/test/memtest/mem_test.go, pkg/session/session.go, pkg/session/session_test.go, pkg/util/memory/arbitrator.go, pkg/util/memory/arbitrator_test.go, pkg/util/memory/global_arbitrator.go, pkg/util/memory/pool.go, pkg/util/memory/pool_test.go, pkg/util/memory/tracker.go, pkg/util/memory/tracker_test.go, pkg/util/memory/utils.go, pkg/util/servermemorylimit/servermemorylimit.go"
+    ]
+  },
+  "analysis": "PR title: memory: fix data race & enhance behaviors in arbitrator\nPR url: https://github.com/pingcap/tidb/pull/65569\nTriage summary: Signed-off-by: Zhigao TONG <tongzhigao@pingcap.com> 3: fix unstable test since pr 65503 Signed-off-by: Zhigao TONG <tongzhigao@pingcap.com> 4: runt\nChanged files (12): pkg/executor/test/memtest/mem_test.go, pkg/session/session.go, pkg/session/session_test.go, pkg/util/memory/arbitrator.go, pkg/util/memory/arbitrator_test.go, pkg/util/memory/global_arbitrator.go, pkg/util/memory/pool.go, pkg/util/memory/pool_test.go, pkg/util/memory/tracker.go, pkg/util/memory/tracker_test.go, pkg/util/memory/utils.go, pkg/util/servermemorylimit/servermemorylimit.go\nFull patch analyzed; see patch_url."
+}

@@ -1,0 +1,49 @@
+{
+  "id": "pr-1933",
+  "source_pr": {
+    "number": 1933,
+    "url": "https://github.com/pingcap/tidb/pull/1933",
+    "title": "plan: fix cost calculate bug.",
+    "body": "When we calculate record counts for table scan, we didn't consider equal conditions.\r\n@shenli @coocood @zimulala PTAL"
+  },
+  "pr_merged_at": "2016-11-03T12:34:34+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "queryStr := `select c2 from t where c1 in ('7', '10', '112', '111', '98', '106', '100', '9', '18', '17') order by c2` (executor/executor_test.go)"
+  ],
+  "failure_signature": "queryStr := `select c2 from t where c1 in ('7', '10', '112', '111', '98', '106', '100', '9', '18', '17') order by c2` (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1933",
+    "https://github.com/pingcap/tidb/pull/1933.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1933.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "plan/physical_plan_builder.go",
+    "plan/plan_test.go",
+    "plan/statistics/statistics.go",
+    "plan/statistics/statistics_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: queryStr := `select c2 from t where c1 in ('7', '10', '112', '111', '98', '106', '100', '9', '18', '17') order by c2` (executor/executor_test.go)",
+      "files: executor/executor_test.go, plan/physical_plan_builder.go, plan/plan_test.go, plan/statistics/statistics.go, plan/statistics/statistics_test.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix cost calculate bug.\nPR url: https://github.com/pingcap/tidb/pull/1933\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: queryStr := `select c2 from t where c1 in ('7', '10', '112', '111', '98', '106', '100', '9', '18', '17') order by c2` (executor/executor_test.go)\nChanged files (5): executor/executor_test.go, plan/physical_plan_builder.go, plan/plan_test.go, plan/statistics/statistics.go, plan/statistics/statistics_test.go\nPatch url: https://github.com/pingcap/tidb/pull/1933.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

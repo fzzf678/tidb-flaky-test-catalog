@@ -1,0 +1,48 @@
+{
+  "id": "pr-9833",
+  "source_pr": {
+    "number": 9833,
+    "url": "https://github.com/pingcap/tidb/pull/9833",
+    "title": "executor: deep copy json into partial result",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nexpression.EvalJSON() only returns a shallow copy of the JSON content in Chunk. We need to deep copy it to avoid dirty memory.\r\n\r\n### What is changed and how it works?\r\n\r\ndeep copy JSON into partial result\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n - Need to be included in the release note\r\n"
+  },
+  "pr_merged_at": "2019-03-28T12:54:19+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(`select b from t group by a order by a;`).Check(testkit.Rows( (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(`select b from t group by a order by a;`).Check(testkit.Rows( (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9833",
+    "https://github.com/pingcap/tidb/pull/9833.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9833.patch",
+  "changed_files": [
+    "executor/aggfuncs/func_first_row.go",
+    "executor/aggfuncs/func_max_min.go",
+    "executor/aggfuncs/func_value.go",
+    "executor/aggregate_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(`select b from t group by a order by a;`).Check(testkit.Rows( (executor/aggregate_test.go)",
+      "files: executor/aggfuncs/func_first_row.go, executor/aggfuncs/func_max_min.go, executor/aggfuncs/func_value.go, executor/aggregate_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: deep copy json into partial result\nPR url: https://github.com/pingcap/tidb/pull/9833\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(`select b from t group by a order by a;`).Check(testkit.Rows( (executor/aggregate_test.go)\nChanged files (4): executor/aggfuncs/func_first_row.go, executor/aggfuncs/func_max_min.go, executor/aggfuncs/func_value.go, executor/aggregate_test.go\nPatch url: https://github.com/pingcap/tidb/pull/9833.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

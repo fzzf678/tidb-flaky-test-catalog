@@ -1,0 +1,48 @@
+{
+  "id": "pr-52879",
+  "source_pr": {
+    "number": 52879,
+    "url": "https://github.com/pingcap/tidb/pull/52879",
+    "title": "ddl,mdl: fix the issue that the table_ids overlap regex is not correct",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #52758 \r\n\r\nProblem Summary:\r\n\r\nThe regexp in `mdl_view` is not correct:\r\n\r\n```\r\nSELECT ',10,` regexp ',1|2,'\r\n```\r\n\r\nThis SQL will return 1, because it actually matches ',1' or '2,'.\r\n\r\n### What changed and how does it work?\r\n\r\nThis PR modified the REGEXP from `,1|2,` to `,(1|2),`.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-05-11T12:29:39+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/infoschema/test/clustertablestest/cluster_tables_test.go",
+    "name": "TestMDLViewIDConflict"
+  },
+  "symptoms": [
+    "rows := testTK.MustQuery(\"select table_name, query, start_time from mysql.tidb_mdl_view order by table_name\").Rows() (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)"
+  ],
+  "failure_signature": "rows := testTK.MustQuery(\"select table_name, query, start_time from mysql.tidb_mdl_view order by table_name\").Rows() (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/52879",
+    "https://github.com/pingcap/tidb/pull/52879.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/52879.patch",
+  "changed_files": [
+    "br/pkg/restore/db_test.go",
+    "pkg/ddl/job_table.go",
+    "pkg/infoschema/test/clustertablestest/cluster_tables_test.go",
+    "pkg/session/bootstrap.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rows := testTK.MustQuery(\"select table_name, query, start_time from mysql.tidb_mdl_view order by table_name\").Rows() (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)",
+      "files: br/pkg/restore/db_test.go, pkg/ddl/job_table.go, pkg/infoschema/test/clustertablestest/cluster_tables_test.go, pkg/session/bootstrap.go"
+    ]
+  },
+  "analysis": "PR title: ddl,mdl: fix the issue that the table_ids overlap regex is not correct\nPR url: https://github.com/pingcap/tidb/pull/52879\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rows := testTK.MustQuery(\"select table_name, query, start_time from mysql.tidb_mdl_view order by table_name\").Rows() (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)\nChanged files (4): br/pkg/restore/db_test.go, pkg/ddl/job_table.go, pkg/infoschema/test/clustertablestest/cluster_tables_test.go, pkg/session/bootstrap.go\nPatch url: https://github.com/pingcap/tidb/pull/52879.patch\nPicked test: type=unit path=pkg/infoschema/test/clustertablestest/cluster_tables_test.go name=TestMDLViewIDConflict"
+}

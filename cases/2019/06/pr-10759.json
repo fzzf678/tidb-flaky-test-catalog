@@ -1,0 +1,53 @@
+{
+  "id": "pr-10759",
+  "source_pr": {
+    "number": 10759,
+    "url": "https://github.com/pingcap/tidb/pull/10759",
+    "title": "ddl, table: allow using SHARD_ROW_ID_BITS with auto_incremental columns",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nThis PR allows using `SHARD_ROW_ID_BITS` for tables with `AUTO_INCREMENT` columns.\r\n\r\nBefore this PR, `SHARD_ROW_ID_BITS` cannot work with `AUTO_INCREMENT`:\r\n\r\n```\r\ntidb> CREATE TABLE T5 (`A` INT UNIQUE KEY AUTO_INCREMENT);\r\nQuery OK, 0 rows affected (0.01 sec)\r\ntidb> ALTER TABLE T5 SHARD_ROW_ID_BITS = 4;\r\nERROR 1105 (HY000): unsupported shard_row_id_bits for table with auto_increment column.\r\n```\r\n\r\nThis restriction leads to inconveniences to many TiDB users, this PR gives a quick way to remove it by:\r\n\r\n* For `row_id`(or `handle`), TiDB still tries to make sharding if `SHARD_ROW_ID_BITS` is defined.\r\n* For `auto_increment_id`(or `autoid`), TiDB doesn't make sharding to keep it incremental always.\r\n\r\n### What is changed and how it works?\r\nA new `AllocHandle()` is added to `table.Table`, which is used for the allocation of `handle`. Now `AllocAutoID()` will not try to do sharding for the allocated ids.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\n - Increased code complexity\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n - Need to update the documentation\r\n - Need to be included in the release note\r\n"
+  },
+  "pr_merged_at": "2019-06-12T20:43:30+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/ddl_test.go",
+    "name": "ddl_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select id from auto order by id\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/ddl_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select id from auto order by id\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/ddl_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/10759",
+    "https://github.com/pingcap/tidb/pull/10759.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/10759.patch",
+  "changed_files": [
+    "ddl/ddl.go",
+    "ddl/ddl_api.go",
+    "executor/ddl_test.go",
+    "executor/insert_common.go",
+    "infoschema/tables.go",
+    "sessionctx/binloginfo/binloginfo_test.go",
+    "table/table.go",
+    "table/tables/tables.go",
+    "table/tables/tables_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select id from auto order by id\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/ddl_test.go)",
+      "files: ddl/ddl.go, ddl/ddl_api.go, executor/ddl_test.go, executor/insert_common.go, infoschema/tables.go, sessionctx/binloginfo/binloginfo_test.go, table/table.go, table/tables/tables.go, table/tables/tables_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl, table: allow using SHARD_ROW_ID_BITS with auto_incremental columns\nPR url: https://github.com/pingcap/tidb/pull/10759\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select id from auto order by id\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/ddl_test.go)\nChanged files (9): ddl/ddl.go, ddl/ddl_api.go, executor/ddl_test.go, executor/insert_common.go, infoschema/tables.go, sessionctx/binloginfo/binloginfo_test.go, table/table.go, table/tables/tables.go, table/tables/tables_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10759.patch\nPicked test: type=unit path=executor/ddl_test.go name=ddl_test"
+}

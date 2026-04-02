@@ -1,0 +1,49 @@
+{
+  "id": "pr-1652",
+  "source_pr": {
+    "number": 1652,
+    "url": "https://github.com/pingcap/tidb/pull/1652",
+    "title": "support constant propagation",
+    "body": "@shenli @hanfei1991 @zimulala @coocood @tiancaiamao \nPTAL\nA transformation takes place for expressions like this:\n\n> WHERE column1 = column2 AND column2 = 'x'\n\nthe transformed condition becomes:\n\n> WHERE column1 = 'x' AND column2 = 'x'\n\nWith constant propagation, we can improve predicate push down\nlike:\n\n> SELECT \\* FROM t1 join t2 on t1.a = t2.a where t1.a = 1;\n\nafter propagate constant, we get \n\n> SELECT \\* FROM t1 join t2 where t2.a = 1 and t1.a = 1;\n\nand we can push down all the conditions.\n"
+  },
+  "pr_merged_at": "2016-09-07T17:30:24+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/plan_test.go",
+    "name": "plan_test"
+  },
+  "symptoms": [
+    "sort.Strings(result) (plan/plan_test.go)"
+  ],
+  "failure_signature": "sort.Strings(result) (plan/plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1652",
+    "https://github.com/pingcap/tidb/pull/1652.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1652.patch",
+  "changed_files": [
+    "expression/expression.go",
+    "plan/expression_rewriter.go",
+    "plan/logical_plan_builder.go",
+    "plan/plan_test.go",
+    "plan/predicate_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Strings(result) (plan/plan_test.go)",
+      "files: executor/builder.go, expression/expression.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/plan_test.go, plan/predicate_push_down.go"
+    ]
+  },
+  "analysis": "PR title: support constant propagation\nPR url: https://github.com/pingcap/tidb/pull/1652\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Strings(result) (plan/plan_test.go)\nChanged files (5): expression/expression.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/plan_test.go, plan/predicate_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/1652.patch\nPicked test: type=unit path=plan/plan_test.go name=plan_test"
+}

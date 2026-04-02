@@ -1,0 +1,54 @@
+{
+  "id": "pr-26271",
+  "source_pr": {
+    "number": 26271,
+    "url": "https://github.com/pingcap/tidb/pull/26271",
+    "title": "planner: improve skyline pruning",
+    "body": "### What problem does this PR solve?\r\n\r\ncloses #26320 \r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed & How it Works:\r\n\r\n1. When comparing whether double scan is needed, if both paths need double scan, we further compare the column set of `IndexFilters`, if the column set of  path A is the subset of that of path B, then path B has less table rows to access than path A, so path B is better than path A on the factor. If there is no subset relation, then the two paths are incomparable.\r\n2. For the `isMatchProp` factor, \r\n```\r\ncreate table t(a int, b int, c int, d int, index idx_a_b_c(a, b, c));\r\nexplain select a, b, c from t where a > 3 and b = 4 order by a, c;\r\n```\r\n`idx_a_b_c` actually matches the order `a, c` since `b = 4` is constant. This pr takes the situation into consideration. (ps: this pr can also close #26017)\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [x] Performance regression: Consumes more CPU\r\n- [x] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- improve skyline pruning rules <!-- Please write a release note here to describe the change you made when it is released to the users of TiDB. If your PR doesn't involve any change to TiDB(like test enhancements, RFC proposals...), you can write `No release note`. -->\r\n"
+  },
+  "pr_merged_at": "2021-08-02T14:17:06+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t where e_str = 'hi' order by c\", (planner/core/logical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t where e_str = 'hi' order by c\", (planner/core/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "sql: \"select * from t where e_str = 'hi' order by c\", (planner/core/logical_plan_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/26271",
+    "https://github.com/pingcap/tidb/pull/26271.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/26271.patch",
+  "changed_files": [
+    "planner/core/exhaust_physical_plans.go",
+    "planner/core/find_best_task.go",
+    "planner/core/integration_test.go",
+    "planner/core/logical_plan_test.go",
+    "planner/core/logical_plans.go",
+    "planner/core/mock.go",
+    "planner/core/testdata/integration_suite_in.json",
+    "planner/core/testdata/integration_suite_out.json",
+    "planner/util/path.go",
+    "util/ranger/detacher.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t where e_str = 'hi' order by c\", (planner/core/logical_plan_test.go)",
+      "files: planner/core/exhaust_physical_plans.go, planner/core/find_best_task.go, planner/core/integration_test.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/mock.go, planner/core/testdata/integration_suite_in.json, planner/core/testdata/integration_suite_out.json, planner/util/path.go, util/ranger/detacher.go"
+    ]
+  },
+  "analysis": "PR title: planner: improve skyline pruning\nPR url: https://github.com/pingcap/tidb/pull/26271\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t where e_str = 'hi' order by c\", (planner/core/logical_plan_test.go)\nChanged files (10): planner/core/exhaust_physical_plans.go, planner/core/find_best_task.go, planner/core/integration_test.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/mock.go, planner/core/testdata/integration_suite_in.json, planner/core/testdata/integration_suite_out.json, planner/util/path.go, util/ranger/detacher.go\nPatch series analyzed; see patch_url."
+}

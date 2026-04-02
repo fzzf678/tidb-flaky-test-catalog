@@ -1,0 +1,54 @@
+{
+  "id": "pr-20750",
+  "source_pr": {
+    "number": 20750,
+    "url": "https://github.com/pingcap/tidb/pull/20750",
+    "title": "executor, infoschema, planner: optimize query cluster_slow_query",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #20236  \r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\nAdd time for primary index in `cluster_slow_queyry` table, and use order maters when parsing the slow log files.\r\nHow it Works:\r\nWe can use index to accelerate the query and avoid using TopN executor\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- executor, infoschema, planner: optimize query cluster_slow_query\r\n"
+  },
+  "pr_merged_at": "2021-01-04T14:23:06+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "sql: \"select time from %s where time > '2020-02-17 12:00:05.000000' and time < '2020-05-14 20:00:00.000000' order by time desc\", (executor/executor_test.go)"
+  ],
+  "failure_signature": "sql: \"select time from %s where time > '2020-02-17 12:00:05.000000' and time < '2020-05-14 20:00:00.000000' order by time desc\", (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "sql: \"select time from %s where time > '2020-02-17 12:00:05.000000' and time < '2020-05-14 20:00:00.000000' order by time desc\", (executor/executor_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/20750",
+    "https://github.com/pingcap/tidb/pull/20750.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/20750.patch",
+  "changed_files": [
+    "executor/coprocessor.go",
+    "executor/executor_test.go",
+    "executor/infoschema_reader_test.go",
+    "executor/slow_query.go",
+    "executor/slow_query_test.go",
+    "infoschema/tables.go",
+    "planner/core/find_best_task.go",
+    "planner/core/memtable_predicate_extractor.go",
+    "planner/core/pb_to_plan.go",
+    "planner/core/point_get_plan.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select time from %s where time > '2020-02-17 12:00:05.000000' and time < '2020-05-14 20:00:00.000000' order by time desc\", (executor/executor_test.go)",
+      "files: executor/coprocessor.go, executor/executor_test.go, executor/infoschema_reader_test.go, executor/slow_query.go, executor/slow_query_test.go, infoschema/tables.go, planner/core/find_best_task.go, planner/core/memtable_predicate_extractor.go, planner/core/pb_to_plan.go, planner/core/point_get_plan.go"
+    ]
+  },
+  "analysis": "PR title: executor, infoschema, planner: optimize query cluster_slow_query\nPR url: https://github.com/pingcap/tidb/pull/20750\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select time from %s where time > '2020-02-17 12:00:05.000000' and time < '2020-05-14 20:00:00.000000' order by time desc\", (executor/executor_test.go)\nChanged files (10): executor/coprocessor.go, executor/executor_test.go, executor/infoschema_reader_test.go, executor/slow_query.go, executor/slow_query_test.go, infoschema/tables.go, planner/core/find_best_task.go, planner/core/memtable_predicate_extractor.go, planner/core/pb_to_plan.go, planner/core/point_get_plan.go\nPatch series analyzed; see patch_url."
+}

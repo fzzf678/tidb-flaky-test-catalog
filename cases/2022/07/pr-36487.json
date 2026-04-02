@@ -1,0 +1,52 @@
+{
+  "id": "pr-36487",
+  "source_pr": {
+    "number": 36487,
+    "url": "https://github.com/pingcap/tidb/pull/36487",
+    "title": "*: cleanup default sysvar value usage",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/36485\r\n\r\nProblem Summary:\r\n\r\nPreviously a default install of TiDB showed several differences of current_value vs. default value when reading from `information_schema.variables_info`. A lot of these were subtle bugs.\r\n\r\n### What is changed and how it works?\r\n\r\nThe default vs current value is stabilized, and a test is added to make sure that any new exceptions (should be very few) need to be explicitly handled.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [x] Contains variable changes\r\nMinor changes to default values. Because most of the broken values have getter functions, it won't be user perceivable. \r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-07-26T19:51:11+08:00",
+  "test": {
+    "type": "unit",
+    "path": "infoschema/tables_test.go",
+    "name": "tables_test"
+  },
+  "symptoms": [
+    "The default vs current value is stabilized, and a test is added to make sure that any new exceptions (should be very few) need to be explicitly handled. | stmt := tk.MustQuery(`SELECT variable_name, default_value, current_value FROM information_schema.variables_info WHERE current_value != default_value and default_value != '' ORDER BY variable_name`) (infoschema/tables_test.go)"
+  ],
+  "failure_signature": "The default vs current value is stabilized, and a test is added to make sure that any new exceptions (should be very few) need to be explicitly handled. | stmt := tk.MustQuery(`SELECT variable_name, default_value, current_value FROM information_schema.variables_info WHERE current_value != default_value and default_value != '' ORDER BY variable_name`) (infoschema/tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/36487",
+    "https://github.com/pingcap/tidb/pull/36487.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/36487.patch",
+  "changed_files": [
+    "infoschema/tables_test.go",
+    "session/bootstrap.go",
+    "sessionctx/variable/noop.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "util/sqlexec/utils.go",
+    "util/sqlexec/utils_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: The default vs current value is stabilized, and a test is added to make sure that any new exceptions (should be very few) need to be explicitly handled. | stmt := tk.MustQuery(`SELECT variable_name, default_value, current_value FROM information_schema.variables_info WHERE current_value != default_value and default_value != '' ORDER BY variable_name`) (infoschema/tables_test.go)",
+      "files: infoschema/tables_test.go, session/bootstrap.go, sessionctx/variable/noop.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, util/sqlexec/utils.go, util/sqlexec/utils_test.go"
+    ]
+  },
+  "analysis": "PR title: *: cleanup default sysvar value usage\nPR url: https://github.com/pingcap/tidb/pull/36487\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: The default vs current value is stabilized, and a test is added to make sure that any new exceptions (should be very few) need to be explicitly handled. | stmt := tk.MustQuery(`SELECT variable_name, default_value, current_value FROM information_schema.variables_info WHERE current_value != default_value and default_value != '' ORDER BY variable_name`) (infoschema/tables_test.go)\nChanged files (7): infoschema/tables_test.go, session/bootstrap.go, sessionctx/variable/noop.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, util/sqlexec/utils.go, util/sqlexec/utils_test.go\nPatch url: https://github.com/pingcap/tidb/pull/36487.patch\nPicked test: type=unit path=infoschema/tables_test.go name=tables_test"
+}

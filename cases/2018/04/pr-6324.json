@@ -1,0 +1,45 @@
+{
+  "id": "pr-6324",
+  "source_pr": {
+    "number": 6324,
+    "url": "https://github.com/pingcap/tidb/pull/6324",
+    "title": "store/tikv/latch: fix a data race in test code",
+    "body": "Fix a data race when running CI in https://github.com/pingcap/tidb/pull/6311\r\n\r\n```\r\n==================\r\nWARNING: DATA RACE\r\nWrite at 0x00c42013e040 by goroutine 19:\r\n  github.com/pingcap/tidb/store/tikv/latch.(*Latches).Acquire()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/store/tikv/latch/latch.go:120 +0x7c\r\n  github.com/pingcap/tidb/store/tikv/latch.(*txnScheduler).runTxn()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/store/tikv/latch/latch_test.go:126 +0x127\r\n\r\nPrevious write at 0x00c42013e040 by goroutine 17:\r\n  github.com/pingcap/tidb/store/tikv/latch.(*Latches).Acquire()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/store/tikv/latch/latch.go:124 +0x1bf\r\n  github.com/pingcap/tidb/store/tikv/latch.(*txnScheduler).runTxn()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/store/tikv/latch/latch_test.go:126 +0x127\r\n\r\nGoroutine 19 (running) created at:\r\n  github.com/pingcap/tidb/store/tikv/latch.(*txnScheduler).runTxn()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/store/tikv/latch/latch_test.go:142 +0x231\r\n\r\nGoroutine 17 (finished) created at:\r\n  github.com/pingcap/tidb/store/tikv/latch.(*txnScheduler).newTxn()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/store/tikv/latch/latch_test.go:156 +0x31a\r\n==================\r\nOK: 2 passed\r\n```\r\n\r\n@coocood @AndreMouche "
+  },
+  "pr_merged_at": "2018-04-20T10:04:12+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/latch/latch_test.go",
+    "name": "latch_test"
+  },
+  "symptoms": [
+    "store/tikv/latch: fix a data race in test code"
+  ],
+  "failure_signature": "store/tikv/latch: fix a data race in test code",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "store/tikv/latch: fix a data race in test code",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6324",
+    "https://github.com/pingcap/tidb/pull/6324.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6324.patch",
+  "changed_files": [
+    "store/tikv/latch/latch_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: store/tikv/latch: fix a data race in test code",
+      "files: store/tikv/latch/latch_test.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv/latch: fix a data race in test code\nPR url: https://github.com/pingcap/tidb/pull/6324\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: store/tikv/latch: fix a data race in test code\nChanged files (1): store/tikv/latch/latch_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6324.patch\nPicked test: type=unit path=store/tikv/latch/latch_test.go name=latch_test"
+}

@@ -1,0 +1,46 @@
+{
+  "id": "pr-22305",
+  "source_pr": {
+    "number": 22305,
+    "url": "https://github.com/pingcap/tidb/pull/22305",
+    "title": "ddl: fix rule cache panic when truncating partitions",
+    "body": "### What problem does this PR solve?\r\n\r\nProblem Summary: `newIDs[i]` will panic, due to this [commit](https://github.com/pingcap/tidb/pull/20622/commits/4417a586249882c2dd135e5ba25df2870f7b18ca). That commit moved the definition of `newIDs`, and now `len(newIDs) == 0` in the loop `for i, oldID := range oldIDs`. Thus `newIDs[i]` will panic.\r\n\r\nWe should not get ID from `newIDs`, and we should get it from `newPartitions[i].ID`.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n- Integration test\r\n- Manual test (add detailed scripts or steps below)\r\n\r\nRefer to manual tests in #19505.\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- Fix panic when truncating partitions with placement rules\r\n"
+  },
+  "pr_merged_at": "2021-01-25T16:16:39+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/placement_sql_test.go",
+    "name": "placement_sql_test"
+  },
+  "symptoms": [
+    "sort.Slice(partDefs, func(i, j int) bool { return partDefs[i].Name.L < partDefs[j].Name.L }) (ddl/placement_sql_test.go)"
+  ],
+  "failure_signature": "sort.Slice(partDefs, func(i, j int) bool { return partDefs[i].Name.L < partDefs[j].Name.L }) (ddl/placement_sql_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "sort.Slice(partDefs, func(i, j int) bool { return partDefs[i].Name.L < partDefs[j].Name.L }) (ddl/placement_sql_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22305",
+    "https://github.com/pingcap/tidb/pull/22305.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22305.patch",
+  "changed_files": [
+    "ddl/partition.go",
+    "ddl/placement_sql_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Slice(partDefs, func(i, j int) bool { return partDefs[i].Name.L < partDefs[j].Name.L }) (ddl/placement_sql_test.go)",
+      "files: ddl/partition.go, ddl/placement_sql_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl: fix rule cache panic when truncating partitions\nPR url: https://github.com/pingcap/tidb/pull/22305\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Slice(partDefs, func(i, j int) bool { return partDefs[i].Name.L < partDefs[j].Name.L }) (ddl/placement_sql_test.go)\nChanged files (2): ddl/partition.go, ddl/placement_sql_test.go\nPatch series analyzed; see patch_url."
+}

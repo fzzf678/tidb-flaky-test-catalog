@@ -1,0 +1,47 @@
+{
+  "id": "pr-1960",
+  "source_pr": {
+    "number": 1960,
+    "url": "https://github.com/pingcap/tidb/pull/1960",
+    "title": "plan: change the way that we find column in group-by items in cbo phase.",
+    "body": "We apply the projection-elimination after cbo. So when we process select count(*) from group by a order by a. The 'a' in order by has been rewritten as agg_1 by projection, so we can't retrieve this column in group-by item.\r\n@shenli @coocood @zimulala @XuHuaiYu @winoros PTAL"
+  },
+  "pr_merged_at": "2016-11-07T15:23:28+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/plan_test.go",
+    "name": "plan_test"
+  },
+  "symptoms": [
+    "sql: \"select count(*) from t group by a order by a\", (plan/plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select count(*) from t group by a order by a\", (plan/plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1960",
+    "https://github.com/pingcap/tidb/pull/1960.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1960.patch",
+  "changed_files": [
+    "plan/physical_plan_builder.go",
+    "plan/plan_test.go",
+    "plan/predicate_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select count(*) from t group by a order by a\", (plan/plan_test.go)",
+      "files: plan/physical_plan_builder.go, plan/plan_test.go, plan/predicate_push_down.go"
+    ]
+  },
+  "analysis": "PR title: plan: change the way that we find column in group-by items in cbo phase.\nPR url: https://github.com/pingcap/tidb/pull/1960\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select count(*) from t group by a order by a\", (plan/plan_test.go)\nChanged files (3): plan/physical_plan_builder.go, plan/plan_test.go, plan/predicate_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/1960.patch\nPicked test: type=unit path=plan/plan_test.go name=plan_test"
+}

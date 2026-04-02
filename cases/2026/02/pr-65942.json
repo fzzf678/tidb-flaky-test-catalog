@@ -1,0 +1,57 @@
+{
+  "id": "pr-65942",
+  "source_pr": {
+    "number": 65942,
+    "url": "https://github.com/pingcap/tidb/pull/65942",
+    "title": "planner: handle double NOT in outer join",
+    "body": "<!--\n\nThank you for contributing to TiDB!\n\nPR Title Format:\n1. pkg [, pkg2, pkg3]: what's changed\n2. *: what's changed\n\n-->\n\n### What problem does this PR solve?\n<!--\n\nPlease create an issue first to describe the problem.\n\nThere MUST be one line starting with \"Issue Number:  \" and\nlinking the relevant issues via the \"close\" or \"ref\".\n\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\n\n-->\n\nIssue Number: close #65937\n\nProblem Summary:\n- Double NOT in outer join ON conditions stayed as other cond and could lead to cartesian-like joins.\n\n### What changed and how does it work?\n- Normalize outer join OtherConditions by applying PushDownNot when UnaryNot is present.\n- Add predicate pushdown cases for double NOT left/right/semi joins and record plan + result.\n- Add integration test case in planner/core/issuetest to validate checksum parity.\n- Document optimizer/test experience in docs and update skills guidance.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [x] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n  > <!-- Or your custom  \"No need to test\" reasons -->\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\n\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\n\n```release-note\nNone\n```\n"
+  },
+  "pr_merged_at": "2026-02-03T21:27:52+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/t/planner/core/issuetest/planner_issue.test",
+    "name": "planner_issue"
+  },
+  "symptoms": [
+    "diff shows determinism stabilization in tests/integrationtest/r/planner/core/issuetest/planner_issue.result, tests/integrationtest/t/planner/core/issuetest/planner_issue.test"
+  ],
+  "failure_signature": "diff shows determinism stabilization in tests/integrationtest/r/planner/core/issuetest/planner_issue.result, tests/integrationtest/t/planner/core/issuetest/planner_issue.test",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "diff shows determinism stabilization in tests/integrationtest/r/planner/core/issuetest/planner_issue.result, tests/integrationtest/t/planner/core/issuetest/planner_issue.test",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/65942",
+    "https://github.com/pingcap/tidb/pull/65942.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/65942.patch",
+  "changed_files": [
+    ".github/skills/tidb-test-guidelines/SKILL.md",
+    ".github/skills/tidb-test-guidelines/references/planner-case-map.md",
+    "AGENTS.md",
+    "docs/note/planner/rule/rule_ai_notes.md",
+    "pkg/expression/util.go",
+    "pkg/expression/util_test.go",
+    "pkg/planner/core/casetest/rule/rule_predicate_pushdown_test.go",
+    "pkg/planner/core/casetest/rule/testdata/predicate_pushdown_suite_in.json",
+    "pkg/planner/core/casetest/rule/testdata/predicate_pushdown_suite_out.json",
+    "pkg/planner/core/casetest/rule/testdata/predicate_pushdown_suite_xut.json",
+    "pkg/planner/core/operator/logicalop/logical_join.go",
+    "tests/integrationtest/r/planner/core/issuetest/planner_issue.result",
+    "tests/integrationtest/t/planner/core/issuetest/planner_issue.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: diff shows determinism stabilization in tests/integrationtest/r/planner/core/issuetest/planner_issue.result, tests/integrationtest/t/planner/core/issuetest/planner_issue.test",
+      "files: tests/integrationtest/r/planner/core/issuetest/planner_issue.result, tests/integrationtest/t/planner/core/issuetest/planner_issue.test"
+    ]
+  },
+  "analysis": "PR title: planner: handle double NOT in outer join\nPR url: https://github.com/pingcap/tidb/pull/65942\nTriage summary: diff shows determinism stabilization in tests/integrationtest/r/planner/core/issuetest/planner_issue.result, tests/integrationtest/t/planner/core/issuetest/planner_issue.test\nChanged files (13): .github/skills/tidb-test-guidelines/SKILL.md, .github/skills/tidb-test-guidelines/references/planner-case-map.md, AGENTS.md, docs/note/planner/rule/rule_ai_notes.md, pkg/expression/util.go, pkg/expression/util_test.go, pkg/planner/core/casetest/rule/rule_predicate_pushdown_test.go, pkg/planner/core/casetest/rule/testdata/predicate_pushdown_suite_in.json, pkg/planner/core/casetest/rule/testdata/predicate_pushdown_suite_out.json, pkg/planner/core/casetest/rule/testdata/predicate_pushdown_suite_xut.json, pkg/planner/core/operator/logicalop/logical_join.go, tests/integrationtest/r/planner/core/issuetest/planner_issue.result ...\nFull patch analyzed; see patch_url."
+}

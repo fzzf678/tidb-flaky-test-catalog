@@ -1,0 +1,47 @@
+{
+  "id": "pr-4470",
+  "source_pr": {
+    "number": 4470,
+    "url": "https://github.com/pingcap/tidb/pull/4470",
+    "title": "executor: fix a order by bug",
+    "body": "To replace https://github.com/pingcap/tidb/pull/4466\r\n\r\n@hanfei1991 @coocood "
+  },
+  "pr_merged_at": "2017-09-08T12:44:39+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select a from t use index(b) order by b\").Check(testkit.Rows(\"9\", \"8\", \"7\", \"6\", \"5\", \"4\", \"3\", \"2\", \"1\", \"0\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select a from t use index(b) order by b\").Check(testkit.Rows(\"9\", \"8\", \"7\", \"6\", \"5\", \"4\", \"3\", \"2\", \"1\", \"0\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4470",
+    "https://github.com/pingcap/tidb/pull/4470.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4470.patch",
+  "changed_files": [
+    "executor/distsql.go",
+    "executor/executor_test.go",
+    "executor/new_distsql.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select a from t use index(b) order by b\").Check(testkit.Rows(\"9\", \"8\", \"7\", \"6\", \"5\", \"4\", \"3\", \"2\", \"1\", \"0\")) (executor/executor_test.go)",
+      "files: executor/distsql.go, executor/executor_test.go, executor/new_distsql.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix a order by bug\nPR url: https://github.com/pingcap/tidb/pull/4470\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select a from t use index(b) order by b\").Check(testkit.Rows(\"9\", \"8\", \"7\", \"6\", \"5\", \"4\", \"3\", \"2\", \"1\", \"0\")) (executor/executor_test.go)\nChanged files (3): executor/distsql.go, executor/executor_test.go, executor/new_distsql.go\nPatch url: https://github.com/pingcap/tidb/pull/4470.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

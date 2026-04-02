@@ -1,0 +1,47 @@
+{
+  "id": "pr-13431",
+  "source_pr": {
+    "number": 13431,
+    "url": "https://github.com/pingcap/tidb/pull/13431",
+    "title": "test: make several slow package unit test support run parallel",
+    "body": "### What problem does this PR solve?\r\nmake several package unit test support run unit test parallel to speed up unit test running\r\n\r\n### What is changed and how it works?\r\nsome unit test need to change global variables to set up running environment, thus make it impossible to run in parallel. By move these test into independent test suite and use `SerialSuites` instead of `Suite`, we can make sure they will still run in serial, so it will be safe to open the parallel flag for other tests.\r\n\r\nHere is the result:\r\nBefore change:\r\n```\r\n>  go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core\r\nok  \tgithub.com/pingcap/tidb/planner/core\t110.140s\r\n\r\n> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/session\r\nok  \tgithub.com/pingcap/tidb/session\t123.002s\r\n```\r\n\r\nAfter change:\r\n```\r\n> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core -check.p=true\r\nok  \tgithub.com/pingcap/tidb/planner/core\t41.524s\r\n\r\n> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/session -check.p=true\r\nok  \tgithub.com/pingcap/tidb/session\t95.673s\r\n```\r\n\r\n### Check List\r\nTests\r\n\r\n- unit tests\r\n\r\nCode changes\r\n\r\nSide effects\r\n\r\nRelated changes"
+  },
+  "pr_merged_at": "2019-11-14T12:47:43+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/prepare_test.go",
+    "name": "prepare_test"
+  },
+  "symptoms": [
+    "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core"
+  ],
+  "failure_signature": "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test: make several slow package unit test support run parallel",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13431",
+    "https://github.com/pingcap/tidb/pull/13431.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13431.patch",
+  "changed_files": [
+    "planner/core/prepare_test.go",
+    "session/pessimistic_test.go",
+    "session/session_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: > go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core",
+      "files: planner/core/prepare_test.go, session/pessimistic_test.go, session/session_test.go"
+    ]
+  },
+  "analysis": "PR title: test: make several slow package unit test support run parallel\nPR url: https://github.com/pingcap/tidb/pull/13431\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: > go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core\nChanged files (3): planner/core/prepare_test.go, session/pessimistic_test.go, session/session_test.go\nPatch url: https://github.com/pingcap/tidb/pull/13431.patch\nPicked test: type=unit path=planner/core/prepare_test.go name=prepare_test"
+}

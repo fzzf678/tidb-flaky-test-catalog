@@ -1,0 +1,50 @@
+{
+  "id": "pr-8243",
+  "source_pr": {
+    "number": 8243,
+    "url": "https://github.com/pingcap/tidb/pull/8243",
+    "title": "planner/core: make TIDB_INLJ to specify the inner table",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nas the title says\r\n\r\n### What is changed and how it works?\r\n\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n - Need to update the documentation\r\n - Need to be included in the release note\r\n"
+  },
+  "pr_merged_at": "2018-11-13T11:55:31+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select /*+ TIDB_INLJ(t1) */ * from t join t1 on t.a=t1.a order by t.b\").Check(testkit.Rows(\"3 1 3 4\", \"1 3 1 2\", \"1 3 1 3\")) (executor/join_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select /*+ TIDB_INLJ(t1) */ * from t join t1 on t.a=t1.a order by t.b\").Check(testkit.Rows(\"3 1 3 4\", \"1 3 1 2\", \"1 3 1 3\")) (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8243",
+    "https://github.com/pingcap/tidb/pull/8243.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8243.patch",
+  "changed_files": [
+    "executor/index_lookup_join_test.go",
+    "executor/join_test.go",
+    "planner/core/exhaust_physical_plans.go",
+    "planner/core/logical_plan_builder.go",
+    "planner/core/logical_plans.go",
+    "planner/core/physical_plan_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select /*+ TIDB_INLJ(t1) */ * from t join t1 on t.a=t1.a order by t.b\").Check(testkit.Rows(\"3 1 3 4\", \"1 3 1 2\", \"1 3 1 3\")) (executor/join_test.go)",
+      "files: executor/index_lookup_join_test.go, executor/join_test.go, planner/core/exhaust_physical_plans.go, planner/core/logical_plan_builder.go, planner/core/logical_plans.go, planner/core/physical_plan_test.go"
+    ]
+  },
+  "analysis": "PR title: planner/core: make TIDB_INLJ to specify the inner table\nPR url: https://github.com/pingcap/tidb/pull/8243\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select /*+ TIDB_INLJ(t1) */ * from t join t1 on t.a=t1.a order by t.b\").Check(testkit.Rows(\"3 1 3 4\", \"1 3 1 2\", \"1 3 1 3\")) (executor/join_test.go)\nChanged files (6): executor/index_lookup_join_test.go, executor/join_test.go, planner/core/exhaust_physical_plans.go, planner/core/logical_plan_builder.go, planner/core/logical_plans.go, planner/core/physical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8243.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

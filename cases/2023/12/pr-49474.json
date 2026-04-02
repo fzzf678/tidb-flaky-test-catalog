@@ -1,0 +1,56 @@
+{
+  "id": "pr-49474",
+  "source_pr": {
+    "number": 49474,
+    "url": "https://github.com/pingcap/tidb/pull/49474",
+    "title": "global sort: new merge with 1 writer",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #48779\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\nImplement new merge step. In new implementation, mergeIter is abandoned.\r\nThe new merge step process data from startKey to endKey, using datas and stats.\r\n1. use rangeSplitter to split range groups to read data.\r\n2. read range data then sort them.\r\n3. write all data to only one file.\r\n\r\nCurrently, the new merge step use only 1 writer.\r\n\r\nTODO:\r\n1. We can speed up the process using multiple worker doing the merge process later.\r\n2. Add more bench test after gcs parallel writer stable.\r\n3. integrate with add index and import into.\r\n4. See if the new merge step can handle more files.\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-12-19T16:01:52+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/lightning/backend/external/bench_test.go",
+    "name": "bench_test"
+  },
+  "symptoms": [
+    "rand.Seed(uint64(seed)) (br/pkg/lightning/backend/external/sort_test.go)"
+  ],
+  "failure_signature": "rand.Seed(uint64(seed)) (br/pkg/lightning/backend/external/sort_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Implement new merge step. In new implementation, mergeIter is abandoned. The new merge step process data from startKey to endKey, using datas and stats. 1. use rangeSplitter to split range groups to read data. 2. read range data then sort them. 3. write all data to only one file.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/49474",
+    "https://github.com/pingcap/tidb/pull/49474.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/49474.patch",
+  "changed_files": [
+    "br/pkg/lightning/backend/external/BUILD.bazel",
+    "br/pkg/lightning/backend/external/bench_test.go",
+    "br/pkg/lightning/backend/external/engine.go",
+    "br/pkg/lightning/backend/external/merge.go",
+    "br/pkg/lightning/backend/external/merge_v2.go",
+    "br/pkg/lightning/backend/external/onefile_writer.go",
+    "br/pkg/lightning/backend/external/onefile_writer_test.go",
+    "br/pkg/lightning/backend/external/reader_test.go",
+    "br/pkg/lightning/backend/external/sort_test.go",
+    "br/pkg/lightning/backend/external/testutil.go",
+    "br/pkg/lightning/backend/external/writer.go",
+    "br/pkg/lightning/backend/external/writer_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rand.Seed(uint64(seed)) (br/pkg/lightning/backend/external/sort_test.go)",
+      "files: br/pkg/lightning/backend/external/BUILD.bazel, br/pkg/lightning/backend/external/bench_test.go, br/pkg/lightning/backend/external/engine.go, br/pkg/lightning/backend/external/merge.go, br/pkg/lightning/backend/external/merge_v2.go, br/pkg/lightning/backend/external/onefile_writer.go, br/pkg/lightning/backend/external/onefile_writer_test.go, br/pkg/lightning/backend/external/reader_test.go, br/pkg/lightning/backend/external/sort_test.go, br/pkg/lightning/backend/external/testutil.go, br/pkg/lightning/backend/external/util.go, br/pkg/lightning/backend/external/writer.go, br/pkg/lightning/backend/external/writer_test.go"
+    ]
+  },
+  "analysis": "PR title: global sort: new merge with 1 writer\nPR url: https://github.com/pingcap/tidb/pull/49474\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(uint64(seed)) (br/pkg/lightning/backend/external/sort_test.go)\nChanged files (12): br/pkg/lightning/backend/external/BUILD.bazel, br/pkg/lightning/backend/external/bench_test.go, br/pkg/lightning/backend/external/engine.go, br/pkg/lightning/backend/external/merge.go, br/pkg/lightning/backend/external/merge_v2.go, br/pkg/lightning/backend/external/onefile_writer.go, br/pkg/lightning/backend/external/onefile_writer_test.go, br/pkg/lightning/backend/external/reader_test.go, br/pkg/lightning/backend/external/sort_test.go, br/pkg/lightning/backend/external/testutil.go, br/pkg/lightning/backend/external/writer.go, br/pkg/lightning/backend/external/writer_test.go\nPatch series analyzed; see patch_url."
+}

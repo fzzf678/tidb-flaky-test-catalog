@@ -1,0 +1,65 @@
+{
+  "id": "pr-1440",
+  "source_pr": {
+    "number": 1440,
+    "url": "https://github.com/pingcap/tidb/pull/1440",
+    "title": "support index scan.",
+    "body": "@coocood @zimulala @shenli PTAL\nNow we can support index scan.\n"
+  },
+  "pr_merged_at": "2016-07-13T18:16:51+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t order by b, a\").Check(testkit.Rows(\"2 3\", \"3 4\", \"1 5\", \"7 6\", \"4 8\", \"6 8\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t order by b, a\").Check(testkit.Rows(\"2 3\", \"3 4\", \"1 5\", \"7 6\", \"4 8\", \"6 8\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1440",
+    "https://github.com/pingcap/tidb/pull/1440.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1440.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/executor.go",
+    "executor/executor_test.go",
+    "executor/new_builder.go",
+    "executor/new_executor.go",
+    "executor/new_executor_xapi.go",
+    "executor/union_scan.go",
+    "plan/column_pruning.go",
+    "plan/expression_rewriter.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plans.go",
+    "plan/new_plan_test.go",
+    "plan/optimizer.go",
+    "plan/physical_plan_builder.go",
+    "plan/physical_plans.go",
+    "plan/plan.go",
+    "plan/planbuilder.go",
+    "plan/plans.go",
+    "plan/predicate_push_down.go",
+    "plan/refiner.go",
+    "plan/stringer.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t order by b, a\").Check(testkit.Rows(\"2 3\", \"3 4\", \"1 5\", \"7 6\", \"4 8\", \"6 8\")) (executor/executor_test.go)",
+      "files: executor/builder.go, executor/executor.go, executor/executor_test.go, executor/executor_xapi.go, executor/new_builder.go, executor/new_executor.go, executor/new_executor_xapi.go, executor/union_scan.go, plan/column_pruning.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/new_plan_test.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/planbuilder.go, plan/plans.go, plan/predicate_push_down.go, plan/refiner.go, plan/stringer.go"
+    ]
+  },
+  "analysis": "PR title: support index scan.\nPR url: https://github.com/pingcap/tidb/pull/1440\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t order by b, a\").Check(testkit.Rows(\"2 3\", \"3 4\", \"1 5\", \"7 6\", \"4 8\", \"6 8\")) (executor/executor_test.go)\nChanged files (21): executor/builder.go, executor/executor.go, executor/executor_test.go, executor/new_builder.go, executor/new_executor.go, executor/new_executor_xapi.go, executor/union_scan.go, plan/column_pruning.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/new_plan_test.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/planbuilder.go, plan/plans.go, plan/predicate_push_down.go, plan/refiner.go, plan/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/1440.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

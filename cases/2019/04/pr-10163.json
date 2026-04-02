@@ -1,0 +1,51 @@
+{
+  "id": "pr-10163",
+  "source_pr": {
+    "number": 10163,
+    "url": "https://github.com/pingcap/tidb/pull/10163",
+    "title": "statistics: support building CMSketch with Top N",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nhttps://github.com/pingcap/tidb/pull/10042 has about 600 lines, this pr picks out the core logic except that related to protobuf and storage.\r\n\r\n### What is changed and how it works?\r\n\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nRelated changes\r\n\r\nhttps://github.com/pingcap/tidb/pull/10042\r\n"
+  },
+  "pr_merged_at": "2019-04-24T16:14:09+08:00",
+  "test": {
+    "type": "unit",
+    "path": "statistics/cmsketch_test.go",
+    "name": "cmsketch_test"
+  },
+  "symptoms": [
+    "+ // Avoid potential data race | zipf := rand.NewZipf(rand.New(rand.NewSource(seed)), s, 1, imax) (statistics/cmsketch_test.go)"
+  ],
+  "failure_signature": "+ // Avoid potential data race | zipf := rand.NewZipf(rand.New(rand.NewSource(seed)), s, 1, imax) (statistics/cmsketch_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/10163",
+    "https://github.com/pingcap/tidb/pull/10163.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/10163.patch",
+  "changed_files": [
+    "statistics/cmsketch.go",
+    "statistics/cmsketch_test.go",
+    "statistics/estimate.go",
+    "statistics/feedback_test.go",
+    "statistics/handle/update.go",
+    "statistics/handle/update_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: + // Avoid potential data race | zipf := rand.NewZipf(rand.New(rand.NewSource(seed)), s, 1, imax) (statistics/cmsketch_test.go)",
+      "files: statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/estimate.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle/update.go, statistics/update.go, statistics/update_test.go"
+    ]
+  },
+  "analysis": "PR title: statistics: support building CMSketch with Top N\nPR url: https://github.com/pingcap/tidb/pull/10163\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: + // Avoid potential data race | zipf := rand.NewZipf(rand.New(rand.NewSource(seed)), s, 1, imax) (statistics/cmsketch_test.go)\nChanged files (6): statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/estimate.go, statistics/feedback_test.go, statistics/handle/update.go, statistics/handle/update_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10163.patch\nPicked test: type=unit path=statistics/cmsketch_test.go name=cmsketch_test"
+}

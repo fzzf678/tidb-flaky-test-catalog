@@ -1,0 +1,68 @@
+{
+  "id": "pr-34644",
+  "source_pr": {
+    "number": 34644,
+    "url": "https://github.com/pingcap/tidb/pull/34644",
+    "title": "*: move config file option oom-action to sysvar",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: ref #33769 \r\n\r\nProblem Summary:\r\n\r\nThe option oom-action has historically been a config option. But based on requirements from cloud & PM it should instead be a sysvar.\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [x] Breaking backward compatibility\r\n  This might be a bit confusing during upgrade for users who have previously set oom-action(most users haven't). It needs to be documented in the release notes that it has been replaced with the system variable tidb_mem_oom_action.\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [x] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nThe TiDB configuration file option `oom-action` has been replaced by the system variable `tidb_mem_oom_action`. This change makes it easier to modify this setting on a cluster wide basis.\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-05-19T05:16:38+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "tests/realtikvtest/sessiontest/session_test.go",
+    "name": "session_test"
+  },
+  "symptoms": [
+    "// Because the internal SQL may access the global bind-info handler. As the result, the data race occurs here as the"
+  ],
+  "failure_signature": "// Because the internal SQL may access the global bind-info handler. As the result, the data race occurs here as the",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: move config file option oom-action to sysvar",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/34644",
+    "https://github.com/pingcap/tidb/pull/34644.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/34644.patch",
+  "changed_files": [
+    "config/config.go",
+    "config/config.toml.example",
+    "config/config_test.go",
+    "config/config_util.go",
+    "config/config_util_test.go",
+    "executor/executor.go",
+    "executor/executor_failpoint_test.go",
+    "executor/executor_issue_test.go",
+    "executor/executor_test.go",
+    "executor/join_test.go",
+    "executor/main_test.go",
+    "executor/merge_join_test.go",
+    "executor/oomtest/oom_test.go",
+    "executor/sort_test.go",
+    "infoschema/cluster_tables_test.go",
+    "server/rpc_server.go",
+    "session/bootstrap.go",
+    "session/bootstrap_test.go",
+    "session/nontransactional.go",
+    "session/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "sessionctx/variable/variable.go",
+    "tests/realtikvtest/sessiontest/session_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: // Because the internal SQL may access the global bind-info handler. As the result, the data race occurs here as the",
+      "files: config/config.go, config/config.toml.example, config/config_test.go, config/config_util.go, config/config_util_test.go, executor/executor.go, executor/executor_failpoint_test.go, executor/executor_issue_test.go, executor/executor_test.go, executor/join_test.go, executor/main_test.go, executor/merge_join_test.go, executor/oomtest/oom_test.go, executor/sort_test.go, infoschema/cluster_tables_test.go, server/rpc_server.go, session/bootstrap.go, session/bootstrap_test.go, session/nontransactional.go, session/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/variable.go, tests/realtikvtest/sessiontest/session_test.go"
+    ]
+  },
+  "analysis": "PR title: *: move config file option oom-action to sysvar\nPR url: https://github.com/pingcap/tidb/pull/34644\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // Because the internal SQL may access the global bind-info handler. As the result, the data race occurs here as the\nChanged files (24): config/config.go, config/config.toml.example, config/config_test.go, config/config_util.go, config/config_util_test.go, executor/executor.go, executor/executor_failpoint_test.go, executor/executor_issue_test.go, executor/executor_test.go, executor/join_test.go, executor/main_test.go, executor/merge_join_test.go, executor/oomtest/oom_test.go, executor/sort_test.go, infoschema/cluster_tables_test.go, server/rpc_server.go, session/bootstrap.go, session/bootstrap_test.go, session/nontransactional.go, session/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/variable.go, tests/realtikvtest/sessiontest/session_test.go\nPatch url: https://github.com/pingcap/tidb/pull/34644.patch\nPicked test: type=realtikv path=tests/realtikvtest/sessiontest/session_test.go name=session_test"
+}

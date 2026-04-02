@@ -1,0 +1,57 @@
+{
+  "id": "pr-40288",
+  "source_pr": {
+    "number": 40288,
+    "url": "https://github.com/pingcap/tidb/pull/40288",
+    "title": "util: use go-deadlock to find deadlock",
+    "body": "Signed-off-by: Weizhen Wang <wangweizhen@pingcap.com>\r\n\r\n<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #40293\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\nWe can find this log in the CI. It has been fixed in the https://github.com/pingcap/tidb/issues/40240\r\n```\r\nPOTENTIAL DEADLOCK:\r\n\r\nPrevious place where the lock was grabbed\r\n\r\ngoroutine 273418 lock 0xc005e863b0\r\n\r\ndomain/sysvar_cache.go:121 domain.(*Domain).rebuildSysVarCache ??? <<<<<\r\n\r\ndomain/sysvar_cache.go:51 domain.(*Domain).rebuildSysVarCacheIfNeeded ???\r\n\r\ndomain/sysvar_cache.go:75 domain.(*Domain).GetGlobalVar ???\r\n\r\ndomain/domain.go:1541 domain.(*Domain).globalBindHandleWorkerLoop.func1 ???\r\n\r\n\r\nHave been trying to lock it again for more than 20s\r\n\r\ngoroutine 261135 lock 0xc005e863b0\r\n\r\ndomain/sysvar_cache.go:121 domain.(*Domain).rebuildSysVarCache ??? <<<<<\r\n\r\ndomain/domain.go:2199 domain.(*Domain).NotifyUpdateSysVarCache ???\r\n\r\nsession/session.go:1450 session.(*session).replaceGlobalVariablesTableValue ???\r\n\r\nsession/session.go:1528 session.(*session).SetGlobalSysVarOnly ???\r\n\r\nsessionctx/variable/varsutil.go:536 variable.updatePasswordValidationLength ???\r\n\r\nsessionctx/variable/sysvar.go:553 variable.glob..func109 ???\r\n\r\nsessionctx/variable/variable.go:361 variable.(*SysVar).ValidateWithRelaxedValidation ???\r\n\r\ndomain/sysvar_cache.go:146 domain.(*Domain).rebuildSysVarCache ???\r\n\r\ndomain/sysvar_cache.go:51 domain.(*Domain).rebuildSysVarCacheIfNeeded ???\r\n\r\ndomain/sysvar_cache.go:62 domain.(*Domain).GetSessionCache ???\r\n\r\nsession/session.go:3651 session.(*session).loadCommonGlobalVariablesIfNeeded ???\r\n\r\nsession/session.go:2140 session.(*session).ExecuteStmt ???\r\n\r\nsession/session.go:1674 session.(*session).ExecuteInternal ???\r\n\r\ndomain/domain.go:1310 domain.(*Domain).LoadPrivilegeLoop ???\r\n\r\nsession/session.go:3329 session.BootstrapSession ???\r\n\r\ntestkit/mockstore.go:84 testkit.bootstrap ???\r\n\r\ntestkit/mockstore.go:69 testkit.CreateMockStoreAndDomain ???\r\n\r\ntestkit/mockstore.go:61 testkit.CreateMockStore ???\r\n\r\nexecutor/union_scan_test.go:419 executor_test.TestIssue28073 ???\r\n```\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-01-05T15:10:20+08:00",
+  "test": {
+    "type": "unit",
+    "path": "server/tidb_library_test.go",
+    "name": "TestIssue28073"
+  },
+  "symptoms": [
+    "+// race detector."
+  ],
+  "failure_signature": "+// race detector.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "+// race detector.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/40288",
+    "https://github.com/pingcap/tidb/pull/40288.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/40288.patch",
+  "changed_files": [
+    "Makefile",
+    "domain/BUILD.bazel",
+    "domain/sysvar_cache.go",
+    "executor/autoidtest/BUILD.bazel",
+    "go.mod",
+    "go.sum",
+    "server/BUILD.bazel",
+    "server/tidb_library_test.go",
+    "session/BUILD.bazel",
+    "session/session.go",
+    "util/syncutil/BUILD.bazel",
+    "util/syncutil/mutex_deadlock.go",
+    "util/syncutil/mutex_sync.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: +// race detector.",
+      "files: Makefile, domain/BUILD.bazel, domain/sysvar_cache.go, executor/autoidtest/BUILD.bazel, go.mod, go.sum, server/BUILD.bazel, server/server.go, server/tidb_library_test.go, session/BUILD.bazel, session/session.go, util/syncutil/BUILD.bazel, util/syncutil/mutex_deadlock.go, util/syncutil/mutex_sync.go"
+    ]
+  },
+  "analysis": "PR title: util: use go-deadlock to find deadlock\nPR url: https://github.com/pingcap/tidb/pull/40288\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: +// race detector.\nChanged files (13): Makefile, domain/BUILD.bazel, domain/sysvar_cache.go, executor/autoidtest/BUILD.bazel, go.mod, go.sum, server/BUILD.bazel, server/tidb_library_test.go, session/BUILD.bazel, session/session.go, util/syncutil/BUILD.bazel, util/syncutil/mutex_deadlock.go, util/syncutil/mutex_sync.go\nPatch series analyzed; see patch_url."
+}

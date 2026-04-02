@@ -1,0 +1,46 @@
+{
+  "id": "pr-14790",
+  "source_pr": {
+    "number": 14790,
+    "url": "https://github.com/pingcap/tidb/pull/14790",
+    "title": "domain: fix test 'start syncer failed'",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nThis PR tries to close #14427\r\n\r\n### What is changed and how it works?\r\nIf we disable the failpoint after checking syncer staring, if may fail because:\r\nIn https://github.com/pingcap/tidb/blob/a5e06604397969345c0c7dea3bb8097d31825215/domain/domain.go#L485-L509\r\n\r\nsyncer.Done() will return repeatly.  \r\nBetween `do.SchemaValidator.Stop()` and `rr := do.mustRestartSyncer()`, `syncerStarted` is false.\r\nIf the environment is CI, the peroid of \"syncerStop\" will be longer and the tests more likely to fail.\r\n\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n\r\nCode changes\r\n\r\n \r\n\r\nSide effects\r\n\r\n - NA\r\n\r\n"
+  },
+  "pr_merged_at": "2020-02-14T19:55:51+08:00",
+  "test": {
+    "type": "unit",
+    "path": "domain/domain_test.go",
+    "name": "domain_test"
+  },
+  "symptoms": [
+    "PR body says CI makes syncerStop period longer and tests more likely to fail; moves failpoint disabling to avoid a window where syncerStarted is false."
+  ],
+  "failure_signature": "PR body says CI makes syncerStop period longer and tests more likely to fail; moves failpoint disabling to avoid a window where syncerStarted is false.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "domain: fix test 'start syncer failed'",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/14790",
+    "https://github.com/pingcap/tidb/pull/14790.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/14790.patch",
+  "changed_files": [
+    "domain/domain_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body says CI makes syncerStop period longer and tests more likely to fail; moves failpoint disabling to avoid a window where syncerStarted is false.",
+      "evidence: diff disables failpoint immediately after <-dom.ddl.SchemaSyncer().Done() instead of after polling syncerStarted (domain/domain_test.go).",
+      "files: domain/domain_test.go"
+    ]
+  },
+  "analysis": "PR title: domain: fix test 'start syncer failed'\nPR url: https://github.com/pingcap/tidb/pull/14790\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body says CI makes syncerStop period longer and tests more likely to fail; moves failpoint disabling to avoid a window where syncerStarted is false.\nChanged files (1): domain/domain_test.go\nPatch url: https://github.com/pingcap/tidb/pull/14790.patch\nPicked test: type=unit path=domain/domain_test.go name=domain_test"
+}

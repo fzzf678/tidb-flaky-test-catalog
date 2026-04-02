@@ -1,0 +1,72 @@
+{
+  "id": "pr-66156",
+  "source_pr": {
+    "number": 66156,
+    "url": "https://github.com/pingcap/tidb/pull/66156",
+    "title": "planner: support index join for embedded inner-join patterns | tidb-test=pr/2692 ",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: ref #65781\r\n\r\nProblem Summary:\r\n- Address index join cann't be support complex embedded join, where choosing hash join by default may lost some perf compared with Apply's index usage, this pr try to expand current index join's inner pattern and execution ability, via expanding index join inner pattern through inner Join, which means when a index join's inner pattern contain inner Join, index join itself will still take off, behavior just like a normal index join, using its original batch mode. Yes, we just expand this complex pattern can leverage index join as well, resolving a history problem existed over past years. \r\n- for example, a history problem like below\r\n\r\n![img_v3_02ul_093fbf1a-3707-483c-9312-4fd2591613bg](https://github.com/user-attachments/assets/ec4e749a-62b4-45ca-aa36-374800dfcaf8)\r\nafter this pr it can be executed like \r\n![img_v3_02uo_b8b9e4e9-52c8-4252-8b8f-5f1c48453b0g](https://github.com/user-attachments/assets/69906f11-f2d1-470f-a314-64043c2724d0)\r\n\r\n\r\n### What changed and how does it work?\r\n- Carry `IndexJoinBatchMode` from pushed-down props through `IndexJoinInfo` and decide `ForceRowMode` at index-join completion.\r\n- Default to batch mode for simple inner patterns; force row mode when inner path crosses `Join`.\r\n- Clamp outer-join `requiredRows` to 1 in row mode to avoid multi-row tasks per probe.\r\n- Add planner/executor tests for row/batch mode behavior.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] Not run (not requested).\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n```release-note\r\nNone\r\n```\r\n\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n## Summary by CodeRabbit\n\n* **Bug Fixes**\n  * Improved concurrency safety during executor building and statement-context updates; fixed race-prone initialization and cleanup paths.\n  * Ensured index-join inner-build work is isolated to prevent cross-task mutation and to propagate initialization errors reliably.\n\n* **Performance**\n  * Expanded index-join plan enumeration to surface more candidate plans for better execution choices.\n\n* **Refactor**\n  * Separated executor initialization steps for clearer lifecycle handling.\n\n* **Tests**\n  * Added tests validating index-join behavior and concurrent CTE/executor cleanup.\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-13T19:52:37+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/planner/core/casetest/rule/rule_join_reorder.result",
+    "name": "rule_join_reorder"
+  },
+  "symptoms": [
+    "Explain/plan-related assertions were unstable due to nondeterministic planner/executor output in partial-stats scenarios."
+  ],
+  "failure_signature": "Nondeterministic plan/explain output in partial-stats tests (unstable golden/ordering).",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Stabilize partial-stats explain tests by making planner/executor behavior deterministic (e.g., enforce stable ordering / align index-join property handling) so explain output and assertions no longer drift.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66156",
+    "https://github.com/pingcap/tidb/pull/66156.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66156.patch",
+  "changed_files": [
+    "pkg/executor/BUILD.bazel",
+    "pkg/executor/adapter.go",
+    "pkg/executor/builder.go",
+    "pkg/executor/builder_index_join_cleanup_test.go",
+    "pkg/executor/join/index_lookup_join.go",
+    "pkg/executor/join/index_lookup_merge_join.go",
+    "pkg/executor/join/test/indexjoin/BUILD.bazel",
+    "pkg/executor/join/test/indexjoin/index_lookup_join_test.go",
+    "pkg/executor/select.go",
+    "pkg/executor/sortexec/topn.go",
+    "pkg/infoschema/test/clustertablestest/cluster_tables_test.go",
+    "pkg/planner/core/casetest/ch/testdata/ch_suite_out.json",
+    "pkg/planner/core/casetest/ch/testdata/ch_suite_xut.json",
+    "pkg/planner/core/casetest/planstats/plan_stats_test.go",
+    "pkg/planner/core/casetest/planstats/testdata/plan_stats_suite_out.json",
+    "pkg/planner/core/casetest/planstats/testdata/plan_stats_suite_xut.json",
+    "pkg/planner/core/casetest/rule/testdata/join_reorder_suite_out.json",
+    "pkg/planner/core/casetest/rule/testdata/join_reorder_suite_xut.json",
+    "pkg/planner/core/casetest/testdata/integration_suite_out.json",
+    "pkg/planner/core/casetest/testdata/integration_suite_xut.json",
+    "pkg/planner/core/casetest/tpch/testdata/tpch_suite_out.json",
+    "pkg/planner/core/casetest/tpch/testdata/tpch_suite_xut.json",
+    "pkg/planner/core/exhaust_physical_plans.go",
+    "pkg/planner/core/operator/physicalop/base_physical_plan.go",
+    "pkg/planner/core/physical_plan_test.go",
+    "pkg/planner/core/task.go",
+    "pkg/planner/property/physical_property.go",
+    "tests/integrationtest/r/planner/core/casetest/rule/rule_join_reorder.result"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: Subject: [PATCH 42/48] planner: stabilize partial stats explain test",
+      "files: pkg/executor/join/test/indexjoin/BUILD.bazel, pkg/executor/join/test/indexjoin/index_lookup_join_test.go, pkg/planner/core/physical_plan_test.go, tests/integrationtest/r/planner/core/casetest/rule/rule_join_reorder.result, pkg/executor/builder_index_join_cleanup_test.go, pkg/planner/core/casetest/ch/testdata/ch_suite_out.json"
+    ]
+  },
+  "analysis": "PR title: planner: support index join for embedded inner-join patterns | tidb-test=pr/2692 \nPR url: https://github.com/pingcap/tidb/pull/66156\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: Subject: [PATCH 42/48] planner: stabilize partial stats explain test\nChanged files (28): pkg/executor/BUILD.bazel, pkg/executor/adapter.go, pkg/executor/builder.go, pkg/executor/builder_index_join_cleanup_test.go, pkg/executor/join/index_lookup_join.go, pkg/executor/join/index_lookup_merge_join.go, pkg/executor/join/test/indexjoin/BUILD.bazel, pkg/executor/join/test/indexjoin/index_lookup_join_test.go, pkg/executor/select.go, pkg/executor/sortexec/topn.go ...\nDiff highlights (excerpt):\n- interruptSignal *atomic.Value,\n- // The key ranges should be ordered.\n- childExec, err := builder.buildExecutorForIndexJoinInternal(ctx, v.Children()[0], lookUpContents, indexRanges, keyOff2IdxOff, cwc, canReorderHandles, memTracker, interruptSignal)\n- childExecs[childIdx], err = builder.buildExecutorForIndexJoinInternal(ctx, v.Children()[childIdx], lookUpContents, indexRanges, keyOff2IdxOff, cwc, canReorderHandles, memTracker, interruptSignal)\n- sql := \"select /*+ INL_JOIN(s) */ * from t1 join (select * from t2 order by b limit 2) s on t1.a = s.a\"\n- sql := \"select /*+ INL_JOIN(s) */ * from t1 left join (select * from t2 order by b limit 2) s on t1.a = s.a\"\n- partialOrderProp = admitIndexJoinProp(partialOrderProp, prop, false)\n- if partialOrderProp == nil {\nFull patch analyzed; see patch_url."
+}

@@ -1,0 +1,46 @@
+{
+  "id": "pr-7936",
+  "source_pr": {
+    "number": 7936,
+    "url": "https://github.com/pingcap/tidb/pull/7936",
+    "title": "executor: fix panic when limit is too large",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nWhen limit is too large. `TopN.totalLimit` will overflow int and got panicked.\r\n\r\n### What is changed and how it works?\r\n\r\nLet `TopN.totalLimit` become uint64.\r\n\r\nLet me know if you have better idea.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n"
+  },
+  "pr_merged_at": "2018-10-18T14:33:18+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "r = tk.MustQuery(\"select id from select_order_test order by name, id limit 18446744073709551615;\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "r = tk.MustQuery(\"select id from select_order_test order by name, id limit 18446744073709551615;\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7936",
+    "https://github.com/pingcap/tidb/pull/7936.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7936.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "executor/sort.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: r = tk.MustQuery(\"select id from select_order_test order by name, id limit 18446744073709551615;\") (executor/executor_test.go)",
+      "files: executor/executor_test.go, executor/sort.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix panic when limit is too large\nPR url: https://github.com/pingcap/tidb/pull/7936\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: r = tk.MustQuery(\"select id from select_order_test order by name, id limit 18446744073709551615;\") (executor/executor_test.go)\nChanged files (2): executor/executor_test.go, executor/sort.go\nPatch url: https://github.com/pingcap/tidb/pull/7936.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

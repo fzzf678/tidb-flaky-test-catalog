@@ -1,0 +1,46 @@
+{
+  "id": "pr-8287",
+  "source_pr": {
+    "number": 8287,
+    "url": "https://github.com/pingcap/tidb/pull/8287",
+    "title": "ddl: fix concurrent access to `do.infoHandle` has a data race error",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\n```go\r\nWARNING: DATA RACE\r\nWrite at 0x00c0001d4c70 by goroutine 51:\r\n  github.com/pingcap/tidb/ddl_test.(*testFailDBSuite).TestHalfwayCancelOperations()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain.go:538 +0x1c80\r\n  github.com/pingcap/tidb/ddl_test.(*testFailDBSuite).TestHalfwayCancelOperations()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/fail_db_test.go:125 +0x1adb\r\n  github.com/pingcap/tidb/ddl_test.(*testFailDBSuite).TestHalfwayCancelOperations()\r\n\r\n github.com/pingcap/tidb/ddl_test.(*testFailDBSuite).TestHalfwayCancelOperations()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/fail_db_test.go:69 +0x70\r\n  runtime.call32()\r\n      /usr/local/go/src/runtime/asm_amd64.s:522 +0x3a\r\n  reflect.Value.Call()\r\n      /usr/local/go/src/reflect/value.go:308 +0xc0\r\n  github.com/pingcap/check.(*suiteRunner).forkTest.func1()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20171206051426-1c287c953996/check.go:798 +0xa04\r\n  github.com/pingcap/check.(*suiteRunner).forkCall.func1()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20171206051426-1c287c953996/check.go:692 +0x89\r\n\r\nPrevious read at 0x00c0001d4c70 by goroutine 179:\r\n  github.com/pingcap/tidb/domain.(*Domain).Reload()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain.go:304 +0x151\r\n  github.com/pingcap/tidb/domain.(*Domain).loadSchemaInLoop()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain.go:401 +0x7f1\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\n* Data race error when concurrently accessing do.infoHandle in this [PR test](https://github.com/pingcap/tidb/pull/7997/files#diff-46dccda7ce1de403b0cda3709f1ce5ceR537).\r\n* So here is the atomic pointer operation on do.infoHandle.\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\n\n<!-- Reviewable:start -->\n---\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8287)\n<!-- Reviewable:end -->\n"
+  },
+  "pr_merged_at": "2018-11-27T22:14:37+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/fail_db_test.go",
+    "name": "fail_db_test"
+  },
+  "symptoms": [
+    "ddl: fix concurrent access to `do.infoHandle` has a data race error"
+  ],
+  "failure_signature": "ddl: fix concurrent access to `do.infoHandle` has a data race error",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: fix concurrent access to `do.infoHandle` has a data race error",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8287",
+    "https://github.com/pingcap/tidb/pull/8287.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8287.patch",
+  "changed_files": [
+    "ddl/fail_db_test.go",
+    "domain/domain.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: ddl: fix concurrent access to `do.infoHandle` has a data race error",
+      "files: ddl/fail_db_test.go, domain/domain.go"
+    ]
+  },
+  "analysis": "PR title: ddl: fix concurrent access to `do.infoHandle` has a data race error\nPR url: https://github.com/pingcap/tidb/pull/8287\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix concurrent access to `do.infoHandle` has a data race error\nChanged files (2): ddl/fail_db_test.go, domain/domain.go\nPatch url: https://github.com/pingcap/tidb/pull/8287.patch\nPicked test: type=unit path=ddl/fail_db_test.go name=fail_db_test"
+}

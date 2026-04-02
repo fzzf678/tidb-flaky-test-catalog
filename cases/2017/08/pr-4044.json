@@ -1,0 +1,46 @@
+{
+  "id": "pr-4044",
+  "source_pr": {
+    "number": 4044,
+    "url": "https://github.com/pingcap/tidb/pull/4044",
+    "title": "plan: fix bug when access cond is not scalar function",
+    "body": "Access condition may not be scalar function, so previous check will cause panic.\r\nPTAL @zz-jason @shenli "
+  },
+  "pr_merged_at": "2017-08-05T17:28:31+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t where 1 order by b\").Check(testkit.Rows(\"1 1\", \"2 2\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t where 1 order by b\").Check(testkit.Rows(\"1 1\", \"2 2\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4044",
+    "https://github.com/pingcap/tidb/pull/4044.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4044.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "plan/new_physical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t where 1 order by b\").Check(testkit.Rows(\"1 1\", \"2 2\")) (executor/executor_test.go)",
+      "files: executor/executor_test.go, plan/new_physical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix bug when access cond is not scalar function\nPR url: https://github.com/pingcap/tidb/pull/4044\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t where 1 order by b\").Check(testkit.Rows(\"1 1\", \"2 2\")) (executor/executor_test.go)\nChanged files (2): executor/executor_test.go, plan/new_physical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/4044.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

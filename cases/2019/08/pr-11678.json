@@ -1,0 +1,60 @@
+{
+  "id": "pr-11678",
+  "source_pr": {
+    "number": 11678,
+    "url": "https://github.com/pingcap/tidb/pull/11678",
+    "title": "executor: copy row data instead of refereeing chunk.Row in some window functions.",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nFixes #11614, and fixes #11626 .\r\nIf a `chunk.Chunk` reuse into a window function executor, it may break the internal memory reference in function `RANK` or `PERCENT_RANK`.\r\n\r\n1. Father calls `chk := NewChunk()`\r\n2. Father calls `windowExecutor.Next(chk)`\r\n3. The `windowExecutor` put column results into `chk` while refereeing the `chunk.Row` into [`PartialResult`](https://github.com/pingcap/tidb/blob/f98ef22/executor/aggfuncs/aggfuncs.go#L89) of  function `RANK` or `PERCENT_RANK`.\r\n4. Father calls `windowExecutor.Next(chk)` again to collect next batch of result and reuses the same `chk`.\r\n5. `chunk.Row` refereced by `PartialResult` is broken when `chk.Reset` is called.\r\n\r\n- [x] TODO: fix the other window functions which may lead this problem.\r\n\r\n### What is changed and how it works?\r\n\r\nChange step 3 above, copy row data instead of refereeing chunk.Row in window functions which rely on data comparing.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n- None\r\n\r\nSide effects\r\n\r\n - Possible performance regression\r\n\r\n* note: no func `lag` because it cannot be finished with old code.\r\n```\r\nname                                                           old time/op    new time/op    delta\r\nWindowRows/(func:row_number,_ndv:10,_rows:1000)-12               65.7µs ± 9%    68.5µs ± 8%       ~     (p=0.523 n=3+3)\r\nWindowRows/(func:row_number,_ndv:1000,_rows:1000)-12              131µs ± 2%     161µs ± 8%    +22.55%  (p=0.041 n=3+3)\r\nWindowRows/(func:row_number,_ndv:10,_rows:100000)-12             5.98ms ± 1%    5.97ms ± 1%       ~     (p=0.784 n=3+3)\r\nWindowRows/(func:row_number,_ndv:1000,_rows:100000)-12           6.19ms ± 2%    6.07ms ± 0%       ~     (p=0.173 n=3+3)\r\nWindowFunctions/(func:row_number,_ndv:1000,_rows:100000)-12      6.07ms ± 2%    6.06ms ± 3%       ~     (p=0.942 n=3+3)\r\nWindowFunctions/(func:rank,_ndv:1000,_rows:100000)-12            6.79ms ± 0%    9.61ms ± 1%    +41.60%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:dense_rank,_ndv:1000,_rows:100000)-12      6.81ms ± 1%    9.70ms ± 1%    +42.59%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:cume_dist,_ndv:1000,_rows:100000)-12       6.82ms ± 3%   10.09ms ± 1%    +47.99%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:percent_rank,_ndv:1000,_rows:100000)-12    6.86ms ± 1%    9.62ms ± 0%    +40.25%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:ntile,_ndv:1000,_rows:100000)-12           6.31ms ± 1%    6.17ms ± 1%       ~     (p=0.050 n=3+3)\r\nWindowFunctions/(func:lead,_ndv:1000,_rows:100000)-12            8.04ms ± 1%   12.30ms ± 0%    +52.91%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:first_value,_ndv:1000,_rows:100000)-12     6.28ms ± 1%    6.44ms ± 0%       ~     (p=0.063 n=3+3)\r\nWindowFunctions/(func:last_value,_ndv:1000,_rows:100000)-12      6.36ms ± 0%    6.40ms ± 1%       ~     (p=0.415 n=3+3)\r\nWindowFunctions/(func:nth_value,_ndv:1000,_rows:100000)-12       6.48ms ± 1%    6.47ms ± 1%       ~     (p=0.871 n=3+3)\r\n\r\nname                                                           old alloc/op   new alloc/op   delta\r\nWindowRows/(func:row_number,_ndv:10,_rows:1000)-12               44.7kB ± 0%    44.7kB ± 0%       ~     (zero variance)\r\nWindowRows/(func:row_number,_ndv:1000,_rows:1000)-12             81.0kB ± 1%    80.5kB ± 1%       ~     (p=0.523 n=3+3)\r\nWindowRows/(func:row_number,_ndv:10,_rows:100000)-12              263kB ± 0%     263kB ± 0%       ~     (p=0.443 n=3+3)\r\nWindowRows/(func:row_number,_ndv:1000,_rows:100000)-12            301kB ± 0%     299kB ± 1%       ~     (p=0.423 n=3+3)\r\nWindowFunctions/(func:row_number,_ndv:1000,_rows:100000)-12       301kB ± 0%     301kB ± 0%       ~     (zero variance)\r\nWindowFunctions/(func:rank,_ndv:1000,_rows:100000)-12             307kB ± 0%    6917kB ± 0%  +2155.27%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:dense_rank,_ndv:1000,_rows:100000)-12       306kB ± 0%    6921kB ± 0%  +2160.67%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:cume_dist,_ndv:1000,_rows:100000)-12        306kB ± 0%    6923kB ± 0%  +2161.01%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:percent_rank,_ndv:1000,_rows:100000)-12     306kB ± 0%    6929kB ± 0%  +2162.99%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:ntile,_ndv:1000,_rows:100000)-12            307kB ± 0%     301kB ± 0%     -1.95%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:lead,_ndv:1000,_rows:100000)-12             306kB ± 0%    5984kB ± 0%  +1857.22%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:first_value,_ndv:1000,_rows:100000)-12      301kB ± 0%     301kB ± 0%       ~     (zero variance)\r\nWindowFunctions/(func:last_value,_ndv:1000,_rows:100000)-12       301kB ± 0%     301kB ± 0%       ~     (zero variance)\r\nWindowFunctions/(func:nth_value,_ndv:1000,_rows:100000)-12        301kB ± 0%     301kB ± 0%       ~     (zero variance)\r\n\r\nname                                                           old allocs/op  new allocs/op  delta\r\nWindowRows/(func:row_number,_ndv:10,_rows:1000)-12                 74.0 ± 0%      74.0 ± 0%       ~     (zero variance)\r\nWindowRows/(func:row_number,_ndv:1000,_rows:1000)-12                698 ± 3%       690 ± 1%       ~     (p=0.523 n=3+3)\r\nWindowRows/(func:row_number,_ndv:10,_rows:100000)-12              1.94k ± 0%     1.94k ± 0%       ~     (p=1.000 n=3+3)\r\nWindowRows/(func:row_number,_ndv:1000,_rows:100000)-12            3.00k ± 0%     3.00k ± 0%       ~     (p=0.423 n=3+3)\r\nWindowFunctions/(func:row_number,_ndv:1000,_rows:100000)-12       3.00k ± 0%     3.00k ± 0%       ~     (zero variance)\r\nWindowFunctions/(func:rank,_ndv:1000,_rows:100000)-12             3.01k ± 0%    23.81k ± 0%   +691.91%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:dense_rank,_ndv:1000,_rows:100000)-12       3.01k ± 0%    23.83k ± 0%   +692.33%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:cume_dist,_ndv:1000,_rows:100000)-12        3.01k ± 0%    23.83k ± 0%   +692.54%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:percent_rank,_ndv:1000,_rows:100000)-12     3.01k ± 0%    23.85k ± 0%   +693.17%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:ntile,_ndv:1000,_rows:100000)-12            3.01k ± 0%     3.00k ± 0%       ~     (zero variance)\r\nWindowFunctions/(func:lead,_ndv:1000,_rows:100000)-12             3.01k ± 0%   111.01k ± 0%  +3591.58%  (p=0.000 n=3+3)\r\nWindowFunctions/(func:first_value,_ndv:1000,_rows:100000)-12      3.00k ± 0%     3.00k ± 0%       ~     (zero variance)\r\nWindowFunctions/(func:last_value,_ndv:1000,_rows:100000)-12       3.00k ± 0%     3.00k ± 0%       ~     (zero variance)\r\nWindowFunctions/(func:nth_value,_ndv:1000,_rows:100000)-12        3.00k ± 0%     3.00k ± 0%       ~     (zero variance)\r\n```\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch"
+  },
+  "pr_merged_at": "2019-08-22T10:57:55+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggfuncs/window_func_test.go",
+    "name": "window_func_test"
+  },
+  "symptoms": [
+    "rand.Seed(time.Now().Unix()) (executor/aggfuncs/window_func_test.go)"
+  ],
+  "failure_signature": "rand.Seed(time.Now().Unix()) (executor/aggfuncs/window_func_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/11678",
+    "https://github.com/pingcap/tidb/pull/11678.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/11678.patch",
+  "changed_files": [
+    "executor/aggfuncs/builder.go",
+    "executor/aggfuncs/func_cume_dist.go",
+    "executor/aggfuncs/func_lead_lag.go",
+    "executor/aggfuncs/func_lead_lag_test.go",
+    "executor/aggfuncs/func_ntile.go",
+    "executor/aggfuncs/func_percent_rank.go",
+    "executor/aggfuncs/func_rank.go",
+    "executor/aggfuncs/func_value.go",
+    "executor/aggfuncs/window_func_test.go",
+    "executor/benchmark_test.go",
+    "executor/window_test.go",
+    "session/tidb.go",
+    "types/mydecimal.go",
+    "types/mydecimal_test.go",
+    "util/chunk/chunk.go",
+    "util/chunk/row.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rand.Seed(time.Now().Unix()) (executor/aggfuncs/window_func_test.go)",
+      "files: executor/aggfuncs/builder.go, executor/aggfuncs/func_cume_dist.go, executor/aggfuncs/func_lead_lag.go, executor/aggfuncs/func_lead_lag_test.go, executor/aggfuncs/func_ntile.go, executor/aggfuncs/func_percent_rank.go, executor/aggfuncs/func_rank.go, executor/aggfuncs/func_value.go, executor/aggfuncs/window_func_test.go, executor/benchmark_test.go, executor/window_test.go, session/tidb.go, types/mydecimal.go, types/mydecimal_test.go, util/chunk/chunk.go, util/chunk/row.go"
+    ]
+  },
+  "analysis": "PR title: executor: copy row data instead of refereeing chunk.Row in some window functions.\nPR url: https://github.com/pingcap/tidb/pull/11678\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(time.Now().Unix()) (executor/aggfuncs/window_func_test.go)\nChanged files (16): executor/aggfuncs/builder.go, executor/aggfuncs/func_cume_dist.go, executor/aggfuncs/func_lead_lag.go, executor/aggfuncs/func_lead_lag_test.go, executor/aggfuncs/func_ntile.go, executor/aggfuncs/func_percent_rank.go, executor/aggfuncs/func_rank.go, executor/aggfuncs/func_value.go, executor/aggfuncs/window_func_test.go, executor/benchmark_test.go, executor/window_test.go, session/tidb.go, types/mydecimal.go, types/mydecimal_test.go, util/chunk/chunk.go, util/chunk/row.go\nPatch url: https://github.com/pingcap/tidb/pull/11678.patch\nPicked test: type=unit path=executor/aggfuncs/window_func_test.go name=window_func_test"
+}

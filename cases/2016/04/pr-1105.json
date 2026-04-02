@@ -1,0 +1,52 @@
+{
+  "id": "pr-1105",
+  "source_pr": {
+    "number": 1105,
+    "url": "https://github.com/pingcap/tidb/pull/1105",
+    "title": "plan: support limit pushdown",
+    "body": ""
+  },
+  "pr_merged_at": "2016-04-20T13:32:20+08:00",
+  "test": {
+    "type": "unit",
+    "path": "optimizer/plan/plan_test.go",
+    "name": "plan_test"
+  },
+  "symptoms": [
+    "sql: \"select count(*) from t where a > 0 order by b limit 100\", (optimizer/plan/plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select count(*) from t where a > 0 order by b limit 100\", (optimizer/plan/plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1105",
+    "https://github.com/pingcap/tidb/pull/1105.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1105.patch",
+  "changed_files": [
+    "context/context.go",
+    "executor/executor_xapi.go",
+    "model/model.go",
+    "optimizer/plan/plan_test.go",
+    "optimizer/plan/planbuilder.go",
+    "optimizer/plan/plans.go",
+    "optimizer/plan/stringer.go",
+    "session.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select count(*) from t where a > 0 order by b limit 100\", (optimizer/plan/plan_test.go)",
+      "files: context/context.go, executor/executor_xapi.go, model/model.go, optimizer/plan/plan_test.go, optimizer/plan/planbuilder.go, optimizer/plan/planbuilder_join.go, optimizer/plan/plans.go, optimizer/plan/stringer.go, optimizer/resolver.go, session.go"
+    ]
+  },
+  "analysis": "PR title: plan: support limit pushdown\nPR url: https://github.com/pingcap/tidb/pull/1105\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select count(*) from t where a > 0 order by b limit 100\", (optimizer/plan/plan_test.go)\nChanged files (8): context/context.go, executor/executor_xapi.go, model/model.go, optimizer/plan/plan_test.go, optimizer/plan/planbuilder.go, optimizer/plan/plans.go, optimizer/plan/stringer.go, session.go\nPatch url: https://github.com/pingcap/tidb/pull/1105.patch\nPicked test: type=unit path=optimizer/plan/plan_test.go name=plan_test"
+}

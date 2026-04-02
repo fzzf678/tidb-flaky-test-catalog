@@ -1,0 +1,56 @@
+{
+  "id": "pr-47146",
+  "source_pr": {
+    "number": 47146,
+    "url": "https://github.com/pingcap/tidb/pull/47146",
+    "title": "planner: support sync loading for mv index stats",
+    "body": "### What problem does this PR solve?\r\n\r\n\r\nIssue Number: ref #46539\r\n\r\n\r\n\r\n### What is changed and how it works?\r\n\r\n- Add a new util function `findTableByTblOrPartID` to get the metadata given a table id or a partition id. And replace several repeated code snippets with this function.\r\n- In the stats sync loading logic, after we collect the needed columns from the expressions, add a new step to collect the virtual columns that directly depend on the needed columns.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->  \r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-09-25T18:03:18+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/test/analyzetest/analyze_test.go",
+    "name": "analyze_test"
+  },
+  "symptoms": [
+    "slices.Sort(cols) (planner/core/plan_stats_test.go)"
+  ],
+  "failure_signature": "slices.Sort(cols) (planner/core/plan_stats_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "slices.Sort(cols) (planner/core/plan_stats_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/47146",
+    "https://github.com/pingcap/tidb/pull/47146.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/47146.patch",
+  "changed_files": [
+    "executor/test/analyzetest/analyze_test.go",
+    "infoschema/infoschema.go",
+    "planner/core/BUILD.bazel",
+    "planner/core/casetest/planstats/BUILD.bazel",
+    "planner/core/casetest/planstats/main_test.go",
+    "planner/core/casetest/planstats/plan_stats_test.go",
+    "planner/core/casetest/planstats/testdata/plan_stats_suite_in.json",
+    "planner/core/casetest/planstats/testdata/plan_stats_suite_out.json",
+    "planner/core/expression_rewriter.go",
+    "planner/core/optimizer.go",
+    "planner/core/plan_stats.go",
+    "planner/core/stats.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: slices.Sort(cols) (planner/core/plan_stats_test.go)",
+      "files: executor/test/analyzetest/analyze_test.go, infoschema/infoschema.go, planner/core/BUILD.bazel, planner/core/casetest/planstats/BUILD.bazel, planner/core/casetest/planstats/main_test.go, planner/core/casetest/planstats/plan_stats_test.go, planner/core/casetest/planstats/testdata/plan_stats_suite_in.json, planner/core/casetest/planstats/testdata/plan_stats_suite_out.json, planner/core/expression_rewriter.go, planner/core/main_test.go, planner/core/optimizer.go, planner/core/plan_stats.go, planner/core/plan_stats_test.go, planner/core/stats.go, planner/core/testdata/plan_stats_suite_in.json, planner/core/testdata/plan_stats_suite_out.json"
+    ]
+  },
+  "analysis": "PR title: planner: support sync loading for mv index stats\nPR url: https://github.com/pingcap/tidb/pull/47146\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: slices.Sort(cols) (planner/core/plan_stats_test.go)\nChanged files (12): executor/test/analyzetest/analyze_test.go, infoschema/infoschema.go, planner/core/BUILD.bazel, planner/core/casetest/planstats/BUILD.bazel, planner/core/casetest/planstats/main_test.go, planner/core/casetest/planstats/plan_stats_test.go, planner/core/casetest/planstats/testdata/plan_stats_suite_in.json, planner/core/casetest/planstats/testdata/plan_stats_suite_out.json, planner/core/expression_rewriter.go, planner/core/optimizer.go, planner/core/plan_stats.go, planner/core/stats.go\nPatch series analyzed; see patch_url."
+}

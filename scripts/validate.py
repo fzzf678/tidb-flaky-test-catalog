@@ -163,7 +163,7 @@ def _validate_cases(
         return [Finding(path=cases_dir, message="missing directory: cases/")]
 
     findings: List[Finding] = []
-    case_files = sorted(p for p in cases_dir.glob("*.json") if p.is_file())
+    case_files = sorted(p for p in cases_dir.rglob("*.json") if p.is_file())
     seen_ids: Set[str] = set()
 
     for path in case_files:
@@ -310,4 +310,3 @@ def _main(argv: Sequence[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(_main(sys.argv[1:]))
-

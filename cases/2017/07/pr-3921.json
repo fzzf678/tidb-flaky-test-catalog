@@ -1,0 +1,53 @@
+{
+  "id": "pr-3921",
+  "source_pr": {
+    "number": 3921,
+    "url": "https://github.com/pingcap/tidb/pull/3921",
+    "title": "plan, executor: support ordered index join.",
+    "body": "1. let index join support `KeepOrder`\r\n2. adjust profile by `expectedCnt`\r\n\r\n@winoros @lamxTyler PTAL"
+  },
+  "pr_merged_at": "2017-07-28T13:45:27+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t t1 join t t2 on t1.b = t2.a order by t1.a\", (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t t1 join t t2 on t1.b = t2.a order by t1.a\", (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3921",
+    "https://github.com/pingcap/tidb/pull/3921.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3921.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/join_test.go",
+    "executor/new_join.go",
+    "plan/dag_plan_test.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/physical_plans.go",
+    "plan/plan.go",
+    "plan/stats.go",
+    "plan/task.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t t1 join t t2 on t1.b = t2.a order by t1.a\", (plan/dag_plan_test.go)",
+      "files: executor/builder.go, executor/join_test.go, executor/new_join.go, plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/stats.go, plan/task.go"
+    ]
+  },
+  "analysis": "PR title: plan, executor: support ordered index join.\nPR url: https://github.com/pingcap/tidb/pull/3921\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t t1 join t t2 on t1.b = t2.a order by t1.a\", (plan/dag_plan_test.go)\nChanged files (9): executor/builder.go, executor/join_test.go, executor/new_join.go, plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/stats.go, plan/task.go\nPatch url: https://github.com/pingcap/tidb/pull/3921.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

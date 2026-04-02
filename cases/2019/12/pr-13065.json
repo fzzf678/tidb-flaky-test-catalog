@@ -1,0 +1,90 @@
+{
+  "id": "pr-13065",
+  "source_pr": {
+    "number": 13065,
+    "url": "https://github.com/pingcap/tidb/pull/13065",
+    "title": "*: support read tidb cluster memory table",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n*support read tidb cluster memory table in TiDB. This comes from PingCAP hackathon 2019.\r\n* target: Read all TiDB memory-table as 1 cluster table. \r\n\r\n#### Demo\r\n\r\n```sql\r\nmysql>select count(*),node_id from `TiDB_CLUSTER_SLOW_QUERY` group by node_id;\r\n+----------+---------+\r\n| count(*) | node_id |\r\n+----------+---------+\r\n| 1184     | tidb9   |\r\n| 22       | tidb10  |\r\n| 15       | tidb11  |\r\n+----------+---------+\r\nmysql>desc select count(*)  from `TiDB_CLUSTER_SLOW_QUERY`;\r\n+----------------------------+----------+----------------+-----------------------------------------------------------------------------+\r\n| id                         | count    | task           | operator info                                                               |\r\n+----------------------------+----------+----------------+-----------------------------------------------------------------------------+\r\n| StreamAgg_19               | 1.00     | root           | funcs:count(Column#35)                                                      |\r\n| └─ClusterMemTableReader_20 | 1.00     | root           | data:StreamAgg_8                                                            |\r\n|   └─StreamAgg_8            | 1.00     | cop[tidbs_mem] | funcs:count(1)                                                              |\r\n|     └─MemTableScan_17      | 10000.00 | cop[tidbs_mem] | table:SLOW_QUERY_CLUSTER, range:[-inf,+inf], keep order:false, stats:pseudo |\r\n+----------------------------+----------+----------------+-----------------------------------------------------------------------------+\r\n```\r\n* `cop[tidbs_mem]` means the table was stored in the all tidb server memory. And we can push the `StreamAgg` executor to another TiDB coprocessor to distributed execution, Just like TiKV. \r\n\r\n\r\n### What is changed and how it works?\r\n\r\n#### Architecture\r\n\r\n![image](https://user-images.githubusercontent.com/26020263/67958043-73ecb300-fc31-11e9-9992-37598bff0e89.png)\r\n\r\n* Start an RPC server, share the 10080 port with HTTP services. \r\n* Support the same Coprocessor with TiKV.  The coprocessor will reuse the tidb `executor`.\r\n* Reuse the `tipb.TableScan` to read memory table.\r\n    * Since `tipb.TableScan` use table id to locate table, and before this PR, the memory table id maybe not same with another tidb nodes, because the memory table id was allocated in local. So this PR also allocates a constant id for system schema/table.\r\n\r\n#### TiDB coprocessor work flow\r\n\r\n1. Get a Cop request.\r\n2. build physical plan from protobuf DAG.\r\n3. build executor from physical plan.\r\n4. execute.\r\n5. encode result data to cop response.\r\n6. return.\r\n\r\n**Attension**\r\nSince TiDB coprocessor reuses the TiDB `executor`, but the tidb aggregation executor is a little different from coprocessor aggregation executor: \r\n\r\nTiDB aggregation executor won't out the group by value, but coprocessor aggregation executor does. So we need a special physical plan for TiDB coprocessor when \r\n TiDB coprocessor aggregation executor was used. We need to add `firstrow` for every `group by` expression, then the TiDB coprocessor aggregation executor will output the group by value.  \r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Manual test (add detailed scripts or steps below)\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\n\r\nRelated changes\r\n\r\nRelease note\r\n\r\n - Support read TiDB cluster memory table\r\n"
+  },
+  "pr_merged_at": "2019-12-04T13:05:37+08:00",
+  "test": {
+    "type": "unit",
+    "path": "infoschema/tables_test.go",
+    "name": "tables_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select query_time, conn_id from `TIDB_CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4.895492 6\")) (infoschema/tables_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select query_time, conn_id from `TIDB_CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4.895492 6\")) (infoschema/tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13065",
+    "https://github.com/pingcap/tidb/pull/13065.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13065.patch",
+  "changed_files": [
+    "docs/design/2019-11-14-tidb-builtin-diagnostics-zh_CN.md",
+    "docs/design/2019-11-14-tidb-builtin-diagnostics.md",
+    "executor/builder.go",
+    "executor/coprocessor.go",
+    "expression/aggregation/agg_to_pb.go",
+    "expression/distsql_builtin.go",
+    "expression/expr_to_pb.go",
+    "infoschema/cluster.go",
+    "infoschema/infoschema.go",
+    "infoschema/perfschema/const.go",
+    "infoschema/perfschema/init.go",
+    "infoschema/perfschema/tables.go",
+    "infoschema/tables.go",
+    "infoschema/tables_test.go",
+    "kv/kv.go",
+    "meta/autoid/autoid.go",
+    "planner/core/common_plans.go",
+    "planner/core/find_best_task.go",
+    "planner/core/logical_plan_builder.go",
+    "planner/core/logical_plans.go",
+    "planner/core/pb_to_plan.go",
+    "planner/core/physical_plans.go",
+    "planner/core/plan_to_pb.go",
+    "planner/core/planbuilder.go",
+    "planner/core/rule_column_pruning.go",
+    "planner/core/task.go",
+    "server/http_status.go",
+    "server/rpc_server.go",
+    "server/server.go",
+    "session/session.go",
+    "session/session_test.go",
+    "sessionctx/stmtctx/stmtctx.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/varsutil.go",
+    "store/mockstore/mocktikv/cop_handler_dag.go",
+    "store/mockstore/mocktikv/rpc.go",
+    "store/tikv/client.go",
+    "store/tikv/coprocessor.go",
+    "store/tikv/region_request.go",
+    "store/tikv/snapshot.go",
+    "store/tikv/tikvrpc/tikvrpc.go",
+    "table/table.go",
+    "tidb-server/main.go",
+    "util/plancodec/id.go",
+    "util/timeutil/time.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select query_time, conn_id from `TIDB_CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4.895492 6\")) (infoschema/tables_test.go)",
+      "files: config/config_test.go, docs/design/2019-11-14-tidb-builtin-diagnostics-zh_CN.md, docs/design/2019-11-14-tidb-builtin-diagnostics.md, domain/domain.go, domain/infosync/info.go, executor/builder.go, executor/coprocessor.go, executor/set.go, expression/aggregation/agg_to_pb.go, expression/distsql_builtin.go, expression/expr_to_pb.go, expression/expression.go, go.mod, go.sum, infoschema/cluster.go, infoschema/infoschema.go, infoschema/perfschema/const.go, infoschema/perfschema/init.go, infoschema/perfschema/tables.go, infoschema/slow_log.go, infoschema/tables.go, infoschema/tables_test.go, infoschema/tikv_mem.go, kv/kv.go, meta/autoid/autoid.go, meta/autoid/autoid_test.go, meta/autoid/constid.go, meta/meta.go, planner/core/common_plans.go, planner/core/find_best_task.go, planner/core/initialize.go, planner/core/logical_plan_builder.go, planner/core/logical_plans.go, planner/core/pb_to_plan.go, planner/core/physical_plans.go, planner/core/plan_to_pb.go, planner/core/planbuilder.go, planner/core/rule_column_pruning.go, planner/core/task.go, rpcserver/rpc_server.go, server/driver_tidb.go, server/http_status.go, server/rpc_server.go, server/server.go, session/session.go, session/session_test.go, session/tidb.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/varsutil.go, store/helper/helper.go, store/mockstore/mocktikv/cop_handler_dag.go, store/mockstore/mocktikv/executor.go, store/mockstore/mocktikv/mppserver.go, store/mockstore/mocktikv/rpc.go, store/mockstore/mocktikv/rpc_server.go, store/tikv/client.go, store/tikv/client_test.go, store/tikv/coprocessor.go, store/tikv/region_cache.go, store/tikv/region_request.go, store/tikv/region_request_test.go, store/tikv/tikvrpc/tikvrpc.go, table/table.go, tidb-server/main.go, util/execdetails/execdetails.go, util/mock/context.go, util/pdapi/const.go, util/plancodec/id.go, util/processinfo.go, util/sysinfo/sysinfo.go, util/timeutil/time.go"
+    ]
+  },
+  "analysis": "PR title: *: support read tidb cluster memory table\nPR url: https://github.com/pingcap/tidb/pull/13065\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select query_time, conn_id from `TIDB_CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4.895492 6\")) (infoschema/tables_test.go)\nChanged files (46): docs/design/2019-11-14-tidb-builtin-diagnostics-zh_CN.md, docs/design/2019-11-14-tidb-builtin-diagnostics.md, executor/builder.go, executor/coprocessor.go, expression/aggregation/agg_to_pb.go, expression/distsql_builtin.go, expression/expr_to_pb.go, infoschema/cluster.go, infoschema/infoschema.go, infoschema/perfschema/const.go, infoschema/perfschema/init.go, infoschema/perfschema/tables.go, infoschema/tables.go, infoschema/tables_test.go, kv/kv.go, meta/autoid/autoid.go, planner/core/common_plans.go, planner/core/find_best_task.go, planner/core/logical_plan_builder.go, planner/core/logical_plans.go, planner/core/pb_to_plan.go, planner/core/physical_plans.go, planner/core/plan_to_pb.go, planner/core/planbuilder.go, planner/core/rule_column_pruning.go, planner/core/task.go, server/http_status.go, server/rpc_server.go, server/server.go, session/session.go, session/session_test.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/varsutil.go, store/mockstore/mocktikv/cop_handler_dag.go, store/mockstore/mocktikv/rpc.go, store/tikv/client.go, store/tikv/coprocessor.go, store/tikv/region_request.go, store/tikv/snapshot.go, store/tikv/tikvrpc/tikvrpc.go, table/table.go, tidb-server/main.go, util/plancodec/id.go, util/timeutil/time.go\nPatch url: https://github.com/pingcap/tidb/pull/13065.patch\nPicked test: type=unit path=infoschema/tables_test.go name=tables_test"
+}

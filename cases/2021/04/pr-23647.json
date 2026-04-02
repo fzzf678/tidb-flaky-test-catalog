@@ -1,0 +1,47 @@
+{
+  "id": "pr-23647",
+  "source_pr": {
+    "number": 23647,
+    "url": "https://github.com/pingcap/tidb/pull/23647",
+    "title": "planner, privileges: do not require SELECT for unqualified DELETE",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: fixes https://github.com/pingcap/tidb/issues/23644\r\n\r\nProblem Summary:\r\n\r\nMySQL does not require the `SELECT` privilege for an unqualified `DELETE`; or more specifically a `DELETE` that does not refer to any table data, or require an `ORDER BY` statement.\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\n\r\nThe `buildDelete` function now pops the `visitInfo` that was set by the `buildResultSetNode` *when* there is no `order by` and `where`.\r\n\r\nThis fix is not 100% compatible, but it is much closer. The case that there is a `WHERE`, but no columns are mentioned is not handled correctly. Adding this would require the `buildResultSetNode` to correctly populate the required columns. Currently it only populates an empty string.\r\n\r\nThe error returned is also changed to be more compatible with MySQL.\r\n\r\n### Related changes\r\n\r\n- None\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\nSide effects\r\n\r\n- Breaking backward compatibility (now more correct error messages).\r\n- Increased code complexity.\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- TiDB no longer requires the `SELECT` privilege for a `DELETE` statement without a `WHERE` or `ORDER BY` clause. Instead, only the `DELETE` privilege is required. This behavior is MySQL compatible."
+  },
+  "pr_merged_at": "2021-04-02T07:35:24+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"delete from t order by a\", (planner/core/logical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"delete from t order by a\", (planner/core/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "sql: \"delete from t order by a\", (planner/core/logical_plan_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/23647",
+    "https://github.com/pingcap/tidb/pull/23647.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/23647.patch",
+  "changed_files": [
+    "planner/core/logical_plan_builder.go",
+    "planner/core/logical_plan_test.go",
+    "privilege/privileges/privileges_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"delete from t order by a\", (planner/core/logical_plan_test.go)",
+      "files: planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, privilege/privileges/privileges_test.go"
+    ]
+  },
+  "analysis": "PR title: planner, privileges: do not require SELECT for unqualified DELETE\nPR url: https://github.com/pingcap/tidb/pull/23647\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"delete from t order by a\", (planner/core/logical_plan_test.go)\nChanged files (3): planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, privilege/privileges/privileges_test.go\nPatch series analyzed; see patch_url."
+}

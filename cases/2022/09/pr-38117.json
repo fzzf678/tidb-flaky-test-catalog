@@ -1,0 +1,51 @@
+{
+  "id": "pr-38117",
+  "source_pr": {
+    "number": 38117,
+    "url": "https://github.com/pingcap/tidb/pull/38117",
+    "title": "copr: enable region load balance for MPP",
+    "body": "Signed-off-by: xufei <xufeixw@mail.ustc.edu.cn>\r\n\r\n<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #38113\r\n\r\nProblem Summary:\r\n\r\nThe whole story is like this:\r\n1. At the very beginning, TiDB can only access TiFlash in cop mode, in cop mode, each cop request only access data in one region. If the region has multiple TiFlash replicas, then each time the region is accessed, it will choose the next replica to serve, so the load is balanced between TiFlash nodes.\r\n2. After introducing MPP and BatchCop, TiDB can access TiFlash in BatchCop/MPP mode, compared to cop mode, BatchCop/MPP mode does not access data by region, instead, it access data by TiFlash node. That is to say, each BatchCop/MPP request will read a batch of regions in on TiFlash node. BatchCop/MPP can reduce the rpc calls greatly but it also meet some problems, especially when some TiFlash nodes are temporary unavailable: in cop mode, TiDB can just retry using the next replica, while in BatchCop/MPP mode, the cost of retry is unacceptable because each BatchCop/MPP request may contain hundreds or even thousands of regions. So in order to avoid sending request to unavailable TiFlash node, for TiFlash region, if one of the replica is availale, TiDB will always use this replica for BatchCop/MPP request.(by set `loadBalance` to false in [here](https://github.com/pingcap/tidb/blob/5fe93790117e5f59d5f906c9bc1d0f9f7b6e768a/store/copr/batch_coprocessor.go#L579).) \r\n3.  After disable per region's load balance, we found that MPP's load is unbalanced even if the TiFlash table has multiple replicas. There is two level of unbalance\r\n  - intra query's unbalance: considering a query like `select * from t`, assuming the cluster has 2 TiFlash nodes, `t` has two TiFlash replica, and t contans 100 regions, it is possible that the query only access the regions from one TiFlash node, the other TiFlash node is completely ignored \r\n  - inter query's unbalance: still considering a query like `select * from t`, the cluster has 2 TiFlash nodes, `t` has two TiFlash replica, this time assuming t only contains 1 region, and the query concurrency is 100, then it is possible that all the 100 queries read from one TiFlash node.\r\n4. In order to solve the intra query's unbalance, we introduce [`balanceBatchCopTask `](https://github.com/pingcap/tidb/blob/5fe93790117e5f59d5f906c9bc1d0f9f7b6e768a/store/copr/batch_coprocessor.go#L296),  it will balance the region access between different TiFlash's node for each query.\r\n5. In some tests, we found even if we disable per region's load balance, there is still a risk of access unavailable TiFlash node, in order to solve the problem totally, we come up a new solution: when construct MPP request, TiDB will check the availability of each TiFlash node, and only construct MPP request on the `live` node.\r\n\r\nSo, as we can see, due to disable per region's load balance, BatchCop/MPP still suffer from inter-query's unbalance preblem. But for MPP request, there is no `unavailable node` problems, we actually do not need disable per region's load balance. This pr enable per region's load balance for MPP request.\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-09-26T09:55:44+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/tiflashtest/tiflash_test.go",
+    "name": "tiflash_test"
+  },
+  "symptoms": [
+    "enable race check"
+  ],
+  "failure_signature": "enable race check",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "copr: enable region load balance for MPP",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/38117",
+    "https://github.com/pingcap/tidb/pull/38117.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/38117.patch",
+  "changed_files": [
+    "executor/tiflashtest/BUILD.bazel",
+    "executor/tiflashtest/tiflash_test.go",
+    "go.mod",
+    "go.sum",
+    "store/copr/batch_coprocessor.go",
+    "store/mockstore/unistore/rpc.go",
+    "store/mockstore/unistore/tikv/server.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: enable race check",
+      "files: executor/tiflashtest/BUILD.bazel, executor/tiflashtest/tiflash_test.go, go.mod, go.sum, store/copr/batch_coprocessor.go, store/mockstore/unistore/rpc.go, store/mockstore/unistore/tikv/server.go"
+    ]
+  },
+  "analysis": "PR title: copr: enable region load balance for MPP\nPR url: https://github.com/pingcap/tidb/pull/38117\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: enable race check\nChanged files (7): executor/tiflashtest/BUILD.bazel, executor/tiflashtest/tiflash_test.go, go.mod, go.sum, store/copr/batch_coprocessor.go, store/mockstore/unistore/rpc.go, store/mockstore/unistore/tikv/server.go\nPatch url: https://github.com/pingcap/tidb/pull/38117.patch\nPicked test: type=unit path=executor/tiflashtest/tiflash_test.go name=tiflash_test"
+}

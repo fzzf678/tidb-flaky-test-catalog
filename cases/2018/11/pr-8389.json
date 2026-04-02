@@ -1,0 +1,52 @@
+{
+  "id": "pr-8389",
+  "source_pr": {
+    "number": 8389,
+    "url": "https://github.com/pingcap/tidb/pull/8389",
+    "title": "planner: for UNION statements, ORDER BY cannot use column references including a table name",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nfix #8196 \r\n\r\n### What is changed and how it works?\r\n* Remove the source ``col.TblName`` when building the columns of ``Union``\r\n* For ``UNION`` or ``UNION ALL``, ``ORDER BY``  cannot use column references including a table name (that is, names in ``tbl_name.col_name`` format). See: https://dev.mysql.com/doc/refman/5.7/en/union.html\r\n* These ``UNION`` statements should return an error if ``ORDER BY``  uses column references with a table name\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has changed the impl.\r\n\r\nSide effects\r\n\r\n - None\r\n\r\nRelated changes\r\n\r\n - None\n\n<!-- Reviewable:start -->\n---\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8389)\n<!-- Reviewable:end -->\n"
+  },
+  "pr_merged_at": "2018-11-29T12:40:09+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "_, err = tk.Exec(\"(select a,b from t1 limit 2) union all (select a,b from t2 order by a limit 1) order by t1.b\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "_, err = tk.Exec(\"(select a,b from t1 limit 2) union all (select a,b from t2 order by a limit 1) order by t1.b\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8389",
+    "https://github.com/pingcap/tidb/pull/8389.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8389.patch",
+  "changed_files": [
+    "cmd/explaintest/r/explain_easy.result",
+    "executor/executor_test.go",
+    "planner/core/errors.go",
+    "planner/core/expression_rewriter.go",
+    "planner/core/logical_plan_builder.go",
+    "planner/core/logical_plan_test.go",
+    "planner/core/physical_plan_test.go",
+    "planner/core/planbuilder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: _, err = tk.Exec(\"(select a,b from t1 limit 2) union all (select a,b from t2 order by a limit 1) order by t1.b\") (executor/executor_test.go)",
+      "files: cmd/explaintest/r/explain_easy.result, executor/executor_test.go, planner/core/errors.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/physical_plan_test.go, planner/core/planbuilder.go"
+    ]
+  },
+  "analysis": "PR title: planner: for UNION statements, ORDER BY cannot use column references including a table name\nPR url: https://github.com/pingcap/tidb/pull/8389\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: _, err = tk.Exec(\"(select a,b from t1 limit 2) union all (select a,b from t2 order by a limit 1) order by t1.b\") (executor/executor_test.go)\nChanged files (8): cmd/explaintest/r/explain_easy.result, executor/executor_test.go, planner/core/errors.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/physical_plan_test.go, planner/core/planbuilder.go\nPatch url: https://github.com/pingcap/tidb/pull/8389.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

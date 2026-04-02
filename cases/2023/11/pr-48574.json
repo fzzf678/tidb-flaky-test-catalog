@@ -1,0 +1,68 @@
+{
+  "id": "pr-48574",
+  "source_pr": {
+    "number": 48574,
+    "url": "https://github.com/pingcap/tidb/pull/48574",
+    "title": "types: remove param `explicitTz` from `types.ParseTime`",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #48573\r\n\r\nProblem Summary:\r\n\r\nIn #41146 a input parameter `explicitTz` was introduced to function `types.ParseTime` to avoid data race. Now after some refactoring works after `47355`, we use `types.Context` which is immutable to replace `stmtctx.StatementContext`. So it is still thread-safe after we remove `explicitTz`.\r\n\r\n### What is changed and how it works?\r\n\r\nRemove param `explicitTz` from `types.ParseTime` to keep a clear semantic for function `types.ParseTime` .\r\n\r\nWe also remove `explicitTz` in `Time.check` and now `Time.check` and `Time.Check` are all same. Then just remove `Time.check` to use `Time.Check` only\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->  \r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-11-15T16:08:17+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/executor/inspection_result_test.go",
+    "name": "inspection_result_test"
+  },
+  "symptoms": [
+    "In #41146 a input parameter `explicitTz` was introduced to function `types.ParseTime` to avoid data race. Now after some refactoring works after `47355`, we use `types.Context` which is immutable to replace `stmtctx.StatementContext`. So it is still thread-safe after we remove `explicitTz`."
+  ],
+  "failure_signature": "In #41146 a input parameter `explicitTz` was introduced to function `types.ParseTime` to avoid data race. Now after some refactoring works after `47355`, we use `types.Context` which is immutable to replace `stmtctx.StatementContext`. So it is still thread-safe after we remove `explicitTz`.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "In #41146 a input parameter `explicitTz` was introduced to function `types.ParseTime` to avoid data race. Now after some refactoring works after `47355`, we use `types.Context` which is immutable to replace `stmtctx.StatementContext`. So it is still thread-safe after we remove `explicitTz`.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/48574",
+    "https://github.com/pingcap/tidb/pull/48574.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/48574.patch",
+  "changed_files": [
+    "br/pkg/task/backup.go",
+    "pkg/ddl/ddl_api.go",
+    "pkg/executor/brie.go",
+    "pkg/executor/inspection_result_test.go",
+    "pkg/executor/inspection_summary_test.go",
+    "pkg/executor/internal/calibrateresource/calibrate_resource_test.go",
+    "pkg/expression/builtin_cast.go",
+    "pkg/expression/builtin_cast_vec.go",
+    "pkg/expression/builtin_time.go",
+    "pkg/expression/builtin_time_vec.go",
+    "pkg/expression/helper.go",
+    "pkg/server/handler/optimizor/statistics_handler.go",
+    "pkg/server/internal/column/column_test.go",
+    "pkg/sessionctx/variable/varsutil.go",
+    "pkg/types/convert.go",
+    "pkg/types/convert_test.go",
+    "pkg/types/datum.go",
+    "pkg/types/datum_test.go",
+    "pkg/types/format_test.go",
+    "pkg/types/time.go",
+    "pkg/types/time_test.go",
+    "pkg/util/codec/codec_test.go",
+    "pkg/util/dbutil/common.go",
+    "pkg/util/rowcodec/rowcodec_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: In #41146 a input parameter `explicitTz` was introduced to function `types.ParseTime` to avoid data race. Now after some refactoring works after `47355`, we use `types.Context` which is immutable to replace `stmtctx.StatementContext`. So it is still thread-safe after we remove `explicitTz`.",
+      "files: br/pkg/task/backup.go, pkg/ddl/ddl_api.go, pkg/executor/brie.go, pkg/executor/inspection_result_test.go, pkg/executor/inspection_summary_test.go, pkg/executor/internal/calibrateresource/calibrate_resource_test.go, pkg/expression/builtin_cast.go, pkg/expression/builtin_cast_vec.go, pkg/expression/builtin_time.go, pkg/expression/builtin_time_vec.go, pkg/expression/helper.go, pkg/server/handler/optimizor/statistics_handler.go, pkg/server/internal/column/column_test.go, pkg/sessionctx/variable/varsutil.go, pkg/types/convert.go, pkg/types/convert_test.go, pkg/types/datum.go, pkg/types/datum_test.go, pkg/types/format_test.go, pkg/types/time.go, pkg/types/time_test.go, pkg/util/codec/codec_test.go, pkg/util/dbutil/common.go, pkg/util/rowcodec/rowcodec_test.go"
+    ]
+  },
+  "analysis": "PR title: types: remove param `explicitTz` from `types.ParseTime`\nPR url: https://github.com/pingcap/tidb/pull/48574\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: In #41146 a input parameter `explicitTz` was introduced to function `types.ParseTime` to avoid data race. Now after some refactoring works after `47355`, we use `types.Context` which is immutable to replace `stmtctx.StatementContext`. So it is still thread-safe after we remove `explicitTz`.\nChanged files (24): br/pkg/task/backup.go, pkg/ddl/ddl_api.go, pkg/executor/brie.go, pkg/executor/inspection_result_test.go, pkg/executor/inspection_summary_test.go, pkg/executor/internal/calibrateresource/calibrate_resource_test.go, pkg/expression/builtin_cast.go, pkg/expression/builtin_cast_vec.go, pkg/expression/builtin_time.go, pkg/expression/builtin_time_vec.go, pkg/expression/helper.go, pkg/server/handler/optimizor/statistics_handler.go, pkg/server/internal/column/column_test.go, pkg/sessionctx/variable/varsutil.go, pkg/types/convert.go, pkg/types/convert_test.go, pkg/types/datum.go, pkg/types/datum_test.go, pkg/types/format_test.go, pkg/types/time.go, pkg/types/time_test.go, pkg/util/codec/codec_test.go, pkg/util/dbutil/common.go, pkg/util/rowcodec/rowcodec_test.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,62 @@
+{
+  "id": "pr-111",
+  "source_pr": {
+    "number": 111,
+    "url": "https://github.com/pingcap/tidb/pull/111",
+    "title": "check subquery column",
+    "body": "- Check subquery column count like Row\n- Check column in select uniformly\n"
+  },
+  "pr_merged_at": "2015-09-11T13:32:41+08:00",
+  "test": {
+    "type": "unit",
+    "path": "stmt/stmts/select_test.go",
+    "name": "select_test"
+  },
+  "symptoms": [
+    "_, err = tx.Query(\"select * from test order by (select 1, 1);\") (stmt/stmts/select_test.go)"
+  ],
+  "failure_signature": "_, err = tx.Query(\"select * from test order by (select 1, 1);\") (stmt/stmts/select_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/111",
+    "https://github.com/pingcap/tidb/pull/111.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/111.patch",
+  "changed_files": [
+    "expression/expressions/between.go",
+    "expression/expressions/between_test.go",
+    "expression/expressions/binop.go",
+    "expression/expressions/helper.go",
+    "expression/expressions/helper_test.go",
+    "expression/expressions/in.go",
+    "expression/expressions/isnull.go",
+    "expression/expressions/istruth.go",
+    "plan/plans/select_list.go",
+    "rset/rsets/groupby.go",
+    "rset/rsets/groupby_test.go",
+    "rset/rsets/having.go",
+    "rset/rsets/having_test.go",
+    "rset/rsets/orderby.go",
+    "rset/rsets/orderby_test.go",
+    "stmt/stmts/select.go",
+    "stmt/stmts/select_test.go",
+    "tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: _, err = tx.Query(\"select * from test order by (select 1, 1);\") (stmt/stmts/select_test.go)",
+      "files: expression/expressions/between.go, expression/expressions/between_test.go, expression/expressions/binop.go, expression/expressions/helper.go, expression/expressions/helper_test.go, expression/expressions/in.go, expression/expressions/isnull.go, expression/expressions/istruth.go, plan/plans/select_list.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, rset/rsets/having.go, rset/rsets/having_test.go, rset/rsets/orderby.go, rset/rsets/orderby_test.go, stmt/stmts/select.go, stmt/stmts/select_test.go, tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: check subquery column\nPR url: https://github.com/pingcap/tidb/pull/111\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: _, err = tx.Query(\"select * from test order by (select 1, 1);\") (stmt/stmts/select_test.go)\nChanged files (18): expression/expressions/between.go, expression/expressions/between_test.go, expression/expressions/binop.go, expression/expressions/helper.go, expression/expressions/helper_test.go, expression/expressions/in.go, expression/expressions/isnull.go, expression/expressions/istruth.go, plan/plans/select_list.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, rset/rsets/having.go, rset/rsets/having_test.go, rset/rsets/orderby.go, rset/rsets/orderby_test.go, stmt/stmts/select.go, stmt/stmts/select_test.go, tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/111.patch\nPicked test: type=unit path=stmt/stmts/select_test.go name=select_test"
+}

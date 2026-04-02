@@ -1,0 +1,50 @@
+{
+  "id": "pr-27096",
+  "source_pr": {
+    "number": 27096,
+    "url": "https://github.com/pingcap/tidb/pull/27096",
+    "title": "lightning: save status checkpoint synchronously",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nClose https://github.com/pingcap/br/issues/1372.\r\nSame as https://github.com/pingcap/br/pull/1304.\r\n\r\nWe save status checkpoint after import finished, and then clean up the engine. \r\nhttps://github.com/pingcap/tidb/blob/550c7d04debe59011b6dcbdca9982be8405dd39c/br/pkg/lightning/restore/table_restore.go#L853-L858\r\nBut `saveStatusCheckpoint`  saves checkpoint asynchronously, an engine may be cleaned up successfully but exit before update checkpoint. After restart, `verifyLocalFile` will fail.\r\nhttps://github.com/pingcap/tidb/blob/550c7d04debe59011b6dcbdca9982be8405dd39c/br/pkg/lightning/restore/restore.go#L827\r\n\r\nTo solve this issue, we can save status synchronously. An engine can only be cleaned up after the checkpoint has been successfully saved. Since we don't change the status of the engine very often, I think synchronously saving status checkpoint is acceptable and it can also avoid some unusual situations.\r\n\r\n\r\nRelated unstable integration test: [lightning_checkpoint_engines_order](https://ci.pingcap.net/blue/organizations/jenkins/br_ghpr_unit_and_integration_test/detail/br_ghpr_unit_and_integration_test/5389/pipeline). \r\n\r\n### What is changed and how it works?\r\n\r\nSave save status checkpoint synchronously.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n```release-note\r\nlightning: save status checkpoint synchronously\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-08-31T13:16:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/lightning/restore/restore_test.go",
+    "name": "restore_test"
+  },
+  "symptoms": [
+    "Related unstable integration test: [lightning_checkpoint_engines_order](https://ci.pingcap.net/blue/organizations/jenkins/br_ghpr_unit_and_integration_test/detail/br_ghpr_unit_and_integration_test/5389/pipeline)."
+  ],
+  "failure_signature": "Related unstable integration test: [lightning_checkpoint_engines_order](https://ci.pingcap.net/blue/organizations/jenkins/br_ghpr_unit_and_integration_test/detail/br_ghpr_unit_and_integration_test/5389/pipeline).",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Related unstable integration test: [lightning_checkpoint_engines_order](https://ci.pingcap.net/blue/organizations/jenkins/br_ghpr_unit_and_integration_test/detail/br_ghpr_unit_and_integration_test/5389/pipeline).",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/27096",
+    "https://github.com/pingcap/tidb/pull/27096.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/27096.patch",
+  "changed_files": [
+    "br/pkg/lightning/backend/local/local.go",
+    "br/pkg/lightning/checkpoints/checkpoints.go",
+    "br/pkg/lightning/checkpoints/glue_checkpoint.go",
+    "br/pkg/lightning/restore/restore.go",
+    "br/pkg/lightning/restore/restore_test.go",
+    "br/pkg/lightning/restore/table_restore.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: Related unstable integration test: [lightning_checkpoint_engines_order](https://ci.pingcap.net/blue/organizations/jenkins/br_ghpr_unit_and_integration_test/detail/br_ghpr_unit_and_integration_test/5389/pipeline).",
+      "files: br/pkg/lightning/backend/local/local.go, br/pkg/lightning/checkpoints/checkpoints.go, br/pkg/lightning/checkpoints/glue_checkpoint.go, br/pkg/lightning/restore/restore.go, br/pkg/lightning/restore/restore_test.go, br/pkg/lightning/restore/table_restore.go"
+    ]
+  },
+  "analysis": "PR title: lightning: save status checkpoint synchronously\nPR url: https://github.com/pingcap/tidb/pull/27096\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Related unstable integration test: [lightning_checkpoint_engines_order](https://ci.pingcap.net/blue/organizations/jenkins/br_ghpr_unit_and_integration_test/detail/br_ghpr_unit_and_integration_test/5389/pipeline).\nChanged files (6): br/pkg/lightning/backend/local/local.go, br/pkg/lightning/checkpoints/checkpoints.go, br/pkg/lightning/checkpoints/glue_checkpoint.go, br/pkg/lightning/restore/restore.go, br/pkg/lightning/restore/restore_test.go, br/pkg/lightning/restore/table_restore.go\nPatch series analyzed; see patch_url."
+}

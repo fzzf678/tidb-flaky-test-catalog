@@ -1,0 +1,46 @@
+{
+  "id": "pr-8659",
+  "source_pr": {
+    "number": 8659,
+    "url": "https://github.com/pingcap/tidb/pull/8659",
+    "title": "planner/core: add support for nested virtual generated columns",
+    "body": "### What problem does this PR solve? \r\nFor now, if a virtual generated columns(let's take VGC for short) refers to another VGC, TiDB cannot evaluate it correctly:\r\n\r\nFor example:\r\n```\r\nmysql> create table t(a int, b int as (a + 1), c int as (b * 2));\r\nQuery OK, 0 rows affected (0.03 sec)\r\n\r\nmysql> insert into t(a) values (0);\r\nQuery OK, 1 row affected (0.01 sec)\r\n\r\nmysql> select * from t;\r\n+------+------+------+\r\n| a    | b    | c    |\r\n+------+------+------+\r\n|    0 |    1 | NULL |\r\n+------+------+------+\r\n1 row in set (0.01 sec)\r\n```\r\nBut we should expect the correct result:\r\n```\r\nmysql> select * from t;\r\n+------+------+------+\r\n| a    | b    | c    |\r\n+------+------+------+\r\n|    0 |    1 |    2 |\r\n+------+------+------+\r\n1 row in set (0.01 sec)\r\n```\r\n\r\n### What is changed and how it works?\r\nA `replaceVirtualColumn` is added in `projectVirtualColumns()`, which checks if a VGC 'a' definition contains another VGC 'b', if so, it replace 'b' with its column expression.\r\n\r\nTests\r\n - Integration test\n\n<!-- Reviewable:start -->\n---\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8659)\n<!-- Reviewable:end -->\n"
+  },
+  "pr_merged_at": "2018-12-25T21:59:05+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(`SELECT t1.* FROM test_gc_read t1 JOIN test_gc_help t2 ON t1.e = t2.e ORDER BY t1.a`) (executor/executor_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(`SELECT t1.* FROM test_gc_read t1 JOIN test_gc_help t2 ON t1.e = t2.e ORDER BY t1.a`) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8659",
+    "https://github.com/pingcap/tidb/pull/8659.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8659.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "planner/core/logical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(`SELECT t1.* FROM test_gc_read t1 JOIN test_gc_help t2 ON t1.e = t2.e ORDER BY t1.a`) (executor/executor_test.go)",
+      "files: executor/executor_test.go, planner/core/logical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: planner/core: add support for nested virtual generated columns\nPR url: https://github.com/pingcap/tidb/pull/8659\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(`SELECT t1.* FROM test_gc_read t1 JOIN test_gc_help t2 ON t1.e = t2.e ORDER BY t1.a`) (executor/executor_test.go)\nChanged files (2): executor/executor_test.go, planner/core/logical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/8659.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

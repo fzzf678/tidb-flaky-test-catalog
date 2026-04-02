@@ -1,0 +1,49 @@
+{
+  "id": "pr-3098",
+  "source_pr": {
+    "number": 3098,
+    "url": "https://github.com/pingcap/tidb/pull/3098",
+    "title": "plan: new plan support union scan.",
+    "body": "When a txn is open, we always add a union scan on top of tabel scan or index scan.\r\n@shenli @coocood @zimulala @winoros PTAL"
+  },
+  "pr_merged_at": "2017-04-26T15:34:38+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t where a = 1 order by a\", (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t where a = 1 order by a\", (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3098",
+    "https://github.com/pingcap/tidb/pull/3098.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3098.patch",
+  "changed_files": [
+    "plan/dag_plan_test.go",
+    "plan/logical_plan_test.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/physical_plan_test.go",
+    "plan/stringer.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t where a = 1 order by a\", (plan/dag_plan_test.go)",
+      "files: plan/dag_plan_test.go, plan/logical_plan_test.go, plan/new_physical_plan_builder.go, plan/physical_plan_test.go, plan/stringer.go"
+    ]
+  },
+  "analysis": "PR title: plan: new plan support union scan.\nPR url: https://github.com/pingcap/tidb/pull/3098\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t where a = 1 order by a\", (plan/dag_plan_test.go)\nChanged files (5): plan/dag_plan_test.go, plan/logical_plan_test.go, plan/new_physical_plan_builder.go, plan/physical_plan_test.go, plan/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/3098.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

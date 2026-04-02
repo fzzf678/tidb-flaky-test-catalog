@@ -1,0 +1,51 @@
+{
+  "id": "pr-54608",
+  "source_pr": {
+    "number": 54608,
+    "url": "https://github.com/pingcap/tidb/pull/54608",
+    "title": "infoschema, http: add two HTTP API for keyvis",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #54281\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\nsee tidb_http_api.md\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\ncluster has a 488k tables' database\r\n\r\nbefore & after\r\n\r\n![image](https://github.com/user-attachments/assets/4ef36b61-c706-4d18-839e-2eac2d3ba06e)\r\n\r\nbefore (10s CPU profile)\r\n\r\n![img_v3_02cr_f3c3eeed-f276-44bf-9651-6cbd064e37cg](https://github.com/user-attachments/assets/f19ee69f-9172-437b-b4e3-067542adb52a)\r\n\r\nafter (10s CPU profile)\r\n\r\n![image](https://github.com/user-attachments/assets/aa6c70c8-1647-4086-966f-bf0fadf5afc7)\r\n\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-07-16T21:33:08+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/server/handler/tests/http_handler_test.go",
+    "name": "http_handler_test"
+  },
+  "symptoms": [
+    "slices.SortFunc(simpleTableInfos, func(i, j *model.TableNameInfo) int { (pkg/server/handler/tests/http_handler_test.go)"
+  ],
+  "failure_signature": "slices.SortFunc(simpleTableInfos, func(i, j *model.TableNameInfo) int { (pkg/server/handler/tests/http_handler_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/54608",
+    "https://github.com/pingcap/tidb/pull/54608.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/54608.patch",
+  "changed_files": [
+    "docs/tidb_http_api.md",
+    "pkg/infoschema/context/infoschema.go",
+    "pkg/infoschema/infoschema.go",
+    "pkg/infoschema/infoschema_v2.go",
+    "pkg/server/handler/tests/http_handler_test.go",
+    "pkg/server/handler/tikvhandler/tikv_handler.go",
+    "pkg/server/handler/util.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: slices.SortFunc(simpleTableInfos, func(i, j *model.TableNameInfo) int { (pkg/server/handler/tests/http_handler_test.go)",
+      "files: docs/tidb_http_api.md, pkg/infoschema/context/infoschema.go, pkg/infoschema/infoschema.go, pkg/infoschema/infoschema_v2.go, pkg/server/handler/tests/http_handler_test.go, pkg/server/handler/tikvhandler/tikv_handler.go, pkg/server/handler/util.go"
+    ]
+  },
+  "analysis": "PR title: infoschema, http: add two HTTP API for keyvis\nPR url: https://github.com/pingcap/tidb/pull/54608\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: slices.SortFunc(simpleTableInfos, func(i, j *model.TableNameInfo) int { (pkg/server/handler/tests/http_handler_test.go)\nChanged files (7): docs/tidb_http_api.md, pkg/infoschema/context/infoschema.go, pkg/infoschema/infoschema.go, pkg/infoschema/infoschema_v2.go, pkg/server/handler/tests/http_handler_test.go, pkg/server/handler/tikvhandler/tikv_handler.go, pkg/server/handler/util.go\nPatch url: https://github.com/pingcap/tidb/pull/54608.patch\nPicked test: type=unit path=pkg/server/handler/tests/http_handler_test.go name=http_handler_test"
+}

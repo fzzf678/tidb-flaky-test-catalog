@@ -1,0 +1,47 @@
+{
+  "id": "pr-31939",
+  "source_pr": {
+    "number": 31939,
+    "url": "https://github.com/pingcap/tidb/pull/31939",
+    "title": "planner/core: migrate test-infra to testify for `planner/core/plan_test.go`",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #28390\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n\r\nSide effects\r\nNA\r\n\r\nDocumentation\r\nNA\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-01-25T18:40:12+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/plan_test.go",
+    "name": "plan_test"
+  },
+  "symptoms": [
+    "- c.Skip(\"skip race test\") | tk.MustQuery(\"explain format='brief' select * from t force index(i) where id <= 1024 and c1 >= 0 and c1 <= 1024 and c2 in (2, 4, 6, 8) order by c1 limit 960\").Check(testkit.Rows( (planner/core/plan_test.go)"
+  ],
+  "failure_signature": "- c.Skip(\"skip race test\") | tk.MustQuery(\"explain format='brief' select * from t force index(i) where id <= 1024 and c1 >= 0 and c1 <= 1024 and c2 in (2, 4, 6, 8) order by c1 limit 960\").Check(testkit.Rows( (planner/core/plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/31939",
+    "https://github.com/pingcap/tidb/pull/31939.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/31939.patch",
+  "changed_files": [
+    "planner/core/main_test.go",
+    "planner/core/plan_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: - c.Skip(\"skip race test\") | tk.MustQuery(\"explain format='brief' select * from t force index(i) where id <= 1024 and c1 >= 0 and c1 <= 1024 and c2 in (2, 4, 6, 8) order by c1 limit 960\").Check(testkit.Rows( (planner/core/plan_test.go)",
+      "files: planner/core/main_test.go, planner/core/plan_test.go"
+    ]
+  },
+  "analysis": "PR title: planner/core: migrate test-infra to testify for `planner/core/plan_test.go`\nPR url: https://github.com/pingcap/tidb/pull/31939\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: - c.Skip(\"skip race test\") | tk.MustQuery(\"explain format='brief' select * from t force index(i) where id <= 1024 and c1 >= 0 and c1 <= 1024 and c2 in (2, 4, 6, 8) order by c1 limit 960\").Check(testkit.Rows( (planner/core/plan_test.go)\nChanged files (2): planner/core/main_test.go, planner/core/plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/31939.patch\nPicked test: type=unit path=planner/core/plan_test.go name=plan_test"
+}

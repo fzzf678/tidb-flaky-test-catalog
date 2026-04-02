@@ -1,0 +1,90 @@
+{
+  "id": "pr-24854",
+  "source_pr": {
+    "number": 24854,
+    "url": "https://github.com/pingcap/tidb/pull/24854",
+    "title": "*: pass sql, plan digest down to KV request",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\nTrack issue: https://github.com/pingcap/tidb/issues/24875\r\n\r\nRelated PR: https://github.com/pingcap/tidb/pull/24380\r\n\r\n### What problem does this PR solve?\r\n\r\nThis PR use to implement the part of TopSQL feature.\r\n\r\nFor TiKV to collection resource by SQL statements, TiDB need pass the `sql digest` and `plan digest` down to TiKV.\r\n\r\n### What is changed and how it works?\r\n\r\n1. Encode the `sql digest` and `plan digest` to `[]byte` and the set on `kv.Context.ResourceGroupTag`.\r\n\r\n\r\n### Related PR\r\n\r\n- https://github.com/pingcap/tipb/pull/223 add resource group tag definition\r\n- https://github.com/pingcap/parser/pull/1231 Add Digest struct to get bytes of digest\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\nSide effects\r\n\r\n- Performance regression\r\n    - Consumes more CPU\r\n    - Consumes more MEM\r\n- Breaking backward compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note"
+  },
+  "pr_merged_at": "2021-05-25T15:47:34+08:00",
+  "test": {
+    "type": "unit",
+    "path": "bindinfo/bind_test.go",
+    "name": "bind_test"
+  },
+  "symptoms": [
+    "fix race"
+  ],
+  "failure_signature": "fix race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "fix race",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/24854",
+    "https://github.com/pingcap/tidb/pull/24854.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/24854.patch",
+  "changed_files": [
+    "bindinfo/bind_test.go",
+    "bindinfo/handle.go",
+    "bindinfo/session_handle.go",
+    "config/config.go",
+    "distsql/request_builder.go",
+    "executor/adapter.go",
+    "executor/analyze.go",
+    "executor/batch_point_get.go",
+    "executor/checksum.go",
+    "executor/executor.go",
+    "executor/executor_test.go",
+    "executor/insert.go",
+    "executor/partition_table_test.go",
+    "executor/point_get.go",
+    "executor/replace.go",
+    "executor/update.go",
+    "go.mod",
+    "go.sum",
+    "infoschema/tables_test.go",
+    "kv/kv.go",
+    "kv/option.go",
+    "planner/core/cache.go",
+    "planner/core/encode.go",
+    "planner/core/plan_test.go",
+    "planner/optimize.go",
+    "session/session.go",
+    "session/session_test.go",
+    "sessionctx/stmtctx/stmtctx.go",
+    "sessionctx/variable/session_test.go",
+    "store/copr/batch_coprocessor.go",
+    "store/copr/coprocessor.go",
+    "store/driver/txn/snapshot.go",
+    "store/driver/txn/txn_driver.go",
+    "store/mockstore/unistore/rpc.go",
+    "store/tikv/2pc.go",
+    "store/tikv/cleanup.go",
+    "store/tikv/commit.go",
+    "store/tikv/prewrite.go",
+    "store/tikv/scan.go",
+    "store/tikv/snapshot.go",
+    "store/tikv/txn.go",
+    "tools/check/go.mod",
+    "util/deadlockhistory/deadlock_history.go",
+    "util/deadlockhistory/deadlock_history_test.go",
+    "util/resourcegrouptag/resource_group_tag.go",
+    "util/resourcegrouptag/resource_group_tag_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix race",
+      "files: bindinfo/bind_test.go, bindinfo/handle.go, bindinfo/session_handle.go, config/config.go, distsql/request_builder.go, executor/adapter.go, executor/analyze.go, executor/batch_point_get.go, executor/checksum.go, executor/executor.go, executor/executor_test.go, executor/insert.go, executor/partition_table_test.go, executor/point_get.go, executor/replace.go, executor/update.go, go.mod, go.sum, infoschema/tables_test.go, kv/kv.go, kv/option.go, planner/core/cache.go, planner/core/encode.go, planner/core/plan_test.go, planner/optimize.go, session/session.go, session/session_test.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session_test.go, store/copr/batch_coprocessor.go, store/copr/coprocessor.go, store/driver/txn/snapshot.go, store/driver/txn/txn_driver.go, store/mockstore/unistore/rpc.go, store/tikv/2pc.go, store/tikv/cleanup.go, store/tikv/commit.go, store/tikv/prewrite.go, store/tikv/scan.go, store/tikv/snapshot.go, store/tikv/txn.go, tools/check/go.mod, util/deadlockhistory/deadlock_history.go, util/deadlockhistory/deadlock_history_test.go, util/resourcegrouptag/resource_group_tag.go, util/resourcegrouptag/resource_group_tag_test.go"
+    ]
+  },
+  "analysis": "PR title: *: pass sql, plan digest down to KV request\nPR url: https://github.com/pingcap/tidb/pull/24854\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix race\nChanged files (46): bindinfo/bind_test.go, bindinfo/handle.go, bindinfo/session_handle.go, config/config.go, distsql/request_builder.go, executor/adapter.go, executor/analyze.go, executor/batch_point_get.go, executor/checksum.go, executor/executor.go, executor/executor_test.go, executor/insert.go, executor/partition_table_test.go, executor/point_get.go, executor/replace.go, executor/update.go, go.mod, go.sum, infoschema/tables_test.go, kv/kv.go, kv/option.go, planner/core/cache.go, planner/core/encode.go, planner/core/plan_test.go, planner/optimize.go, session/session.go, session/session_test.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session_test.go, store/copr/batch_coprocessor.go, store/copr/coprocessor.go, store/driver/txn/snapshot.go, store/driver/txn/txn_driver.go, store/mockstore/unistore/rpc.go, store/tikv/2pc.go, store/tikv/cleanup.go, store/tikv/commit.go, store/tikv/prewrite.go, store/tikv/scan.go, store/tikv/snapshot.go, store/tikv/txn.go, tools/check/go.mod, util/deadlockhistory/deadlock_history.go, util/deadlockhistory/deadlock_history_test.go, util/resourcegrouptag/resource_group_tag.go, util/resourcegrouptag/resource_group_tag_test.go\nPatch series analyzed; see patch_url."
+}

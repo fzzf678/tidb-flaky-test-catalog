@@ -1,0 +1,46 @@
+{
+  "id": "pr-280",
+  "source_pr": {
+    "number": 280,
+    "url": "https://github.com/pingcap/tidb/pull/280",
+    "title": "plans: avoid next append overwriting last data",
+    "body": "Fix issue #266\n"
+  },
+  "pr_merged_at": "2015-09-28T11:06:34+08:00",
+  "test": {
+    "type": "unit",
+    "path": "tidb_test.go",
+    "name": "tidb_test"
+  },
+  "symptoms": [
+    "r = mustExecSQL(c, se, \"select * from t1 left join t2 on t1.c1 = t2.c2 left join t3 on t1.c1 = t3.c3 order by t1.c1, t2.c2, t3.c3\") (tidb_test.go)"
+  ],
+  "failure_signature": "r = mustExecSQL(c, se, \"select * from t1 left join t2 on t1.c1 = t2.c2 left join t3 on t1.c1 = t3.c3 order by t1.c1, t2.c2, t3.c3\") (tidb_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/280",
+    "https://github.com/pingcap/tidb/pull/280.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/280.patch",
+  "changed_files": [
+    "plan/plans/join.go",
+    "tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: r = mustExecSQL(c, se, \"select * from t1 left join t2 on t1.c1 = t2.c2 left join t3 on t1.c1 = t3.c3 order by t1.c1, t2.c2, t3.c3\") (tidb_test.go)",
+      "files: plan/plans/join.go, tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: plans: avoid next append overwriting last data\nPR url: https://github.com/pingcap/tidb/pull/280\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: r = mustExecSQL(c, se, \"select * from t1 left join t2 on t1.c1 = t2.c2 left join t3 on t1.c1 = t3.c3 order by t1.c1, t2.c2, t3.c3\") (tidb_test.go)\nChanged files (2): plan/plans/join.go, tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/280.patch\nPicked test: type=unit path=tidb_test.go name=tidb_test"
+}

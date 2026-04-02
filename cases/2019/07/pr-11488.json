@@ -1,0 +1,46 @@
+{
+  "id": "pr-11488",
+  "source_pr": {
+    "number": 11488,
+    "url": "https://github.com/pingcap/tidb/pull/11488",
+    "title": "planner: fix compatibility bug for window function",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nFix #11010, #11001, #11002, #11011.\r\n\r\n### What is changed and how it works?\r\nThe error judging should not be involved in the build function. It caused the wrong frame like the default frame to check. That's a fault.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - None\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n - Need to change common test\r\n\r\n"
+  },
+  "pr_merged_at": "2019-07-31T11:50:11+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select dense_rank() over w1, a, b from t window w1 as (partition by t.b order by t.a desc, t.b desc range between current row and 1 following)\", (planner/core/logical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select dense_rank() over w1, a, b from t window w1 as (partition by t.b order by t.a desc, t.b desc range between current row and 1 following)\", (planner/core/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/11488",
+    "https://github.com/pingcap/tidb/pull/11488.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/11488.patch",
+  "changed_files": [
+    "planner/core/logical_plan_builder.go",
+    "planner/core/logical_plan_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select dense_rank() over w1, a, b from t window w1 as (partition by t.b order by t.a desc, t.b desc range between current row and 1 following)\", (planner/core/logical_plan_test.go)",
+      "files: planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go"
+    ]
+  },
+  "analysis": "PR title: planner: fix compatibility bug for window function\nPR url: https://github.com/pingcap/tidb/pull/11488\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select dense_rank() over w1, a, b from t window w1 as (partition by t.b order by t.a desc, t.b desc range between current row and 1 following)\", (planner/core/logical_plan_test.go)\nChanged files (2): planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11488.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
+}

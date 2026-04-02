@@ -1,0 +1,56 @@
+{
+  "id": "pr-51203",
+  "source_pr": {
+    "number": 51203,
+    "url": "https://github.com/pingcap/tidb/pull/51203",
+    "title": "planner,executor: fix join resolveIndex won't find its column from children schema & amend join's lused and rused logic for reversed column ref from join schema to its children",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/42588\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\nissue https://github.com/pingcap/tidb/issues/42588 is caused by many factors and this pr is try to resolve them all.\r\n* first: resolve parent pointer modification error caused by the apply elimination, as mentioned here https://github.com/pingcap/tidb/issues/42588#issuecomment-1929026146\r\n* second: since TiDB internal has many non-rigorous logical optimizing rules, occasionally two or more of them will leading a critical assumption which will lead a resolveIndex error as mentioned here: https://github.com/pingcap/tidb/pull/45831#discussion_r1481031471\r\n* third: in the execution of join, the inline projection's `lused` and `rused` are order unawareness, which means even if we  allow reversed column ref in join schema itself to its children, it will break its assumption here too. So we need to fix here as well.\r\nexample: \r\n```\r\njoin schema[col11, col22, col21], child1 [col1], child2 [col21, col22]\r\nthe pull/45831 make an assumption here that join schema won't refer a column-order revered from the order of its children. Like here [col22, col21] in join schema is reversed with  [col21, col22] from its child2. Step2 try to fix this.\r\n\r\nin the execution layer.\r\njoin schema[col11, col22, col21], child1 [col1], child2 [col21, col22]\r\nthe lused will be [true]\r\nthe rused will be [true, true]\r\nwhen constructing the join row result, the order couldn't be restored from a simple bool array. Consequently one join result will be shown like: <col1, col21, col22> while the field type is totally different from what the datum in the same position. So step3 try to fix this.\r\n```\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-02-23T10:52:58+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/planner/core/casetest/integration.result",
+    "name": "integration"
+  },
+  "symptoms": [
+    "slices.SortFunc(usedIdxPair, func(a, b intPair) int { (pkg/executor/benchmark_test.go)"
+  ],
+  "failure_signature": "slices.SortFunc(usedIdxPair, func(a, b intPair) int { (pkg/executor/benchmark_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/51203",
+    "https://github.com/pingcap/tidb/pull/51203.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/51203.patch",
+  "changed_files": [
+    "pkg/executor/benchmark_test.go",
+    "pkg/executor/builder.go",
+    "pkg/executor/joiner.go",
+    "pkg/executor/test/tiflashtest/tiflash_test.go",
+    "pkg/planner/cascades/optimize.go",
+    "pkg/planner/core/casetest/testdata/integration_suite_out.json",
+    "pkg/planner/core/plan.go",
+    "pkg/planner/core/resolve_indices.go",
+    "pkg/planner/core/rule_column_pruning.go",
+    "pkg/planner/core/rule_max_min_eliminate.go",
+    "tests/integrationtest/r/planner/core/casetest/integration.result",
+    "tests/integrationtest/t/planner/core/casetest/integration.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: slices.SortFunc(usedIdxPair, func(a, b intPair) int { (pkg/executor/benchmark_test.go)",
+      "files: pkg/executor/benchmark_test.go, pkg/executor/builder.go, pkg/executor/joiner.go, pkg/executor/test/tiflashtest/tiflash_test.go, pkg/planner/cascades/optimize.go, pkg/planner/core/casetest/testdata/integration_suite_out.json, pkg/planner/core/plan.go, pkg/planner/core/resolve_indices.go, pkg/planner/core/rule_column_pruning.go, pkg/planner/core/rule_max_min_eliminate.go, tests/integrationtest/r/planner/core/casetest/integration.result, tests/integrationtest/t/planner/core/casetest/integration.test"
+    ]
+  },
+  "analysis": "PR title: planner,executor: fix join resolveIndex won't find its column from children schema & amend join's lused and rused logic for reversed column ref from join schema to its children\nPR url: https://github.com/pingcap/tidb/pull/51203\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: slices.SortFunc(usedIdxPair, func(a, b intPair) int { (pkg/executor/benchmark_test.go)\nChanged files (12): pkg/executor/benchmark_test.go, pkg/executor/builder.go, pkg/executor/joiner.go, pkg/executor/test/tiflashtest/tiflash_test.go, pkg/planner/cascades/optimize.go, pkg/planner/core/casetest/testdata/integration_suite_out.json, pkg/planner/core/plan.go, pkg/planner/core/resolve_indices.go, pkg/planner/core/rule_column_pruning.go, pkg/planner/core/rule_max_min_eliminate.go, tests/integrationtest/r/planner/core/casetest/integration.result, tests/integrationtest/t/planner/core/casetest/integration.test\nPatch url: https://github.com/pingcap/tidb/pull/51203.patch\nPicked test: type=integration path=tests/integrationtest/r/planner/core/casetest/integration.result name=integration"
+}

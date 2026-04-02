@@ -1,0 +1,49 @@
+{
+  "id": "pr-8724",
+  "source_pr": {
+    "number": 8724,
+    "url": "https://github.com/pingcap/tidb/pull/8724",
+    "title": "ddl: fix data race in unit test TestChangeColumn",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\n```\r\n=============\r\nWARNING: DATA RACE\r\nRead at 0x000002df5a08 by goroutine 151:\r\n  github.com/pingcap/tidb/ddl.(*ddl).CreateTable()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl_api.go:619 +0x77f\r\n  github.com/pingcap/tidb/executor.(*DDLExec).executeCreateTable()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/ddl.go:157 +0xca\r\n  github.com/pingcap/tidb/executor.(*DDLExec).Next()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/ddl.go:88 +0x518\r\n  github.com/pingcap/tidb/executor.(*ExecStmt).handleNoDelayExecutor()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/adapter.go:289 +0x1d5\r\n  github.com/pingcap/tidb/executor.(*ExecStmt).Exec()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/adapter.go:242 +0x617\r\n  github.com/pingcap/tidb/session.runStmt()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/tidb.go:153 +0xd2\r\n  github.com/pingcap/tidb/session.(*session).executeStatement()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:840 +0x21d\r\n  github.com/pingcap/tidb/session.(*session).executeStatement()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:838 +0x1a7\r\n  github.com/pingcap/tidb/session.(*session).execute()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:908 +0x9d8\r\n  github.com/pingcap/tidb/session.(*session).Execute()\r\n\r\nPrevious write at 0x000002df5a08 by goroutine 89:\r\n  [failed to restore the stack]\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\nUse atomic to avoid race\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - No code\r\n\r\n@zimulala @winkyao\n\n<!-- Reviewable:start -->\n---\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8724)\n<!-- Reviewable:end -->\n"
+  },
+  "pr_merged_at": "2018-12-18T14:27:49+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_integration_test.go",
+    "name": "TestChangeColumn"
+  },
+  "symptoms": [
+    "ddl: fix data race in unit test TestChangeColumn"
+  ],
+  "failure_signature": "ddl: fix data race in unit test TestChangeColumn",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: fix data race in unit test TestChangeColumn",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8724",
+    "https://github.com/pingcap/tidb/pull/8724.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8724.patch",
+  "changed_files": [
+    "ddl/column.go",
+    "ddl/db_integration_test.go",
+    "ddl/db_test.go",
+    "ddl/ddl.go",
+    "ddl/ddl_api.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: ddl: fix data race in unit test TestChangeColumn",
+      "files: ddl/column.go, ddl/db_integration_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go"
+    ]
+  },
+  "analysis": "PR title: ddl: fix data race in unit test TestChangeColumn\nPR url: https://github.com/pingcap/tidb/pull/8724\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix data race in unit test TestChangeColumn\nChanged files (5): ddl/column.go, ddl/db_integration_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go\nPatch url: https://github.com/pingcap/tidb/pull/8724.patch\nPicked test: type=unit path=ddl/db_integration_test.go name=TestChangeColumn"
+}

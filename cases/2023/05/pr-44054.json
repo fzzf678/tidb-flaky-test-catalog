@@ -1,0 +1,55 @@
+{
+  "id": "pr-44054",
+  "source_pr": {
+    "number": 44054,
+    "url": "https://github.com/pingcap/tidb/pull/44054",
+    "title": "planner: wrong execution when CTE meet non-correlated subquery",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #44051\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nThe early execution might miss the pushed predicates, causing wrong results.\r\nThus we disable the early execution for the plan segment containing CTE consumers.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nFix the issue that TiDB might get wrong results when CTE is used in non-correlated subquery\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-05-22T23:03:39+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/explain_test.go",
+    "name": "cte"
+  },
+  "symptoms": [
+    "race = \"on\", | rs.Sort().Check(testkit.Rows(\"1 <nil> <nil> <nil>\", \"2 <nil> <nil> <nil>\", \"3 <nil> <nil> <nil>\")) (planner/core/issuetest/planner_issue_test.go)"
+  ],
+  "failure_signature": "race = \"on\", | rs.Sort().Check(testkit.Rows(\"1 <nil> <nil> <nil>\", \"2 <nil> <nil> <nil>\", \"3 <nil> <nil> <nil>\")) (planner/core/issuetest/planner_issue_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"on\", | rs.Sort().Check(testkit.Rows(\"1 <nil> <nil> <nil>\", \"2 <nil> <nil> <nil>\", \"3 <nil> <nil> <nil>\")) (planner/core/issuetest/planner_issue_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/44054",
+    "https://github.com/pingcap/tidb/pull/44054.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/44054.patch",
+  "changed_files": [
+    "cmd/explaintest/r/cte.result",
+    "cmd/explaintest/r/explain_cte.result",
+    "executor/explain_test.go",
+    "planner/core/casetest/physicalplantest/testdata/plan_suite_out.json",
+    "planner/core/casetest/testdata/flat_plan_suite_out.json",
+    "planner/core/expression_rewriter.go",
+    "planner/core/issuetest/BUILD.bazel",
+    "planner/core/issuetest/planner_issue_test.go",
+    "planner/core/planbuilder.go",
+    "planner/core/stats.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: race = \"on\", | rs.Sort().Check(testkit.Rows(\"1 <nil> <nil> <nil>\", \"2 <nil> <nil> <nil>\", \"3 <nil> <nil> <nil>\")) (planner/core/issuetest/planner_issue_test.go)",
+      "files: cmd/explaintest/r/cte.result, cmd/explaintest/r/explain_cte.result, executor/explain_test.go, planner/core/casetest/physicalplantest/testdata/plan_suite_out.json, planner/core/casetest/testdata/flat_plan_suite_out.json, planner/core/expression_rewriter.go, planner/core/issuetest/BUILD.bazel, planner/core/issuetest/planner_issue_test.go, planner/core/planbuilder.go, planner/core/rule_decorrelate.go, planner/core/stats.go"
+    ]
+  },
+  "analysis": "PR title: planner: wrong execution when CTE meet non-correlated subquery\nPR url: https://github.com/pingcap/tidb/pull/44054\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: race = \"on\", | rs.Sort().Check(testkit.Rows(\"1 <nil> <nil> <nil>\", \"2 <nil> <nil> <nil>\", \"3 <nil> <nil> <nil>\")) (planner/core/issuetest/planner_issue_test.go)\nChanged files (10): cmd/explaintest/r/cte.result, cmd/explaintest/r/explain_cte.result, executor/explain_test.go, planner/core/casetest/physicalplantest/testdata/plan_suite_out.json, planner/core/casetest/testdata/flat_plan_suite_out.json, planner/core/expression_rewriter.go, planner/core/issuetest/BUILD.bazel, planner/core/issuetest/planner_issue_test.go, planner/core/planbuilder.go, planner/core/stats.go\nPatch series analyzed; see patch_url."
+}

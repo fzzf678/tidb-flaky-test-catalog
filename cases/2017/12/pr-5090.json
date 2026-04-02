@@ -1,0 +1,50 @@
+{
+  "id": "pr-5090",
+  "source_pr": {
+    "number": 5090,
+    "url": "https://github.com/pingcap/tidb/pull/5090",
+    "title": "expression, plan: support builtin aggregation function 'bit_xor'",
+    "body": "for #5077, support builtin aggregation function 'bit_xor' in TiDB.\r\nTo support this pr, tipb must be updated too. See My another pr: https://github.com/pingcap/tipb/pull/46/files"
+  },
+  "pr_merged_at": "2017-12-05T19:32:27+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select a, bit_xor(a) from t group by a order by a\") (expression/integration_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select a, bit_xor(a) from t group by a order by a\") (expression/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5090",
+    "https://github.com/pingcap/tidb/pull/5090.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5090.patch",
+  "changed_files": [
+    "ast/functions.go",
+    "expression/aggregation/agg_to_pb.go",
+    "expression/aggregation/aggregation.go",
+    "expression/aggregation/bit_xor.go",
+    "expression/integration_test.go",
+    "plan/physical_plans.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select a, bit_xor(a) from t group by a order by a\") (expression/integration_test.go)",
+      "files: _vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go, ast/functions.go, expression/aggregation/agg_to_pb.go, expression/aggregation/aggregation.go, expression/aggregation/bit_xor.go, expression/integration_test.go, plan/logical_plan_builder.go, plan/physical_plans.go, store/tikv/coprocessor.go"
+    ]
+  },
+  "analysis": "PR title: expression, plan: support builtin aggregation function 'bit_xor'\nPR url: https://github.com/pingcap/tidb/pull/5090\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select a, bit_xor(a) from t group by a order by a\") (expression/integration_test.go)\nChanged files (6): ast/functions.go, expression/aggregation/agg_to_pb.go, expression/aggregation/aggregation.go, expression/aggregation/bit_xor.go, expression/integration_test.go, plan/physical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/5090.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+}

@@ -1,0 +1,60 @@
+{
+  "id": "pr-46414",
+  "source_pr": {
+    "number": 46414,
+    "url": "https://github.com/pingcap/tidb/pull/46414",
+    "title": "ddl, disttask: implement add index operators",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #46258\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nThis PR picks up the work from #46279.\r\n\r\nThis PR introduces four operators for adding index:  \r\n- `TableScanTaskSource` splits the table records into multiple ranges and send them to the sink.\r\n- `TableScanOperator` reads the table records range by range and saves them to chunks. \r\n- `IndexIngestOperator` encodes the index key values from chunks and writes them to `ingest.Engine`. \r\n- `indexWriteResultSink` collects how many records are written.\r\n\r\nThese operators are managed by `AsyncPipeline` and they are driven asychronously.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-08-29T14:59:15+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "ddl/backfilling_operator_test.go",
+    "name": "backfilling_operator_test"
+  },
+  "symptoms": [
+    "fix data race"
+  ],
+  "failure_signature": "fix data race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "fix data race",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/46414",
+    "https://github.com/pingcap/tidb/pull/46414.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/46414.patch",
+  "changed_files": [
+    "ddl/BUILD.bazel",
+    "ddl/backfilling_operator.go",
+    "ddl/backfilling_scheduler.go",
+    "ddl/export_test.go",
+    "ddl/index.go",
+    "ddl/index_cop.go",
+    "ddl/ingest/mock.go",
+    "disttask/operator/compose.go",
+    "disttask/operator/operator.go",
+    "disttask/operator/wrapper.go",
+    "executor/executor.go",
+    "resourcemanager/pool/workerpool/BUILD.bazel",
+    "resourcemanager/pool/workerpool/workerpool.go",
+    "resourcemanager/pool/workerpool/workpool_test.go",
+    "tests/realtikvtest/addindextest/BUILD.bazel",
+    "tests/realtikvtest/addindextest/operator_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix data race",
+      "files: ddl/BUILD.bazel, ddl/backfilling.go, ddl/backfilling_operator.go, ddl/backfilling_operator_test.go, ddl/backfilling_scheduler.go, ddl/cluster.go, ddl/column.go, ddl/ddl.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/export_test.go, ddl/index.go, ddl/index_cop.go, ddl/ingest/checkpoint.go, ddl/ingest/checkpoint_test.go, ddl/ingest/mock.go, ddl/internal/session/BUILD.bazel, ddl/internal/session/session.go, ddl/internal/session/session_pool.go, ddl/internal/session/session_pool_test.go, ddl/job_table.go, ddl/partition.go, ddl/reorg.go, ddl/sanity_check.go, ddl/session/BUILD.bazel, ddl/session/session.go, ddl/session/session_pool.go, ddl/session/session_pool_test.go, ddl/table.go, disttask/operator/compose.go, disttask/operator/operator.go, disttask/operator/pipeline.go, disttask/operator/pipeline_test.go, disttask/operator/wrapper.go, disttask/operators/table_scan.go, executor/executor.go, resourcemanager/pool/workerpool/BUILD.bazel, resourcemanager/pool/workerpool/workerpool.go, resourcemanager/pool/workerpool/workpool_test.go, tests/realtikvtest/addindextest/BUILD.bazel, tests/realtikvtest/addindextest/operator_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl, disttask: implement add index operators\nPR url: https://github.com/pingcap/tidb/pull/46414\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (16): ddl/BUILD.bazel, ddl/backfilling_operator.go, ddl/backfilling_scheduler.go, ddl/export_test.go, ddl/index.go, ddl/index_cop.go, ddl/ingest/mock.go, disttask/operator/compose.go, disttask/operator/operator.go, disttask/operator/wrapper.go, executor/executor.go, resourcemanager/pool/workerpool/BUILD.bazel, resourcemanager/pool/workerpool/workerpool.go, resourcemanager/pool/workerpool/workpool_test.go, tests/realtikvtest/addindextest/BUILD.bazel, tests/realtikvtest/addindextest/operator_test.go\nPatch series analyzed; see patch_url."
+}

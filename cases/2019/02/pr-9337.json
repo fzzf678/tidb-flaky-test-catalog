@@ -1,0 +1,61 @@
+{
+  "id": "pr-9337",
+  "source_pr": {
+    "number": 9337,
+    "url": "https://github.com/pingcap/tidb/pull/9337",
+    "title": "planner/core: implement skyline pruning",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nFix https://github.com/pingcap/tidb/issues/8593\r\n\r\n### What is changed and how it works?\r\n\r\nImplement the skyline pruning according to the [proposal]( https://github.com/pingcap/tidb/blob/master/docs/design/2019-01-25-skyline-pruning.md).\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\n - None\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n"
+  },
+  "pr_merged_at": "2019-02-19T11:19:31+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t order by f\", (planner/core/logical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t order by f\", (planner/core/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9337",
+    "https://github.com/pingcap/tidb/pull/9337.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9337.patch",
+  "changed_files": [
+    "cmd/explaintest/main.go",
+    "cmd/explaintest/r/access_path_selection.result",
+    "cmd/explaintest/r/explain_complex.result",
+    "cmd/explaintest/r/explain_complex_stats.result",
+    "cmd/explaintest/r/explain_easy.result",
+    "cmd/explaintest/r/explain_easy_stats.result",
+    "cmd/explaintest/r/select.result",
+    "cmd/explaintest/r/topn_push_down.result",
+    "cmd/explaintest/r/tpch.result",
+    "cmd/explaintest/r/window_function.result",
+    "docs/design/README.md",
+    "expression/util.go",
+    "go.mod",
+    "planner/core/find_best_task.go",
+    "planner/core/logical_plan_test.go",
+    "statistics/selectivity_test.go",
+    "util/ranger/ranger_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t order by f\", (planner/core/logical_plan_test.go)",
+      "files: cmd/explaintest/main.go, cmd/explaintest/r/access_path_selection.result, cmd/explaintest/r/explain_complex.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/explain_easy_stats.result, cmd/explaintest/r/select.result, cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/tpch.result, cmd/explaintest/r/window_function.result, docs/design/README.md, expression/util.go, go.mod, planner/core/find_best_task.go, planner/core/logical_plan_test.go, statistics/selectivity_test.go, util/ranger/ranger_test.go"
+    ]
+  },
+  "analysis": "PR title: planner/core: implement skyline pruning\nPR url: https://github.com/pingcap/tidb/pull/9337\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t order by f\", (planner/core/logical_plan_test.go)\nChanged files (17): cmd/explaintest/main.go, cmd/explaintest/r/access_path_selection.result, cmd/explaintest/r/explain_complex.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/explain_easy_stats.result, cmd/explaintest/r/select.result, cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/tpch.result, cmd/explaintest/r/window_function.result, docs/design/README.md, expression/util.go, go.mod, planner/core/find_best_task.go, planner/core/logical_plan_test.go, statistics/selectivity_test.go, util/ranger/ranger_test.go\nPatch url: https://github.com/pingcap/tidb/pull/9337.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
+}

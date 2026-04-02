@@ -1,0 +1,45 @@
+{
+  "id": "pr-11541",
+  "source_pr": {
+    "number": 11541,
+    "url": "https://github.com/pingcap/tidb/pull/11541",
+    "title": "tikv: make region_request_test stable",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nold TestOnSendFailedWithCloseKnownStoreThenUseNewOne test is occasionally failed\r\n\r\n```\r\n[2019-07-30T11:52:47.513Z] FAIL: region_request_test.go:92: testRegionRequestSuite.TestOnSendFailedWithCloseKnownStoreThenUseNewOne\r\n[2019-07-30T11:52:47.513Z]\r\n[2019-07-30T11:52:47.513Z] region_request_test.go:127:\r\n[2019-07-30T11:52:47.513Z]     c.Assert(err, IsNil)\r\n[2019-07-30T11:52:47.513Z] ... value *errors.withStack = [tikv:9002]TiKV server timeout (\"[tikv:9002]TiKV server timeout\")\r\n[2019-07-30T11:52:47.513Z]\r\n```\r\n\r\nthe old test has a problem new store never be a leader and accept the request.\r\n\r\nand old assert will be failed to because of async scheduleReload + race/leak slow running.\r\n\r\n### What is changed and how it works?\r\n\r\nelect a new leader to another store when one store fails\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - N/A\r\n\r\nSide effects\r\n\r\n - N/A\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\n\n<!-- Reviewable:start -->\n---\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/11541)\n<!-- Reviewable:end -->\n"
+  },
+  "pr_merged_at": "2019-07-31T17:18:41+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/region_request_test.go",
+    "name": "region_request_test"
+  },
+  "symptoms": [
+    "and old assert will be failed to because of async scheduleReload + race/leak slow running."
+  ],
+  "failure_signature": "and old assert will be failed to because of async scheduleReload + race/leak slow running.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tikv: make region_request_test stable",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/11541",
+    "https://github.com/pingcap/tidb/pull/11541.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/11541.patch",
+  "changed_files": [
+    "store/tikv/region_request_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: and old assert will be failed to because of async scheduleReload + race/leak slow running.",
+      "files: store/tikv/region_request_test.go"
+    ]
+  },
+  "analysis": "PR title: tikv: make region_request_test stable\nPR url: https://github.com/pingcap/tidb/pull/11541\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: and old assert will be failed to because of async scheduleReload + race/leak slow running.\nChanged files (1): store/tikv/region_request_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11541.patch\nPicked test: type=unit path=store/tikv/region_request_test.go name=region_request_test"
+}

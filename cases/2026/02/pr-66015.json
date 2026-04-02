@@ -1,0 +1,54 @@
+{
+  "id": "pr-66015",
+  "source_pr": {
+    "number": 66015,
+    "url": "https://github.com/pingcap/tidb/pull/66015",
+    "title": "planner: simplify outer join other conditions",
+    "body": "### What problem does this PR solve?\nIssue Number: close #65994\n\nProblem Summary:\n- OR logical constants in outer join other conditions (e.g. `a=b OR 0`) are not simplified, which prevents join key extraction and can lead to incorrect plans/results after predicate pushdown.\n\n### What changed and how does it work?\n- Apply predicate simplification to outer join `OtherConditions` to eliminate trivial OR constants and keep join keys.\n- Add regression coverage in predicate pushdown testdata and integration test for the OR-0 outer join case.\n- Record planner rule notes and test guidance updates.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [x] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n  > <!-- Or your custom  \"No need to test\" reasons -->\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n```release-note\nNone\n```\n"
+  },
+  "pr_merged_at": "2026-02-05T16:20:51+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/t/select.test",
+    "name": "select"
+  },
+  "symptoms": [
+    "diff shows determinism stabilization in tests/integrationtest/r/select.result, tests/integrationtest/t/select.test"
+  ],
+  "failure_signature": "diff shows determinism stabilization in tests/integrationtest/r/select.result, tests/integrationtest/t/select.test",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "diff shows determinism stabilization in tests/integrationtest/r/select.result, tests/integrationtest/t/select.test",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66015",
+    "https://github.com/pingcap/tidb/pull/66015.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66015.patch",
+  "changed_files": [
+    "AGENTS.md",
+    "docs/note/planner/rule/rule_ai_notes.md",
+    "pkg/planner/core/casetest/rule/rule_predicate_pushdown_test.go",
+    "pkg/planner/core/casetest/rule/testdata/predicate_pushdown_suite_in.json",
+    "pkg/planner/core/casetest/rule/testdata/predicate_pushdown_suite_out.json",
+    "pkg/planner/core/casetest/rule/testdata/predicate_pushdown_suite_xut.json",
+    "pkg/planner/core/operator/logicalop/logical_join.go",
+    "references/planner-case-map.md",
+    "tests/integrationtest/r/select.result",
+    "tests/integrationtest/t/select.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: diff shows determinism stabilization in tests/integrationtest/r/select.result, tests/integrationtest/t/select.test",
+      "files: tests/integrationtest/r/select.result, tests/integrationtest/t/select.test"
+    ]
+  },
+  "analysis": "PR title: planner: simplify outer join other conditions\nPR url: https://github.com/pingcap/tidb/pull/66015\nTriage summary: diff shows determinism stabilization in tests/integrationtest/r/select.result, tests/integrationtest/t/select.test\nChanged files (10): AGENTS.md, docs/note/planner/rule/rule_ai_notes.md, pkg/planner/core/casetest/rule/rule_predicate_pushdown_test.go, pkg/planner/core/casetest/rule/testdata/predicate_pushdown_suite_in.json, pkg/planner/core/casetest/rule/testdata/predicate_pushdown_suite_out.json, pkg/planner/core/casetest/rule/testdata/predicate_pushdown_suite_xut.json, pkg/planner/core/operator/logicalop/logical_join.go, references/planner-case-map.md, tests/integrationtest/r/select.result, tests/integrationtest/t/select.test\nFull patch analyzed; see patch_url."
+}

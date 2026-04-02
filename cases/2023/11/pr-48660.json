@@ -1,0 +1,90 @@
+{
+  "id": "pr-48660",
+  "source_pr": {
+    "number": 48660,
+    "url": "https://github.com/pingcap/tidb/pull/48660",
+    "title": "disttask: fix subtask finished immediately and mark success when encountering network partition",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #48649 ref #46258\r\n\r\nProblem Summary:\r\nsee the comments in issue.\r\n### What is changed and how it works?\r\n1. change taskTable interface using ctx\r\n2. when updating subtasks, check the exec_id of them\r\nMost of the code are editing tests.\r\nMain logic modifications only occur in task_table.go and scheduler.go\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->  \r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-11-17T21:00:48+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "pkg/ddl/backfilling_dispatcher_test.go",
+    "name": "backfilling_dispatcher_test"
+  },
+  "symptoms": [
+    "race = \"on\","
+  ],
+  "failure_signature": "race = \"on\",",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"on\",",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/48660",
+    "https://github.com/pingcap/tidb/pull/48660.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/48660.patch",
+  "changed_files": [
+    "pkg/ddl/backfilling_dispatcher_test.go",
+    "pkg/ddl/index.go",
+    "pkg/disttask/framework/BUILD.bazel",
+    "pkg/disttask/framework/dispatcher/dispatcher.go",
+    "pkg/disttask/framework/dispatcher/dispatcher_manager.go",
+    "pkg/disttask/framework/dispatcher/dispatcher_manager_test.go",
+    "pkg/disttask/framework/dispatcher/dispatcher_test.go",
+    "pkg/disttask/framework/dispatcher/interface.go",
+    "pkg/disttask/framework/framework_dynamic_dispatch_test.go",
+    "pkg/disttask/framework/framework_err_handling_test.go",
+    "pkg/disttask/framework/framework_ha_test.go",
+    "pkg/disttask/framework/framework_pause_and_resume_test.go",
+    "pkg/disttask/framework/framework_rollback_test.go",
+    "pkg/disttask/framework/framework_test.go",
+    "pkg/disttask/framework/handle/handle.go",
+    "pkg/disttask/framework/handle/handle_test.go",
+    "pkg/disttask/framework/mock/dispatcher_mock.go",
+    "pkg/disttask/framework/mock/scheduler_mock.go",
+    "pkg/disttask/framework/planner/BUILD.bazel",
+    "pkg/disttask/framework/planner/planner.go",
+    "pkg/disttask/framework/planner/planner_test.go",
+    "pkg/disttask/framework/scheduler/execute/summary.go",
+    "pkg/disttask/framework/scheduler/interface.go",
+    "pkg/disttask/framework/scheduler/manager.go",
+    "pkg/disttask/framework/scheduler/manager_test.go",
+    "pkg/disttask/framework/scheduler/scheduler.go",
+    "pkg/disttask/framework/scheduler/scheduler_test.go",
+    "pkg/disttask/framework/storage/BUILD.bazel",
+    "pkg/disttask/framework/storage/table_test.go",
+    "pkg/disttask/framework/storage/task_table.go",
+    "pkg/disttask/framework/storage/util.go",
+    "pkg/disttask/importinto/BUILD.bazel",
+    "pkg/disttask/importinto/dispatcher_testkit_test.go",
+    "pkg/disttask/importinto/job.go",
+    "pkg/disttask/importinto/job_testkit_test.go",
+    "pkg/disttask/importinto/subtask_executor.go",
+    "pkg/disttask/importinto/subtask_executor_test.go",
+    "pkg/domain/domain.go",
+    "pkg/executor/import_into.go",
+    "pkg/executor/show.go",
+    "tests/realtikvtest/importintotest/BUILD.bazel",
+    "tests/realtikvtest/importintotest/import_into_test.go",
+    "tests/realtikvtest/importintotest/job_test.go",
+    "tests/realtikvtest/importintotest4/BUILD.bazel",
+    "tests/realtikvtest/importintotest4/global_sort_test.go",
+    "tests/realtikvtest/importintotest4/split_file_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: race = \"on\",",
+      "files: pkg/ddl/backfilling_dispatcher_test.go, pkg/ddl/index.go, pkg/disttask/framework/BUILD.bazel, pkg/disttask/framework/dispatcher/dispatcher.go, pkg/disttask/framework/dispatcher/dispatcher_manager.go, pkg/disttask/framework/dispatcher/dispatcher_manager_test.go, pkg/disttask/framework/dispatcher/dispatcher_test.go, pkg/disttask/framework/dispatcher/interface.go, pkg/disttask/framework/framework_dynamic_dispatch_test.go, pkg/disttask/framework/framework_err_handling_test.go, pkg/disttask/framework/framework_ha_test.go, pkg/disttask/framework/framework_pause_and_resume_test.go, pkg/disttask/framework/framework_rollback_test.go, pkg/disttask/framework/framework_test.go, pkg/disttask/framework/handle/handle.go, pkg/disttask/framework/handle/handle_test.go, pkg/disttask/framework/mock/dispatcher_mock.go, pkg/disttask/framework/mock/scheduler_mock.go, pkg/disttask/framework/planner/BUILD.bazel, pkg/disttask/framework/planner/planner.go, pkg/disttask/framework/planner/planner_test.go, pkg/disttask/framework/scheduler/BUILD.bazel, pkg/disttask/framework/scheduler/execute/summary.go, pkg/disttask/framework/scheduler/interface.go, pkg/disttask/framework/scheduler/manager.go, pkg/disttask/framework/scheduler/manager_test.go, pkg/disttask/framework/scheduler/scheduler.go, pkg/disttask/framework/scheduler/scheduler_test.go, pkg/disttask/framework/storage/BUILD.bazel, pkg/disttask/framework/storage/table_test.go, pkg/disttask/framework/storage/task_table.go, pkg/disttask/framework/storage/util.go, pkg/disttask/importinto/BUILD.bazel, pkg/disttask/importinto/dispatcher_testkit_test.go, pkg/disttask/importinto/job.go, pkg/disttask/importinto/job_testkit_test.go, pkg/disttask/importinto/subtask_executor.go, pkg/disttask/importinto/subtask_executor_test.go, pkg/domain/domain.go, pkg/executor/import_into.go, pkg/executor/show.go, tests/realtikvtest/importintotest/BUILD.bazel, tests/realtikvtest/importintotest/import_into_test.go, tests/realtikvtest/importintotest/job_test.go, tests/realtikvtest/importintotest4/BUILD.bazel, tests/realtikvtest/importintotest4/global_sort_test.go, tests/realtikvtest/importintotest4/split_file_test.go"
+    ]
+  },
+  "analysis": "PR title: disttask: fix subtask finished immediately and mark success when encountering network partition\nPR url: https://github.com/pingcap/tidb/pull/48660\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"on\",\nChanged files (46): pkg/ddl/backfilling_dispatcher_test.go, pkg/ddl/index.go, pkg/disttask/framework/BUILD.bazel, pkg/disttask/framework/dispatcher/dispatcher.go, pkg/disttask/framework/dispatcher/dispatcher_manager.go, pkg/disttask/framework/dispatcher/dispatcher_manager_test.go, pkg/disttask/framework/dispatcher/dispatcher_test.go, pkg/disttask/framework/dispatcher/interface.go, pkg/disttask/framework/framework_dynamic_dispatch_test.go, pkg/disttask/framework/framework_err_handling_test.go, pkg/disttask/framework/framework_ha_test.go, pkg/disttask/framework/framework_pause_and_resume_test.go, pkg/disttask/framework/framework_rollback_test.go, pkg/disttask/framework/framework_test.go, pkg/disttask/framework/handle/handle.go, pkg/disttask/framework/handle/handle_test.go, pkg/disttask/framework/mock/dispatcher_mock.go, pkg/disttask/framework/mock/scheduler_mock.go, pkg/disttask/framework/planner/BUILD.bazel, pkg/disttask/framework/planner/planner.go, pkg/disttask/framework/planner/planner_test.go, pkg/disttask/framework/scheduler/execute/summary.go, pkg/disttask/framework/scheduler/interface.go, pkg/disttask/framework/scheduler/manager.go, pkg/disttask/framework/scheduler/manager_test.go, pkg/disttask/framework/scheduler/scheduler.go, pkg/disttask/framework/scheduler/scheduler_test.go, pkg/disttask/framework/storage/BUILD.bazel, pkg/disttask/framework/storage/table_test.go, pkg/disttask/framework/storage/task_table.go, pkg/disttask/framework/storage/util.go, pkg/disttask/importinto/BUILD.bazel, pkg/disttask/importinto/dispatcher_testkit_test.go, pkg/disttask/importinto/job.go, pkg/disttask/importinto/job_testkit_test.go, pkg/disttask/importinto/subtask_executor.go, pkg/disttask/importinto/subtask_executor_test.go, pkg/domain/domain.go, pkg/executor/import_into.go, pkg/executor/show.go, tests/realtikvtest/importintotest/BUILD.bazel, tests/realtikvtest/importintotest/import_into_test.go, tests/realtikvtest/importintotest/job_test.go, tests/realtikvtest/importintotest4/BUILD.bazel, tests/realtikvtest/importintotest4/global_sort_test.go, tests/realtikvtest/importintotest4/split_file_test.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,56 @@
+{
+  "id": "pr-1899",
+  "source_pr": {
+    "number": 1899,
+    "url": "https://github.com/pingcap/tidb/pull/1899",
+    "title": "*:support aggregate function push cross outer join.",
+    "body": "Like \"select sum(b.c) from a left join b on a.id = b.id\", It can be rewrited as \"select sum(agg_0) from a left join (select sum(c), id from b group by id) b on a.id = b.id\". But instead of null padding, we shoule set sum(c)'s default value as 0.\n@shenli @coocood @zimulala @XuHuaiyu PTAL\n"
+  },
+  "pr_merged_at": "2016-11-01T17:59:12+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select count(*), b.d from t a left join t b on a.c = b.d group by b.d order by b.d\") (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select count(*), b.d from t a left join t b on a.c = b.d group by b.d order by b.d\") (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1899",
+    "https://github.com/pingcap/tidb/pull/1899.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1899.patch",
+  "changed_files": [
+    "executor/aggregate_test.go",
+    "executor/builder.go",
+    "executor/executor.go",
+    "expression/aggregation.go",
+    "expression/expression.go",
+    "plan/aggregation_push_down.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plans.go",
+    "plan/physical_plan_builder.go",
+    "plan/physical_plans.go",
+    "plan/plan_test.go",
+    "plan/predicate_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select count(*), b.d from t a left join t b on a.c = b.d group by b.d order by b.d\") (executor/aggregate_test.go)",
+      "files: executor/aggregate_test.go, executor/builder.go, executor/executor.go, expression/aggregation.go, expression/expression.go, plan/aggregation_push_down.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan_test.go, plan/predicate_push_down.go"
+    ]
+  },
+  "analysis": "PR title: *:support aggregate function push cross outer join.\nPR url: https://github.com/pingcap/tidb/pull/1899\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select count(*), b.d from t a left join t b on a.c = b.d group by b.d order by b.d\") (executor/aggregate_test.go)\nChanged files (12): executor/aggregate_test.go, executor/builder.go, executor/executor.go, expression/aggregation.go, expression/expression.go, plan/aggregation_push_down.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan_test.go, plan/predicate_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/1899.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

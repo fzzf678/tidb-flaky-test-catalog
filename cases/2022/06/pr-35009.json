@@ -1,0 +1,63 @@
+{
+  "id": "pr-35009",
+  "source_pr": {
+    "number": 35009,
+    "url": "https://github.com/pingcap/tidb/pull/35009",
+    "title": "expression: refine date_add/sub return type and precision",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #31799, close #9813. And part of #31867 will be resolved by this PR.\r\n\r\nProblem Summary:\r\n\r\nThere exists several issues about function `date_add` and `date_sub`:\r\n1. Return types of several signatures don't match MySQL's [(doc)](https://dev.mysql.com/doc/refman/8.0/en/date-and-time-functions.html#function_date-add):\r\n    1. `date_add/sub(int/double/decimal, interval)`: MySQL returns string, TiDB returns datetime.\r\n    2. `date_add/sub(duration, interval)` when interval unit contains YMD part (except for DAY_MICROSECOND - I believe it's a mismatch between MySQL's actual behavior and its document, but it doesn't matter much), MySQL returns datetime with current date padded, TiDB returns time.\r\n    3. Precision of the return type doesn't match MySQL's in many cases. Note that here I mean the precision concluded by type inference - MySQL client option `--column-type-info` is your good friend.\r\n2. Runtime doesn't respect the precision inferred in compile time. For a datetime value, we check if the MS part is zero then adjust the precision to 0 (min fsp) or 6 (max fsp). No respect to compile time type at all.\r\n\r\nHonestly I can file 10+ bugs easily about the above issues.\r\n\r\n### What is changed and how it works?\r\n\r\nDon't get scared of this huge PR - 90% are tests and 80% of which are generated, the core is quite simple. This PR includes the following changes:\r\n1. The core change is in `expression/builtin_time.go`:\r\n    1. Refine the type inference about the return type and precision of `date_add` and `date_sub`.\r\n    2. Refine the evaluation so that the type and precision by type inference is respected.\r\n    3. Add necessary signatures - ideally we should be able to leverage implicit cast to get a datetime value from int/double/decimal/string, however, as described in this [comment](https://github.com/pingcap/tidb/pull/35009/files#diff-084c9cef9b34d2f1b64570e2cf7d4010b7ce5b26170c480cde3a47441eaa1549R3498), to comply with MySQL's weird behaviors we need specialized overload for each of int/double/decimal/string.\r\n    4. Abstract things like \"add or sub\", \"how to evaluate the datetime value\", and \"how to evaluate the interval value\". Use some simple composition to eliminate the mostly-copy-paste individual overloads. And the overall LOC is reduced from 1456 to 591.\r\n 2. The vectorized versions are simple enough to not use generator, thus moved from generator (expression/generator/time_vec.go) to regular implementations (expression/builtin_time_vec.go). I would have to write more code in template than just directly write them in go. However the vectorized tests are enhanced by adding more cases.\r\n 3. Tests:\r\n     1. Add thorough type infer test cases.\r\n     2. Update several existing UT and integration test cases that already mismatch MySQL's result - each of them is a bug-to-be-reported.\r\n     3. Add more cases to existing UT and integration test.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nFix the issue that the return type and precision of function `date_add` and `date_sub` does not match that of MySQL.\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-06-16T16:12:35+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "result := tk.MustQuery(\"select c from t order by i\").Rows() (expression/integration_test.go)"
+  ],
+  "failure_signature": "result := tk.MustQuery(\"select c from t order by i\").Rows() (expression/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/35009",
+    "https://github.com/pingcap/tidb/pull/35009.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/35009.patch",
+  "changed_files": [
+    "DEPS.bzl",
+    "expression/bench_test.go",
+    "expression/builtin.go",
+    "expression/builtin_time.go",
+    "expression/builtin_time_test.go",
+    "expression/builtin_time_vec.go",
+    "expression/builtin_time_vec_generated.go",
+    "expression/builtin_time_vec_generated_test.go",
+    "expression/builtin_time_vec_test.go",
+    "expression/generator/time_vec.go",
+    "expression/integration_serial_test.go",
+    "expression/integration_test.go",
+    "expression/typeinfer_test.go",
+    "expression/util_test.go",
+    "go.mod",
+    "go.sum",
+    "testkit/result.go",
+    "types/time.go",
+    "types/time_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result := tk.MustQuery(\"select c from t order by i\").Rows() (expression/integration_test.go)",
+      "files: DEPS.bzl, expression/bench_test.go, expression/builtin.go, expression/builtin_time.go, expression/builtin_time_test.go, expression/builtin_time_vec.go, expression/builtin_time_vec_generated.go, expression/builtin_time_vec_generated_test.go, expression/builtin_time_vec_test.go, expression/generator/time_vec.go, expression/integration_serial_test.go, expression/integration_test.go, expression/typeinfer_test.go, expression/util_test.go, go.mod, go.sum, testkit/result.go, types/time.go, types/time_test.go"
+    ]
+  },
+  "analysis": "PR title: expression: refine date_add/sub return type and precision\nPR url: https://github.com/pingcap/tidb/pull/35009\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result := tk.MustQuery(\"select c from t order by i\").Rows() (expression/integration_test.go)\nChanged files (19): DEPS.bzl, expression/bench_test.go, expression/builtin.go, expression/builtin_time.go, expression/builtin_time_test.go, expression/builtin_time_vec.go, expression/builtin_time_vec_generated.go, expression/builtin_time_vec_generated_test.go, expression/builtin_time_vec_test.go, expression/generator/time_vec.go, expression/integration_serial_test.go, expression/integration_test.go, expression/typeinfer_test.go, expression/util_test.go, go.mod, go.sum, testkit/result.go, types/time.go, types/time_test.go\nPatch url: https://github.com/pingcap/tidb/pull/35009.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+}

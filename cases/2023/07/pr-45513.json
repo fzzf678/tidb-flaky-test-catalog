@@ -1,0 +1,46 @@
+{
+  "id": "pr-45513",
+  "source_pr": {
+    "number": 45513,
+    "url": "https://github.com/pingcap/tidb/pull/45513",
+    "title": "executor: make `TestOrderByAndLimit` stable",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #45496\r\n\r\nProblem Summary:\r\n\r\n```\r\nThe test easy failed when `limit = 1`.\r\n\r\nLike `select /*+ LIMIT_TO_COP() */ * from tlist use index(idx_b) where b > 1126 and b < greatest(1127+1, 1127) order by b limit 1`.\r\n\r\nIt will change to `b = 1127`. Sometimes we have more than 1 line equal to 1127, so the result is unstable.\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n```\r\nModify y=1 to run the test without error.\r\n```\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-07-24T13:38:49+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/partition_table_test.go",
+    "name": "TestOrderByAndLimit"
+  },
+  "symptoms": [
+    "It will change to `b = 1127`. Sometimes we have more than 1 line equal to 1127, so the result is unstable. | queryRangePartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from trange use index(idx_a) where a > %v and a < %v order by a limit %v\", x, maxEle, y) (executor/partition_table_test.go)"
+  ],
+  "failure_signature": "It will change to `b = 1127`. Sometimes we have more than 1 line equal to 1127, so the result is unstable. | queryRangePartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from trange use index(idx_a) where a > %v and a < %v order by a limit %v\", x, maxEle, y) (executor/partition_table_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "It will change to `b = 1127`. Sometimes we have more than 1 line equal to 1127, so the result is unstable. | queryRangePartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from trange use index(idx_a) where a > %v and a < %v order by a limit %v\", x, maxEle, y) (executor/partition_table_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/45513",
+    "https://github.com/pingcap/tidb/pull/45513.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/45513.patch",
+  "changed_files": [
+    "executor/partition_table_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: It will change to `b = 1127`. Sometimes we have more than 1 line equal to 1127, so the result is unstable. | queryRangePartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from trange use index(idx_a) where a > %v and a < %v order by a limit %v\", x, maxEle, y) (executor/partition_table_test.go)",
+      "files: executor/partition_table_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: make `TestOrderByAndLimit` stable\nPR url: https://github.com/pingcap/tidb/pull/45513\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: It will change to `b = 1127`. Sometimes we have more than 1 line equal to 1127, so the result is unstable. | queryRangePartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from trange use index(idx_a) where a > %v and a < %v order by a limit %v\", x, maxEle, y) (executor/partition_table_test.go)\nChanged files (1): executor/partition_table_test.go\nPatch series analyzed; see patch_url."
+}

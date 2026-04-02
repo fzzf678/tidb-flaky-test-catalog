@@ -1,0 +1,54 @@
+{
+  "id": "pr-8037",
+  "source_pr": {
+    "number": 8037,
+    "url": "https://github.com/pingcap/tidb/pull/8037",
+    "title": "ddl: support altering the other charset to utf8 or utf8mb4",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nfix #7920.\r\n\r\nSupport changing the other charset to utf8 or utf8mb4. \r\n\r\nRules is:\r\n\r\n1. change any other charset to utf8mb4 is permitted, because TiDB treat all data as utf8mb4\r\n2. change any other charset to utf8 is permitted, except utf8mb4.\r\n\r\nBefore this PR, `alter table charset` take no effects, we just parse it and ignore, in this PR, we change the charset and collate of tableInfo in the infoSchema.\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\n - Increased code complexity\r\n\r\nRelated changes\r\n\r\n - Need to update the documentation\r\n - Need to be included in the release note\n\n<!-- Reviewable:start -->\n---\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8037)\n<!-- Reviewable:end -->\n"
+  },
+  "pr_merged_at": "2018-12-10T12:58:19+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/column_test.go",
+    "name": "column_test"
+  },
+  "symptoms": [
+    "-// SetRowCount sets the number of rows. Make sure it can pass `make race`."
+  ],
+  "failure_signature": "-// SetRowCount sets the number of rows. Make sure it can pass `make race`.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: support altering the other charset to utf8 or utf8mb4",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8037",
+    "https://github.com/pingcap/tidb/pull/8037.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8037.patch",
+  "changed_files": [
+    "ddl/column_test.go",
+    "ddl/db_change_test.go",
+    "ddl/db_integration_test.go",
+    "ddl/db_test.go",
+    "ddl/ddl.go",
+    "ddl/ddl_api.go",
+    "ddl/ddl_worker.go",
+    "ddl/table.go",
+    "go.mod",
+    "go.sum"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: -// SetRowCount sets the number of rows. Make sure it can pass `make race`.",
+      "files: ast/ddl.go, ddl/column_test.go, ddl/db_change_test.go, ddl/db_integration_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/table.go, go.mod, go.sum, model/ddl.go"
+    ]
+  },
+  "analysis": "PR title: ddl: support altering the other charset to utf8 or utf8mb4\nPR url: https://github.com/pingcap/tidb/pull/8037\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: -// SetRowCount sets the number of rows. Make sure it can pass `make race`.\nChanged files (10): ddl/column_test.go, ddl/db_change_test.go, ddl/db_integration_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/table.go, go.mod, go.sum\nPatch url: https://github.com/pingcap/tidb/pull/8037.patch\nPicked test: type=unit path=ddl/column_test.go name=column_test"
+}

@@ -1,0 +1,46 @@
+{
+  "id": "pr-6187",
+  "source_pr": {
+    "number": 6187,
+    "url": "https://github.com/pingcap/tidb/pull/6187",
+    "title": "plan: fix a bug when applying `top-n push down` rule.",
+    "body": "If the limit operator is combined with a sort operator, it's a new operator and should not be eliminated."
+  },
+  "pr_merged_at": "2018-03-30T13:27:57+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/physical_plan_test.go",
+    "name": "physical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from (select * from t use index() order by b) t left join t t1 on t.a=t1.a limit 10\", (plan/physical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from (select * from t use index() order by b) t left join t t1 on t.a=t1.a limit 10\", (plan/physical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6187",
+    "https://github.com/pingcap/tidb/pull/6187.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6187.patch",
+  "changed_files": [
+    "plan/physical_plan_test.go",
+    "plan/topn_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from (select * from t use index() order by b) t left join t t1 on t.a=t1.a limit 10\", (plan/physical_plan_test.go)",
+      "files: plan/physical_plan_test.go, plan/topn_push_down.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix a bug when applying `top-n push down` rule.\nPR url: https://github.com/pingcap/tidb/pull/6187\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from (select * from t use index() order by b) t left join t t1 on t.a=t1.a limit 10\", (plan/physical_plan_test.go)\nChanged files (2): plan/physical_plan_test.go, plan/topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/6187.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
+}

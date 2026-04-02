@@ -1,0 +1,46 @@
+{
+  "id": "pr-4087",
+  "source_pr": {
+    "number": 4087,
+    "url": "https://github.com/pingcap/tidb/pull/4087",
+    "title": "executor: fix double desc read.",
+    "body": "we needn't reverse handle."
+  },
+  "pr_merged_at": "2017-08-08T20:12:10+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t where a between 1 and 2 order by a desc\").Check(testkit.Rows(\"2 2\", \"1 1\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t where a between 1 and 2 order by a desc\").Check(testkit.Rows(\"2 2\", \"1 1\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4087",
+    "https://github.com/pingcap/tidb/pull/4087.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4087.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "executor/new_distsql.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t where a between 1 and 2 order by a desc\").Check(testkit.Rows(\"2 2\", \"1 1\")) (executor/executor_test.go)",
+      "files: executor/executor_test.go, executor/new_distsql.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix double desc read.\nPR url: https://github.com/pingcap/tidb/pull/4087\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t where a between 1 and 2 order by a desc\").Check(testkit.Rows(\"2 2\", \"1 1\")) (executor/executor_test.go)\nChanged files (2): executor/executor_test.go, executor/new_distsql.go\nPatch url: https://github.com/pingcap/tidb/pull/4087.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

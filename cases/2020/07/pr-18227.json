@@ -1,0 +1,46 @@
+{
+  "id": "pr-18227",
+  "source_pr": {
+    "number": 18227,
+    "url": "https://github.com/pingcap/tidb/pull/18227",
+    "title": "ddl: stabilize test TestParallelDDLBeforeRunDDLJob",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nClose #18226\r\n\r\nProblem Summary:\r\n\r\nTestParallelDDLBeforeRunDDLJob may hang forever.\r\n\r\nIn OnGetInfoSchemaExported, there are two loops.\r\nIf the second session do `atomic.AddInt32(&sessionCnt, 1)`. Before `if atomic.LoadInt32(&sessionCnt) == 2 {`, the first session finish OnGetInfoSchemaExported and `atomic.StoreInt32(&sessionCnt, finishedCnt)`. Then the second session will block forever.\r\n\r\n### What is changed and how it works?\r\n\r\nSleep a while.\r\n\r\n### Related changes\r\n\r\n\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n\r\n- No code\r\n\r\nSide effects\r\n\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note\r\n"
+  },
+  "pr_merged_at": "2020-07-02T19:02:09+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_change_test.go",
+    "name": "TestParallelDDLBeforeRunDDLJob"
+  },
+  "symptoms": [
+    "PR title: stabilize test TestParallelDDLBeforeRunDDLJob."
+  ],
+  "failure_signature": "PR title: stabilize test TestParallelDDLBeforeRunDDLJob.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: stabilize test TestParallelDDLBeforeRunDDLJob",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/18227",
+    "https://github.com/pingcap/tidb/pull/18227.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/18227.patch",
+  "changed_files": [
+    "ddl/db_change_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR title: stabilize test TestParallelDDLBeforeRunDDLJob.",
+      "evidence: adds time.Sleep(100ms) with comment to avoid a loop waiting on atomic sessionCnt becoming true forever (ddl/db_change_test.go).",
+      "files: ddl/db_change_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl: stabilize test TestParallelDDLBeforeRunDDLJob\nPR url: https://github.com/pingcap/tidb/pull/18227\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: stabilize test TestParallelDDLBeforeRunDDLJob.\nChanged files (1): ddl/db_change_test.go\nPatch url: https://github.com/pingcap/tidb/pull/18227.patch\nPicked test: type=unit path=ddl/db_change_test.go name=TestParallelDDLBeforeRunDDLJob"
+}

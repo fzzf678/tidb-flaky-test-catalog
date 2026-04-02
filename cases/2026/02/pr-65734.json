@@ -1,0 +1,45 @@
+{
+  "id": "pr-65734",
+  "source_pr": {
+    "number": 65734,
+    "url": "https://github.com/pingcap/tidb/pull/65734",
+    "title": "pkg/util: stabilize TLS tests",
+    "body": "<!--\n\nThank you for contributing to TiDB!\n\nPR Title Format:\n1. pkg [, pkg2, pkg3]: what's changed\n2. *: what's changed\n\n-->\n\n### What problem does this PR solve?\n<!--\n\nPlease create an issue first to describe the problem.\n\nThere MUST be one line starting with \"Issue Number:  \" and\nlinking the relevant issues via the \"close\" or \"ref\".\n\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\n\n-->\n\nIssue Number: close #65728\n\nProblem Summary:\n\nTLS CN verify/rotation tests were flaky due to unstable client-side TLS error strings and shared global HTTP mux state.\n\n### What changed and how does it work?\n\n- Use a per-test `http.ServeMux` instead of `http.DefaultServeMux`.\n- Capture server-side TLS handshake errors via `http.Server.ErrorLog` and assert on the server-side error message.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [ ] Unit test\n  - `go test ./pkg/util -run '^(TestInvalidTLS|TestVerifyCommonNameAndRotate|TestTLSVersion|TestCA)$' -tags=intest`\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [x] No need to test\n  > - [x] The change is for stabilizing unit tests; CI will cover it.\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\n\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\n\n```release-note\nNone\n```\n"
+  },
+  "pr_merged_at": "2026-02-03T01:23:30+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/util/security_test.go",
+    "name": "TestVerifyCommonNameAndRotate"
+  },
+  "symptoms": [
+    "#65728  Problem Summary:  TLS CN verify/rotation tests were flaky due to unstable client-side TLS error strings and shared global HTTP mux state."
+  ],
+  "failure_signature": "#65728  Problem Summary:  TLS CN verify/rotation tests were flaky due to unstable client-side TLS error strings and shared global HTTP mux state.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/65734",
+    "https://github.com/pingcap/tidb/pull/65734.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/65734.patch",
+  "changed_files": [
+    "pkg/util/security_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: #65728  Problem Summary:  TLS CN verify/rotation tests were flaky due to unstable client-side TLS error strings and shared global HTTP mux state.",
+      "files: pkg/util/security_test.go"
+    ]
+  },
+  "analysis": "PR title: pkg/util: stabilize TLS tests\nPR url: https://github.com/pingcap/tidb/pull/65734\nTriage summary: #65728  Problem Summary:  TLS CN verify/rotation tests were flaky due to unstable client-side TLS error strings and shared global HTTP mux state.\nChanged files (1): pkg/util/security_test.go\nFull patch analyzed; see patch_url."
+}

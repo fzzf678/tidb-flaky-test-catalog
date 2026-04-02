@@ -1,0 +1,45 @@
+{
+  "id": "pr-13886",
+  "source_pr": {
+    "number": 13886,
+    "url": "https://github.com/pingcap/tidb/pull/13886",
+    "title": "test: fix ddl test duplicated test cases due to wrong embedding struct",
+    "body": "### What problem does this PR solve?\r\nfix ddl test duplicated cases  due to wrong embedding struct\r\n\r\n### What is changed and how it works?\r\nThe ddl test suite `serialTestStateChangeSuite` embedding another test suite `testStateChangeSuite`, so all the test cases under `testStateChangeSuite` will be implicitly auto-generated for `serialTestStateChangeSuite` thus make ddl test run slow and unnecessary .\r\n\r\nresult:\r\nbefore changes: \r\n```\r\n> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl\r\nok  \tgithub.com/pingcap/tidb/ddl\t103.783s\r\n```\r\n\r\nafter change:\r\n```\r\n> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl\r\nok  \tgithub.com/pingcap/tidb/ddl\t87.718s\r\n```\r\n\r\n### Check List\r\nTests\r\n\r\n- unit tests\r\n\r\nCode changes\r\n\r\nSide effects\r\n\r\nRelated changes"
+  },
+  "pr_merged_at": "2019-12-04T13:30:42+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_change_test.go",
+    "name": "db_change_test"
+  },
+  "symptoms": [
+    "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl"
+  ],
+  "failure_signature": "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test: fix ddl test duplicated test cases due to wrong embedding struct",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13886",
+    "https://github.com/pingcap/tidb/pull/13886.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13886.patch",
+  "changed_files": [
+    "ddl/db_change_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: > go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl",
+      "files: ddl/db_change_test.go"
+    ]
+  },
+  "analysis": "PR title: test: fix ddl test duplicated test cases due to wrong embedding struct\nPR url: https://github.com/pingcap/tidb/pull/13886\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: > go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl\nChanged files (1): ddl/db_change_test.go\nPatch url: https://github.com/pingcap/tidb/pull/13886.patch\nPicked test: type=unit path=ddl/db_change_test.go name=db_change_test"
+}

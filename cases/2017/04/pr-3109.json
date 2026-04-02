@@ -1,0 +1,46 @@
+{
+  "id": "pr-3109",
+  "source_pr": {
+    "number": 3109,
+    "url": "https://github.com/pingcap/tidb/pull/3109",
+    "title": "plan: consider primary key for index scan",
+    "body": "index encode handle as value, we consider it when pushing filter.\r\n@shenli @coocood @zimulala @winoros PTAL"
+  },
+  "pr_merged_at": "2017-04-21T16:00:11+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select c from t where t.c = 1 and t.a = 1 order by t.d limit 1\", (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select c from t where t.c = 1 and t.a = 1 order by t.d limit 1\", (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3109",
+    "https://github.com/pingcap/tidb/pull/3109.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3109.patch",
+  "changed_files": [
+    "plan/dag_plan_test.go",
+    "plan/new_physical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select c from t where t.c = 1 and t.a = 1 order by t.d limit 1\", (plan/dag_plan_test.go)",
+      "files: plan/dag_plan_test.go, plan/new_physical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: plan: consider primary key for index scan\nPR url: https://github.com/pingcap/tidb/pull/3109\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select c from t where t.c = 1 and t.a = 1 order by t.d limit 1\", (plan/dag_plan_test.go)\nChanged files (2): plan/dag_plan_test.go, plan/new_physical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/3109.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

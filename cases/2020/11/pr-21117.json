@@ -1,0 +1,46 @@
+{
+  "id": "pr-21117",
+  "source_pr": {
+    "number": 21117,
+    "url": "https://github.com/pingcap/tidb/pull/21117",
+    "title": "table/tables: make the test case more stable",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nMake the test code more stable\r\n\r\nProblem Summary:\r\n\r\nI meet some strange error in the CI like that:\r\n\r\n```\r\n[domain:8028]Information schema is changed during the execution of the statement(for example, table definition may be updated by other DDL ran in parallel). If you see this error often, try increasing `tidb_max_delta_schema_count`. [try again later]\r\ngithub.com/pingcap/errors.AddStack\r\n\t/media/genius/OS/project/pkg/mod/github.com/pingcap/errors@v0.11.5-0.20201029093017-5a7df2af2ac7/errors.go:174\r\ngithub.com/pingcap/errors.Trace\r\n\t/media/genius/OS/project/pkg/mod/github.com/pingcap/errors@v0.11.5-0.202010290930175a7df2af2ac7/juju_adaptor.go:15\r\ngithub.com/pingcap/tidb/executor.(*DDLExec).toErr\r\n\t/media/genius/OS/project/src/\r\ngithub.com/pingcap/tidb/executor/ddl.go:65\r\ngithub.com/pingcap/tidb/executor.(*DDLExec).Next\r\n\t/media/genius/OS/project/src/github.com/pingcap/tidb/executor/ddl.go:134\r\ngithub.com/pingcap/tidb/executor.Next\r\n\t/media/genius/OS/project/src/github.com/pingcap/tidb/executor/executor.go:268\r\ngithub.com/pingcap/tidb/executor.(*ExecStmt).handleNoDelayExecutor\r\n\t/media/genius/OS/project/src/github.com/pingcap/tidb/executor/adapter.go:522\r\ngithub.com/pingcap/tidb/executor.(*ExecStmt).handleNoDelay\r\n\t/media\r\n/genius/OS/project/src/github.com/pingcap/tidb/executor/adapter.go:404\r\ngithub.com/pingcap/tidb/executor.(*ExecStmt).Exec\r\n\t/media/genius/OS/project/src/github.com/pingcap/tidb/executor/adapter.go:354\r\ngithub.com/pingcap/tidb/session.runStmt\r\n\t/media/\r\ngenius/OS/project/src/github.com/pingcap/tidb/session/session.go:1285\r\ngithub.com/pingcap/tidb/session.(*session).ExecuteStmt\r\n\t/media/genius/OS/project/src/github.com/pingcap/tidb/session/session.go:1229\r\ngithub.com/pingcap/tidb/session.(*session).Execute\r\n\t/media/genius/OS/project/src/github.com/pingcap/tidb/session/session.go:1145\r\ngithub.com/pingcap/tidb/table/tables_test.(*testSuite).TestTypes\r\n\t/media/genius/OS/project/src/github.com/pingcap/tidb/table/tables/tables_test.go:190\r\nreflect.Value.call\r\n\t/media/genius/OS/project/go/src/reflect/value.go:475\r\nreflect.Value.Call\r\n\t/media/genius/OS/project/go/src/reflect/value.go:336\r\ngithub.com/pingcap/check.(*suiteRunner).forkTest.func1\r\n\t/media/genius/OS/project/pkg/mod/github.com/pingcap/check@v0.0.0-20200212061837-5e12011dc712/check.go:850\r\ngithub.com/pingcap/check.(*suiteRunner).forkCall.func1\r\n\t/media/genius/OS/project/pkg/mod/github.com/pingcap/check@v0.0.0-20200212061837-5e12011dc712/check.go:739\r\nruntime.goexit\r\n\t/media/genius/OS/project/go/src/runtime/asm_amd64.s:1374\r\n```\r\n\r\nIt turned out that I create two tables with the same name ( \"create table t\")  that conflicts.\r\n**But the error message should be \"table already exist\", instead of \"infoschema change\".**\r\nThat puzzles me a lot, so I continue to investigate, and finally locate the problem here.\r\n\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\n\r\nUse the ts future.\r\n\r\n```\r\n_, err := ts.se.Txn(true)\r\n```\r\n\r\nHow it Works:\r\n\r\nThis code makes a direct call on session internal state, and discard the result, lead the session to an unclean state.\r\nAnd cause some weird behavior in the following tests finally.\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note\r\n"
+  },
+  "pr_merged_at": "2020-11-23T17:21:55+08:00",
+  "test": {
+    "type": "unit",
+    "path": "table/tables/tables_test.go",
+    "name": "tables_test"
+  },
+  "symptoms": [
+    "PR body: CI sometimes hits \"Information schema is changed during the execution\" error; make test code more stable"
+  ],
+  "failure_signature": "PR body: CI sometimes hits \"Information schema is changed during the execution\" error; make test code more stable",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "table/tables: make the test case more stable",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/21117",
+    "https://github.com/pingcap/tidb/pull/21117.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/21117.patch",
+  "changed_files": [
+    "table/tables/tables_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body: CI sometimes hits \"Information schema is changed during the execution\" error; make test code more stable",
+      "evidence: ensure txn exists before reading infoschema by calling `ts.se.Txn(true)` and asserting no error (table/tables/tables_test.go)",
+      "files: table/tables/tables_test.go"
+    ]
+  },
+  "analysis": "PR title: table/tables: make the test case more stable\nPR url: https://github.com/pingcap/tidb/pull/21117\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body: CI sometimes hits \"Information schema is changed during the execution\" error; make test code more stable\nChanged files (1): table/tables/tables_test.go\nPatch url: https://github.com/pingcap/tidb/pull/21117.patch\nPicked test: type=unit path=table/tables/tables_test.go name=tables_test"
+}

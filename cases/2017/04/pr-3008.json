@@ -1,0 +1,48 @@
+{
+  "id": "pr-3008",
+  "source_pr": {
+    "number": 3008,
+    "url": "https://github.com/pingcap/tidb/pull/3008",
+    "title": "*: Support topN with DAG",
+    "body": ""
+  },
+  "pr_merged_at": "2017-04-07T18:05:56+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "r = tk.MustQuery(\"select id from select_order_test order by id desc limit 1 \") (executor/executor_test.go)"
+  ],
+  "failure_signature": "r = tk.MustQuery(\"select id from select_order_test order by id desc limit 1 \") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3008",
+    "https://github.com/pingcap/tidb/pull/3008.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3008.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "store/tikv/mock-tikv/cop_handler_dag.go",
+    "store/tikv/mock-tikv/executor.go",
+    "store/tikv/mock-tikv/rpc.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: r = tk.MustQuery(\"select id from select_order_test order by id desc limit 1 \") (executor/executor_test.go)",
+      "files: executor/executor_test.go, store/tikv/mock-tikv/cop_handler_dag.go, store/tikv/mock-tikv/executor.go, store/tikv/mock-tikv/rpc.go"
+    ]
+  },
+  "analysis": "PR title: *: Support topN with DAG\nPR url: https://github.com/pingcap/tidb/pull/3008\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: r = tk.MustQuery(\"select id from select_order_test order by id desc limit 1 \") (executor/executor_test.go)\nChanged files (4): executor/executor_test.go, store/tikv/mock-tikv/cop_handler_dag.go, store/tikv/mock-tikv/executor.go, store/tikv/mock-tikv/rpc.go\nPatch url: https://github.com/pingcap/tidb/pull/3008.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

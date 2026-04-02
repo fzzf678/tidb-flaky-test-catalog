@@ -1,0 +1,55 @@
+{
+  "id": "pr-262",
+  "source_pr": {
+    "number": 262,
+    "url": "https://github.com/pingcap/tidb/pull/262",
+    "title": "plans:fix a bug in index plan",
+    "body": "When we have a interger column type, and compare it with a float value, the previous implementation first convert that float value to the column's type interger, then the value may be changed.\n\nfor example, we have column c1 values `1, 3, 5, 7`, when condition is `c1 >= 3.1` the result should be `5, 7`, but as we first converted 3.1 to 3, the condition has changed to `c1 >= 3`, then we get the wrong result `3, 5, 7`.\n\nBut type convertion is nessesary because the seek value must have the same type as the column to be encoded corectly.\n\nTo fix this bug, I added a field in `indexSpan`, which is the type converted value used to seek the lower bound, and keep the original `lowVal` for comparison.\n\nI also added a `testkit` package which simplifies testing code.\n"
+  },
+  "pr_merged_at": "2015-10-10T09:13:52+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/plans/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "\"select * from t1, t2 order by t1.c1, t1.c2, t2.c1, t2.c2\", (plan/plans/join_test.go)"
+  ],
+  "failure_signature": "\"select * from t1, t2 order by t1.c1, t1.c2, t2.c1, t2.c2\", (plan/plans/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/262",
+    "https://github.com/pingcap/tidb/pull/262.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/262.patch",
+  "changed_files": [
+    "expression/binop.go",
+    "expression/binop_test.go",
+    "expression/visitor_ident.go",
+    "expression/visitor_test.go",
+    "field/result_field.go",
+    "plan/plans/from.go",
+    "plan/plans/index.go",
+    "plan/plans/index_test.go",
+    "plan/plans/join.go",
+    "plan/plans/join_test.go",
+    "util/testkit/testkit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: \"select * from t1, t2 order by t1.c1, t1.c2, t2.c1, t2.c2\", (plan/plans/join_test.go)",
+      "files: expression/binop.go, expression/binop_test.go, expression/visitor_ident.go, expression/visitor_test.go, field/result_field.go, plan/plans/from.go, plan/plans/index.go, plan/plans/index_test.go, plan/plans/join.go, plan/plans/join_test.go, util/testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: plans:fix a bug in index plan\nPR url: https://github.com/pingcap/tidb/pull/262\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"select * from t1, t2 order by t1.c1, t1.c2, t2.c1, t2.c2\", (plan/plans/join_test.go)\nChanged files (11): expression/binop.go, expression/binop_test.go, expression/visitor_ident.go, expression/visitor_test.go, field/result_field.go, plan/plans/from.go, plan/plans/index.go, plan/plans/index_test.go, plan/plans/join.go, plan/plans/join_test.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/262.patch\nPicked test: type=unit path=plan/plans/join_test.go name=join_test"
+}

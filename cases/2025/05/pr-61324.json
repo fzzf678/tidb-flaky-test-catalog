@@ -1,0 +1,49 @@
+{
+  "id": "pr-61324",
+  "source_pr": {
+    "number": 61324,
+    "url": "https://github.com/pingcap/tidb/pull/61324",
+    "title": "planner: index join banned the enforced sort from stream agg, which is not supported in executor layer now.",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/61323\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-05-27T13:40:58+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/t/planner/core/indexjoin.test",
+    "name": "explain_union_scan"
+  },
+  "symptoms": [
+    "explain select /*+ inl_join(st_984) */ concat( st_984.r1 , st_984.r1 ) as r0 , st_984.r0 as r1 , t8e1f515f.col_44 as r2 from t8e1f515f inner join (select /*+ stream_agg() */ t5602f14e.col_55 as r0 , group_concat( t5602f14e.col_56 order by t5602f14e.col_56 ) as r1 , bit_and( t5602f14e.col_53 ) as r2 from t5602f14e where not( IsNull( JSON_OVERLAPS( '[151142..."
+  ],
+  "failure_signature": "explain select /*+ inl_join(st_984) */ concat( st_984.r1 , st_984.r1 ) as r0 , st_984.r0 as r1 , t8e1f515f.col_44 as r2 from t8e1f515f inner join (select /*+ stream_agg() */ t5602f14e.col_55 as r0 , group_concat( t5602f14e.col_56 order by t5602f14e.col_56 ) as r1 , bit_and( t5602f14e.col_53 ) as r2 from t5602f14e where not( IsNull( JSON_OVERLAPS( '[151142...",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "explain select /*+ inl_join(st_984) */ concat( st_984.r1 , st_984.r1 ) as r0 , st_984.r0 as r1 , t8e1f515f.col_44 as r2 from t8e1f515f inner join (select /*+ stream_agg() */ t5602f14e.col_55 as r0 , group_concat( t5602f14e.col_56 order by t5602f14e.col_56 ) as r1 , bit_and( t5602f14e.col_53 ) as r2 from t5602f14e where not( IsNull( JSON_OVERLAPS( '[151142...",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/61324",
+    "https://github.com/pingcap/tidb/pull/61324.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/61324.patch",
+  "changed_files": [
+    "pkg/planner/core/exhaust_physical_plans.go",
+    "pkg/planner/core/operator/logicalop/logical_union_scan.go",
+    "tests/integrationtest/r/explain_union_scan.result",
+    "tests/integrationtest/r/planner/core/indexjoin.result",
+    "tests/integrationtest/t/planner/core/indexjoin.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: explain select /*+ inl_join(st_984) */ concat( st_984.r1 , st_984.r1 ) as r0 , st_984.r0 as r1 , t8e1f515f.col_44 as r2 from t8e1f515f inner join (select /*+ stream_agg() */ t5602f14e.col_55 as r0 , group_concat( t5602f14e.col_56 order by t5602f14e.col_56 ) as r1 , bit_and( t5602f14e.col_53 ) as r2 from t5602f14e where not( IsNull( JSON_OVERLAPS( '[151142...",
+      "files: pkg/planner/core/exhaust_physical_plans.go, pkg/planner/core/operator/logicalop/logical_union_scan.go, tests/integrationtest/r/explain_union_scan.result, tests/integrationtest/r/planner/core/indexjoin.result, tests/integrationtest/t/planner/core/indexjoin.test"
+    ]
+  },
+  "analysis": "PR title: planner: index join banned the enforced sort from stream agg, which is not supported in executor layer now.\nPR url: https://github.com/pingcap/tidb/pull/61324\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: explain select /*+ inl_join(st_984) */ concat( st_984.r1 , st_984.r1 ) as r0 , st_984.r0 as r1 , t8e1f515f.col_44 as r2 from t8e1f515f inner join (select /*+ stream_agg() */ t5602f14e.col_55 as r0 , group_concat( t5602f14e.col_56 order by t5602f14e.col_56 ) as r1 , bit_and( t5602f14e.col_53 ) as r2 from t5602f14e where not( IsNull( JSON_OVERLAPS( '[151142...\nChanged files (5): pkg/planner/core/exhaust_physical_plans.go, pkg/planner/core/operator/logicalop/logical_union_scan.go, tests/integrationtest/r/explain_union_scan.result, tests/integrationtest/r/planner/core/indexjoin.result, tests/integrationtest/t/planner/core/indexjoin.test\nPatch series analyzed; see patch_url."
+}

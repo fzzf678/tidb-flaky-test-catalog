@@ -1,0 +1,47 @@
+{
+  "id": "pr-3093",
+  "source_pr": {
+    "number": 3093,
+    "url": "https://github.com/pingcap/tidb/pull/3093",
+    "title": "plan: new plan support hash aggregation.",
+    "body": "Now we only support hash aggregation.\r\n@shenli @coocood @zimulala @tiancaiamao PTAL"
+  },
+  "pr_merged_at": "2017-04-25T15:40:48+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by d order by k\", (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by d order by k\", (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3093",
+    "https://github.com/pingcap/tidb/pull/3093.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3093.patch",
+  "changed_files": [
+    "plan/dag_plan_test.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/task_profile.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by d order by k\", (plan/dag_plan_test.go)",
+      "files: plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/task_profile.go"
+    ]
+  },
+  "analysis": "PR title: plan: new plan support hash aggregation.\nPR url: https://github.com/pingcap/tidb/pull/3093\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by d order by k\", (plan/dag_plan_test.go)\nChanged files (3): plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/task_profile.go\nPatch url: https://github.com/pingcap/tidb/pull/3093.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

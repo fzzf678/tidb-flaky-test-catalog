@@ -1,0 +1,45 @@
+{
+  "id": "pr-22291",
+  "source_pr": {
+    "number": 22291,
+    "url": "https://github.com/pingcap/tidb/pull/22291",
+    "title": "executor: add test case for memory cache in parition table",
+    "body": "Signed-off-by: Shuaipeng Yu <jackysp@gmail.com>\r\n\r\n<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #xxx <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\nMemory cache (manager) using table ID to manage cache for the read-only tables, which will not consider partitions (physical ID), but `lock table` also only using table ID. It's better to add some test cases to confirm the memory cache management still works well. Besides, the row ID/clustered index will use one allocator for the partition tables, it's better to confirm the\r\nkey will not be overwritten in the memory cache.\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: [xxx](url) <!-- REMOVE this line if not applicable -->\r\n\r\nWhat's Changed:\r\nAdd test case for memory cache in the partition tables.\r\n\r\nHow it Works:\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note\r\n"
+  },
+  "pr_merged_at": "2021-01-08T14:34:28+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/point_get_test.go",
+    "name": "point_get_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select distinct(_tidb_rowid) from point order by _tidb_rowid\").Check(testkit.Rows(\"1\", \"2\")) (executor/point_get_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select distinct(_tidb_rowid) from point order by _tidb_rowid\").Check(testkit.Rows(\"1\", \"2\")) (executor/point_get_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select distinct(_tidb_rowid) from point order by _tidb_rowid\").Check(testkit.Rows(\"1\", \"2\")) (executor/point_get_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22291",
+    "https://github.com/pingcap/tidb/pull/22291.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22291.patch",
+  "changed_files": [
+    "executor/point_get_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select distinct(_tidb_rowid) from point order by _tidb_rowid\").Check(testkit.Rows(\"1\", \"2\")) (executor/point_get_test.go)",
+      "files: executor/point_get_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: add test case for memory cache in parition table\nPR url: https://github.com/pingcap/tidb/pull/22291\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select distinct(_tidb_rowid) from point order by _tidb_rowid\").Check(testkit.Rows(\"1\", \"2\")) (executor/point_get_test.go)\nChanged files (1): executor/point_get_test.go\nPatch series analyzed; see patch_url."
+}

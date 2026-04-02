@@ -1,0 +1,47 @@
+{
+  "id": "pr-24051",
+  "source_pr": {
+    "number": 24051,
+    "url": "https://github.com/pingcap/tidb/pull/24051",
+    "title": "executor: bypass encoding invalid datetime for index join",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #23609  <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: [xxx](url) <!-- REMOVE this line if not applicable -->\r\n\r\nWhat's Changed:\r\n\r\nIgnore error from convertTimezone\r\n\r\nHow it Works:\r\n\r\n### Related changes\r\n\r\n- Need to cherry-pick to the release branch 5.0\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\nSide effects\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note\r\n"
+  },
+  "pr_merged_at": "2021-04-15T20:23:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t1 x cross join t1 y on x.a>y.b order by x.a, x.b, y.a, y.b\").Check(testkit.Rows(\"2002-10-03 04:28:53 2000 <nil> 2002\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2000\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2002\", \"2002-10-03 04:28:53 2002 <nil> 2002\", \"2002-10-03 04:28:53 2002 2002-10-03 04:28:53 2000\", \"2002-10-03..."
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t1 x cross join t1 y on x.a>y.b order by x.a, x.b, y.a, y.b\").Check(testkit.Rows(\"2002-10-03 04:28:53 2000 <nil> 2002\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2000\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2002\", \"2002-10-03 04:28:53 2002 <nil> 2002\", \"2002-10-03 04:28:53 2002 2002-10-03 04:28:53 2000\", \"2002-10-03...",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select * from t1 x cross join t1 y on x.a>y.b order by x.a, x.b, y.a, y.b\").Check(testkit.Rows(\"2002-10-03 04:28:53 2000 <nil> 2002\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2000\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2002\", \"2002-10-03 04:28:53 2002 <nil> 2002\", \"2002-10-03 04:28:53 2002 2002-10-03 04:28:53 2000\", \"2002-10-03...",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/24051",
+    "https://github.com/pingcap/tidb/pull/24051.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/24051.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "executor/index_lookup_join.go",
+    "go.sum"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t1 x cross join t1 y on x.a>y.b order by x.a, x.b, y.a, y.b\").Check(testkit.Rows(\"2002-10-03 04:28:53 2000 <nil> 2002\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2000\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2002\", \"2002-10-03 04:28:53 2002 <nil> 2002\", \"2002-10-03 04:28:53 2002 2002-10-03 04:28:53 2000\", \"2002-10-03...",
+      "files: executor/executor_test.go, executor/index_lookup_join.go, go.sum"
+    ]
+  },
+  "analysis": "PR title: executor: bypass encoding invalid datetime for index join\nPR url: https://github.com/pingcap/tidb/pull/24051\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t1 x cross join t1 y on x.a>y.b order by x.a, x.b, y.a, y.b\").Check(testkit.Rows(\"2002-10-03 04:28:53 2000 <nil> 2002\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2000\", \"2002-10-03 04:28:53 2000 2002-10-03 04:28:53 2002\", \"2002-10-03 04:28:53 2002 <nil> 2002\", \"2002-10-03 04:28:53 2002 2002-10-03 04:28:53 2000\", \"2002-10-03...\nChanged files (3): executor/executor_test.go, executor/index_lookup_join.go, go.sum\nPatch series analyzed; see patch_url."
+}

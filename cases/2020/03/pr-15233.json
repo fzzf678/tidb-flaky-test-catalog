@@ -1,0 +1,51 @@
+{
+  "id": "pr-15233",
+  "source_pr": {
+    "number": 15233,
+    "url": "https://github.com/pingcap/tidb/pull/15233",
+    "title": "planner/bindinfo: fix occasional panic of baseline evolution",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nThere would be occasional panic when running this SQL script:\r\n```sql\r\nset tidb_evolve_plan_baselines=ON;\r\ndrop table if exists t;\r\ncreate table t(a int, index idx_a(a));\r\ncreate global binding for select * from t where a > 10 using select * from t ignore index(idx_a) where a > 10;\r\nshow global bindings;\r\nselect * from t where a > 0;\r\ndo sleep(4);\r\nshow global bindings;\r\nexplain select * from t use index(idx_a) where a > 0;\r\n```\r\n\r\nthe panic stack is like:\r\n```\r\n[err=\"runtime error: invalid memory address or nil pointer dereference\"] [stack=\"goroutine 1523 [running]:\r\ngithub.com/pingcap/tidb/server.(*clientConn).Run.func1(0x5d2b8e0, 0xc001288b40, 0xc000b60b60)\r\n\t/Users/chenpeng/go/src/github.com/pingcap/tidb/server/conn.go:623 +0xee\r\npanic(0x56ee600, 0x7129650)\r\n\t/usr/local/go/src/runtime/panic.go:679 +0x1b2\r\ngithub.com/pingcap/tidb/bindinfo.(*HintsSet).GetFirstTableHints(...)\r\n\t/Users/chenpeng/go/src/github.com/pingcap/tidb/bindinfo/bind.go:26\r\ngithub.com/pingcap/tidb/planner.Optimize(0x5d2b8e0, 0xc001288b40, 0x5d83b40, 0xc000d0a500, 0x5d2c7e0, 0xc00199c000, 0x5d58340, 0xc000b694a0, 0x0, 0x0, ...)\r\n\t/Users/chenpeng/go/src/github.com/pingcap/tidb/planner/optimize.go:80 +0xe77\r\ngithub.com/pingcap/tidb/executor.(*Compiler).Compile(0xc0011d4dc8, 0x5d2b8e0, 0xc001288b40, 0x5d32620, 0xc00199c000, 0x0, 0x0, 0x0)\r\n\t/Users/chenpeng/go/src/github.com/pingcap/tidb/executor/compiler.go:61 +0x253\r\ngithub.com/pingcap/tidb/session.(*session).execute(0xc000d0a500, 0x5d2b8e0, 0xc001288b40, 0xc00190b701, 0x34, 0xc000d0c000, 0x376, 0x4000, 0x376, 0x0)\r\n\t/Users/chenpeng/go/src/github.com/pingcap/tidb/session/session.go:1120 +0x5cf\r\ngithub.com/pingcap/tidb/session.(*session).Execute(0xc000d0a500, 0x5d2b8e0, 0xc001288b40, 0xc00190b701, 0x34, 0x0, 0x0, 0x0, 0x0, 0x0)\r\n\t/Users/chenpeng/go/src/github.com/pingcap/tidb/session/session.go:1074 +0xdb\r\ngithub.com/pingcap/tidb/server.(*TiDBContext).Execute(0xc000e29f20, 0x5d2b8e0, 0xc001288b40, 0xc00190b701, 0x34, 0x40306e1, 0x5a6a6e0, 0xc0011d5278, 0xc0011d5268, 0x40cf022)\r\n\t/Users/chenpeng/go/src/github.com/pingcap/tidb/server/driver_tidb.go:248 +0x7c\r\ngithub.com/pingcap/tidb/server.(*clientConn).handleQuery(0xc000b60b60, 0x5d2b8e0, 0xc001288b40, 0xc00190b701, 0x34, 0x0, 0x0)\r\n\t/Users/chenpeng/go/src/github.com/pingcap/tidb/server/conn.go:1205 +0x91\r\ngithub.com/pingcap/tidb/server.(*clientConn).dispatch(0xc000b60b60, 0x5d2b8e0, 0xc001288b40, 0xc00190b701, 0x35, 0x34, 0x0, 0x0)\r\n\t/Users/chenpeng/go/src/github.com/pingcap/tidb/server/conn.go:869 +0x5e2\r\ngithub.com/pingcap/tidb/server.(*clientConn).Run(0xc000b60b60, 0x5d2b8e0, 0xc001288b40)\r\n\t/Users/chenpeng/go/src/github.com/pingcap/tidb/server/conn.go:678 +0x27c\r\ngithub.com/pingcap/tidb/server.(*Server).onConn(0xc00142f5f0, 0xc000b60b60)\r\n\t/Users/chenpeng/go/src/github.com/pingcap/tidb/server/server.go:463 +0xaf9\r\ncreated by github.com/pingcap/tidb/server.(*Server).Run\r\n\t/Users/chenpeng/go/src/github.com/pingcap/tidb/server/server.go:364 +0x759\r\n\"]\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\nThe root cause of panic is: only `id` of `Binding` is set in `AddEvolvePlanTask`, the `Hint` field is left as nil. In `prepareHints`, if `id` is not an empty string, the `Hint` would never be filled, so this `Hint` would remain nil in cache until `Update` is called. Thus there exists a time window when this binding is verified and added into `cache` before `Update` fills the `Hint` field, if a query comes in this time window and chooses this verified plan, it would panic in `Optimize -> GetFirstTableHints`.\r\n\r\nThe fix is to build `id` and `Hint` when adding evolving tasks. Also, for baseline capture, the `Hint` built is wrong, we fix it in this PR as well.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\n\r\nSide effects\r\n\r\n - Increased code complexity\r\n\r\n\r\nRelated changes\r\n\r\nN/A\r\n\r\nRelease note\r\n\r\n - Write release note for bug-fix or new feature.\r\n"
+  },
+  "pr_merged_at": "2020-03-19T21:10:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "bindinfo/bind_test.go",
+    "name": "bind_test"
+  },
+  "symptoms": [
+    "PR title: fix occasional panic of baseline evolution."
+  ],
+  "failure_signature": "PR title: fix occasional panic of baseline evolution.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "planner/bindinfo: fix occasional panic of baseline evolution",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/15233",
+    "https://github.com/pingcap/tidb/pull/15233.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/15233.patch",
+  "changed_files": [
+    "bindinfo/bind.go",
+    "bindinfo/bind_test.go",
+    "bindinfo/cache.go",
+    "bindinfo/handle.go",
+    "bindinfo/session_handle.go",
+    "planner/optimize.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR title: fix occasional panic of baseline evolution.",
+      "evidence: diff adds ParseHintsSet and stores Binding.ID/HintsSet to ensure evolve tasks have valid ID/Hint; adds TestHintsSetEvolveTask to prevent panic (bindinfo/*, planner/optimize.go).",
+      "files: bindinfo/bind.go, bindinfo/bind_test.go, bindinfo/cache.go, bindinfo/handle.go, bindinfo/session_handle.go, planner/optimize.go"
+    ]
+  },
+  "analysis": "PR title: planner/bindinfo: fix occasional panic of baseline evolution\nPR url: https://github.com/pingcap/tidb/pull/15233\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: fix occasional panic of baseline evolution.\nChanged files (6): bindinfo/bind.go, bindinfo/bind_test.go, bindinfo/cache.go, bindinfo/handle.go, bindinfo/session_handle.go, planner/optimize.go\nPatch url: https://github.com/pingcap/tidb/pull/15233.patch\nPicked test: type=unit path=bindinfo/bind_test.go name=bind_test"
+}

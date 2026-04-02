@@ -1,0 +1,46 @@
+{
+  "id": "pr-16021",
+  "source_pr": {
+    "number": 16021,
+    "url": "https://github.com/pingcap/tidb/pull/16021",
+    "title": "test: try to fix race",
+    "body": "Signed-off-by: crazycs520 <crazycs520@gmail.com>\r\n\r\n<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nUpdate go.mod for https://github.com/pingcap/parser/pull/794\r\n\r\nfix-race\r\n\r\nhttps://internal.pingcap.net/idc-jenkins/blue/organizations/jenkins/tidb_ghpr_unit_test/detail/tidb_ghpr_unit_test/30430/pipeline\r\n\r\nhttps://internal.pingcap.net/idc-jenkins/blue/organizations/jenkins/tidb_ghpr_unit_test/detail/tidb_ghpr_unit_test/30436/pipeline \r\n\r\n```sql\r\n\r\n[2020-04-02T09:14:49.603Z] ==================\r\n[2020-04-02T09:14:49.603Z] WARNING: DATA RACE\r\n[2020-04-02T09:14:49.603Z] Read at 0x00c000399350 by goroutine 484:\r\n[2020-04-02T09:14:49.603Z]   runtime.mapaccess2_fast64()\r\n[2020-04-02T09:14:49.603Z]       /usr/local/go/src/runtime/map_fast64.go:52 +0x0\r\n[2020-04-02T09:14:49.603Z]   github.com/pingcap/parser/terror.(*Error).getMySQLErrorCode()\r\n[2020-04-02T09:14:49.603Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/parser@v0.0.0-20200326020624-68d423641be5/terror/terror.go:296 +0x11a\r\n[2020-04-02T09:14:49.603Z]   github.com/pingcap/parser/terror.(*Error).ToSQLError()\r\n[2020-04-02T09:14:49.603Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/parser@v0.0.0-20200326020624-68d423641be5/terror/terror.go:284 +0x3f\r\n[2020-04-02T09:14:49.603Z]   github.com/pingcap/tidb/util/testkit.(*TestKit).MustGetErrCode()\r\n[2020-04-02T09:14:49.603Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/util/testkit/testkit.go:275 +0x358\r\n[2020-04-02T09:14:49.603Z]   github.com/pingcap/tidb/ddl_test.(*testSequenceSuite).TestDropSequence()\r\n[2020-04-02T09:14:49.603Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/sequence_test.go:103 +0x2e8\r\n[2020-04-02T09:14:49.603Z]   github.com/pingcap/tidb/ddl_test.(*testSequenceSuite).TestDropSequence()\r\n[2020-04-02T09:14:49.603Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/sequence_test.go:100 +0x282\r\n[2020-04-02T09:14:49.603Z]   runtime.call32()\r\n[2020-04-02T09:14:49.603Z]       /usr/local/go/src/runtime/asm_amd64.s:539 +0x3a\r\n[2020-04-02T09:14:49.603Z]   reflect.Value.Call()\r\n[2020-04-02T09:14:49.603Z]       /usr/local/go/src/reflect/value.go:321 +0xd3\r\n[2020-04-02T09:14:49.603Z]   github.com/pingcap/check.(*suiteRunner).forkTest.func1()\r\n[2020-04-02T09:14:49.603Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20200212061837-5e12011dc712/check.go:850 +0x9aa\r\n[2020-04-02T09:14:49.603Z]   github.com/pingcap/check.(*suiteRunner).forkCall.func1()\r\n[2020-04-02T09:14:49.603Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20200212061837-5e12011dc712/check.go:739 +0x113\r\n[2020-04-02T09:14:49.603Z] \r\n[2020-04-02T09:14:49.603Z] Previous write at 0x00c000399350 by goroutine 55:\r\n[2020-04-02T09:14:49.603Z]   runtime.mapassign_fast64()\r\n[2020-04-02T09:14:49.603Z]       /usr/local/go/src/runtime/map_fast64.go:92 +0x0\r\n[2020-04-02T09:14:49.603Z]   github.com/pingcap/tidb/ddl.(*ddl).doDDLJob()\r\n[2020-04-02T09:14:49.603Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/parser@v0.0.0-20200326020624-68d423641be5/terror/terror.go:133 +0x1103\r\n[2020-04-02T09:14:49.603Z]   github.com/pingcap/tidb/ddl.(*ddl).doDDLJob()\r\n[2020-04-02T09:14:49.603Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl.go:500 +0x354\r\n[2020-04-02T09:14:49.603Z]   github.com/pingcap/tidb/ddl.(*ddl).CreateSchemaWithInfo()\r\n[2020-04-02T09:14:49.604Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl_api.go:115 +0x50f\r\n[2020-04-02T09:14:49.604Z]   github.com/pingcap/tidb/ddl.(*ddl).CreateSchema()\r\n[2020-04-02T09:14:49.604Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl_api.go:69 +0x1ee\r\n[2020-04-02T09:14:49.604Z]   github.com/pingcap/tidb/executor.(*DDLExec).executeCreateDatabase()\r\n[2020-04-02T09:14:49.604Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/ddl.go:179 +0x419\r\n[2020-04-02T09:14:49.604Z]   github.com/pingcap/tidb/executor.(*DDLExec).Next()\r\n```\r\n\r\nPlease merge Parser first.\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: [xxx](url) <!-- REMOVE this line if not applicable -->\r\n\r\nWhat's Changed:\r\n\r\nHow it Works:\r\n\r\n### Related changes\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- No code\r\n"
+  },
+  "pr_merged_at": "2020-04-02T21:50:40+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/ddl.go",
+    "name": "ddl"
+  },
+  "symptoms": [
+    "PR body includes CI race detector trace (WARNING: DATA RACE) involving parser/terror during ddl tests."
+  ],
+  "failure_signature": "PR body includes CI race detector trace (WARNING: DATA RACE) involving parser/terror during ddl tests.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test: try to fix race",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/16021",
+    "https://github.com/pingcap/tidb/pull/16021.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/16021.patch",
+  "changed_files": [
+    "ddl/ddl.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body includes CI race detector trace (WARNING: DATA RACE) involving parser/terror during ddl tests.",
+      "evidence: diff switches terror Class().New(...) to Class().Synthesize(...) when rewriting cancelled DDL job error, avoiding the data race (ddl/ddl.go).",
+      "files: ddl/ddl.go"
+    ]
+  },
+  "analysis": "PR title: test: try to fix race\nPR url: https://github.com/pingcap/tidb/pull/16021\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body includes CI race detector trace (WARNING: DATA RACE) involving parser/terror during ddl tests.\nChanged files (1): ddl/ddl.go\nPatch url: https://github.com/pingcap/tidb/pull/16021.patch\nPicked test: type=unit path=ddl/ddl.go name=ddl"
+}

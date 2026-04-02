@@ -1,0 +1,58 @@
+{
+  "id": "pr-36181",
+  "source_pr": {
+    "number": 36181,
+    "url": "https://github.com/pingcap/tidb/pull/36181",
+    "title": "planner: support rewrite for skew group distinct aggregate to avoid skew execution",
+    "body": "This patch adds a new rewrite rule rule_aggregation_skew_rewrite.\r\n\r\nSkewDistinctAggRewriter will rewrite group distinct aggregate into 2 level aggregates, e.g.:\r\n```sql\r\n   select S_NATIONKEY as s,\r\n      count(S_SUPPKEY),\r\n      count(distinct S_NAME)\r\n   from supplier group by s;\r\n```\r\nwill be rewritten to\r\n```sql\r\n   select S_NATIONKEY as s, sum(c), count(S_NAME) from (\r\n      select S_NATIONKEY, S_NAME, count(S_SUPPKEY) c\r\n      from supplier\r\n      group by S_NATIONKEY, S_NAME\r\n   ) as T group by s;\r\n```\r\nIf the group key is highly skewed and the distinct key has large number of\r\ndistinct values (a.k.a. high cardinality), the query execution will be slow.\r\nThis rule may help to ease the skew issue.\r\n\r\nThe rewrite rule only applies to query that satisfies:\r\n- The aggregate has at least 1 group by column (the group key can be columns or\r\n  expressions)\r\n- The aggregate has 1 and only 1 distinct aggregate function\r\n\r\nThis rule is disabled by default. Use `tidb_opt_skew_distinct_agg` to enable the rule.\r\n\r\nIssue Number: close #36169\r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [x] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n```release-note\r\nAdd a variable `tidb_opt_skew_distinct_agg` to rewrite group aggregate\r\nwith single distinct aggregate function into 2 level aggregate to avoid\r\nskew execution.\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-07-18T15:29:07+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/physical_plan_test.go",
+    "name": "physical_plan_test"
+  },
+  "symptoms": [
+    "\"from t group by date_format(d,'%Y') order by df;\").Check( (planner/core/physical_plan_test.go)"
+  ],
+  "failure_signature": "\"from t group by date_format(d,'%Y') order by df;\").Check( (planner/core/physical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/36181",
+    "https://github.com/pingcap/tidb/pull/36181.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/36181.patch",
+  "changed_files": [
+    "executor/set_test.go",
+    "planner/core/enforce_mpp_test.go",
+    "planner/core/exhaust_physical_plans.go",
+    "planner/core/logical_plan_builder.go",
+    "planner/core/optimizer.go",
+    "planner/core/physical_plan_test.go",
+    "planner/core/rule_aggregation_skew_rewrite.go",
+    "planner/core/testdata/enforce_mpp_suite_in.json",
+    "planner/core/testdata/enforce_mpp_suite_out.json",
+    "planner/core/testdata/plan_suite_in.json",
+    "planner/core/testdata/plan_suite_out.json",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: \"from t group by date_format(d,'%Y') order by df;\").Check( (planner/core/physical_plan_test.go)",
+      "files: executor/set_test.go, planner/core/enforce_mpp_test.go, planner/core/exhaust_physical_plans.go, planner/core/logical_plan_builder.go, planner/core/optimizer.go, planner/core/physical_plan_test.go, planner/core/rule_aggregation_skew_rewrite.go, planner/core/testdata/enforce_mpp_suite_in.json, planner/core/testdata/enforce_mpp_suite_out.json, planner/core/testdata/plan_suite_in.json, planner/core/testdata/plan_suite_out.json, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go"
+    ]
+  },
+  "analysis": "PR title: planner: support rewrite for skew group distinct aggregate to avoid skew execution\nPR url: https://github.com/pingcap/tidb/pull/36181\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"from t group by date_format(d,'%Y') order by df;\").Check( (planner/core/physical_plan_test.go)\nChanged files (14): executor/set_test.go, planner/core/enforce_mpp_test.go, planner/core/exhaust_physical_plans.go, planner/core/logical_plan_builder.go, planner/core/optimizer.go, planner/core/physical_plan_test.go, planner/core/rule_aggregation_skew_rewrite.go, planner/core/testdata/enforce_mpp_suite_in.json, planner/core/testdata/enforce_mpp_suite_out.json, planner/core/testdata/plan_suite_in.json, planner/core/testdata/plan_suite_out.json, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go\nPatch url: https://github.com/pingcap/tidb/pull/36181.patch\nPicked test: type=unit path=planner/core/physical_plan_test.go name=physical_plan_test"
+}

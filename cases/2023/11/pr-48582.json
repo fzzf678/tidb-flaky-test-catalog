@@ -1,0 +1,49 @@
+{
+  "id": "pr-48582",
+  "source_pr": {
+    "number": 48582,
+    "url": "https://github.com/pingcap/tidb/pull/48582",
+    "title": "util/ranger: move cut prefix logic for prefix index to ealier stage",
+    "body": "\r\n### What problem does this PR solve?\r\n\r\n\r\nIssue Number: ref https://github.com/pingcap/tidb/issues/48181\r\n\r\n\r\n### What is changed and how it works?\r\n\r\nThis is part of the prerequisite to implement #48181.\r\n\r\nCurrent logic:\r\n1. First, build expressions into `point`s, which will be further built into `Range`s.\r\n2. Some type conversion works and build `point`s into `Range`s.\r\n3. Cut prefix on `Range`s.\r\n\r\nHowever, to implement #48181, we need to convert strings into sort key when building points, while cutting prefix require the original value (because prefix length is calculated by characters instead of bytes).\r\n\r\nTherefore, we have to move the cutting prefix logic to an earlier stage, into the points builder.\r\n\r\nFortunately, cutting prefix on `point`s is similar to cutting on `Range`. And other existing logic (appending points into ranges, reserving a selection, etc,) will take care of other things.\r\n\r\n#### Side effects\r\n\r\nTo eliminate possible overlapped ranges after cutting prefix, a `UnionRange` is needed.\r\nPreviously, we only do this when a cut actually happens. That's easy to implement because they are at the same place in the code.\r\nNow, they are in different stages in code logic. So we always do `UnionRange` for prefix index, even if the cut doesn't happen. (We think `UnionRange` is a safe operation, and it doesn't affect the correctness)\r\nThis will result in a side effect, ranges like ['a' 1, 'a' 1], ['a' 2, 'a' 2], ['a' 3, 'a' 3] will become ['a' 1, 'a' 3]. This doesn't affect correctness but has some subtle influence on estimation and performance.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [x] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->  \r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-11-28T18:11:49+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/t/planner/core/integration.test",
+    "name": "integration"
+  },
+  "symptoms": [
+    "explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result)"
+  ],
+  "failure_signature": "explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/48582",
+    "https://github.com/pingcap/tidb/pull/48582.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/48582.patch",
+  "changed_files": [
+    "pkg/util/ranger/detacher.go",
+    "pkg/util/ranger/points.go",
+    "pkg/util/ranger/ranger.go",
+    "tests/integrationtest/r/planner/core/integration.result",
+    "tests/integrationtest/t/planner/core/integration.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result)",
+      "files: pkg/util/ranger/detacher.go, pkg/util/ranger/points.go, pkg/util/ranger/ranger.go, tests/integrationtest/r/planner/core/integration.result, tests/integrationtest/t/planner/core/integration.test"
+    ]
+  },
+  "analysis": "PR title: util/ranger: move cut prefix logic for prefix index to ealier stage\nPR url: https://github.com/pingcap/tidb/pull/48582\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result)\nChanged files (5): pkg/util/ranger/detacher.go, pkg/util/ranger/points.go, pkg/util/ranger/ranger.go, tests/integrationtest/r/planner/core/integration.result, tests/integrationtest/t/planner/core/integration.test\nPatch series analyzed; see patch_url."
+}

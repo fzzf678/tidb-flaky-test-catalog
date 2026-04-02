@@ -1,0 +1,47 @@
+{
+  "id": "pr-8073",
+  "source_pr": {
+    "number": 8073,
+    "url": "https://github.com/pingcap/tidb/pull/8073",
+    "title": "planner: refine PhysicalProjection.ResolveIndices during neighbouring Proj",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\nDescription and test to be added.\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n``` sql\r\ncreate table t1(a int, b int);\r\ninsert into t1 values(1,1),(2,2);\r\n\r\ncreate table t2(a int, b int);\r\ninsert into t2 values(1,1),(2,2);\r\n\r\nselect sum(c) from (select t1.a as a, t1.a as c, length(t1.b) from t1  union select a, b, b from t2) t;\r\n```\r\n\r\nBefore this PR, this query will cause a panic.\r\n\r\n### What is changed and how it works?\r\nexplain info:\r\n``` sql\r\n+--------------------------------+----------+------+-------------------------------------------------------------+\r\n| id                             | count    | task | operator info                                               |\r\n+--------------------------------+----------+------+-------------------------------------------------------------+\r\n| StreamAgg_16                   | 1.00     | root | funcs:sum(t.c)                                              |\r\n| └─HashAgg_30                   | 16000.00 | root | group by:length(t1.b), t1.a, t1.c, funcs:firstrow(t1.c)     |\r\n|   └─Union_20                   | 20000.00 | root |                                                             |\r\n|     ├─Projection_21            | 10000.00 | root | test.t1.a, test.t1.c, cast(length(t1.b))                    |\r\n|     │ └─Projection_22          | 10000.00 | root | test.t1.a, test.t1.a, length(cast(test.t1.b))               |\r\n|     │   └─TableReader_24       | 10000.00 | root | data:TableScan_23                                           |\r\n|     │     └─TableScan_23       | 10000.00 | cop  | table:t1, range:[-inf,+inf], keep order:false, stats:pseudo |\r\n|     └─Projection_25            | 10000.00 | root | test.t2.a, test.t2.b, cast(test.t2.b)                       |\r\n|       └─TableReader_27         | 10000.00 | root | data:TableScan_26                                           |\r\n|         └─TableScan_26         | 10000.00 | cop  | table:t2, range:[-inf,+inf], keep order:false, stats:pseudo |\r\n+--------------------------------+----------+------+-------------------------------------------------------------+\r\n```\r\nAfter buildProjection4Union, `Projection_21:test.t1.a`.`Index` and `Projection_21:test.t1.c`.`Index` will be 0 and 1 individually.\r\nWhile both the two `Projection_22.test.t1.a`.`Index` are 0.\r\nThus during execution, when `Projection_21:test.t1.c` calling chunk.SwapColumn, it will get an empty chunk.column, which would cause the panic.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\n\r\nSide effects\r\n\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n \r\nrelease-2.1 release-2.0"
+  },
+  "pr_merged_at": "2018-11-02T13:42:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "rs := tk.MustQuery(\"select cast(count(a) as signed), a as another, a from t group by a order by cast(count(a) as signed), a limit 10;\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "rs := tk.MustQuery(\"select cast(count(a) as signed), a as another, a from t group by a order by cast(count(a) as signed), a limit 10;\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8073",
+    "https://github.com/pingcap/tidb/pull/8073.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8073.patch",
+  "changed_files": [
+    "Makefile",
+    "executor/executor_test.go",
+    "planner/core/resolve_indices.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rs := tk.MustQuery(\"select cast(count(a) as signed), a as another, a from t group by a order by cast(count(a) as signed), a limit 10;\") (executor/executor_test.go)",
+      "files: .gitignore, Makefile, executor/executor_test.go, planner/core/logical_plan_builder.go, planner/core/resolve_indices.go"
+    ]
+  },
+  "analysis": "PR title: planner: refine PhysicalProjection.ResolveIndices during neighbouring Proj\nPR url: https://github.com/pingcap/tidb/pull/8073\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rs := tk.MustQuery(\"select cast(count(a) as signed), a as another, a from t group by a order by cast(count(a) as signed), a limit 10;\") (executor/executor_test.go)\nChanged files (3): Makefile, executor/executor_test.go, planner/core/resolve_indices.go\nPatch url: https://github.com/pingcap/tidb/pull/8073.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

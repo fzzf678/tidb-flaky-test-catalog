@@ -1,0 +1,46 @@
+{
+  "id": "pr-4882",
+  "source_pr": {
+    "number": 4882,
+    "url": "https://github.com/pingcap/tidb/pull/4882",
+    "title": "plan: join's default value length should be changed when do column pruning.",
+    "body": "After column pruning, the `LogicalJoin.DefaultValues` may not be expected, and cause bug when do merge join"
+  },
+  "pr_merged_at": "2017-10-25T15:44:04+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/merge_join_test.go",
+    "name": "merge_join_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select /*+ TIDB_SMJ(t, t1) */ t.a, t1.b from t right join t t1 on t.a = t1.b order by t.a\").Check(testkit.Rows(\"<nil> 2\")) (executor/merge_join_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select /*+ TIDB_SMJ(t, t1) */ t.a, t1.b from t right join t t1 on t.a = t1.b order by t.a\").Check(testkit.Rows(\"<nil> 2\")) (executor/merge_join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4882",
+    "https://github.com/pingcap/tidb/pull/4882.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4882.patch",
+  "changed_files": [
+    "executor/merge_join_test.go",
+    "plan/column_pruning.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select /*+ TIDB_SMJ(t, t1) */ t.a, t1.b from t right join t t1 on t.a = t1.b order by t.a\").Check(testkit.Rows(\"<nil> 2\")) (executor/merge_join_test.go)",
+      "files: executor/merge_join_test.go, plan/column_pruning.go"
+    ]
+  },
+  "analysis": "PR title: plan: join's default value length should be changed when do column pruning.\nPR url: https://github.com/pingcap/tidb/pull/4882\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select /*+ TIDB_SMJ(t, t1) */ t.a, t1.b from t right join t t1 on t.a = t1.b order by t.a\").Check(testkit.Rows(\"<nil> 2\")) (executor/merge_join_test.go)\nChanged files (2): executor/merge_join_test.go, plan/column_pruning.go\nPatch url: https://github.com/pingcap/tidb/pull/4882.patch\nPicked test: type=unit path=executor/merge_join_test.go name=merge_join_test"
+}

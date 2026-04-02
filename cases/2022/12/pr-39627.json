@@ -1,0 +1,51 @@
+{
+  "id": "pr-39627",
+  "source_pr": {
+    "number": 39627,
+    "url": "https://github.com/pingcap/tidb/pull/39627",
+    "title": "ttl: add methods to split ttl scan tasks",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #39626\r\n\r\n### What is changed and how it works?\r\n\r\n- The scan range defined to `[start, end)` ,  so modified some implements of sql builder\r\n- Split scan tasks for table with int or binary primary key \r\n\r\nFor implement detail, the PR takes some considerations with:\r\n\r\n- The region cannot grantee its start/end key is a legal format for table row: #20727. So this PR does some works to parse a legal value of the region edges.\r\n- When a int handle is unsigned, and if a range  is across negative and positive values, we should split this range to two ranges.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-12-09T04:02:05+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ttl/sqlbuilder/sql_test.go",
+    "name": "sql_test"
+  },
+  "symptoms": [
+    "\"SELECT LOW_PRIORITY `id` FROM `test`.`t1` WHERE `id` >= 1 AND `id` < 100 AND `time` < '1970-01-01 00:00:00' ORDER BY `id` ASC LIMIT 3\", (ttl/sqlbuilder/sql_test.go)"
+  ],
+  "failure_signature": "\"SELECT LOW_PRIORITY `id` FROM `test`.`t1` WHERE `id` >= 1 AND `id` < 100 AND `time` < '1970-01-01 00:00:00' ORDER BY `id` ASC LIMIT 3\", (ttl/sqlbuilder/sql_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/39627",
+    "https://github.com/pingcap/tidb/pull/39627.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/39627.patch",
+  "changed_files": [
+    "ttl/cache/BUILD.bazel",
+    "ttl/cache/split_test.go",
+    "ttl/cache/table.go",
+    "ttl/sqlbuilder/sql.go",
+    "ttl/sqlbuilder/sql_test.go",
+    "ttl/ttlworker/scan.go",
+    "ttl/ttlworker/scan_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: \"SELECT LOW_PRIORITY `id` FROM `test`.`t1` WHERE `id` >= 1 AND `id` < 100 AND `time` < '1970-01-01 00:00:00' ORDER BY `id` ASC LIMIT 3\", (ttl/sqlbuilder/sql_test.go)",
+      "files: ttl/cache/BUILD.bazel, ttl/cache/split_test.go, ttl/cache/table.go, ttl/sqlbuilder/sql.go, ttl/sqlbuilder/sql_test.go, ttl/ttlworker/scan.go, ttl/ttlworker/scan_test.go"
+    ]
+  },
+  "analysis": "PR title: ttl: add methods to split ttl scan tasks\nPR url: https://github.com/pingcap/tidb/pull/39627\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"SELECT LOW_PRIORITY `id` FROM `test`.`t1` WHERE `id` >= 1 AND `id` < 100 AND `time` < '1970-01-01 00:00:00' ORDER BY `id` ASC LIMIT 3\", (ttl/sqlbuilder/sql_test.go)\nChanged files (7): ttl/cache/BUILD.bazel, ttl/cache/split_test.go, ttl/cache/table.go, ttl/sqlbuilder/sql.go, ttl/sqlbuilder/sql_test.go, ttl/ttlworker/scan.go, ttl/ttlworker/scan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/39627.patch\nPicked test: type=unit path=ttl/sqlbuilder/sql_test.go name=sql_test"
+}

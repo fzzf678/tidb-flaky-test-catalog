@@ -1,0 +1,45 @@
+{
+  "id": "pr-12910",
+  "source_pr": {
+    "number": 12910,
+    "url": "https://github.com/pingcap/tidb/pull/12910",
+    "title": "executor: fix data race in TestFastAnalyze",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nFix a data race.\r\n```\r\n[2019-10-23T13:18:58.735Z] ==================\r\n[2019-10-23T13:18:58.735Z] WARNING: DATA RACE\r\n[2019-10-23T13:18:58.735Z] Write at 0x000004641498 by goroutine 595:\r\n[2019-10-23T13:18:58.735Z]   github.com/pingcap/tidb/executor_test.(*testFastAnalyze).TestFastAnalyze()\r\n[2019-10-23T13:18:58.735Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/tidb.go:134 +0x273\r\n[2019-10-23T13:18:58.735Z]   runtime.call32()\r\n[2019-10-23T13:18:58.735Z]       /usr/local/go/src/runtime/asm_amd64.s:539 +0x3a\r\n[2019-10-23T13:18:58.735Z]   reflect.Value.Call()\r\n[2019-10-23T13:18:58.735Z]       /usr/local/go/src/reflect/value.go:321 +0xd3\r\n[2019-10-23T13:18:58.735Z]   github.com/pingcap/check.(*suiteRunner).forkTest.func1()\r\n[2019-10-23T13:18:58.735Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:836 +0x9aa\r\n[2019-10-23T13:18:58.735Z]   github.com/pingcap/check.(*suiteRunner).forkCall.func1()\r\n[2019-10-23T13:18:58.735Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:730 +0xc4\r\n[2019-10-23T13:18:58.735Z] \r\n[2019-10-23T13:18:58.735Z] Previous read at 0x000004641498 by goroutine 504:\r\n[2019-10-23T13:18:58.735Z]   github.com/pingcap/tidb/session.(*domainMap).Get()\r\n[2019-10-23T13:18:58.735Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/tidb.go:68 +0x1d4\r\n[2019-10-23T13:18:58.735Z]   github.com/pingcap/tidb/session.createSession()\r\n[2019-10-23T13:18:58.735Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:1670 +0x7c\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/tidb/session.runInBootstrapSession()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:1653 +0x60\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/tidb/session.BootstrapSession()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:1574 +0x9fa\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/tidb/executor_test.(*testBypassSuite).TestLatch()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/write_test.go:2142 +0x18b\r\n[2019-10-23T13:18:58.736Z]   runtime.call32()\r\n[2019-10-23T13:18:58.736Z]       /usr/local/go/src/runtime/asm_amd64.s:539 +0x3a\r\n[2019-10-23T13:18:58.736Z]   reflect.Value.Call()\r\n[2019-10-23T13:18:58.736Z]       /usr/local/go/src/reflect/value.go:321 +0xd3\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/check.(*suiteRunner).forkTest.func1()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:836 +0x9aa\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/check.(*suiteRunner).forkCall.func1()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:730 +0xc4\r\n[2019-10-23T13:18:58.736Z] \r\n[2019-10-23T13:18:58.736Z] Goroutine 595 (running) created at:\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/check.(*suiteRunner).forkCall()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:727 +0x4a3\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/check.(*suiteRunner).forkTest()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:818 +0x1b9\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/check.(*suiteRunner).doRun()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:659 +0x13a\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/check.(*suiteRunner).asyncRun.func1()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:643 +0xae\r\n[2019-10-23T13:18:58.736Z] \r\n[2019-10-23T13:18:58.736Z] Goroutine 504 (running) created at:\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/check.(*suiteRunner).forkCall()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:727 +0x4a3\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/check.(*suiteRunner).forkTest()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:818 +0x1b9\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/check.(*suiteRunner).doRun()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:659 +0x13a\r\n[2019-10-23T13:18:58.736Z]   github.com/pingcap/check.(*suiteRunner).asyncRun.func1()\r\n[2019-10-23T13:18:58.736Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20190102082844-67f458068fc8/check.go:643 +0xae\r\n[2019-10-23T13:18:58.736Z] ==================\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\nUse atomic to get/set the global value.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - None\r\n\r\n\r\n"
+  },
+  "pr_merged_at": "2019-10-23T23:41:29+08:00",
+  "test": {
+    "type": "unit",
+    "path": "session/tidb.go",
+    "name": "TestFastAnalyze"
+  },
+  "symptoms": [
+    "executor: fix data race in TestFastAnalyze"
+  ],
+  "failure_signature": "executor: fix data race in TestFastAnalyze",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "executor: fix data race in TestFastAnalyze",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/12910",
+    "https://github.com/pingcap/tidb/pull/12910.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/12910.patch",
+  "changed_files": [
+    "session/tidb.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: executor: fix data race in TestFastAnalyze",
+      "files: session/tidb.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix data race in TestFastAnalyze\nPR url: https://github.com/pingcap/tidb/pull/12910\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: executor: fix data race in TestFastAnalyze\nChanged files (1): session/tidb.go\nPatch url: https://github.com/pingcap/tidb/pull/12910.patch\nPicked test: type=unit path=session/tidb.go name=TestFastAnalyze"
+}

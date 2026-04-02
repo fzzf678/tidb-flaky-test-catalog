@@ -1,0 +1,74 @@
+{
+  "id": "pr-41537",
+  "source_pr": {
+    "number": 41537,
+    "url": "https://github.com/pingcap/tidb/pull/41537",
+    "title": "*: Support List default partition | tidb-test=pr/2110",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #20679\r\n\r\nProblem Summary:\r\nCurrently all values must be defined in the partitioning definitions, which is not very user friendly. By allowing a DEFAULT partition, as a catch-all partition, one only need to define the most occurring values and have the DEFAULT partition catch the rest.\r\n\r\n### What is changed and how it works?\r\nFor insert/update, the pruning is simple, if no match on defined values and there exists a default partition, put the new value there.\r\n\r\nFor select pruning, we will add the default partition if the existing values are not matched or there are multiple partitioning columns (due to the combination check needs a further refactoring) or if there is a range.\r\n\r\nSince this is a compatibility breaker for MySQL (but not completely for MariaDB), I also added `tidb_enable_default_list_partition` variable that is default OFF.\r\n\r\nOne difference from the syntax of MariaDB and Oracle is that it allows both `(DEFAULT)` and `(<list of values>)` in a partition definition, which if used, it is not supported by MariaDB (I'm OK to remove this enhancement, since functionally it does not make sense, but it may be better usability to have the known values there, instead of like in a comment).\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [x] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [x] Changes MySQL compatibility\r\n\r\n#### Manual testing\r\n```bash\r\nmake\r\ntiup playground nightly --db.binpath ~/repos/tidb/bin/tidb-server\r\n```\r\n```mysql\r\ndrop table if exists t;\r\nset tidb_enable_default_list_partition=1;\r\ncreate table t\r\n(a bigint unsigned,\r\n b bigint unsigned,\r\n c varchar(768),\r\n primary key (a,b),\r\n key (c))\r\npartition by list(b)\r\n(partition p1 values in (0,1,4,5,6,7,9),\r\n partition p2 values in (11,13,12,15,16,17,18),\r\n partition p3 values in (22,21,default,66,220));\r\ninsert into t values (1,1,\"Z\"),(2,2,\"y\"),(3,3,\"q\"),(4,4,\"R\"),(5,5,\"M\");\r\ninsert into t values (15,15,\"W\"),(17,17,\"N\"),(220,220,\"T\"),(66,66,\"o\"),(10,10,\"z\");\r\ninsert into t values (6,6,\"p\"),(7,7,\"B\"),(8,8,\"a\"),(9,9,\"i\"),(11,11,\"n\");\r\nanalyze table t;\r\ninsert into t select `a`+pow(2,0),b,concat(`a`,`c`) from t; \r\ninsert into t select `a`+pow(2,1),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,2),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,3),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,4),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,5),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,6),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,7),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,8),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,9),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,10),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,11),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,12),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,13),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,14),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,15),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,16),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,17),b,concat(`a`,`c`) from t;\r\ninsert into t select `a`+pow(2,18),b,concat(`a`,`c`) from t order by a,b limit 1600000;\r\ninsert into t select `a`+pow(2,19),b,concat(`a`,`c`) from t order by a,b limit 1600000;\r\ninsert into t select `a`+pow(2,20),b,concat(`a`,`c`) from t order by a,b limit 1600000;\r\ninsert into t select `a`+pow(2,21),b,concat(`a`,`c`) from t order by a,b limit 1600000;\r\nselect count(*), sum(a), sum(b) from t;\r\n# +----------+---------------+----------+\r\n# | count(*) | sum(a)        | sum(b)   |\r\n# +----------+---------------+----------+\r\n# | 10332160 | 7148444658184 | 264327144 |\r\n# +----------+---------------+----------+\r\n```\r\n```bash\r\n ./bin/br restore full --storage 'local:///backup/defaultlist'\r\n```\r\nThen drop the table, or start a new cluster\r\n```mysql\r\ndrop table t;\r\n```\r\nAnd Restore\r\n```bash\r\n./bin/br restore full --storage 'local:///backup/defaultlist'\r\n```\r\nAnd check the table contains the same\r\n```mysql\r\nselect count(*), sum(a), sum(b) from t;\r\n# +----------+---------------+----------+\r\n# | count(*) | sum(a)        | sum(b)   |\r\n# +----------+---------------+----------+\r\n# | 10332160 | 7148444658184 | 264327144 |\r\n# +----------+---------------+----------+\r\n```\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nAdding support for a default partition in LIST [COLUMNS] partitioning.\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-07-31T22:35:37+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_partition_test.go",
+    "name": "db_partition_test"
+  },
+  "symptoms": [
+    "+ // Default RPC encoding may cause statistics explain result differ and then the test unstable. | sort.Slice(infos, func(i, j int) bool { (planner/core/partition_pruner_test.go)"
+  ],
+  "failure_signature": "+ // Default RPC encoding may cause statistics explain result differ and then the test unstable. | sort.Slice(infos, func(i, j int) bool { (planner/core/partition_pruner_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "+ // Default RPC encoding may cause statistics explain result differ and then the test unstable. | sort.Slice(infos, func(i, j int) bool { (planner/core/partition_pruner_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/41537",
+    "https://github.com/pingcap/tidb/pull/41537.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/41537.patch",
+  "changed_files": [
+    "br/tests/lightning_partitioned-table/data/partitioned.defaultlist-schema.sql",
+    "br/tests/lightning_partitioned-table/data/partitioned.defaultlist.sql",
+    "br/tests/lightning_partitioned-table/data/partitioned.list-schema.sql",
+    "br/tests/lightning_partitioned-table/data/partitioned.list.sql",
+    "br/tests/lightning_partitioned-table/data/partitioned.range-schema.sql",
+    "br/tests/lightning_partitioned-table/data/partitioned.range.sql",
+    "br/tests/lightning_partitioned-table/run.sh",
+    "ddl/db_partition_test.go",
+    "ddl/ddl_api.go",
+    "ddl/partition.go",
+    "errors.toml",
+    "executor/infoschema_reader.go",
+    "parser/ast/ddl.go",
+    "parser/ast/expressions.go",
+    "parser/parser.go",
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "planner/core/casetest/partition/BUILD.bazel",
+    "planner/core/casetest/partition/partition_pruner_test.go",
+    "planner/core/casetest/partition/testdata/partition_pruner_in.json",
+    "planner/core/casetest/partition/testdata/partition_pruner_out.json",
+    "planner/core/partition_pruner_test.go",
+    "planner/core/rule_partition_processor.go",
+    "session/sessiontest/session_test.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "table/tables/partition.go",
+    "util/dbterror/ddl_terror.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: + // Default RPC encoding may cause statistics explain result differ and then the test unstable. | sort.Slice(infos, func(i, j int) bool { (planner/core/partition_pruner_test.go)",
+      "files: br/tests/lightning_partitioned-table/data/partitioned.defaultlist-schema.sql, br/tests/lightning_partitioned-table/data/partitioned.defaultlist.sql, br/tests/lightning_partitioned-table/data/partitioned.list-schema.sql, br/tests/lightning_partitioned-table/data/partitioned.list.sql, br/tests/lightning_partitioned-table/data/partitioned.range-schema.sql, br/tests/lightning_partitioned-table/data/partitioned.range.sql, br/tests/lightning_partitioned-table/run.sh, ddl/db_partition_test.go, ddl/ddl_api.go, ddl/partition.go, errors.toml, executor/infoschema_reader.go, parser/ast/ddl.go, parser/ast/expressions.go, parser/parser.go, parser/parser.y, parser/parser_test.go, planner/core/casetest/partition/BUILD.bazel, planner/core/casetest/partition/partition_pruner_test.go, planner/core/casetest/partition/testdata/partition_pruner_out.json, planner/core/casetest/partition_pruner_test.go, planner/core/casetest/testdata/partition_pruner_in.json, planner/core/casetest/testdata/partition_pruner_out.json, planner/core/partition_pruner_test.go, planner/core/rule_partition_processor.go, session/sessiontest/session_test.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, table/tables/partition.go, util/dbterror/ddl_terror.go"
+    ]
+  },
+  "analysis": "PR title: *: Support List default partition | tidb-test=pr/2110\nPR url: https://github.com/pingcap/tidb/pull/41537\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: + // Default RPC encoding may cause statistics explain result differ and then the test unstable. | sort.Slice(infos, func(i, j int) bool { (planner/core/partition_pruner_test.go)\nChanged files (29): br/tests/lightning_partitioned-table/data/partitioned.defaultlist-schema.sql, br/tests/lightning_partitioned-table/data/partitioned.defaultlist.sql, br/tests/lightning_partitioned-table/data/partitioned.list-schema.sql, br/tests/lightning_partitioned-table/data/partitioned.list.sql, br/tests/lightning_partitioned-table/data/partitioned.range-schema.sql, br/tests/lightning_partitioned-table/data/partitioned.range.sql, br/tests/lightning_partitioned-table/run.sh, ddl/db_partition_test.go, ddl/ddl_api.go, ddl/partition.go, errors.toml, executor/infoschema_reader.go, parser/ast/ddl.go, parser/ast/expressions.go, parser/parser.go, parser/parser.y, parser/parser_test.go, planner/core/casetest/partition/BUILD.bazel, planner/core/casetest/partition/partition_pruner_test.go, planner/core/casetest/partition/testdata/partition_pruner_in.json, planner/core/casetest/partition/testdata/partition_pruner_out.json, planner/core/partition_pruner_test.go, planner/core/rule_partition_processor.go, session/sessiontest/session_test.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, table/tables/partition.go, util/dbterror/ddl_terror.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,48 @@
+{
+  "id": "pr-6194",
+  "source_pr": {
+    "number": 6194,
+    "url": "https://github.com/pingcap/tidb/pull/6194",
+    "title": "executor: optimization for insert on duplicate key update",
+    "body": "Batch update duplicate keys for insert executor. \r\nPTAL @coocood "
+  },
+  "pr_merged_at": "2018-04-08T15:12:22+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from test.t where a < 1 order by a limit 0;\").Check(testkit.Rows()) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from test.t where a < 1 order by a limit 0;\").Check(testkit.Rows()) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6194",
+    "https://github.com/pingcap/tidb/pull/6194.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6194.patch",
+  "changed_files": [
+    "executor/write.go",
+    "executor/write_test.go",
+    "table/tables/index.go",
+    "table/tables/tables.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from test.t where a < 1 order by a limit 0;\").Check(testkit.Rows()) (executor/executor_test.go)",
+      "files: distsql/distsql.go, distsql/stream.go, executor/distsql.go, executor/executor.go, executor/executor_pkg_test.go, executor/executor_test.go, executor/index_lookup_join.go, executor/pkg_test.go, executor/write.go, executor/write_test.go, expression/builtin.go, plan/cbo_test.go, plan/common_plans.go, plan/gen_physical_plans.go, plan/logical_plan_builder.go, plan/physical_plan_builder.go, plan/physical_plan_test.go, plan/stats.go, plan/topn_push_down.go, privilege/privileges/privileges_test.go, server/http_handler_test.go, server/util_test.go, sessionctx/binloginfo/binloginfo.go, sessionctx/binloginfo/binloginfo_test.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, statistics/selectivity.go, store/mockstore/mocktikv/mvcc.go, store/mockstore/mocktikv/mvcc_leveldb.go, store/store_test.go, store/tikv/pd_codec.go, structure/type.go, table/tables/index.go, table/tables/tables.go, util/codec/bench_test.go, util/codec/bytes.go, util/codec/bytes_test.go, util/codec/codec.go, util/codec/codec_test.go, util/ranger/detacher.go, util/ranger/ranger_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: optimization for insert on duplicate key update\nPR url: https://github.com/pingcap/tidb/pull/6194\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from test.t where a < 1 order by a limit 0;\").Check(testkit.Rows()) (executor/executor_test.go)\nChanged files (4): executor/write.go, executor/write_test.go, table/tables/index.go, table/tables/tables.go\nPatch url: https://github.com/pingcap/tidb/pull/6194.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

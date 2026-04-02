@@ -1,0 +1,76 @@
+{
+  "id": "pr-42396",
+  "source_pr": {
+    "number": 42396,
+    "url": "https://github.com/pingcap/tidb/pull/42396",
+    "title": "bazel: set short timeout as 120s",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #xxx\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nIn bazel, The time limit for a test is based on its [timeout](https://bazel.build/reference/be/common-definitions#test.timeout) attribute according to the following table:\r\n\r\n<img width=\"734\" alt=\"image\" src=\"https://user-images.githubusercontent.com/3427324/226286983-fc388ef6-d1b1-4277-b654-2c574a02d063.png\">\r\n\r\nBut in the old test tools, our smallest timeout is 2m, so we need to reset it again as 120s. \r\n\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-03-22T01:50:42+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/backup/main_test.go",
+    "name": "main_test"
+  },
+  "symptoms": [
+    "test:race --test_timeout=1200,6000,18000,72000"
+  ],
+  "failure_signature": "test:race --test_timeout=1200,6000,18000,72000",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test:race --test_timeout=1200,6000,18000,72000",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/42396",
+    "https://github.com/pingcap/tidb/pull/42396.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/42396.patch",
+  "changed_files": [
+    ".bazelrc",
+    "bindinfo/BUILD.bazel",
+    "br/pkg/backup/BUILD.bazel",
+    "br/pkg/backup/main_test.go",
+    "br/pkg/utils/BUILD.bazel",
+    "build/BUILD.bazel",
+    "ddl/indexmergetest/BUILD.bazel",
+    "ddl/metadatalocktest/BUILD.bazel",
+    "ddl/resourcegrouptest/BUILD.bazel",
+    "executor/aggfuncs/BUILD.bazel",
+    "executor/asyncloaddata/BUILD.bazel",
+    "executor/autoidtest/BUILD.bazel",
+    "executor/issuetest/BUILD.bazel",
+    "executor/loaddatatest/BUILD.bazel",
+    "executor/loaddatatest/load_data_test.go",
+    "executor/loaddatatest/main_test.go",
+    "executor/passwordtest/BUILD.bazel",
+    "executor/passwordtest/main_test.go",
+    "executor/passwordtest/password_management_test.go",
+    "executor/showtest/BUILD.bazel",
+    "executor/simpletest/BUILD.bazel",
+    "executor/simpletest/main_test.go",
+    "executor/tiflashtest/BUILD.bazel",
+    "executor/writetest/BUILD.bazel",
+    "executor/writetest/write_test.go",
+    "session/BUILD.bazel",
+    "session/nontransactionaltest/BUILD.bazel",
+    "statistics/handle/handletest/BUILD.bazel",
+    "store/copr/BUILD.bazel",
+    "store/copr/batch_coprocessor.go",
+    "util/gpool/spmc/BUILD.bazel",
+    "util/gpool/spmc/spmcpool_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: test:race --test_timeout=1200,6000,18000,72000",
+      "files: .bazelrc, bindinfo/BUILD.bazel, br/pkg/backup/BUILD.bazel, br/pkg/backup/main_test.go, br/pkg/utils/BUILD.bazel, build/BUILD.bazel, ddl/indexmergetest/BUILD.bazel, ddl/metadatalocktest/BUILD.bazel, ddl/resourcegrouptest/BUILD.bazel, executor/aggfuncs/BUILD.bazel, executor/asyncloaddata/BUILD.bazel, executor/autoidtest/BUILD.bazel, executor/issuetest/BUILD.bazel, executor/loaddatatest/BUILD.bazel, executor/loaddatatest/load_data_test.go, executor/loaddatatest/main_test.go, executor/passwordtest/BUILD.bazel, executor/passwordtest/main_test.go, executor/passwordtest/password_management_test.go, executor/showtest/BUILD.bazel, executor/simpletest/BUILD.bazel, executor/simpletest/main_test.go, executor/tiflashtest/BUILD.bazel, executor/writetest/BUILD.bazel, executor/writetest/write_test.go, session/BUILD.bazel, session/nontransactionaltest/BUILD.bazel, statistics/handle/handletest/BUILD.bazel, store/copr/BUILD.bazel, store/copr/batch_coprocessor.go, util/gpool/spmc/BUILD.bazel, util/gpool/spmc/spmcpool_test.go"
+    ]
+  },
+  "analysis": "PR title: bazel: set short timeout as 120s\nPR url: https://github.com/pingcap/tidb/pull/42396\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: test:race --test_timeout=1200,6000,18000,72000\nChanged files (32): .bazelrc, bindinfo/BUILD.bazel, br/pkg/backup/BUILD.bazel, br/pkg/backup/main_test.go, br/pkg/utils/BUILD.bazel, build/BUILD.bazel, ddl/indexmergetest/BUILD.bazel, ddl/metadatalocktest/BUILD.bazel, ddl/resourcegrouptest/BUILD.bazel, executor/aggfuncs/BUILD.bazel, executor/asyncloaddata/BUILD.bazel, executor/autoidtest/BUILD.bazel, executor/issuetest/BUILD.bazel, executor/loaddatatest/BUILD.bazel, executor/loaddatatest/load_data_test.go, executor/loaddatatest/main_test.go, executor/passwordtest/BUILD.bazel, executor/passwordtest/main_test.go, executor/passwordtest/password_management_test.go, executor/showtest/BUILD.bazel, executor/simpletest/BUILD.bazel, executor/simpletest/main_test.go, executor/tiflashtest/BUILD.bazel, executor/writetest/BUILD.bazel, executor/writetest/write_test.go, session/BUILD.bazel, session/nontransactionaltest/BUILD.bazel, statistics/handle/handletest/BUILD.bazel, store/copr/BUILD.bazel, store/copr/batch_coprocessor.go, util/gpool/spmc/BUILD.bazel, util/gpool/spmc/spmcpool_test.go\nPatch series analyzed; see patch_url."
+}

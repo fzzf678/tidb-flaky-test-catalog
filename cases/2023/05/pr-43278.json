@@ -1,0 +1,58 @@
+{
+  "id": "pr-43278",
+  "source_pr": {
+    "number": 43278,
+    "url": "https://github.com/pingcap/tidb/pull/43278",
+    "title": "planner, statistics: fix panic in plan replayer debug trace and add more tests",
+    "body": "### What problem does this PR solve?\r\n\r\n\r\nIssue Number: ref #43069 close #43412\r\n\r\nProblem Summary:\r\n\r\n`endIdx == 0` is not considered in `debugTraceTopNRange`\r\n\r\n### What is changed and how it works?\r\n\r\nWe should have splitted this PR into several PRs, but it needs to be cherry-picked to v7.1, so I put them in one PR.\r\n\r\n- Fix out-of-range panic in `debugTraceTopNRange` (`statistics/debugtrace.go`)\r\n- Make the `testdata` handle comments in `*_in.json` properly. (`testkit/testdata/testdata.go`, `*_in.json`)\r\n- Make the process of iterating the indexes and columns stable in `Selectivity()`. (`statistics/selectivity.go`)\r\n- Add more tests for the debug trace. (`statistics/trace_test.go`, `statistics/testdata/trace_suite_{in,out}.json`)\r\n- Add 2 failpoints to make the tests stable (`planner/core/debugtrace.go`, `server/optimize_trace_test.go`, `server/testdata/optimizer_suite_out.json`, `statistics/cmsketch.go`)\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-05-06T17:46:56+08:00",
+  "test": {
+    "type": "unit",
+    "path": "server/optimize_trace_test.go",
+    "name": "optimize_trace_test"
+  },
+  "symptoms": [
+    "stabilize tests"
+  ],
+  "failure_signature": "stabilize tests",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "stabilize tests",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/43278",
+    "https://github.com/pingcap/tidb/pull/43278.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/43278.patch",
+  "changed_files": [
+    "planner/cascades/testdata/integration_suite_in.json",
+    "planner/core/casetest/physicalplantest/testdata/plan_suite_in.json",
+    "planner/core/casetest/testdata/join_reorder_suite_in.json",
+    "planner/core/debugtrace.go",
+    "server/optimize_trace_test.go",
+    "server/testdata/optimizer_suite_out.json",
+    "statistics/BUILD.bazel",
+    "statistics/cmsketch.go",
+    "statistics/debugtrace.go",
+    "statistics/selectivity.go",
+    "statistics/testdata/trace_suite_in.json",
+    "statistics/testdata/trace_suite_out.json",
+    "statistics/trace_test.go",
+    "testkit/testdata/testdata.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: stabilize tests",
+      "files: planner/cascades/testdata/integration_suite_in.json, planner/core/casetest/testdata/join_reorder_suite_in.json, planner/core/casetest/testdata/plan_suite_in.json, planner/core/debugtrace.go, server/optimize_trace_test.go, server/testdata/optimizer_suite_out.json, statistics/BUILD.bazel, statistics/cmsketch.go, statistics/debugtrace.go, statistics/selectivity.go, statistics/testdata/trace_suite_in.json, statistics/testdata/trace_suite_out.json, statistics/trace_test.go, testkit/testdata/testdata.go"
+    ]
+  },
+  "analysis": "PR title: planner, statistics: fix panic in plan replayer debug trace and add more tests\nPR url: https://github.com/pingcap/tidb/pull/43278\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: stabilize tests\nChanged files (14): planner/cascades/testdata/integration_suite_in.json, planner/core/casetest/physicalplantest/testdata/plan_suite_in.json, planner/core/casetest/testdata/join_reorder_suite_in.json, planner/core/debugtrace.go, server/optimize_trace_test.go, server/testdata/optimizer_suite_out.json, statistics/BUILD.bazel, statistics/cmsketch.go, statistics/debugtrace.go, statistics/selectivity.go, statistics/testdata/trace_suite_in.json, statistics/testdata/trace_suite_out.json, statistics/trace_test.go, testkit/testdata/testdata.go\nPatch series analyzed; see patch_url."
+}

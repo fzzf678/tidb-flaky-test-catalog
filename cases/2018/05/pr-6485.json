@@ -1,0 +1,46 @@
+{
+  "id": "pr-6485",
+  "source_pr": {
+    "number": 6485,
+    "url": "https://github.com/pingcap/tidb/pull/6485",
+    "title": "plan: prepare possible property for logical Sort/TopN/Projection",
+    "body": "Sort/Top-N/Projection doesn't manage property correctly. e.g. For sort/top-n, if the `ByItems` is the same with group-by items, we actually can choose stream agg but don't in current master."
+  },
+  "pr_merged_at": "2018-05-10T20:32:04+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/physical_plan_test.go",
+    "name": "physical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select count(*) from (select * from t order by b) t group by b\", (plan/physical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select count(*) from (select * from t order by b) t group by b\", (plan/physical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6485",
+    "https://github.com/pingcap/tidb/pull/6485.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6485.patch",
+  "changed_files": [
+    "plan/physical_plan_test.go",
+    "plan/property_cols_prune.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select count(*) from (select * from t order by b) t group by b\", (plan/physical_plan_test.go)",
+      "files: plan/physical_plan_test.go, plan/property_cols_prune.go"
+    ]
+  },
+  "analysis": "PR title: plan: prepare possible property for logical Sort/TopN/Projection\nPR url: https://github.com/pingcap/tidb/pull/6485\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select count(*) from (select * from t order by b) t group by b\", (plan/physical_plan_test.go)\nChanged files (2): plan/physical_plan_test.go, plan/property_cols_prune.go\nPatch url: https://github.com/pingcap/tidb/pull/6485.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
+}

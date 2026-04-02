@@ -1,0 +1,46 @@
+{
+  "id": "pr-7209",
+  "source_pr": {
+    "number": 7209,
+    "url": "https://github.com/pingcap/tidb/pull/7209",
+    "title": "executor: set the correct handle in DirtyDB when executing update statements",
+    "body": "## What have you changed? (mandatory)\r\n\r\nSet the correct handle in DirtyDB when executing update statements\r\n\r\n## What is the type of the changes? (mandatory)\r\n- Bug fix (non-breaking change which fixes an issue)\r\n\r\n## How has this PR been tested? (mandatory)\r\n\r\nUT\r\n\r\n## Does this PR affect documentation (docs/docs-cn) update? (mandatory)\r\n\r\nNo.\r\n## Does this PR affect tidb-ansible update? (mandatory)\r\n\r\nNo.\r\n## Does this PR need to be added to the release notes? (mandatory)\r\n\r\nNo.\r\n\r\n## Refer to a related PR or issue link (optional)\r\n\r\n## Benchmark result if necessary (optional)\r\n\r\n## Add a few positive/negative examples (optional)\r\n\r\n"
+  },
+  "pr_merged_at": "2018-08-01T11:36:23+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/write_test.go",
+    "name": "write_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from ttt use index (i_host) order by host;\").Check(testkit.Rows(\"8 8\")) (executor/write_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from ttt use index (i_host) order by host;\").Check(testkit.Rows(\"8 8\")) (executor/write_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7209",
+    "https://github.com/pingcap/tidb/pull/7209.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7209.patch",
+  "changed_files": [
+    "executor/write.go",
+    "executor/write_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from ttt use index (i_host) order by host;\").Check(testkit.Rows(\"8 8\")) (executor/write_test.go)",
+      "files: executor/write.go, executor/write_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: set the correct handle in DirtyDB when executing update statements\nPR url: https://github.com/pingcap/tidb/pull/7209\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from ttt use index (i_host) order by host;\").Check(testkit.Rows(\"8 8\")) (executor/write_test.go)\nChanged files (2): executor/write.go, executor/write_test.go\nPatch url: https://github.com/pingcap/tidb/pull/7209.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
+}

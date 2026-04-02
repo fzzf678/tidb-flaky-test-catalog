@@ -1,0 +1,56 @@
+{
+  "id": "pr-46731",
+  "source_pr": {
+    "number": 46731,
+    "url": "https://github.com/pingcap/tidb/pull/46731",
+    "title": "*: support collect and async load stats for mv index",
+    "body": "\r\n### What problem does this PR solve?\r\n\r\n\r\nIssue Number: ref #46539\r\n\r\n\r\n### What is changed and how it works?\r\n\r\n1. For analyzing mv index, use an independent v2 analyze index task to handle it.\r\n    1. When building analyze tasks, add a new `AnalyzeIndexTask` for each mv index. (`planner/core/planbuilder.go`)\r\n    2. When storing the analyze result, specially handle mv index, like the row count, etc. See the comments for details. (`executor/analyze_idx.go`, `statistics/handle/handle.go`, `statistics/histogram.go`, `statistics/analyze.go`)\r\n3. For loading stats, in `initStats()`, we consider all columns instead of pruned columns to make stats for the virtual columns (and therefore expression index, including mv index) able to be async loaded. (`planner/core/stats.go`)\r\n4. For estimation on mv index, we keep it using pseudo estimation to make its behavior unchanged. We'll enable the estimation after it's supported. (`planner/cardinality/row_count_index.go`)\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-09-13T23:22:39+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/test/analyzetest/analyze_test.go",
+    "name": "analyze_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select id, table_schema, table_name, partition_name, job_info, processed_rows, state from mysql.analyze_jobs order by id\"). (executor/test/analyzetest/analyze_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select id, table_schema, table_name, partition_name, job_info, processed_rows, state from mysql.analyze_jobs order by id\"). (executor/test/analyzetest/analyze_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select id, table_schema, table_name, partition_name, job_info, processed_rows, state from mysql.analyze_jobs order by id\"). (executor/test/analyzetest/analyze_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/46731",
+    "https://github.com/pingcap/tidb/pull/46731.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/46731.patch",
+  "changed_files": [
+    "executor/analyze_idx.go",
+    "executor/test/analyzetest/analyze_test.go",
+    "planner/cardinality/row_count_index.go",
+    "planner/core/indexmerge_path_test.go",
+    "planner/core/planbuilder.go",
+    "planner/core/stats.go",
+    "statistics/BUILD.bazel",
+    "statistics/analyze.go",
+    "statistics/handle/handle.go",
+    "statistics/histogram.go",
+    "statistics/histogram_test.go",
+    "statistics/table.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select id, table_schema, table_name, partition_name, job_info, processed_rows, state from mysql.analyze_jobs order by id\"). (executor/test/analyzetest/analyze_test.go)",
+      "files: executor/analyze_idx.go, executor/test/analyzetest/analyze_test.go, planner/cardinality/row_count_index.go, planner/core/indexmerge_path_test.go, planner/core/planbuilder.go, planner/core/stats.go, statistics/BUILD.bazel, statistics/analyze.go, statistics/handle/handle.go, statistics/histogram.go, statistics/histogram_test.go, statistics/table.go"
+    ]
+  },
+  "analysis": "PR title: *: support collect and async load stats for mv index\nPR url: https://github.com/pingcap/tidb/pull/46731\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select id, table_schema, table_name, partition_name, job_info, processed_rows, state from mysql.analyze_jobs order by id\"). (executor/test/analyzetest/analyze_test.go)\nChanged files (12): executor/analyze_idx.go, executor/test/analyzetest/analyze_test.go, planner/cardinality/row_count_index.go, planner/core/indexmerge_path_test.go, planner/core/planbuilder.go, planner/core/stats.go, statistics/BUILD.bazel, statistics/analyze.go, statistics/handle/handle.go, statistics/histogram.go, statistics/histogram_test.go, statistics/table.go\nPatch series analyzed; see patch_url."
+}

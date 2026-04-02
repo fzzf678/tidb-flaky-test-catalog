@@ -1,0 +1,46 @@
+{
+  "id": "pr-18377",
+  "source_pr": {
+    "number": 18377,
+    "url": "https://github.com/pingcap/tidb/pull/18377",
+    "title": "mockstore: return error when store is closed",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\nThe Leak tests are not stable, like [this](https://internal.pingcap.net/idc-jenkins/blue/rest/organizations/jenkins/pipelines/tidb_ghpr_unit_test/runs/41800/nodes/85/steps/285/log/?start=0).\r\n\r\n### What is changed and how it works?\r\nThe root cause is `RPCClient` doesn't check the server states and directly route request into a closed unistore.\r\nThe returned error will make some goroutines get stuck in `Backoff`.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n- Manual test: run leak test locally\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- <!-- Please write a release note here to describe the change you made when it is released to the users of TiDB. If your PR doesn't involve any change to TiDB(like test enhancements, RFC proposals...), you can write `No release note`. --> No release note\r\n"
+  },
+  "pr_merged_at": "2020-07-06T11:25:10+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/mockstore/unistore/rpc.go",
+    "name": "rpc"
+  },
+  "symptoms": [
+    "PR body: leak tests are not stable because RPCClient routes requests into a closed unistore."
+  ],
+  "failure_signature": "PR body: leak tests are not stable because RPCClient routes requests into a closed unistore.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "mockstore: return error when store is closed",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/18377",
+    "https://github.com/pingcap/tidb/pull/18377.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/18377.patch",
+  "changed_files": [
+    "store/mockstore/unistore/rpc.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body: leak tests are not stable because RPCClient routes requests into a closed unistore.",
+      "evidence: diff adds an atomic closed flag and returns context.Canceled when closed to break Backoff and avoid stuck goroutines (store/mockstore/unistore/rpc.go).",
+      "files: store/mockstore/unistore/rpc.go"
+    ]
+  },
+  "analysis": "PR title: mockstore: return error when store is closed\nPR url: https://github.com/pingcap/tidb/pull/18377\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body: leak tests are not stable because RPCClient routes requests into a closed unistore.\nChanged files (1): store/mockstore/unistore/rpc.go\nPatch url: https://github.com/pingcap/tidb/pull/18377.patch\nPicked test: type=unit path=store/mockstore/unistore/rpc.go name=rpc"
+}

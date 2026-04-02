@@ -1,0 +1,47 @@
+{
+  "id": "pr-32651",
+  "source_pr": {
+    "number": 32651,
+    "url": "https://github.com/pingcap/tidb/pull/32651",
+    "title": "ddl: migrate test-infra to testify for db_change_test.go",
+    "body": "Issue Number: close #28633 \r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-02-28T11:59:45+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_change_test.go",
+    "name": "db_change_test"
+  },
+  "symptoms": [
+    "// Using same `tk` in different goroutines may lead to data race. | tk.MustQuery(\"select c4, c2 from t order by c4 asc\").Check(testkit.Rows(\"8 N\", \"10 A\", \"11 A\")) (ddl/db_change_test.go)"
+  ],
+  "failure_signature": "// Using same `tk` in different goroutines may lead to data race. | tk.MustQuery(\"select c4, c2 from t order by c4 asc\").Check(testkit.Rows(\"8 N\", \"10 A\", \"11 A\")) (ddl/db_change_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/32651",
+    "https://github.com/pingcap/tidb/pull/32651.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/32651.patch",
+  "changed_files": [
+    "ddl/db_change_test.go",
+    "ddl/db_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: // Using same `tk` in different goroutines may lead to data race. | tk.MustQuery(\"select c4, c2 from t order by c4 asc\").Check(testkit.Rows(\"8 N\", \"10 A\", \"11 A\")) (ddl/db_change_test.go)",
+      "files: ddl/db_change_test.go, ddl/db_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl: migrate test-infra to testify for db_change_test.go\nPR url: https://github.com/pingcap/tidb/pull/32651\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: // Using same `tk` in different goroutines may lead to data race. | tk.MustQuery(\"select c4, c2 from t order by c4 asc\").Check(testkit.Rows(\"8 N\", \"10 A\", \"11 A\")) (ddl/db_change_test.go)\nChanged files (2): ddl/db_change_test.go, ddl/db_test.go\nPatch url: https://github.com/pingcap/tidb/pull/32651.patch\nPicked test: type=unit path=ddl/db_change_test.go name=db_change_test"
+}

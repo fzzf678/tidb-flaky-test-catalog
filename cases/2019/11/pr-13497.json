@@ -1,0 +1,45 @@
+{
+  "id": "pr-13497",
+  "source_pr": {
+    "number": 13497,
+    "url": "https://github.com/pingcap/tidb/pull/13497",
+    "title": "test: optimize dll test",
+    "body": "### What problem does this PR solve?\r\nmake ddl unit test running faster\r\n### What is changed and how it works?\r\nOne loop in the hot path cost  almost 10s to execute, and several test cases depends on this function. The loop run 100 times to randomly select a range of 3 to check whether the result is right, this is unneccssary. We can reduce it to 20 times with check the lower/upper boundary and some random inner case is enough to make sure the logic is right.\r\n\r\nHere is the result:\r\nBefore change:\r\n```\r\n>  go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl\r\nok  \tok  \tgithub.com/pingcap/tidb/ddl\t200.443s\r\n```\r\n\r\nAfter change:\r\n```\r\n> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl\r\nok  \tgithub.com/pingcap/tidb/ddl\t118.154s\r\n```\r\n\r\n### Check List\r\nTests\r\n\r\n- unit tests\r\n\r\nCode changes\r\n\r\nSide effects\r\n\r\nRelated changes"
+  },
+  "pr_merged_at": "2019-11-18T10:37:15+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_test.go",
+    "name": "db_test"
+  },
+  "symptoms": [
+    "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl"
+  ],
+  "failure_signature": "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test: optimize dll test",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13497",
+    "https://github.com/pingcap/tidb/pull/13497.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13497.patch",
+  "changed_files": [
+    "ddl/db_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: > go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl",
+      "files: ddl/db_test.go"
+    ]
+  },
+  "analysis": "PR title: test: optimize dll test\nPR url: https://github.com/pingcap/tidb/pull/13497\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: > go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl\nChanged files (1): ddl/db_test.go\nPatch url: https://github.com/pingcap/tidb/pull/13497.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+}

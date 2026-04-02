@@ -1,0 +1,47 @@
+{
+  "id": "pr-6554",
+  "source_pr": {
+    "number": 6554,
+    "url": "https://github.com/pingcap/tidb/pull/6554",
+    "title": "binloginfo: fix CI in unit test TestMaxRecvSize",
+    "body": "`TestMaxRecvSize` failed because of some unexpected concurrency logic.\r\nI adjust the test `TestIgnoreError` to avoid it.\r\n\r\n```\r\nExec(\"insert...\")   ...  it fails because we mock fail   @1\r\n\r\n// our test begin\r\nsetIgnoreError()\r\nMustExec(\"insert...\")   ....  \r\n\r\n// test finish, clean up\r\nbinloginfo.DisableSkipBinlogFlag()\r\n\r\n// Well, there is a background 2pc clean up goroutine asynchronously, left by @1\r\n// it set skipBinlog again !!\r\n// Then TestMaxRecvSize fails\r\n```"
+  },
+  "pr_merged_at": "2018-05-15T15:29:12+08:00",
+  "test": {
+    "type": "unit",
+    "path": "sessionctx/binloginfo/binloginfo_test.go",
+    "name": "TestMaxRecvSize"
+  },
+  "symptoms": [
+    "Merge branch 'master' into fix-race-continue"
+  ],
+  "failure_signature": "Merge branch 'master' into fix-race-continue",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "binloginfo: fix CI in unit test TestMaxRecvSize",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6554",
+    "https://github.com/pingcap/tidb/pull/6554.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6554.patch",
+  "changed_files": [
+    "sessionctx/binloginfo/binloginfo.go",
+    "sessionctx/binloginfo/binloginfo_test.go",
+    "tidb-server/main.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: Merge branch 'master' into fix-race-continue",
+      "files: sessionctx/binloginfo/binloginfo.go, sessionctx/binloginfo/binloginfo_test.go, tidb-server/main.go"
+    ]
+  },
+  "analysis": "PR title: binloginfo: fix CI in unit test TestMaxRecvSize\nPR url: https://github.com/pingcap/tidb/pull/6554\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Merge branch 'master' into fix-race-continue\nChanged files (3): sessionctx/binloginfo/binloginfo.go, sessionctx/binloginfo/binloginfo_test.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/6554.patch\nPicked test: type=unit path=sessionctx/binloginfo/binloginfo_test.go name=TestMaxRecvSize"
+}

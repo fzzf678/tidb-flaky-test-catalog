@@ -1,0 +1,46 @@
+{
+  "id": "pr-22042",
+  "source_pr": {
+    "number": 22042,
+    "url": "https://github.com/pingcap/tidb/pull/22042",
+    "title": "executor:return warning when load data meet no partition for incompatiable mysql,but err and abort",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #21966 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\nload data into partition table shouldn't return no partition error\r\n### What is changed and how it works?\r\n\r\nProposal: [xxx](url) <!-- REMOVE this line if not applicable -->\r\n\r\nWhat's Changed:\r\nwhen load data meet no partition, return toBeCheckedRow with err,but err returned directly in  function getKeysNeedCheckOneRow, file batch_checked.go and  append warning when noPartitionErr is not nil in batchCheckAndInsert func, file insert_common.go \r\n\r\nHow it Works:\r\nappend warning when noPartitionErr is not nil in batchCheckAndInsert func, file insert_common.go \r\n\r\n### Related changes\r\n\r\n- PR to update `pingcap/docs`/`pingcap/docs-cn`:\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n- Integration test\r\n- Manual test (add detailed scripts or steps below)\r\n- No code\r\n\r\nSide effects\r\n\r\n- Performance regression\r\n    - Consumes more CPU\r\n    - Consumes more MEM\r\n- Breaking backward compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n- When load data meet no partition in getPartitionByRow func, it return err directly.but should return warning for incompatiable mysql."
+  },
+  "pr_merged_at": "2021-01-04T12:49:44+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/write_test.go",
+    "name": "write_test"
+  },
+  "symptoms": [
+    "rows = dbt.mustQuery(\"select id,name from t order by id\") (server/server_test.go)"
+  ],
+  "failure_signature": "rows = dbt.mustQuery(\"select id,name from t order by id\") (server/server_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "rows = dbt.mustQuery(\"select id,name from t order by id\") (server/server_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22042",
+    "https://github.com/pingcap/tidb/pull/22042.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22042.patch",
+  "changed_files": [
+    "executor/executor.go",
+    "server/server_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rows = dbt.mustQuery(\"select id,name from t order by id\") (server/server_test.go)",
+      "files: executor/batch_checker.go, executor/executor.go, executor/insert_common.go, executor/replace.go, executor/write_test.go, server/server_test.go, table/tables/partition.go, table/tables/partition_test.go"
+    ]
+  },
+  "analysis": "PR title: executor:return warning when load data meet no partition for incompatiable mysql,but err and abort\nPR url: https://github.com/pingcap/tidb/pull/22042\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rows = dbt.mustQuery(\"select id,name from t order by id\") (server/server_test.go)\nChanged files (2): executor/executor.go, server/server_test.go\nPatch series analyzed; see patch_url."
+}

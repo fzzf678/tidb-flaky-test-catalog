@@ -1,0 +1,46 @@
+{
+  "id": "pr-4845",
+  "source_pr": {
+    "number": 4845,
+    "url": "https://github.com/pingcap/tidb/pull/4845",
+    "title": "gc_woker: start safePointChecker before run worker.",
+    "body": "If tidb is not able to finish bootstrap in 100 seconds, the safePointChecker will not be started, then all transactions are not able to execute."
+  },
+  "pr_merged_at": "2017-10-23T09:39:41+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/gc_worker.go",
+    "name": "gc_worker"
+  },
+  "symptoms": [
+    "wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race."
+  ],
+  "failure_signature": "wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "gc_woker: start safePointChecker before run worker.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4845",
+    "https://github.com/pingcap/tidb/pull/4845.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4845.patch",
+  "changed_files": [
+    "store/tikv/gc_worker.go",
+    "store/tikv/kv.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
+      "files: store/tikv/gc_worker.go, store/tikv/kv.go"
+    ]
+  },
+  "analysis": "PR title: gc_woker: start safePointChecker before run worker.\nPR url: https://github.com/pingcap/tidb/pull/4845\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.\nChanged files (2): store/tikv/gc_worker.go, store/tikv/kv.go\nPatch url: https://github.com/pingcap/tidb/pull/4845.patch\nPicked test: type=unit path=store/tikv/gc_worker.go name=gc_worker"
+}

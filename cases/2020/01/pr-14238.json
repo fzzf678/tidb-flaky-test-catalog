@@ -1,0 +1,74 @@
+{
+  "id": "pr-14238",
+  "source_pr": {
+    "number": 14238,
+    "url": "https://github.com/pingcap/tidb/pull/14238",
+    "title": "Improve the performance of `WindowExec` by using multi-thread hash grouping",
+    "body": "PCP #12966\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nImprove the performance of `WindowExec` by using multi-thread hash grouping.\r\n\r\n### What is changed and how it works?\r\nIt gets faster about 57% in 4 threads (`bit_xor(...) over window as (... rows between unbounded preceding and current row)`, 100000 rows, 1000 ndv).\r\nPerformance increases nearly linearly with number of threads.\r\n![image](https://user-images.githubusercontent.com/1907938/71448581-d2896580-2778-11ea-8161-b5a9429fef81.png)\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Benchmark\r\n```\r\n$ go test -v -benchmem -bench=BenchmarkWindowFunctionsWithFrame -run=BenchmarkWindowFunctionsWithFrame\r\ngoos: darwin\r\ngoarch: amd64\r\npkg: github.com/pingcap/tidb/executor\r\nBenchmarkWindowFunctionsWithFrame/(func:avg,_ndv:1000,_rows:100000,_concurrency:1)-12         \t      12\t  89765393 ns/op\t27571204 B/op\t   21393 allocs/op\r\nBenchmarkWindowFunctionsWithFrame/(func:avg,_ndv:1000,_rows:100000,_concurrency:2)-12         \t      14\t  73684980 ns/op\t46587139 B/op\t   32056 allocs/op\r\nBenchmarkWindowFunctionsWithFrame/(func:avg,_ndv:1000,_rows:100000,_concurrency:3)-12         \t      18\t  72007548 ns/op\t46585014 B/op\t   32289 allocs/op\r\nBenchmarkWindowFunctionsWithFrame/(func:avg,_ndv:1000,_rows:100000,_concurrency:4)-12         \t      14\t  73698047 ns/op\t46588729 B/op\t   32418 allocs/op\r\nBenchmarkWindowFunctionsWithFrame/(func:avg,_ndv:1000,_rows:100000,_concurrency:5)-12         \t      18\t  65804165 ns/op\t46547966 B/op\t   32672 allocs/op\r\nBenchmarkWindowFunctionsWithFrame/(func:avg,_ndv:1000,_rows:100000,_concurrency:6)-12         \t      19\t  59964004 ns/op\t46580966 B/op\t   32849 allocs/op\r\nBenchmarkWindowFunctionsWithFrame/(func:bit_xor,_ndv:1000,_rows:100000,_concurrency:1)-12     \t      20\t  55602304 ns/op\t27571153 B/op\t   21392 allocs/op\r\nBenchmarkWindowFunctionsWithFrame/(func:bit_xor,_ndv:1000,_rows:100000,_concurrency:2)-12     \t      28\t  39742133 ns/op\t46545054 B/op\t   32173 allocs/op\r\nBenchmarkWindowFunctionsWithFrame/(func:bit_xor,_ndv:1000,_rows:100000,_concurrency:3)-12     \t      36\t  30434658 ns/op\t46578722 B/op\t   32280 allocs/op\r\nBenchmarkWindowFunctionsWithFrame/(func:bit_xor,_ndv:1000,_rows:100000,_concurrency:4)-12     \t      42\t  26426068 ns/op\t46612195 B/op\t   32415 allocs/op\r\nBenchmarkWindowFunctionsWithFrame/(func:bit_xor,_ndv:1000,_rows:100000,_concurrency:5)-12     \t      46\t  24762677 ns/op\t46759923 B/op\t   32552 allocs/op\r\nBenchmarkWindowFunctionsWithFrame/(func:bit_xor,_ndv:1000,_rows:100000,_concurrency:6)-12     \t      44\t  23740103 ns/op\t46619587 B/op\t   32762 allocs/op\r\nPASS\r\nok  \tgithub.com/pingcap/tidb/executor\t15.996s\r\n```\r\n"
+  },
+  "pr_merged_at": "2020-01-16T21:04:17+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go, executor/window_test.go",
+    "name": "window_test"
+  },
+  "symptoms": [
+    "add .Sort() on query results to stabilize order-dependent checks (executor/aggregate_test.go, executor/window_test.go)"
+  ],
+  "failure_signature": "add .Sort() on query results to stabilize order-dependent checks (executor/aggregate_test.go, executor/window_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/14238",
+    "https://github.com/pingcap/tidb/pull/14238.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/14238.patch",
+  "changed_files": [
+    "cmd/explaintest/r/explain_easy.result",
+    "cmd/explaintest/r/window_function.result",
+    "cmd/explaintest/t/explain_easy.test",
+    "cmd/explaintest/t/window_function.test",
+    "executor/aggregate_test.go",
+    "executor/benchmark_test.go",
+    "executor/builder.go",
+    "executor/shuffle.go",
+    "executor/window_test.go",
+    "planner/core/explain.go",
+    "planner/core/find_best_task.go",
+    "planner/core/initialize.go",
+    "planner/core/logical_plan_test.go",
+    "planner/core/physical_plan_test.go",
+    "planner/core/physical_plans.go",
+    "planner/core/plan.go",
+    "planner/core/resolve_indices.go",
+    "planner/core/stringer.go",
+    "planner/core/testdata/plan_suite_in.json",
+    "planner/core/testdata/plan_suite_out.json",
+    "planner/core/testdata/plan_suite_unexported_in.json",
+    "planner/core/testdata/plan_suite_unexported_out.json",
+    "session/session.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "sessionctx/variable/varsutil.go",
+    "sessionctx/variable/varsutil_test.go",
+    "util/plancodec/id.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: add .Sort() on query results to stabilize order-dependent checks (executor/aggregate_test.go, executor/window_test.go)",
+      "evidence: result = tk.MustQuery(\"select a, var_pop(b) over w, var_pop(c) over w from t window w as (partition by a)\").Sort() (executor/aggregate_test.go)",
+      "files: cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/window_function.result, cmd/explaintest/t/explain_easy.test, cmd/explaintest/t/window_function.test, executor/aggregate_test.go, executor/benchmark_test.go, executor/builder.go, executor/shuffle.go, executor/window_test.go, planner/core/explain.go, planner/core/find_best_task.go, planner/core/initialize.go, planner/core/logical_plan_test.go, planner/core/physical_plan_test.go, planner/core/physical_plans.go, planner/core/plan.go, planner/core/resolve_indices.go, planner/core/stringer.go, planner/core/testdata/plan_suite_in.json, planner/core/testdata/plan_suite_out.json, planner/core/testdata/plan_suite_unexported_in.json, planner/core/testdata/plan_suite_unexported_out.json, session/session.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, sessionctx/variable/varsutil_test.go, util/plancodec/id.go"
+    ]
+  },
+  "analysis": "PR title: Improve the performance of `WindowExec` by using multi-thread hash grouping\nPR url: https://github.com/pingcap/tidb/pull/14238\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: add .Sort() on query results to stabilize order-dependent checks (executor/aggregate_test.go, executor/window_test.go)\nChanged files (29): cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/window_function.result, cmd/explaintest/t/explain_easy.test, cmd/explaintest/t/window_function.test, executor/aggregate_test.go, executor/benchmark_test.go, executor/builder.go, executor/shuffle.go, executor/window_test.go, planner/core/explain.go, planner/core/find_best_task.go, planner/core/initialize.go, planner/core/logical_plan_test.go, planner/core/physical_plan_test.go, planner/core/physical_plans.go, planner/core/plan.go, planner/core/resolve_indices.go, planner/core/stringer.go, planner/core/testdata/plan_suite_in.json, planner/core/testdata/plan_suite_out.json, planner/core/testdata/plan_suite_unexported_in.json, planner/core/testdata/plan_suite_unexported_out.json, session/session.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, sessionctx/variable/varsutil_test.go, util/plancodec/id.go\nPatch url: https://github.com/pingcap/tidb/pull/14238.patch\nPicked test: type=unit path=executor/aggregate_test.go, executor/window_test.go name=window_test"
+}

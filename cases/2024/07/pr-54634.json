@@ -1,0 +1,54 @@
+{
+  "id": "pr-54634",
+  "source_pr": {
+    "number": 54634,
+    "url": "https://github.com/pingcap/tidb/pull/54634",
+    "title": "br: support backup and restore `column_stats_usage`",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref https://github.com/pingcap/tidb/issues/53567\r\n\r\nProblem Summary:\r\n\r\nAfter we enabled the predicate columns feature by default, we need to support backup and restore this information.\r\n\r\n### What changed and how does it work?\r\n\r\n- Added the support for backuping and restoring `column_stats_usage`.\r\n- I moved some functions from `pkg/statistics/handle/usage/predicate_column.go` to `pkg/statistics/handle/usage/predicatecolumn/predicate_column.go`, otherwise it would cause a cyclic dependence issue.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] [Manual test](https://github.com/pingcap/tidb/pull/54634#issuecomment-2232896962)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\n支持备份和恢复 mysql.column_stats_usage 表\r\nSupport for backing up and restoring mysql.column_stats_usage table\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-07-19T14:12:01+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/statistics/handle/storage/dump_test.go",
+    "name": "TestLoadPredicateColumns"
+  },
+  "symptoms": [
+    "rows := tk.MustQuery(\"select table_id, column_id, last_used_at, last_analyzed_at from mysql.column_stats_usage order by column_id\").Rows() (pkg/statistics/handle/storage/dump_test.go)"
+  ],
+  "failure_signature": "rows := tk.MustQuery(\"select table_id, column_id, last_used_at, last_analyzed_at from mysql.column_stats_usage order by column_id\").Rows() (pkg/statistics/handle/storage/dump_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/54634",
+    "https://github.com/pingcap/tidb/pull/54634.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/54634.patch",
+  "changed_files": [
+    "br/pkg/restore/snap_client/systable_restore.go",
+    "pkg/statistics/handle/storage/BUILD.bazel",
+    "pkg/statistics/handle/storage/dump_test.go",
+    "pkg/statistics/handle/storage/json.go",
+    "pkg/statistics/handle/storage/stats_read_writer.go",
+    "pkg/statistics/handle/usage/BUILD.bazel",
+    "pkg/statistics/handle/usage/predicate_column.go",
+    "pkg/statistics/handle/usage/predicatecolumn/BUILD.bazel",
+    "pkg/statistics/handle/usage/predicatecolumn/predicate_column.go",
+    "pkg/statistics/handle/util/util.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rows := tk.MustQuery(\"select table_id, column_id, last_used_at, last_analyzed_at from mysql.column_stats_usage order by column_id\").Rows() (pkg/statistics/handle/storage/dump_test.go)",
+      "files: br/pkg/restore/snap_client/systable_restore.go, pkg/statistics/handle/storage/BUILD.bazel, pkg/statistics/handle/storage/dump_test.go, pkg/statistics/handle/storage/json.go, pkg/statistics/handle/storage/stats_read_writer.go, pkg/statistics/handle/usage/BUILD.bazel, pkg/statistics/handle/usage/predicate_column.go, pkg/statistics/handle/usage/predicatecolumn/BUILD.bazel, pkg/statistics/handle/usage/predicatecolumn/predicate_column.go, pkg/statistics/handle/util/util.go"
+    ]
+  },
+  "analysis": "PR title: br: support backup and restore `column_stats_usage`\nPR url: https://github.com/pingcap/tidb/pull/54634\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rows := tk.MustQuery(\"select table_id, column_id, last_used_at, last_analyzed_at from mysql.column_stats_usage order by column_id\").Rows() (pkg/statistics/handle/storage/dump_test.go)\nChanged files (10): br/pkg/restore/snap_client/systable_restore.go, pkg/statistics/handle/storage/BUILD.bazel, pkg/statistics/handle/storage/dump_test.go, pkg/statistics/handle/storage/json.go, pkg/statistics/handle/storage/stats_read_writer.go, pkg/statistics/handle/usage/BUILD.bazel, pkg/statistics/handle/usage/predicate_column.go, pkg/statistics/handle/usage/predicatecolumn/BUILD.bazel, pkg/statistics/handle/usage/predicatecolumn/predicate_column.go, pkg/statistics/handle/util/util.go\nPatch url: https://github.com/pingcap/tidb/pull/54634.patch\nPicked test: type=unit path=pkg/statistics/handle/storage/dump_test.go name=TestLoadPredicateColumns"
+}

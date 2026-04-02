@@ -1,0 +1,64 @@
+{
+  "id": "pr-66642",
+  "source_pr": {
+    "number": 66642,
+    "url": "https://github.com/pingcap/tidb/pull/66642",
+    "title": "topsql: add TopRU state and subscription plumbing (tipb upgrade)",
+    "body": "### What problem does this PR solve?\nIssue Number: close #66625\n\nProblem Summary:\nTopRU requires shared state/interval handling and subscription transport plumbing. These primitives are missing, which blocks the later RU aggregation/reporting pipeline and makes review harder.\n\n### What changed and how does it work?\n- Added TopRU state/interval management with ref-counted enablement and default reset behavior.\n- Added subscription plumbing (datasink/pubsub/single_target/server) to gate TopRU delivery paths.\n- Added datamodel/metrics scaffolding for RU-related reporting.\n- Updated `tipb` and deps plus minimal BUILD wiring for new sources/tests.\n\n**Scope**\n- Includes: `state.go/state_test.go` for TopRU enable/interval handling.\n- Includes: subscription plumbing (`datasink.go`, `pubsub.go`, `single_target.go`, `server.go`) and associated tests.\n- Includes: datamodel/metrics scaffolding (`datamodel.go`, `metrics.go`, `rustats.go`).\n- Includes: `tipb` upgrade / deps (`DEPS.bzl`, `go.mod`, `go.sum`) and minimal BUILD updates.\n- Excludes: execution-time collection (stmtstats/executor) and RU window aggregator/reporting main pipeline (reporter `ru_*`).\n\n**Behavior / Compatibility**\n- Default behavior is unchanged unless TopRU is explicitly enabled via subscription.\n- TopRU enablement is ref-counted; item interval is last-write-wins while enabled and resets on last deregister.\n- Invalid item intervals are normalized in state handling; pubsub keeps raw values until state normalization.\n- `tipb` adds TopRU fields; older components should ignore unknown fields, and unimplemented TopRU RPCs are tolerated.\n\n**Follow-ups**\n- PR2 (depends on PR1): collect RU deltas for TopRU\n- PR3 (depends on PR1/PR2): TopRU aggregation + reporting\n\n**Reviewer Notes**\n- BUILD.bazel is staged minimally to include only newly added sources/tests; no `ru_*` targets yet.\n- Quick verification: `git diff --name-only master...HEAD` should match the PR1 file list only.\n- Commit range: 6a74e74f59b29f679a6f1bd15bdfe0748f1ae000-4db51ae4e4e5db24898e2f738df65bdc4f14d08b\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n  > <!-- Or your custom  \"No need to test\" reasons -->\n\nTest Results:\n- Unit tests ran (commit `f664f2e987e8cc4d469b24eb305ecd4fa7231fe2`): `TestPubSubDataSinkDoSendOrderIsStable`\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n```release-note\nNone\n```\n\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n## Summary by CodeRabbit\n\n* **New Features**\n  * Added TopRU (resource-usage) reporting alongside TopSQL: independent enable/disable, configurable item intervals, streaming delivery, and end-to-end reporting paths.\n\n* **Metrics**\n  * Added RU-specific counters and histograms to observe RU record counts and reporting durations.\n\n* **Tests**\n  * Extensive tests for TopRU/TopSQL parsing, subscriptions, streaming, concurrency, error handling, and lifecycle.\n\n* **Chores**\n  * Updated dependency versions and build/test shard/configuration adjustments.\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-10T18:03:56+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/util/topsql/reporter/datasink_test.go",
+    "name": "TestDefaultDataSinkRegisterer"
+  },
+  "symptoms": [
+    "flaky = True, (pkg/util/topsql/state/BUILD.bazel)"
+  ],
+  "failure_signature": "flaky = True, (pkg/util/topsql/state/BUILD.bazel)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Quarantine/mark Bazel test target as flaky (flaky = True) to avoid unstable CI signal; add/update related tests.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66642",
+    "https://github.com/pingcap/tidb/pull/66642.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66642.patch",
+  "changed_files": [
+    "DEPS.bzl",
+    "go.mod",
+    "go.sum",
+    "pkg/util/topsql/BUILD.bazel",
+    "pkg/util/topsql/reporter/BUILD.bazel",
+    "pkg/util/topsql/reporter/datasink.go",
+    "pkg/util/topsql/reporter/datasink_test.go",
+    "pkg/util/topsql/reporter/metrics/metrics.go",
+    "pkg/util/topsql/reporter/mock/server.go",
+    "pkg/util/topsql/reporter/pubsub.go",
+    "pkg/util/topsql/reporter/pubsub_test.go",
+    "pkg/util/topsql/reporter/single_target.go",
+    "pkg/util/topsql/reporter/single_target_test.go",
+    "pkg/util/topsql/state/BUILD.bazel",
+    "pkg/util/topsql/state/state.go",
+    "pkg/util/topsql/state/state_test.go",
+    "pkg/util/topsql/stmtstats/BUILD.bazel",
+    "pkg/util/topsql/stmtstats/rustats.go",
+    "pkg/util/topsql/topsql_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "bazel_flaky_attr"
+    ],
+    "evidence": [
+      "evidence: flaky = True, (pkg/util/topsql/state/BUILD.bazel)",
+      "files: pkg/util/topsql/reporter/BUILD.bazel, pkg/util/topsql/reporter/datasink_test.go, pkg/util/topsql/reporter/pubsub_test.go, pkg/util/topsql/reporter/single_target_test.go, pkg/util/topsql/state/BUILD.bazel, pkg/util/topsql/state/state_test.go"
+    ]
+  },
+  "analysis": "PR title: topsql: add TopRU state and subscription plumbing (tipb upgrade)\nPR url: https://github.com/pingcap/tidb/pull/66642\nTriage sources: manual_triage, explicit_flaky_signal, bazel_flaky_attr\nTriage summary: flaky = True, (pkg/util/topsql/state/BUILD.bazel)\nChanged files (19): DEPS.bzl, go.mod, go.sum, pkg/util/topsql/BUILD.bazel, pkg/util/topsql/reporter/BUILD.bazel, pkg/util/topsql/reporter/datasink.go, pkg/util/topsql/reporter/datasink_test.go, pkg/util/topsql/reporter/metrics/metrics.go, pkg/util/topsql/reporter/mock/server.go, pkg/util/topsql/reporter/pubsub.go ...\nDiff highlights (excerpt):\n- // TestDefaultDataSinkRegistererTopRURefCountConcurrentRegisterDeregister verifies\n- // concurrent register/deregister cycles do not leak TopRU/TopSQL global state.\n- // It uses fixed loop counts with a waitgroup, so there are no timing-based assertions.\n- func TestDefaultDataSinkRegistererTopRURefCountConcurrentRegisterDeregister(t *testing.T) {\n- var wg sync.WaitGroup\n- // It relies on require.Eventually with bounded timeouts to avoid timing-sensitive asserts.\n- // Eventually checks make this test robust to async subscribe goroutines.\n- require.Eventually(t, func() bool {\nFull patch analyzed; see patch_url."
+}

@@ -1,0 +1,47 @@
+{
+  "id": "pr-45241",
+  "source_pr": {
+    "number": 45241,
+    "url": "https://github.com/pingcap/tidb/pull/45241",
+    "title": "lightning: fix lightning failed to log encoding error",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #44321 \r\n\r\nProblem Summary:\r\n\r\nWhen the source file has ill-formated row, the row is very large so it can't be logged. We can't locate the bad row;\r\n\r\n```\r\n2023-06-01 10:55:27.887067902 +0800 CST m=+35.508861459 write error: write length 20297970322 exceeds maximum file size 536870912\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\nWhen we encounter ill-formatted row, we take out the ill-formatted row and only log the first 1024 characters of the row, so that it would not report error that write length exceeds maximum file size.\r\n\r\nBefore fixing the issue, the log looks like this when encountering ill-formatted row:\r\n\r\n```\r\n[2023/07/06 22:23:38.812 +08:00] [INFO] [base_test.go:40] [\"logger is initialized\"]\r\n2023-07-06 22:23:39.344279 +0800 CST m=+0.575101501 write error: write length 1050272 exceeds maximum file size 1048576\r\n2023-07-06 22:23:39.353842 +0800 CST m=+0.584668709 write error: write length 1050249 exceeds maximum file size 1048576\r\n```\r\nThe length of the row is 324.\r\n\r\nAfter fixing the issue, the log looks like this when encountering ill-formatted row:\r\n```\r\n[2023/07/07 21:08:03.211 +08:00] [INFO] [base_test.go:41] [\"logger is initialized\"]\r\n[2023/07/07 21:08:03.737 +08:00] [ERROR] [base.go:308] [\"kv convert failed\"] [original=test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test] [originalCol=6] [colName=c1] [colType=tinyint(4)] []\r\n[2023/07/07 21:08:03.737 +08:00] [ERROR] [base.go:315] [\"failed to convert kv value\"] [origVal=test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test_test] [fieldType=tinyint(4)] [column=c1] [columnID=7]\r\n```\r\nThe length of the row is 2419.\r\n\r\nSo to check whether the \"exceeds maximum file size\" issue has been fixed, we could check whether the length of the row is larger than 500, which can make sure the log shows the first 1024 characters of the ill-formatted row instead of saying \"write error: write length xxx exceeds maximum file size xxx\".\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nWhen lightning encounters ill-formatted row, it can log the encoding error within which shows the first 1024 characters of the row content, instead of logging the write error that write length exceeds maximum file size.\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-07-14T15:42:44+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/lightning/backend/kv/base_test.go",
+    "name": "base_test"
+  },
+  "symptoms": [
+    "race = \"on\","
+  ],
+  "failure_signature": "race = \"on\",",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"on\",",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/45241",
+    "https://github.com/pingcap/tidb/pull/45241.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/45241.patch",
+  "changed_files": [
+    "br/pkg/lightning/backend/kv/BUILD.bazel",
+    "br/pkg/lightning/backend/kv/base.go",
+    "br/pkg/lightning/backend/kv/base_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: race = \"on\",",
+      "files: br/pkg/lightning/backend/kv/BUILD.bazel, br/pkg/lightning/backend/kv/base.go, br/pkg/lightning/backend/kv/base_test.go"
+    ]
+  },
+  "analysis": "PR title: lightning: fix lightning failed to log encoding error\nPR url: https://github.com/pingcap/tidb/pull/45241\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"on\",\nChanged files (3): br/pkg/lightning/backend/kv/BUILD.bazel, br/pkg/lightning/backend/kv/base.go, br/pkg/lightning/backend/kv/base_test.go\nPatch series analyzed; see patch_url."
+}

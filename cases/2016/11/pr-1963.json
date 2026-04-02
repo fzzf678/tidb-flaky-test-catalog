@@ -1,0 +1,46 @@
+{
+  "id": "pr-1963",
+  "source_pr": {
+    "number": 1963,
+    "url": "https://github.com/pingcap/tidb/pull/1963",
+    "title": "plan: fix a panic bug when involved join and order by.",
+    "body": "Consider the query:\r\n`select * from a join (select * from t limit 1) b on a.c = b.c order by b.c`\r\nthe final plan will be Join{table(a), table(b)->Projection->Limit->Order by b.c} -> Projection.\r\nFirstly, we calucate the b.c's index as 1. When we push \"order by\" past join, we should update b.c's index to avoid panic.\r\n@shenli @coocood @zimulala @XuHuaiyu PTAL"
+  },
+  "pr_merged_at": "2016-11-08T16:11:10+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select a.c1 from t a , (select * from t1 limit 3) b where a.c1 = b.c1 order by b.c1;\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select a.c1 from t a , (select * from t1 limit 3) b where a.c1 = b.c1 order by b.c1;\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1963",
+    "https://github.com/pingcap/tidb/pull/1963.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1963.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "plan/physical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select a.c1 from t a , (select * from t1 limit 3) b where a.c1 = b.c1 order by b.c1;\") (executor/executor_test.go)",
+      "files: executor/executor_test.go, plan/physical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix a panic bug when involved join and order by.\nPR url: https://github.com/pingcap/tidb/pull/1963\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select a.c1 from t a , (select * from t1 limit 3) b where a.c1 = b.c1 order by b.c1;\") (executor/executor_test.go)\nChanged files (2): executor/executor_test.go, plan/physical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/1963.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

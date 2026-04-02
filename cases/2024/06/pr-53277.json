@@ -1,0 +1,56 @@
+{
+  "id": "pr-53277",
+  "source_pr": {
+    "number": 53277,
+    "url": "https://github.com/pingcap/tidb/pull/53277",
+    "title": "ddl: Reorganize partition supporting global index",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #45133\r\nREORGANIZE PARTITION is not allowed for tables with GLOBAL INDEX\r\n\r\n\r\nProblem Summary:\r\nThis was disabled, since Global index was not stable. Now when we are stabilizing Global index, this is a functionality blocker.\r\n\r\n### What changed and how does it work?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-06-04T16:16:26+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/ddl/integration.result",
+    "name": "integration"
+  },
+  "symptoms": [
+    "Updated unstable test | result.Sort().Check(testkit.Rows(\"11 6 4\", \"12 7 7\", \"18 18 17\", \"19 17 18\", \"4 5 6\", \"6 4 5\", \"8 8 9\", \"9 9 8\")) (pkg/ddl/tests/partition/db_partition_test.go)"
+  ],
+  "failure_signature": "Updated unstable test | result.Sort().Check(testkit.Rows(\"11 6 4\", \"12 7 7\", \"18 18 17\", \"19 17 18\", \"4 5 6\", \"6 4 5\", \"8 8 9\", \"9 9 8\")) (pkg/ddl/tests/partition/db_partition_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/53277",
+    "https://github.com/pingcap/tidb/pull/53277.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/53277.patch",
+  "changed_files": [
+    "pkg/ddl/ddl_api.go",
+    "pkg/ddl/delete_range.go",
+    "pkg/ddl/index.go",
+    "pkg/ddl/partition.go",
+    "pkg/ddl/tests/partition/BUILD.bazel",
+    "pkg/ddl/tests/partition/db_partition_test.go",
+    "pkg/table/tables/index.go",
+    "pkg/table/tables/test/partition/BUILD.bazel",
+    "pkg/table/tables/test/partition/partition_test.go",
+    "tests/integrationtest/r/ddl/integration.result",
+    "tests/integrationtest/t/ddl/integration.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: Updated unstable test | result.Sort().Check(testkit.Rows(\"11 6 4\", \"12 7 7\", \"18 18 17\", \"19 17 18\", \"4 5 6\", \"6 4 5\", \"8 8 9\", \"9 9 8\")) (pkg/ddl/tests/partition/db_partition_test.go)",
+      "files: pkg/ddl/ddl_api.go, pkg/ddl/delete_range.go, pkg/ddl/index.go, pkg/ddl/partition.go, pkg/ddl/tests/partition/BUILD.bazel, pkg/ddl/tests/partition/db_partition_test.go, pkg/table/tables/index.go, pkg/table/tables/test/partition/BUILD.bazel, pkg/table/tables/test/partition/partition_test.go, tests/integrationtest/r/ddl/integration.result, tests/integrationtest/t/ddl/integration.test"
+    ]
+  },
+  "analysis": "PR title: ddl: Reorganize partition supporting global index\nPR url: https://github.com/pingcap/tidb/pull/53277\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: Updated unstable test | result.Sort().Check(testkit.Rows(\"11 6 4\", \"12 7 7\", \"18 18 17\", \"19 17 18\", \"4 5 6\", \"6 4 5\", \"8 8 9\", \"9 9 8\")) (pkg/ddl/tests/partition/db_partition_test.go)\nChanged files (11): pkg/ddl/ddl_api.go, pkg/ddl/delete_range.go, pkg/ddl/index.go, pkg/ddl/partition.go, pkg/ddl/tests/partition/BUILD.bazel, pkg/ddl/tests/partition/db_partition_test.go, pkg/table/tables/index.go, pkg/table/tables/test/partition/BUILD.bazel, pkg/table/tables/test/partition/partition_test.go, tests/integrationtest/r/ddl/integration.result, tests/integrationtest/t/ddl/integration.test\nPatch url: https://github.com/pingcap/tidb/pull/53277.patch\nPicked test: type=integration path=tests/integrationtest/r/ddl/integration.result name=integration"
+}

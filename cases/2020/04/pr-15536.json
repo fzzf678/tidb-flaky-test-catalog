@@ -1,0 +1,47 @@
+{
+  "id": "pr-15536",
+  "source_pr": {
+    "number": 15536,
+    "url": "https://github.com/pingcap/tidb/pull/15536",
+    "title": "statistics: fix repetitive selectivity accounting and stabilify the result",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nProblem Summary:\r\n- in `Selectivity`, index order in `coll.Indices` is non-deterministic, so the greedy search algorithm may return different results in different runs, that would confuse users since the stats is not changed at all;\r\n- in the greedy search algorithm, there are repetitive selectivity accounting sometimes. For example, if the filter is like `t.a = 1 and t.b > 1 and t.c > 1`, and there are 2 indexes `idx1(a,b)` and `idx2(a,c)`, the greedy algorithm would choose both indexes and multiply their selectivity computed respectively. Obviously, this is wrong, because selectivity of `t.a = 1` is accounted twice.\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\n- do not choose indexes whose filters covered are overlapped;\r\n- sort the `StatsNode` slice before greedy search;\r\n\r\nHow it Works:\r\n\r\nNote that, how we sort the `StatsNode` slice impacts the greedy search result. I put the PK in the end of the slice, indexes in the middle and columns in the front, to enforce the heuristic rule that, PK is preferred over indexes in estimation, and indexes are preferred over columns.\r\n\r\n### Related changes\r\n\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\nSide effects\r\n\r\n- Performance regression: the change of the selectivity result may change plan generated.\r\n- Breaking backward compatibility: nope, in order to keep compatibility, I introduces the `compareType` function, instead of changing the values of `IndexType` / `PkType` / `ColType`, because feedback encoding uses these constants.\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n"
+  },
+  "pr_merged_at": "2020-04-03T15:50:10+08:00",
+  "test": {
+    "type": "unit",
+    "path": "statistics/selectivity_test.go",
+    "name": "selectivity_test"
+  },
+  "symptoms": [
+    "PR title: stabilify the result; makes greedy selectivity stable by sorting nodes (statistics/selectivity.go)."
+  ],
+  "failure_signature": "PR title: stabilify the result; makes greedy selectivity stable by sorting nodes (statistics/selectivity.go).",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "statistics: fix repetitive selectivity accounting and stabilify the result",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/15536",
+    "https://github.com/pingcap/tidb/pull/15536.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/15536.patch",
+  "changed_files": [
+    "statistics/selectivity.go",
+    "statistics/selectivity_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR title: stabilify the result; makes greedy selectivity stable by sorting nodes (statistics/selectivity.go).",
+      "evidence: adds TestSelectivityGreedyAlgo to assert chosen set is stable regardless of input order (statistics/selectivity_test.go).",
+      "files: statistics/selectivity.go, statistics/selectivity_test.go"
+    ]
+  },
+  "analysis": "PR title: statistics: fix repetitive selectivity accounting and stabilify the result\nPR url: https://github.com/pingcap/tidb/pull/15536\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: stabilify the result; makes greedy selectivity stable by sorting nodes (statistics/selectivity.go).\nChanged files (2): statistics/selectivity.go, statistics/selectivity_test.go\nPatch url: https://github.com/pingcap/tidb/pull/15536.patch\nPicked test: type=unit path=statistics/selectivity_test.go name=selectivity_test"
+}

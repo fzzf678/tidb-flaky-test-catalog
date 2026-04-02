@@ -1,0 +1,47 @@
+{
+  "id": "pr-19863",
+  "source_pr": {
+    "number": 19863,
+    "url": "https://github.com/pingcap/tidb/pull/19863",
+    "title": "executor, util: fix TestGlobalMemoryTrackerOnCleanUp ci error",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/19851\r\n\r\nProblem Summary:\r\n\r\nThe current way to ensure the `Consume` in `TestGlobalMemoryTrackerOnCleanUp `is to check the maxConsumed value which is manually set into 0 before the test.\r\nHowever, in the `race` test, the `maxConsumed` might be covered by other cases and cause the ci failed.\r\n\r\nWhat's changed.\r\nRemove the current way to ensure the `Consume` happened in `TestGlobalMemoryTrackerOnCleanUp` and leave a `TODO` to find a more proper way to solve this problem.\r\n\r\n\r\n\r\n### Release note\r\n* No release note\r\n"
+  },
+  "pr_merged_at": "2020-09-08T18:15:47+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/memory_test.go",
+    "name": "TestGlobalMemoryTrackerOnCleanUp"
+  },
+  "symptoms": [
+    "PR body: in race test, GlobalMemoryUsageTracker.maxConsumed might be covered by other cases and cause CI failed"
+  ],
+  "failure_signature": "PR body: in race test, GlobalMemoryUsageTracker.maxConsumed might be covered by other cases and cause CI failed",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "executor, util: fix TestGlobalMemoryTrackerOnCleanUp ci error",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/19863",
+    "https://github.com/pingcap/tidb/pull/19863.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/19863.patch",
+  "changed_files": [
+    "executor/memory_test.go",
+    "util/memory/tracker.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body: in race test, GlobalMemoryUsageTracker.maxConsumed might be covered by other cases and cause CI failed",
+      "evidence: remove MaxConsumed/SetMaxConsumed-based assertion and test-only setter to avoid global-state interference (executor/memory_test.go, util/memory/tracker.go)",
+      "files: executor/memory_test.go, util/memory/tracker.go"
+    ]
+  },
+  "analysis": "PR title: executor, util: fix TestGlobalMemoryTrackerOnCleanUp ci error\nPR url: https://github.com/pingcap/tidb/pull/19863\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body: in race test, GlobalMemoryUsageTracker.maxConsumed might be covered by other cases and cause CI failed\nChanged files (2): executor/memory_test.go, util/memory/tracker.go\nPatch url: https://github.com/pingcap/tidb/pull/19863.patch\nPicked test: type=unit path=executor/memory_test.go name=TestGlobalMemoryTrackerOnCleanUp"
+}

@@ -1,0 +1,46 @@
+{
+  "id": "pr-66755",
+  "source_pr": {
+    "number": 66755,
+    "url": "https://github.com/pingcap/tidb/pull/66755",
+    "title": "br/pkg/streamhelper: fix flaky TestGCServiceSafePoint assertion",
+    "body": "### What problem does this PR solve?\n\nIssue Number: close #66731\n\nProblem Summary:\n\n`TestGCServiceSafePoint` in `br/pkg/streamhelper` is flaky because it waits for `serviceGCSafePoint != 0` after task removal. In this test setup, `cp` can be `1`, so `cp-1` is validly `0`, causing intermittent false failures.\n\n### What changed and how does it work?\n\n- Updated `TestGCServiceSafePoint` to wait only for `serviceGCSafePointDeleted` after unregistering the task.\n- Kept the existing earlier assertion `serviceGCSafePoint == cp-1`, so the safe point value is still verified.\n\nThis removes the nondeterministic `!= 0` condition while preserving the intended behavior checks.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [ ] Unit test\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [x] No need to test\n  > - [ ] I checked and no code files have been changed.\n  > - [x] Test-only assertion update for flaky behavior; no production logic changed.\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n```release-note\nNone\n```\n\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n## Summary by CodeRabbit\n\n* **Tests**\n  * Simplified retry assertion for clarity and added a focused check to verify the GC safe-point is marked as set after the tick.\n  * Added a test-only flag to track when the service GC safe-point is updated, improving test reliability.\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-10T06:18:35+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/streamhelper/advancer_test.go",
+    "name": "TestGCServiceSafePoint"
+  },
+  "symptoms": [
+    "br/pkg/streamhelper: fix flaky TestGCServiceSafePoint assertion | `TestGCServiceSafePoint` in `br/pkg/streamhelper` is flaky because it waits for `serviceGCSafePoint != 0` after task removal. In this test setup, `cp` can be `1`, so `cp-1` is validly `0`, causing intermittent false failures. | Subject: [PATCH 1/2] br/pkg/streamhelper: fix flaky TestGCServiceSafePoint"
+  ],
+  "failure_signature": "br/pkg/streamhelper: fix flaky TestGCServiceSafePoint assertion | `TestGCServiceSafePoint` in `br/pkg/streamhelper` is flaky because it waits for `serviceGCSafePoint != 0` after task removal. In this test setup, `cp` can be `1`, so `cp-1` is validly `0`, causing intermittent false failures. | Subject: [PATCH 1/2] br/pkg/streamhelper: fix flaky TestGCServiceSafePoint",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "br/pkg/streamhelper: fix flaky TestGCServiceSafePoint assertion | `TestGCServiceSafePoint` in `br/pkg/streamhelper` is flaky because it waits for `serviceGCSafePoint != 0` after task removal. In this test setup, `cp` can be `1`, so `cp-1` is validly `0`, causing intermittent false failures. | Subject: [PATCH 1/2] br/pkg/streamhelper: fix flaky TestGCServiceSafePoint",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66755",
+    "https://github.com/pingcap/tidb/pull/66755.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66755.patch",
+  "changed_files": [
+    "br/pkg/streamhelper/advancer_test.go",
+    "br/pkg/streamhelper/basic_lib_for_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: br/pkg/streamhelper: fix flaky TestGCServiceSafePoint assertion | `TestGCServiceSafePoint` in `br/pkg/streamhelper` is flaky because it waits for `serviceGCSafePoint != 0` after task removal. In this test setup, `cp` can be `1`, so `cp-1` is validly `0`, causing intermittent false failures. | Subject: [PATCH 1/2] br/pkg/streamhelper: fix flaky TestGCServiceSafePoint",
+      "files: br/pkg/streamhelper/advancer_test.go, br/pkg/streamhelper/basic_lib_for_test.go"
+    ]
+  },
+  "analysis": "PR title: br/pkg/streamhelper: fix flaky TestGCServiceSafePoint assertion\nPR url: https://github.com/pingcap/tidb/pull/66755\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: br/pkg/streamhelper: fix flaky TestGCServiceSafePoint assertion | `TestGCServiceSafePoint` in `br/pkg/streamhelper` is flaky because it waits for `serviceGCSafePoint != 0` after task removal. In this test setup, `cp` can be `1`, so `cp-1` is validly `0`, causing intermittent false failures. | Subject: [PATCH 1/2] br/pkg/streamhelper: fix flaky TestGCServiceSafePoint\nChanged files (2): br/pkg/streamhelper/advancer_test.go, br/pkg/streamhelper/basic_lib_for_test.go\nFull patch analyzed; see patch_url."
+}

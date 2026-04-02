@@ -1,0 +1,53 @@
+{
+  "id": "pr-55588",
+  "source_pr": {
+    "number": 55588,
+    "url": "https://github.com/pingcap/tidb/pull/55588",
+    "title": "ddl/ingest: set `minCommitTS` when detect remote duplicate keys",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #55587\r\n\r\nProblem Summary:\r\n\r\nhttps://github.com/pingcap/tidb/issues/55587#issuecomment-2303941700\r\n\r\n### What changed and how does it work?\r\n\r\nSet `minCommitTS` when detect remote duplicate keys\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n    After this PR:\r\n    ```sql\r\n    mysql> set @@global.tidb_gc_life_time = '100m';\r\n    Query OK, 0 rows affected (0.01 sec)\r\n\r\n    mysql> drop table if exists t;\r\n    Query OK, 0 rows affected, 1 warning (0.00 sec)\r\n\r\n    mysql> create table t (a int, b int);\r\n    Query OK, 0 rows affected (0.10 sec)\r\n\r\n    mysql> insert into t values (1, 1);\r\n    Query OK, 1 row affected (0.01 sec)\r\n\r\n    mysql> select now();\r\n    +---------------------+\r\n    | now()               |\r\n    +---------------------+\r\n    | 2024-09-05 17:31:47 |\r\n    +---------------------+\r\n    1 row in set (0.00 sec)\r\n\r\n    mysql> alter table t add index idx(b);\r\n    Query OK, 0 rows affected (2.20 sec)\r\n\r\n    mysql> flashback cluster to timestamp '2024-09-05 17:31:47';\r\n    Query OK, 0 rows affected (2.22 sec)\r\n\r\n    mysql> alter table t add unique index idx(b);\r\n    Query OK, 0 rows affected (2.24 sec)\r\n    ```\r\n    Because using flashback cluster in real tikv test is very unstable, I test it manually. There is also an integration test on endless.\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-09-05T23:28:18+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "tests/realtikvtest/addindextest3/functional_test.go",
+    "name": "TestAddUniqueIndexAfterFlashBack"
+  },
+  "symptoms": [
+    "remove unstable TestAddUniqueIndexAfterFlashBack"
+  ],
+  "failure_signature": "remove unstable TestAddUniqueIndexAfterFlashBack",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl/ingest: set `minCommitTS` when detect remote duplicate keys",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/55588",
+    "https://github.com/pingcap/tidb/pull/55588.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/55588.patch",
+  "changed_files": [
+    "pkg/ddl/backfilling.go",
+    "pkg/ddl/backfilling_dist_executor.go",
+    "pkg/ddl/index.go",
+    "pkg/ddl/ingest/backend.go",
+    "pkg/ddl/ingest/backend_mgr.go",
+    "pkg/ddl/ingest/mock.go",
+    "pkg/lightning/backend/encode/encode.go",
+    "pkg/lightning/backend/local/duplicate.go",
+    "tests/realtikvtest/addindextest3/functional_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: remove unstable TestAddUniqueIndexAfterFlashBack",
+      "files: pkg/ddl/backfilling.go, pkg/ddl/backfilling_dist_executor.go, pkg/ddl/index.go, pkg/ddl/ingest/backend.go, pkg/ddl/ingest/backend_mgr.go, pkg/ddl/ingest/mock.go, pkg/lightning/backend/encode/encode.go, pkg/lightning/backend/local/duplicate.go, tests/realtikvtest/addindextest3/functional_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl/ingest: set `minCommitTS` when detect remote duplicate keys\nPR url: https://github.com/pingcap/tidb/pull/55588\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: remove unstable TestAddUniqueIndexAfterFlashBack\nChanged files (9): pkg/ddl/backfilling.go, pkg/ddl/backfilling_dist_executor.go, pkg/ddl/index.go, pkg/ddl/ingest/backend.go, pkg/ddl/ingest/backend_mgr.go, pkg/ddl/ingest/mock.go, pkg/lightning/backend/encode/encode.go, pkg/lightning/backend/local/duplicate.go, tests/realtikvtest/addindextest3/functional_test.go\nPatch url: https://github.com/pingcap/tidb/pull/55588.patch\nPicked test: type=realtikv path=tests/realtikvtest/addindextest3/functional_test.go name=TestAddUniqueIndexAfterFlashBack"
+}

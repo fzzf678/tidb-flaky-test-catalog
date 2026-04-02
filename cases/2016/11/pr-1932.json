@@ -1,0 +1,48 @@
+{
+  "id": "pr-1932",
+  "source_pr": {
+    "number": 1932,
+    "url": "https://github.com/pingcap/tidb/pull/1932",
+    "title": "plan: add cast function for PatternInExpr.",
+    "body": "Fixes a bug when pattern in items input is string but pattern column is of integer type."
+  },
+  "pr_merged_at": "2016-11-03T15:40:58+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "queryStr := `select c2 from t where c1 in ('7', '10', '112', '111', '98', '106', '100', '9', '18', '17') order by c2` (executor/executor_test.go)"
+  ],
+  "failure_signature": "queryStr := `select c2 from t where c1 in ('7', '10', '112', '111', '98', '106', '100', '9', '18', '17') order by c2` (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1932",
+    "https://github.com/pingcap/tidb/pull/1932.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1932.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "plan/typeinferer.go",
+    "util/types/convert_test.go",
+    "util/types/datum.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: queryStr := `select c2 from t where c1 in ('7', '10', '112', '111', '98', '106', '100', '9', '18', '17') order by c2` (executor/executor_test.go)",
+      "files: executor/executor_test.go, plan/typeinferer.go, util/types/convert_test.go, util/types/datum.go"
+    ]
+  },
+  "analysis": "PR title: plan: add cast function for PatternInExpr.\nPR url: https://github.com/pingcap/tidb/pull/1932\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: queryStr := `select c2 from t where c1 in ('7', '10', '112', '111', '98', '106', '100', '9', '18', '17') order by c2` (executor/executor_test.go)\nChanged files (4): executor/executor_test.go, plan/typeinferer.go, util/types/convert_test.go, util/types/datum.go\nPatch url: https://github.com/pingcap/tidb/pull/1932.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

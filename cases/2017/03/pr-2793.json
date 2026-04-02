@@ -1,0 +1,48 @@
+{
+  "id": "pr-2793",
+  "source_pr": {
+    "number": 2793,
+    "url": "https://github.com/pingcap/tidb/pull/2793",
+    "title": "plan: forbid limit to push across selection.",
+    "body": "When the SQL is `Select * from t left join s on true where least(1,2,3,t1.a,t2.b) > 0 order by t2.a limit 10`, the old plan is `Join(t,s)->TopN->Selection`, it's wrong. After fixing it, the plan is `Join(t,s)->Selection->TopN`.\r\n@shenli @coocood @zimulala PTAL"
+  },
+  "pr_merged_at": "2017-03-08T16:37:36+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/physical_plan_test.go",
+    "name": "physical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t t1 left outer join t t2 on true where least(1,2,3,t1.a,t2.b) > 0 order by t2.a limit 10\", (plan/physical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t t1 left outer join t t2 on true where least(1,2,3,t1.a,t2.b) > 0 order by t2.a limit 10\", (plan/physical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/2793",
+    "https://github.com/pingcap/tidb/pull/2793.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/2793.patch",
+  "changed_files": [
+    "plan/match_property.go",
+    "plan/physical_plan_builder.go",
+    "plan/physical_plan_test.go",
+    "plan/plan.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t t1 left outer join t t2 on true where least(1,2,3,t1.a,t2.b) > 0 order by t2.a limit 10\", (plan/physical_plan_test.go)",
+      "files: plan/match_property.go, plan/physical_plan_builder.go, plan/physical_plan_test.go, plan/plan.go"
+    ]
+  },
+  "analysis": "PR title: plan: forbid limit to push across selection.\nPR url: https://github.com/pingcap/tidb/pull/2793\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t t1 left outer join t t2 on true where least(1,2,3,t1.a,t2.b) > 0 order by t2.a limit 10\", (plan/physical_plan_test.go)\nChanged files (4): plan/match_property.go, plan/physical_plan_builder.go, plan/physical_plan_test.go, plan/plan.go\nPatch url: https://github.com/pingcap/tidb/pull/2793.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
+}

@@ -1,0 +1,52 @@
+{
+  "id": "pr-28906",
+  "source_pr": {
+    "number": 28906,
+    "url": "https://github.com/pingcap/tidb/pull/28906",
+    "title": "copr: MPP balance regions between TiFlash nodes with continuity.",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\nIssue Number: close #xxx <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary: \r\nRegions balance between TiFlash nodes should take account of region’s physical continuity in TiFlash nodes for better read performance.\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: [Better read plan of region peer between TiFlash nodes](https://docs.google.com/document/d/1mskvznoMLvo8EBRROclXKIDKgf3txn5L8_DA5TbO-ys/edit?n=Better_read_plan_of_region_peer_between_TiFlash_nodes#heading=h.3ct01020ovnv) \r\n\r\nWhat's Changed:\r\n\r\nAdd a new balance strategy that take account of region's order:\r\n1. Sort regions by key ranges.\r\n2. Assign several regions to a store each round until all regions are assigned.\r\n\r\nAdd two TiDB variables:\r\n1.`tidb_enable_mpp_balance_with_continuous_region` indicates whether take account of region's order when doing MPP balance, default is ON.\r\n2. `tidb_enable_mpp_balance_with_continuous_region_count` indicates the region count assigned to a store each round when doing MPP balance, default is 20.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [x] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n```release-note\r\nOptimize MPP balance strategy and improve read I/O performance of TiFlash. \r\n```\r\n\r\n### Result\r\n\r\nDisk read metric of TPCH-100 workload:\r\n1. Left is metrics before this PR.\r\n2. Right is metrics of this PR.\r\n\r\n![tpch-100](https://user-images.githubusercontent.com/6143402/137899954-f3fa12a1-a9e0-45ec-a239-8a2f340bb1ae.png)\r\n"
+  },
+  "pr_merged_at": "2021-10-20T12:18:42+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/copr/batch_coprocessor_test.go",
+    "name": "batch_coprocessor_test"
+  },
+  "symptoms": [
+    "// TiDBEnableOrderedResultMode indicates if stabilize query results."
+  ],
+  "failure_signature": "// TiDBEnableOrderedResultMode indicates if stabilize query results.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "// TiDBEnableOrderedResultMode indicates if stabilize query results.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/28906",
+    "https://github.com/pingcap/tidb/pull/28906.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/28906.patch",
+  "changed_files": [
+    "kv/mpp.go",
+    "planner/core/fragment.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "store/copr/batch_coprocessor.go",
+    "store/copr/batch_coprocessor_test.go",
+    "store/copr/mpp.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: // TiDBEnableOrderedResultMode indicates if stabilize query results.",
+      "files: kv/mpp.go, planner/core/fragment.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, store/copr/batch_coprocessor.go, store/copr/batch_coprocessor_test.go, store/copr/mpp.go"
+    ]
+  },
+  "analysis": "PR title: copr: MPP balance regions between TiFlash nodes with continuity.\nPR url: https://github.com/pingcap/tidb/pull/28906\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // TiDBEnableOrderedResultMode indicates if stabilize query results.\nChanged files (8): kv/mpp.go, planner/core/fragment.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, store/copr/batch_coprocessor.go, store/copr/batch_coprocessor_test.go, store/copr/mpp.go\nPatch series analyzed; see patch_url."
+}

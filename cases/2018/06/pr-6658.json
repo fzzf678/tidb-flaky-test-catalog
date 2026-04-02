@@ -1,0 +1,58 @@
+{
+  "id": "pr-6658",
+  "source_pr": {
+    "number": 6658,
+    "url": "https://github.com/pingcap/tidb/pull/6658",
+    "title": "*: support parallel hash agg",
+    "body": "1. ~There still remains some optimization to be done, (** can be reviewed now, there will be no big change**)~\r\nand ~some problems to be fixed~.\r\n~Comparision with main branch will be tested after these problems are fixed.~\r\n~2. I'll try to split this PR into small ones.~\r\n3. benchmark on an 8-core machine with partial concurrency = 8 and final concurrency = 8:\r\nFor a dataset with 1000w rows, compared with master(d963ee734856095aecdfc38396db62f4670dd051), we get the following result:\r\n\r\n| group count| main| parallel |improvement| \r\n|--|--|--|--|\r\n|1|19.1724746227|4.44947560628|3.30892903326404|\r\n|4|19.5655293465|4.57436728477|3.27720996773519|\r\n|16|19.5942333539|4.54332232475|3.31275440158831|\r\n|64|19.9703223705|4.64132626851|3.30271892454375|\r\n|256|19.6182471116|4.76589171092|3.11638541149583|\r\n|1024|19.4453799725|4.83600767454|3.0209572195002|\r\n|4096|19.6149880091|4.86029005051|3.03576490399822|\r\n|10480000|61.1787583828|45.3584220409|0.348784980386546|\r\n\r\n"
+  },
+  "pr_merged_at": "2018-06-29T22:59:48+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "fix data race | result = tk.MustQuery(\"select count(*) from t group by d order by c\") (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "fix data race | result = tk.MustQuery(\"select count(*) from t group by d order by c\") (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6658",
+    "https://github.com/pingcap/tidb/pull/6658.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6658.patch",
+  "changed_files": [
+    "executor/aggregate.go",
+    "executor/aggregate_test.go",
+    "executor/builder.go",
+    "executor/executor_test.go",
+    "executor/join_test.go",
+    "expression/aggregation/aggregation.go",
+    "expression/aggregation/descriptor.go",
+    "expression/builtin_compare.go",
+    "expression/integration_test.go",
+    "plan/physical_plans.go",
+    "plan/rule_aggregation_push_down.go",
+    "plan/task.go",
+    "util/codec/codec_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: fix data race | result = tk.MustQuery(\"select count(*) from t group by d order by c\") (executor/aggregate_test.go)",
+      "files: executor/aggregate.go, executor/aggregate_test.go, executor/bench_parallel_hashagg_test.go, executor/builder.go, executor/executor.go, executor/executor_test.go, executor/join_test.go, expression/aggregation/aggregation.go, expression/aggregation/avg.go, expression/aggregation/bit_and.go, expression/aggregation/bit_or.go, expression/aggregation/bit_xor.go, expression/aggregation/concat.go, expression/aggregation/count.go, expression/aggregation/descriptor.go, expression/aggregation/first_row.go, expression/aggregation/max_min.go, expression/aggregation/sum.go, expression/builtin_arithmetic.go, expression/builtin_compare.go, expression/distsql_builtin_test.go, expression/expr_to_pb.go, expression/integration_test.go, plan/aggregation_push_down.go, plan/gen_physical_plans.go, plan/physical_plans.go, plan/rule_aggregation_push_down.go, plan/task.go, session/session.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, util/codec/bench_test.go, util/codec/codec.go, util/codec/codec_test.go, util/codec/decimal.go, util/codec/decimal_test.go"
+    ]
+  },
+  "analysis": "PR title: *: support parallel hash agg\nPR url: https://github.com/pingcap/tidb/pull/6658\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix data race | result = tk.MustQuery(\"select count(*) from t group by d order by c\") (executor/aggregate_test.go)\nChanged files (13): executor/aggregate.go, executor/aggregate_test.go, executor/builder.go, executor/executor_test.go, executor/join_test.go, expression/aggregation/aggregation.go, expression/aggregation/descriptor.go, expression/builtin_compare.go, expression/integration_test.go, plan/physical_plans.go, plan/rule_aggregation_push_down.go, plan/task.go, util/codec/codec_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6658.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

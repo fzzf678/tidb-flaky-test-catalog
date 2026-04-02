@@ -1,0 +1,49 @@
+{
+  "id": "pr-8719",
+  "source_pr": {
+    "number": 8719,
+    "url": "https://github.com/pingcap/tidb/pull/8719",
+    "title": "ddl: fix a data race in unit test TestTableSplit",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nFound in the unit test:\r\n\r\n```\r\n==================\r\nWARNING: DATA RACE\r\nWrite at 0x0000030f923c by goroutine 198:\r\n  github.com/pingcap/tidb/ddl_test.(*testDDLTableSplitSuite).TestTableSplit()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/table_split_test.go:44 +0x27d\r\n  github.com/pingcap/tidb/privilege/privileges.(*MySQLPrivilege).LoadDBTable()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/privilege/privileges/cache.go:256 +0x8b\r\n  github.com/pingcap/tidb/privilege/privileges.(*MySQLPrivilege).LoadAll()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/privilege/privileges/cache.go:121 +0x9d\r\n  github.com/pingcap/tidb/privilege/privileges.(*MySQLPrivilege).LoadUserTable()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/privilege/privileges/cache.go:159 +0xa2\r\n  github.com/pingcap/tidb/privilege/privileges.(*MySQLPrivilege).LoadAll()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/privilege/privileges/cache.go:116 +0x5f\r\n  github.com/pingcap/tidb/privilege/privileges.(*Handle).Update()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/privilege/privileges/cache.go:708 +0xa8\r\n  github.com/pingcap/tidb/domain.(*Domain).LoadPrivilegeLoop()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain.go:723 +0x148\r\n  github.com/pingcap/tidb/session.BootstrapSession()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:1235 +0x10a\r\n\r\n\r\nPrevious read at 0x0000030f923c by goroutine 162:\r\n  github.com/pingcap/tidb/ddl.onCreateTable()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/table.go:62 +0x2e7\r\n  github.com/pingcap/tidb/ddl.(*worker).runDDLJob()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl_worker.go:470 +0x70d\r\n  github.com/sirupsen/logrus.Infof()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/sirupsen/logrus@v1.2.0/exported.go:148 +0x7c\r\n  github.com/pingcap/tidb/ddl.(*worker).runDDLJob()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl_worker.go:447 +0xdf\r\n  github.com/pingcap/tidb/ddl.(*worker).handleDDLJobQueue.func1()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/ddl_worker.go:384 +0x63b\r\n  github.com/pingcap/tidb/ddl.(*TestDDLCallback).OnJobRunBefore()\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\nMake `EnableSplitTableRegion`  automic\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - No code\r\n\r\n@zimulala @winkyao\n\n<!-- Reviewable:start -->\n---\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8719)\n<!-- Reviewable:end -->\n"
+  },
+  "pr_merged_at": "2018-12-18T11:40:00+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/table_split_test.go",
+    "name": "TestTableSplit"
+  },
+  "symptoms": [
+    "ddl: fix a data race in unit test TestTableSplit"
+  ],
+  "failure_signature": "ddl: fix a data race in unit test TestTableSplit",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: fix a data race in unit test TestTableSplit",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8719",
+    "https://github.com/pingcap/tidb/pull/8719.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8719.patch",
+  "changed_files": [
+    "circle.yml",
+    "ddl/ddl.go",
+    "ddl/table.go",
+    "ddl/table_split_test.go",
+    "tidb-server/main.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: ddl: fix a data race in unit test TestTableSplit",
+      "files: circle.yml, ddl/ddl.go, ddl/table.go, ddl/table_split_test.go, tidb-server/main.go"
+    ]
+  },
+  "analysis": "PR title: ddl: fix a data race in unit test TestTableSplit\nPR url: https://github.com/pingcap/tidb/pull/8719\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix a data race in unit test TestTableSplit\nChanged files (5): circle.yml, ddl/ddl.go, ddl/table.go, ddl/table_split_test.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/8719.patch\nPicked test: type=unit path=ddl/table_split_test.go name=TestTableSplit"
+}

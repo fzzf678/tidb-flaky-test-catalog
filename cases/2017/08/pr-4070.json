@@ -1,0 +1,46 @@
+{
+  "id": "pr-4070",
+  "source_pr": {
+    "number": 4070,
+    "url": "https://github.com/pingcap/tidb/pull/4070",
+    "title": "plan: make sort's cost right",
+    "body": "sort's cost may be less than 0 when the count is less than 1. We should avoid this.\r\n@winoros @lamxTyler PTAL"
+  },
+  "pr_merged_at": "2017-08-07T19:18:43+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select c from t where t.c = 1 and t.d = 1 order by t.a limit 1\", (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select c from t where t.c = 1 and t.d = 1 order by t.a limit 1\", (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4070",
+    "https://github.com/pingcap/tidb/pull/4070.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4070.patch",
+  "changed_files": [
+    "plan/dag_plan_test.go",
+    "plan/task.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select c from t where t.c = 1 and t.d = 1 order by t.a limit 1\", (plan/dag_plan_test.go)",
+      "files: plan/dag_plan_test.go, plan/task.go"
+    ]
+  },
+  "analysis": "PR title: plan: make sort's cost right\nPR url: https://github.com/pingcap/tidb/pull/4070\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select c from t where t.c = 1 and t.d = 1 order by t.a limit 1\", (plan/dag_plan_test.go)\nChanged files (2): plan/dag_plan_test.go, plan/task.go\nPatch url: https://github.com/pingcap/tidb/pull/4070.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

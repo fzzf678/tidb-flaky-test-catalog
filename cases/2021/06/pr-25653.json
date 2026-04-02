@@ -1,0 +1,48 @@
+{
+  "id": "pr-25653",
+  "source_pr": {
+    "number": 25653,
+    "url": "https://github.com/pingcap/tidb/pull/25653",
+    "title": "expression: fix IN expr critical bug",
+    "body": "Signed-off-by: guo-shaoge <shaoge1994@163.com>\r\n\r\n<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #25591 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary: The implementation of **IN expr** will change its arguments array unexpectedly. For example:\r\n\r\n```\r\nt1.c1 IN (1, t2.c1, t2.c2);\r\noriginal args: (t1.c1, 1, t2.c1, t2.c2)\r\nafter: (t1.c1, t2.c1, t2.c2, t2.c2)\r\n```\r\n\r\n### What is changed and how it works?\r\nWhat's Changed: If we need to change local args slice, make a new underlying array instead of changing the expr's(`b.args` should not be changed)\r\n\r\n\r\n### Related changes\r\n\r\n- PR to update `pingcap/docs`/`pingcap/docs-cn`:\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n\r\n- Integration test\r\n\r\n\r\nSide effects: May use extra memory to store local arguments array.\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- expression: fix IN expr critical bug\r\n"
+  },
+  "pr_merged_at": "2021-06-22T17:13:23+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "rows := tk.MustQuery(\"select t1.col1, t2.col1, t2.col2 from t1_1 t1 inner join t2_1 t2 on t1.col1 not in (1,t2.col1,t2.col2) order by 1,2,3;\") (expression/integration_test.go)"
+  ],
+  "failure_signature": "rows := tk.MustQuery(\"select t1.col1, t2.col1, t2.col2 from t1_1 t1 inner join t2_1 t2 on t1.col1 not in (1,t2.col1,t2.col2) order by 1,2,3;\") (expression/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "rows := tk.MustQuery(\"select t1.col1, t2.col1, t2.col2 from t1_1 t1 inner join t2_1 t2 on t1.col1 not in (1,t2.col1,t2.col2) order by 1,2,3;\") (expression/integration_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/25653",
+    "https://github.com/pingcap/tidb/pull/25653.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/25653.patch",
+  "changed_files": [
+    "expression/builtin_other.go",
+    "expression/builtin_other_vec_generated.go",
+    "expression/generator/other_vec.go",
+    "expression/integration_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rows := tk.MustQuery(\"select t1.col1, t2.col1, t2.col2 from t1_1 t1 inner join t2_1 t2 on t1.col1 not in (1,t2.col1,t2.col2) order by 1,2,3;\") (expression/integration_test.go)",
+      "files: expression/builtin_other.go, expression/builtin_other_vec_generated.go, expression/generator/other_vec.go, expression/integration_test.go"
+    ]
+  },
+  "analysis": "PR title: expression: fix IN expr critical bug\nPR url: https://github.com/pingcap/tidb/pull/25653\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rows := tk.MustQuery(\"select t1.col1, t2.col1, t2.col2 from t1_1 t1 inner join t2_1 t2 on t1.col1 not in (1,t2.col1,t2.col2) order by 1,2,3;\") (expression/integration_test.go)\nChanged files (4): expression/builtin_other.go, expression/builtin_other_vec_generated.go, expression/generator/other_vec.go, expression/integration_test.go\nPatch series analyzed; see patch_url."
+}

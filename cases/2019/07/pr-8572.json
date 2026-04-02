@@ -1,0 +1,54 @@
+{
+  "id": "pr-8572",
+  "source_pr": {
+    "number": 8572,
+    "url": "https://github.com/pingcap/tidb/pull/8572",
+    "title": "*: speed up the operation of \"admin check table\"",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nReduce the execution time of this operation of \"admin check table\".\r\n\r\n### What is changed and how it works?\r\ncompare the result of \"select count(*) from table\" and \"select count(*) from table use index(idx)\"\r\n\r\n- table count == index count\r\nWe will check the records with the `IndexLookUpReader` method of all indexes.\r\n\r\n- table count > index count \r\nWe will use the current index's `checkTableRecord` to check the records.\r\n\r\n- table count < index count \r\nWe will use the current index's  IndexLookUpReader to check the records.\r\n\r\nUsing 3 TiKV(8  Intel(R) Core(TM) i7-4790 CPU @ 3.60GHz), 1 PD, 1 TiDB , the servers of TiKV and TiDB are not on a server.\r\n\r\n```\r\nCREATE TABLE `x` (\r\n  `a` int(11) NOT NULL,\r\n  `b` varchar(255) DEFAULT NULL,\r\n  `c` blob DEFAULT NULL,\r\n  `d` time DEFAULT NULL,\r\n  `e` double DEFAULT NULL,\r\n  `f` text DEFAULT NULL,\r\n  `g` bit(10) DEFAULT NULL,\r\n  PRIMARY KEY (`a`),\r\n  KEY `d` (`d`),\r\n  KEY `a_2` (`a`,`b`),\r\n  KEY `c` (`c`(10),`d`),\r\n  KEY `e` (`e`,`f`(100)),\r\n  KEY `a_3` (`a`,`b`,`c`(2048)),\r\n  KEY `d_2` (`d`,`e`,`f`(1024),`g`)\r\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin |\r\n```\r\nbefore vs after\r\n```\r\nmysql> select count(*) from x use index(d);\r\n+----------+\r\n| count(*) |\r\n+----------+\r\n| 10000000 |\r\n+----------+\r\n1 row in set (2.30 sec)\r\n\r\nbefore this PR:\r\nmysql> admin check table x;\r\nMore than 3 hours\r\n\r\nafter this PR:\r\nmysql> admin check table x;\r\nQuery OK, 0 rows affected (45.52 sec)\r\n```\r\n\r\nExecuting this operation with old code takes too long, so the following only tests the new code\r\n```\r\nmysql> select count(*) from x use index(d);\r\n+-----------+\r\n| count(*)  |\r\n+-----------+\r\n| 100000000 |\r\n+—————+\r\nQuery OK, 0 rows affected (4 min 27.76 sec)\r\n```\r\n\r\n```\r\nCREATE TABLE `lineitem` (\r\n  `L_ORDERKEY` int(11) NOT NULL,\r\n  `L_PARTKEY` int(11) NOT NULL,\r\n  `L_SUPPKEY` int(11) NOT NULL,\r\n  `L_LINENUMBER` int(11) NOT NULL,\r\n  `L_QUANTITY` decimal(15,2) NOT NULL,\r\n  `L_EXTENDEDPRICE` decimal(15,2) NOT NULL,\r\n  `L_DISCOUNT` decimal(15,2) NOT NULL,\r\n  `L_TAX` decimal(15,2) NOT NULL,\r\n  `L_RETURNFLAG` char(1) NOT NULL,\r\n  `L_LINESTATUS` char(1) NOT NULL,\r\n  `L_SHIPDATE` date NOT NULL,\r\n  `L_COMMITDATE` date NOT NULL,\r\n  `L_RECEIPTDATE` date NOT NULL,\r\n  `L_SHIPINSTRUCT` char(25) NOT NULL,\r\n  `L_SHIPMODE` char(10) NOT NULL,\r\n  `L_COMMENT` varchar(44) NOT NULL,\r\n  PRIMARY KEY (`L_ORDERKEY`,`L_LINENUMBER`)\r\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin \r\n\r\nmysql> select count(*) from TPCH10.lineitem;\r\n+----------+\r\n| count(*) |\r\n+----------+\r\n| 59986052 |\r\n+----------+\r\n1 row in set (4.69 sec)\r\ntidb> admin check table TPCH10.lineitem;\r\nQuery OK, 0 rows affected (1 min 16.92 sec)\r\n\r\nmysql> select count(*) from TPCH50.lineitem;\r\n+-----------+\r\n| count(*)  |\r\n+-----------+\r\n| 300005811 |\r\ntidb> admin check table TPCH50.lineitem;\r\nQuery OK, 0 rows affected (5 min 50.57 sec)\r\n\r\n```\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n - Unit test\r\n\r\nSide effects\r\n\r\n - Possible performance regression\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n - Need to update the documentation\r\n - Need to be included in the release note\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8572)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2019-07-31T17:11:31+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/admin_test.go",
+    "name": "admin_test"
+  },
+  "symptoms": [
+    "util/admin: fix data race"
+  ],
+  "failure_signature": "util/admin: fix data race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: speed up the operation of \"admin check table\"",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8572",
+    "https://github.com/pingcap/tidb/pull/8572.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8572.patch",
+  "changed_files": [
+    "executor/admin_test.go",
+    "executor/builder.go",
+    "executor/distsql.go",
+    "executor/executor.go",
+    "executor/executor_test.go",
+    "planner/core/common_plans.go",
+    "planner/core/physical_plans.go",
+    "planner/core/planbuilder.go",
+    "util/admin/admin.go",
+    "util/admin/admin_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: util/admin: fix data race",
+      "files: executor/admin_test.go, executor/builder.go, executor/ddl.go, executor/distsql.go, executor/executor.go, executor/executor_test.go, expression/column.go, expression/scalar_function.go, go.mod, go.sum, plan/common_plans.go, plan/planbuilder.go, planner/core/common_plans.go, planner/core/physical_plans.go, planner/core/plan_to_pb.go, planner/core/planbuilder.go, server/http_handler.go, store/mockstore/mocktikv/cop_handler_dag.go, store/mockstore/mocktikv/executor.go, types/datum.go, util/admin/admin.go, util/admin/admin_integration_test.go, util/admin/admin_test.go, util/chunk/compare.go, util/codec/codec.go"
+    ]
+  },
+  "analysis": "PR title: *: speed up the operation of \"admin check table\"\nPR url: https://github.com/pingcap/tidb/pull/8572\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: util/admin: fix data race\nChanged files (10): executor/admin_test.go, executor/builder.go, executor/distsql.go, executor/executor.go, executor/executor_test.go, planner/core/common_plans.go, planner/core/physical_plans.go, planner/core/planbuilder.go, util/admin/admin.go, util/admin/admin_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8572.patch\nPicked test: type=unit path=executor/admin_test.go name=admin_test"
+}

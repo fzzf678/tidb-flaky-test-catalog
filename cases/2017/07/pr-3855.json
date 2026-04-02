@@ -1,0 +1,48 @@
+{
+  "id": "pr-3855",
+  "source_pr": {
+    "number": 3855,
+    "url": "https://github.com/pingcap/tidb/pull/3855",
+    "title": "plan: fix bug of apply plan.",
+    "body": "apply and semi join will pass the sort properties from left child. But in function `getChildrenPossibleProps`, we don't know the schema of left child, so we record the length of left child's schema.\r\nAt the same time, we fix the stats profile of apply operator.\r\n\r\n@winoros @lamxTyler PTAL"
+  },
+  "pr_merged_at": "2017-07-23T15:54:01+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t where exists (select s.a from t s having sum(s.a) = t.a ) order by t.a\", (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t where exists (select s.a from t s having sum(s.a) = t.a ) order by t.a\", (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3855",
+    "https://github.com/pingcap/tidb/pull/3855.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3855.patch",
+  "changed_files": [
+    "plan/dag_plan_test.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/physical_plans.go",
+    "plan/stats.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t where exists (select s.a from t s having sum(s.a) = t.a ) order by t.a\", (plan/dag_plan_test.go)",
+      "files: plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/physical_plans.go, plan/stats.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix bug of apply plan.\nPR url: https://github.com/pingcap/tidb/pull/3855\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t where exists (select s.a from t s having sum(s.a) = t.a ) order by t.a\", (plan/dag_plan_test.go)\nChanged files (4): plan/dag_plan_test.go, plan/new_physical_plan_builder.go, plan/physical_plans.go, plan/stats.go\nPatch url: https://github.com/pingcap/tidb/pull/3855.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

@@ -1,0 +1,77 @@
+{
+  "id": "pr-37148",
+  "source_pr": {
+    "number": 37148,
+    "url": "https://github.com/pingcap/tidb/pull/37148",
+    "title": "*: support create table with foreign key and maintain foreign key reference",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #37147\r\n\r\n### What is changed and how it works?\r\n\r\nSee the design doc DDL design part: https://github.com/pingcap/tidb/pull/35982\r\n\r\nThe following is the related design from the design doc(attention: It maybe outdate):\r\n\r\n### Create Table with Foreign Key\r\n\r\n#### Build TableInfo\r\n\r\nWhen build `TableInfo`, an index for the foreign key columns is created automatically if there is no index covering the foreign key columns. Here is an example:\r\n\r\n```sql\r\nmysql> create table t (id int key, a int, foreign key fk(a) references t(id));\r\nQuery OK, 0 rows affected\r\nmysql> show create table t\\G\r\n***************************[ 1. row ]***************************\r\nTable        | t\r\nCreate Table | CREATE TABLE `t` (\r\n  `id` int NOT NULL,\r\n  `a` int DEFAULT NULL,\r\n  PRIMARY KEY (`id`),\r\n  KEY `fk` (`a`),\r\n  CONSTRAINT `t_ibfk_1` FOREIGN KEY (`a`) REFERENCES `t` (`id`)\r\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci\r\n1 row in set\r\n```\r\n\r\nAs you can see, the index `fk` is created automatically for the foreign key.\r\n\r\n#### Validate\r\n\r\nCreate a table with foreign key, check the following conditions when a DDL job is built and the DDL owner received a DDL job(aka Double-Check):\r\n\r\n- whether the user have `REFERENCES` privilege to the foreign key references table.\r\n- Corresponding columns in the foreign key and the referenced key must have similar data types. The size and sign of fixed precision types such as INTEGER and DECIMAL must be the same. The length of string types need not be the same. For nonbinary (character) string columns, the character set and collation must be the same.\r\n- Supports foreign key references between one column and another within a table. (A column cannot have a foreign key reference to itself.)\r\n- Indexes on foreign keys and referenced keys are required, because the foreign key check can be fast and do not require a table scan. The size and sign of fixed precision types such as INTEGER and DECIMAL must be the same. The length of string types need not be the same. For nonbinary (character) string columns, the character set and collation must be the same.\r\n- Prefixed indexes on foreign key columns are not supported. Consequently, BLOB and TEXT columns cannot be included in a foreign key because indexes on those columns must always include a prefix length.\r\n- Does not currently support foreign keys for tables with user-defined partitioning. This includes both reference and child tables.\r\n- A foreign key constraint cannot reference any virtual generated columns, but the stored generated columns are fine.\r\n\r\n#### Handle In DDL Owner\r\n\r\nWhen DDL Owner handle create table job, DDL owner need to create a new table, and update the reference tables information.\r\n\r\nAt the same point in time, there may be two versions of the schema in the TiDB cluster, so we can't create new table and \r\nupdate all reference tables in one schema version, since this may break foreign key constraint, such as delete reference table\r\nwithout foreign key constrain check in child table.\r\n\r\n```sql\r\n-- In TiDB-1 and Schema Version is 1\r\ninsert into t_has_foreign_key values (1, 1);\r\n\r\n-- In TiDB-0 and  Schema Version is 0\r\ndelete from t_reference where id = 1; --Since doesn't know foreign key information in old version, so doesn't do foreign key constrain check.\r\n```\r\n\r\nSo, when create a table with foreign key, we need multi-schema version change:\r\n\r\n1. None -> Write Only: Create table with state is `write-only`.\r\n2. Write Only -> Done: Update the created table state to `public`.\r\n\r\n#### Maintain ReferredFKInfo\r\n\r\nWhy need to maintain `ReferredFKInfo` in reference table? When execute `UPDATE`/`DELETE` in reference table, we need the `ReferredFKInfo` of reference table to do foreign key check/cascade.\r\n\r\nHow to maintain `ReferredFKInfo` in reference table? When we create table with foreign key, we didn't add `ReferredFKInfo` into reference table, because the reference table may not have been created yet,\r\nwhen `foreign_key_checks` variable value is `OFF`, the user can create child table before reference table.\r\n\r\nWe decided to maintain `ReferredFKInfo` while TiDB loading schema. At first, `infoSchema` will record all table's `ReferredFKInfo`:\r\n\r\n```go\r\ntype infoSchema struct {\r\n    // referredForeignKeyMap records all table's ReferredFKInfo.\r\n    // referredSchemaAndTableName => child SchemaAndTableAndForeignKeyName => *model.ReferredFKInfo\r\n    referredForeignKeyMap map[SchemaAndTableName]map[SchemaAndTableAndForeignKeyName]*model.ReferredFKInfo\r\n}\r\n```\r\n\r\nFunction `applyTableUpdate` uses `applyDropTable` to drop the old table, uses `applyCreateTable` to create the new table.\r\n\r\nIn function `applyDropTable`, we will delete the table's foreign key information from `infoSchema.referredForeignKeyMap`.\r\n\r\nIn function `applyCreateTable`, we will add the table's foreign key information into `infoSchema.referredForeignKeyMap` first, \r\nthen get the table's `ReferredFKInfo` by schema name and table name, then store the `ReferredFKInfo` into `TableInfo.ReferredForeignKeys`.\r\n\r\nThen `applyTableUpdate` will also need to reload the old/new table's referred table information, also uses `applyDropTable` to drop the old reference table, use `applyCreateTable` to create new reference table.\r\n\r\nThat's all.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n\r\nSide effects\r\n\r\n- [x] Performance regression: Consumes more CPU\r\n- [x] Performance regression: Consumes more Memory\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [x] Contains variable changes\r\n- [x] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-09-07T13:22:56+08:00",
+  "test": {
+    "type": "unit",
+    "path": "config/config_test.go",
+    "name": "config_test"
+  },
+  "symptoms": [
+    "- // fix data race"
+  ],
+  "failure_signature": "- // fix data race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: support create table with foreign key and maintain foreign key reference",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/37148",
+    "https://github.com/pingcap/tidb/pull/37148.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/37148.patch",
+  "changed_files": [
+    "ddl/db_table_test.go",
+    "ddl/db_test.go",
+    "ddl/ddl_api.go",
+    "ddl/ddl_error_test.go",
+    "ddl/ddl_worker.go",
+    "ddl/foreign_key.go",
+    "ddl/foreign_key_test.go",
+    "ddl/table.go",
+    "errno/errcode.go",
+    "errno/errname.go",
+    "errors.toml",
+    "executor/infoschema_reader.go",
+    "executor/set_test.go",
+    "executor/show.go",
+    "executor/showtest/show_test.go",
+    "expression/integration_test.go",
+    "infoschema/builder.go",
+    "infoschema/error.go",
+    "infoschema/infoschema.go",
+    "parser/ast/ddl.go",
+    "parser/model/model.go",
+    "parser/model/model_test.go",
+    "parser/mysql/errcode.go",
+    "parser/mysql/errname.go",
+    "parser/parser.go",
+    "parser/parser.y",
+    "planner/core/planbuilder.go",
+    "planner/core/preprocess.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/sysvar_test.go",
+    "sessionctx/variable/tidb_vars.go",
+    "sessionctx/variable/varsutil_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: - // fix data race",
+      "files: config/config.go, config/config_test.go, ddl/db_table_test.go, ddl/db_test.go, ddl/ddl_api.go, ddl/ddl_error_test.go, ddl/ddl_worker.go, ddl/foreign_key.go, ddl/foreign_key_test.go, ddl/table.go, errno/errcode.go, errno/errname.go, errors.toml, executor/ddl_test.go, executor/foreign_key_test.go, executor/infoschema_reader.go, executor/set_test.go, executor/show.go, executor/showtest/show_test.go, expression/integration_test.go, infoschema/builder.go, infoschema/error.go, infoschema/infoschema.go, parser/ast/ddl.go, parser/model/model.go, parser/model/model_test.go, parser/mysql/errcode.go, parser/mysql/errname.go, parser/parser.go, parser/parser.y, planner/core/planbuilder.go, planner/core/preprocess.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/sysvar_test.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go"
+    ]
+  },
+  "analysis": "PR title: *: support create table with foreign key and maintain foreign key reference\nPR url: https://github.com/pingcap/tidb/pull/37148\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - // fix data race\nChanged files (33): ddl/db_table_test.go, ddl/db_test.go, ddl/ddl_api.go, ddl/ddl_error_test.go, ddl/ddl_worker.go, ddl/foreign_key.go, ddl/foreign_key_test.go, ddl/table.go, errno/errcode.go, errno/errname.go, errors.toml, executor/infoschema_reader.go, executor/set_test.go, executor/show.go, executor/showtest/show_test.go, expression/integration_test.go, infoschema/builder.go, infoschema/error.go, infoschema/infoschema.go, parser/ast/ddl.go, parser/model/model.go, parser/model/model_test.go, parser/mysql/errcode.go, parser/mysql/errname.go, parser/parser.go, parser/parser.y, planner/core/planbuilder.go, planner/core/preprocess.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/sysvar_test.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go\nPatch url: https://github.com/pingcap/tidb/pull/37148.patch\nPicked test: type=unit path=config/config_test.go name=config_test"
+}

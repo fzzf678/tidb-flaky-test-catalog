@@ -1,0 +1,48 @@
+{
+  "id": "pr-18205",
+  "source_pr": {
+    "number": 18205,
+    "url": "https://github.com/pingcap/tidb/pull/18205",
+    "title": "ddl: stabilize ddl tests",
+    "body": "Signed-off-by: wjhuang2016 <huangwenjun1997@gmail.com>\r\n\r\n<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #18202 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\n1. We set a hook OnJobUpdatedExported and execute some SQLs within the hook.\r\nHowever, the schema may not sync.\r\nWe want to test the state DeleteOnly, but mostly it's WriteOnly.\r\nIn the state DeleteOnly, the returned err would be `field_list`, not `field list`. This problem exposure.\r\n\r\n\r\n### What is changed and how it works?\r\n\r\n1. Move `d.mu.hook.OnJobUpdated(job)`  after `w.waitSchemaChanged(nil, d, waitTime, schemaVer, job)`\r\n2. Change `field_list` to `field list`, since the latter is more compatible with MySQL.\r\n3. Refine some tests(TestWriteOnlyWriteNULL...), I asked @jackysp and he confirmed that the previous comments were wrong. It should be passed in write-only state. And I tested it 100 times to make sure it's stable.\r\n\r\n### Related changes\r\n\r\n\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n\r\n- No code\r\n\r\nSide effects\r\n\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note\r\n"
+  },
+  "pr_merged_at": "2020-06-28T14:59:12+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_change_test.go",
+    "name": "db_change_test"
+  },
+  "symptoms": [
+    "PR title: stabilize ddl tests."
+  ],
+  "failure_signature": "PR title: stabilize ddl tests.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: stabilize ddl tests",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/18205",
+    "https://github.com/pingcap/tidb/pull/18205.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/18205.patch",
+  "changed_files": [
+    "ddl/db_change_test.go",
+    "ddl/ddl_worker.go",
+    "planner/core/logical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR title: stabilize ddl tests.",
+      "evidence: diff fixes DDL test stability by adjusting schema-state tests and moving hook OnJobUpdated after waitSchemaChanged, reducing timing/race windows (ddl/db_change_test.go, ddl/ddl_worker.go).",
+      "files: ddl/db_change_test.go, ddl/ddl_worker.go, planner/core/logical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: ddl: stabilize ddl tests\nPR url: https://github.com/pingcap/tidb/pull/18205\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: stabilize ddl tests.\nChanged files (3): ddl/db_change_test.go, ddl/ddl_worker.go, planner/core/logical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/18205.patch\nPicked test: type=unit path=ddl/db_change_test.go name=db_change_test"
+}

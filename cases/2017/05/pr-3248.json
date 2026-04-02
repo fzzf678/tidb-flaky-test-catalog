@@ -1,0 +1,53 @@
+{
+  "id": "pr-3248",
+  "source_pr": {
+    "number": 3248,
+    "url": "https://github.com/pingcap/tidb/pull/3248",
+    "title": "document store: add JSON type and codec.",
+    "body": "The JSON binary representation is same with MySQL 5.7. we prefer\r\nthis not bson because 1) bson only supports JSON compound types\r\nbut not JSON primitive types, and 2) this representation is better\r\nthan bson on random access.\r\n\r\nThis PR now can support these two statements:\r\n```\r\nCREATE TABLE t (a json_field);\r\nINSERT INTO t (a) values ('{\"a\": \"b\"}');\r\nSELECT * FROM t;\r\n```"
+  },
+  "pr_merged_at": "2017-05-17T12:00:35+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(`select tj.a from test_json tj order by tj.id`) (executor/executor_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(`select tj.a from test_json tj order by tj.id`) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3248",
+    "https://github.com/pingcap/tidb/pull/3248.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3248.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "server/util.go",
+    "util/codec/codec.go",
+    "util/types/datum.go",
+    "util/types/etc.go",
+    "util/types/json/impl.go",
+    "util/types/json/json.go",
+    "util/types/json/json_test.go",
+    "util/types/json/serdes.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(`select tj.a from test_json tj order by tj.id`) (executor/executor_test.go)",
+      "files: executor/executor_test.go, server/util.go, util/codec/codec.go, util/types/datum.go, util/types/etc.go, util/types/json/impl.go, util/types/json/json.go, util/types/json/json_test.go, util/types/json/path.go, util/types/json/serde.go, util/types/json/serdes.go"
+    ]
+  },
+  "analysis": "PR title: document store: add JSON type and codec.\nPR url: https://github.com/pingcap/tidb/pull/3248\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(`select tj.a from test_json tj order by tj.id`) (executor/executor_test.go)\nChanged files (9): executor/executor_test.go, server/util.go, util/codec/codec.go, util/types/datum.go, util/types/etc.go, util/types/json/impl.go, util/types/json/json.go, util/types/json/json_test.go, util/types/json/serdes.go\nPatch url: https://github.com/pingcap/tidb/pull/3248.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

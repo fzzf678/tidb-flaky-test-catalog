@@ -1,0 +1,47 @@
+{
+  "id": "pr-2423",
+  "source_pr": {
+    "number": 2423,
+    "url": "https://github.com/pingcap/tidb/pull/2423",
+    "title": "plan: collect visit info during logical plan build",
+    "body": "Privilege check need DB Table and Column names, and also statement type to decide the privilege type.\r\nIn theory, it's possible to get all the information during preprocess, after resolve name. \r\nBut I find many field in the `ast.Node` is still nil.\r\nThis is the skeleton code, I'll back to it and add more details step by step."
+  },
+  "pr_merged_at": "2017-02-08T14:55:32+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "sort.Sort(visitInfoArray(v1)) (plan/logical_plan_test.go)"
+  ],
+  "failure_signature": "sort.Sort(visitInfoArray(v1)) (plan/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/2423",
+    "https://github.com/pingcap/tidb/pull/2423.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/2423.patch",
+  "changed_files": [
+    "plan/logical_plan_builder.go",
+    "plan/logical_plan_test.go",
+    "plan/planbuilder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Sort(visitInfoArray(v1)) (plan/logical_plan_test.go)",
+      "files: mysql/const.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/physical_plan_test.go, plan/planbuilder.go, plan/preprocess.go, plan/preprocess_test.go"
+    ]
+  },
+  "analysis": "PR title: plan: collect visit info during logical plan build\nPR url: https://github.com/pingcap/tidb/pull/2423\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Sort(visitInfoArray(v1)) (plan/logical_plan_test.go)\nChanged files (3): plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/planbuilder.go\nPatch url: https://github.com/pingcap/tidb/pull/2423.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+}

@@ -1,0 +1,46 @@
+{
+  "id": "pr-34764",
+  "source_pr": {
+    "number": 34764,
+    "url": "https://github.com/pingcap/tidb/pull/34764",
+    "title": "planner: reset PhysicalWindow's schema for mpp plan.",
+    "body": "Issue Number: close pingcap/tidb#34765\r\n\r\nsee https://github.com/pingcap/tidb/issues/34765#issuecomment-1129558112 for more imformations\r\n\r\n\r\n- [x] Manual test (add detailed scripts or steps below)\r\nbefore this pr: PhysicalWindow only has 3 output columns.\r\nafter his pr: PhyscialWindow has 5 output columns\r\n\r\n\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-05-18T15:00:35+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/window_push_down_test.go",
+    "name": "window_push_down_test"
+  },
+  "symptoms": [
+    "tk.MustExec(\"explain select count(*) from (select row_number() over (partition by c1 order by c2) num from (select * from t1 left join t2 on t1.c4 = t2.b2) tem2 ) tx where num = 1;\") (planner/core/window_push_down_test.go)"
+  ],
+  "failure_signature": "tk.MustExec(\"explain select count(*) from (select row_number() over (partition by c1 order by c2) num from (select * from t1 left join t2 on t1.c4 = t2.b2) tem2 ) tx where num = 1;\") (planner/core/window_push_down_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/34764",
+    "https://github.com/pingcap/tidb/pull/34764.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/34764.patch",
+  "changed_files": [
+    "planner/core/task.go",
+    "planner/core/window_push_down_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustExec(\"explain select count(*) from (select row_number() over (partition by c1 order by c2) num from (select * from t1 left join t2 on t1.c4 = t2.b2) tem2 ) tx where num = 1;\") (planner/core/window_push_down_test.go)",
+      "files: planner/core/task.go, planner/core/window_push_down_test.go"
+    ]
+  },
+  "analysis": "PR title: planner: reset PhysicalWindow's schema for mpp plan.\nPR url: https://github.com/pingcap/tidb/pull/34764\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustExec(\"explain select count(*) from (select row_number() over (partition by c1 order by c2) num from (select * from t1 left join t2 on t1.c4 = t2.b2) tem2 ) tx where num = 1;\") (planner/core/window_push_down_test.go)\nChanged files (2): planner/core/task.go, planner/core/window_push_down_test.go\nPatch url: https://github.com/pingcap/tidb/pull/34764.patch\nPicked test: type=unit path=planner/core/window_push_down_test.go name=window_push_down_test"
+}

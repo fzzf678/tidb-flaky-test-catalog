@@ -1,0 +1,55 @@
+{
+  "id": "pr-55333",
+  "source_pr": {
+    "number": 55333,
+    "url": "https://github.com/pingcap/tidb/pull/55333",
+    "title": "pkg/planner: set proj.AvoidColumnEvaluator in postOptimize",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #52985 \r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nFixed an issue where certain queries were producing incorrect results. This was caused by a bug in the query processing logic related to the handling of the projection operator which is a child of Union operator.\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-08-12T12:49:38+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/planner/core/physical_plan_test.go",
+    "name": "TestAvoidColumnEvaluatorForProjBelowUnion"
+  },
+  "symptoms": [
+    "`select * from (SELECT DISTINCT cc2 as a, cc2 as b, cc1 as c FROM t2 UNION ALL SELECT count(1) over (partition by cc1), cc2, cc1 FROM t1) order by a, b, c;`, (pkg/planner/core/physical_plan_test.go)"
+  ],
+  "failure_signature": "`select * from (SELECT DISTINCT cc2 as a, cc2 as b, cc1 as c FROM t2 UNION ALL SELECT count(1) over (partition by cc1), cc2, cc1 FROM t1) order by a, b, c;`, (pkg/planner/core/physical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/55333",
+    "https://github.com/pingcap/tidb/pull/55333.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/55333.patch",
+  "changed_files": [
+    "pkg/planner/cascades/implementation_rules.go",
+    "pkg/planner/core/exhaust_physical_plans.go",
+    "pkg/planner/core/logical_plan_builder.go",
+    "pkg/planner/core/logical_union_all.go",
+    "pkg/planner/core/operator/logicalop/logical_projection.go",
+    "pkg/planner/core/optimizer.go",
+    "pkg/planner/core/physical_plan_test.go",
+    "pkg/planner/core/physical_plans.go",
+    "pkg/planner/core/rule_eliminate_projection.go",
+    "pkg/planner/core/rule_inject_extra_projection.go",
+    "pkg/planner/core/task.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: `select * from (SELECT DISTINCT cc2 as a, cc2 as b, cc1 as c FROM t2 UNION ALL SELECT count(1) over (partition by cc1), cc2, cc1 FROM t1) order by a, b, c;`, (pkg/planner/core/physical_plan_test.go)",
+      "files: pkg/planner/cascades/implementation_rules.go, pkg/planner/core/exhaust_physical_plans.go, pkg/planner/core/logical_plan_builder.go, pkg/planner/core/logical_union_all.go, pkg/planner/core/operator/logicalop/logical_projection.go, pkg/planner/core/optimizer.go, pkg/planner/core/physical_plan_test.go, pkg/planner/core/physical_plans.go, pkg/planner/core/rule_eliminate_projection.go, pkg/planner/core/rule_inject_extra_projection.go, pkg/planner/core/task.go"
+    ]
+  },
+  "analysis": "PR title: pkg/planner: set proj.AvoidColumnEvaluator in postOptimize\nPR url: https://github.com/pingcap/tidb/pull/55333\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: `select * from (SELECT DISTINCT cc2 as a, cc2 as b, cc1 as c FROM t2 UNION ALL SELECT count(1) over (partition by cc1), cc2, cc1 FROM t1) order by a, b, c;`, (pkg/planner/core/physical_plan_test.go)\nChanged files (11): pkg/planner/cascades/implementation_rules.go, pkg/planner/core/exhaust_physical_plans.go, pkg/planner/core/logical_plan_builder.go, pkg/planner/core/logical_union_all.go, pkg/planner/core/operator/logicalop/logical_projection.go, pkg/planner/core/optimizer.go, pkg/planner/core/physical_plan_test.go, pkg/planner/core/physical_plans.go, pkg/planner/core/rule_eliminate_projection.go, pkg/planner/core/rule_inject_extra_projection.go, pkg/planner/core/task.go\nPatch url: https://github.com/pingcap/tidb/pull/55333.patch\nPicked test: type=unit path=pkg/planner/core/physical_plan_test.go name=TestAvoidColumnEvaluatorForProjBelowUnion"
+}

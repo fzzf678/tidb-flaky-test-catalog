@@ -1,0 +1,62 @@
+{
+  "id": "pr-24892",
+  "source_pr": {
+    "number": 24892,
+    "url": "https://github.com/pingcap/tidb/pull/24892",
+    "title": "*: use pprof profile to collect CPU time group by SQL and plan digest",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\nTrack issue: #24875\r\n\r\n### What problem does this PR solve?\r\n\r\nThis PR uses `pprof profile labels` to collect CPU time group by SQL and plan digest.\r\n\r\n### What is changed and how it works?\r\n\r\nThe implementation is:\r\n\r\n1: Use SQL digest and plan digest as the pprof labels.\r\n\r\n```go\r\n// After parse and calculated SQL digest, set the sql digest label\r\nctx = pprof.WithLabels(ctx, pprof.Labels(\"sql_digest\", sql_digest))\r\npprof.SetGoroutineLabels(ctx)\r\n\r\n...\r\n\r\n// After the optimizer generated plan, set the plan digest label.\r\nctx = pprof.WithLabels(ctx, pprof.Labels(\"plan_digest\", plan_digest))\r\npprof.SetGoroutineLabels(ctx)\r\n```\r\n\r\nThere is a special case, for `execute stmt` SQL, should use the prepare SQL digest as the `sql_digest` pprof label.\r\n\r\n2. Start 2 background worker to fetch profile and analyze the profile data.\r\n\r\n![image](https://user-images.githubusercontent.com/26020263/119510499-25b77b80-bda4-11eb-8d3d-d89d60e8b72e.png)\r\n\r\nUsing a buffer channel to avoid parse and output take too much time that infect the fetching profile work.\r\n\r\n#### Other problem\r\n\r\nBecause the `profile worker` keep calling `pprof.StartCPUProfile` to fetch profile data, other place (such pprof profile HTTP API handler) call `pprof.StartCPUProfile` will be failed.\r\n\r\nIn order to solve this problem, other place should fetch profile data from `profile worker` instead of `pprof.StartCPUProfile`.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\nSide effects\r\n\r\n- Performance regression\r\n    - Consumes more CPU\r\n    - Consumes more MEM\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note\r\n\r\n\r\n"
+  },
+  "pr_merged_at": "2021-06-02T12:51:40+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_change_test.go",
+    "name": "db_change_test"
+  },
+  "symptoms": [
+    "fix race test"
+  ],
+  "failure_signature": "fix race test",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "fix race test",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/24892",
+    "https://github.com/pingcap/tidb/pull/24892.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/24892.patch",
+  "changed_files": [
+    "executor/adapter.go",
+    "executor/executor.go",
+    "executor/prepared.go",
+    "planner/optimize.go",
+    "server/conn.go",
+    "server/conn_stmt.go",
+    "server/http_status.go",
+    "server/sql_info_fetcher.go",
+    "server/tidb_test.go",
+    "session/session.go",
+    "statistics/handle/handle.go",
+    "tidb-server/main.go",
+    "util/misc.go",
+    "util/topsql/collector/collector.go",
+    "util/topsql/topsql.go",
+    "util/topsql/tracecpu/mock/mock.go",
+    "util/topsql/tracecpu/profile.go",
+    "util/topsql/tracecpu_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix race test",
+      "files: config/config.go, ddl/db_change_test.go, executor/adapter.go, executor/executor.go, executor/prepared.go, planner/core/cbo_test.go, planner/core/common_plans.go, planner/core/physical_plan_test.go, planner/core/prepare_test.go, planner/optimize.go, server/conn.go, server/conn_stmt.go, server/http_status.go, server/sql_info_fetcher.go, server/tidb_test.go, session/session.go, session/session_test.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/tidb_vars.go, statistics/handle/handle.go, tidb-server/main.go, util/misc.go, util/topsql/collector/collector.go, util/topsql/topsql.go, util/topsql/tracecpu/collector.go, util/topsql/tracecpu/mock/mock.go, util/topsql/tracecpu/profile.go, util/topsql/tracecpu_test.go, util/tracecpu/collector.go, util/tracecpu/manager.go, util/tracecpu/mock/mock.go, util/tracecpu/profile.go, util/tracecpu/profile_test.go, util/traceresource/manager.go"
+    ]
+  },
+  "analysis": "PR title: *: use pprof profile to collect CPU time group by SQL and plan digest\nPR url: https://github.com/pingcap/tidb/pull/24892\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix race test\nChanged files (18): executor/adapter.go, executor/executor.go, executor/prepared.go, planner/optimize.go, server/conn.go, server/conn_stmt.go, server/http_status.go, server/sql_info_fetcher.go, server/tidb_test.go, session/session.go, statistics/handle/handle.go, tidb-server/main.go, util/misc.go, util/topsql/collector/collector.go, util/topsql/topsql.go, util/topsql/tracecpu/mock/mock.go, util/topsql/tracecpu/profile.go, util/topsql/tracecpu_test.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,53 @@
+{
+  "id": "pr-45460",
+  "source_pr": {
+    "number": 45460,
+    "url": "https://github.com/pingcap/tidb/pull/45460",
+    "title": "disttask: refine dispatcher",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #41495\r\n\r\nProblem Summary:\r\n\r\nCurrently, the `dispatcher` use 2 for loop to dispatch and monitor tasks.\r\n\r\nThere is no abstraction for `dispatcher` and `dispatcherManager`.\r\n1. `dispatcher` only handles one task.\r\n2. `dispatcherManager` manages a bunch of `dispatcher`s and transfer submitted tasks to different `dispatcher`s.\r\n\r\n### What is changed and how it works?\r\n1.  remove `DetectTaskLoop`.\r\n2. Don't call processFlow in `DispatchTaskLoop`, make it as light weight as possible.\r\n3. add `monitorTask` which monitor the task status.\r\n4. add `scheduleTask` which will call schedule one task with a for loop.\r\n5. add `executeTask` interface which will trigger one goroutine to call scheduleTask.\r\n\r\nAbstract `dispatcher` struct which only schedule and execute one task.\r\n\r\n`dispatcher` will provide interface like:\r\n1. `scheduleTask`: schedules the execution of subtasks.\r\n2. `monitorTask`: check if the step is finished.\r\n3. `GenerateDistPlan`: generate the task plan.\r\n\r\nThe `dispatcher`  do the following job step by step:\r\n1. Generate distributed plan which have multiple steps.\r\n2. dispatch first step's subtasks.\r\n3. monitor first step's subtasks status and decide if going to next step. If next step, go to 2. If all steps subtasks finished, mark task finished.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-08-01T17:34:09+08:00",
+  "test": {
+    "type": "unit",
+    "path": "disttask/framework/dispatcher/dispatcher_test.go",
+    "name": "dispatcher_test"
+  },
+  "symptoms": [
+    "race = \"on\","
+  ],
+  "failure_signature": "race = \"on\",",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "race = \"on\",",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/45460",
+    "https://github.com/pingcap/tidb/pull/45460.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/45460.patch",
+  "changed_files": [
+    "disttask/framework/BUILD.bazel",
+    "disttask/framework/dispatcher/BUILD.bazel",
+    "disttask/framework/dispatcher/dispatcher.go",
+    "disttask/framework/dispatcher/dispatcher_manager.go",
+    "disttask/framework/dispatcher/dispatcher_test.go",
+    "disttask/framework/dispatcher/main_test.go",
+    "disttask/framework/framework_rollback_test.go",
+    "disttask/framework/framework_test.go",
+    "domain/domain.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: race = \"on\",",
+      "files: disttask/framework/BUILD.bazel, disttask/framework/dispatcher/BUILD.bazel, disttask/framework/dispatcher/dispatcher.go, disttask/framework/dispatcher/dispatcher_manager.go, disttask/framework/dispatcher/dispatcher_pool.go, disttask/framework/dispatcher/dispatcher_test.go, disttask/framework/dispatcher/main_test.go, disttask/framework/framework_rollback_test.go, disttask/framework/framework_test.go, domain/domain.go, test.yaml, tests/realtikvtest/testkit.go"
+    ]
+  },
+  "analysis": "PR title: disttask: refine dispatcher\nPR url: https://github.com/pingcap/tidb/pull/45460\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"on\",\nChanged files (9): disttask/framework/BUILD.bazel, disttask/framework/dispatcher/BUILD.bazel, disttask/framework/dispatcher/dispatcher.go, disttask/framework/dispatcher/dispatcher_manager.go, disttask/framework/dispatcher/dispatcher_test.go, disttask/framework/dispatcher/main_test.go, disttask/framework/framework_rollback_test.go, disttask/framework/framework_test.go, domain/domain.go\nPatch series analyzed; see patch_url."
+}

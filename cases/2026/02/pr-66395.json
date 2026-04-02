@@ -1,0 +1,45 @@
+{
+  "id": "pr-66395",
+  "source_pr": {
+    "number": 66395,
+    "url": "https://github.com/pingcap/tidb/pull/66395",
+    "title": "txntest: fix flaky TestStmtCtxStaleFlag by using TSO-derived timestamp",
+    "body": "<!--\n\nThank you for contributing to TiDB!\n\nPR Title Format:\n1. pkg [, pkg2, pkg3]: what's changed\n2. *: what's changed\n\n-->\n\n### What problem does this PR solve?\n<!--\n\nPlease create an issue first to describe the problem.\n\nThere MUST be one line starting with \"Issue Number:  \" and\nlinking the relevant issues via the \"close\" or \"ref\".\n\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\n\n-->\n\nIssue Number: close #66370\n\nProblem Summary:\n\n`TestStmtCtxStaleFlag` is a top-10 flaky test with 6 failures in one week. The test uses `time.Now()` (Go wall clock) to construct the stale read timestamp, but in real TiKV tests, the Go wall clock and PD's TSO can have slight skew. The timestamp, truncated to second precision, may be very close to (or slightly ahead of) the current PD TSO, causing intermittent stale read failures.\n\n### What changed and how does it work?\n\nReplace `time.Now()` with `store.GetOracle().GetTimestamp()` to obtain a PD-aligned TSO, then subtract 1 second to ensure the stale read timestamp is safely in the past. This eliminates clock skew between the Go wall clock and PD.\n\nThis follows the same fix pattern already applied to sibling tests in the same file:\n- `TestStalenessAndHistoryRead` (commit `e15515e804`)\n- `TestStaleReadAllCombinations` (commit `6f7a47a919`)\n- `TestValidateReadOnlyInStalenessTransaction` (commit `c36a683f98`)\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [ ] Unit test\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [x] No need to test\n  > - [x] This is a test-only fix (changes only test code to eliminate flakiness)\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\n\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\n\n```release-note\nNone\n```"
+  },
+  "pr_merged_at": "2026-02-26T12:38:09+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "tests/realtikvtest/txntest/stale_read_test.go",
+    "name": "TestStmtCtxStaleFlag"
+  },
+  "symptoms": [
+    "txntest: fix flaky TestStmtCtxStaleFlag by using TSO-derived timestamp"
+  ],
+  "failure_signature": "txntest: fix flaky TestStmtCtxStaleFlag by using TSO-derived timestamp",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Avoid brittle fixed sleeps by tightening synchronization/wait conditions in the test.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66395",
+    "https://github.com/pingcap/tidb/pull/66395.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66395.patch",
+  "changed_files": [
+    "tests/realtikvtest/txntest/stale_read_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: txntest: fix flaky TestStmtCtxStaleFlag by using TSO-derived timestamp",
+      "files: tests/realtikvtest/txntest/stale_read_test.go"
+    ]
+  },
+  "analysis": "PR title: txntest: fix flaky TestStmtCtxStaleFlag by using TSO-derived timestamp\nPR url: https://github.com/pingcap/tidb/pull/66395\nTriage summary: txntest: fix flaky TestStmtCtxStaleFlag by using TSO-derived timestamp\nChanged files (1): tests/realtikvtest/txntest/stale_read_test.go\nFull patch analyzed; see patch_url."
+}

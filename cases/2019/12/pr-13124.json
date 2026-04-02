@@ -1,0 +1,59 @@
+{
+  "id": "pr-13124",
+  "source_pr": {
+    "number": 13124,
+    "url": "https://github.com/pingcap/tidb/pull/13124",
+    "title": "planner: support plan digest",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nsupport physical plan digest. This is used for `statement table` and `slow_query`. \r\n\r\n### What is changed and how it works?\r\n\r\nAdd `ExplainNormalizedInfo` to `PhysicalPlan` interface.\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\n - Possible performance regression\r\n - Increased code complexity\r\n - Breaking backward compatibility\r\n\r\nRelated changes\r\n\r\n\r\nRelease note\r\n\r\n - Support physical plan digest.\r\n"
+  },
+  "pr_merged_at": "2019-12-03T21:08:56+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/plan_test.go",
+    "name": "plan_test"
+  },
+  "symptoms": [
+    "fix race test | sql1: \"SELECT * from t1 where a!=1 order by c limit 1\", (planner/core/plan_test.go)"
+  ],
+  "failure_signature": "fix race test | sql1: \"SELECT * from t1 where a!=1 order by c limit 1\", (planner/core/plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13124",
+    "https://github.com/pingcap/tidb/pull/13124.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13124.patch",
+  "changed_files": [
+    "ddl/db_change_test.go",
+    "executor/adapter.go",
+    "expression/explain.go",
+    "expression/expression.go",
+    "expression/util_test.go",
+    "planner/core/common_plans.go",
+    "planner/core/encode.go",
+    "planner/core/explain.go",
+    "planner/core/plan.go",
+    "planner/core/plan_test.go",
+    "planner/core/point_get_plan.go",
+    "planner/core/testdata/plan_normalized_suite_in.json",
+    "planner/core/testdata/plan_normalized_suite_out.json",
+    "util/plancodec/codec.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: fix race test | sql1: \"SELECT * from t1 where a!=1 order by c limit 1\", (planner/core/plan_test.go)",
+      "files: ddl/db_change_test.go, executor/adapter.go, expression/explain.go, expression/expression.go, expression/util_test.go, go.sum, planner/core/common_plans.go, planner/core/encode.go, planner/core/explain.go, planner/core/physical_plan_test.go, planner/core/plan.go, planner/core/plan_test.go, planner/core/point_get_plan.go, planner/core/testdata/plan_normalized_suite_in.json, planner/core/testdata/plan_normalized_suite_out.json, util/plancodec/codec.go"
+    ]
+  },
+  "analysis": "PR title: planner: support plan digest\nPR url: https://github.com/pingcap/tidb/pull/13124\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix race test | sql1: \"SELECT * from t1 where a!=1 order by c limit 1\", (planner/core/plan_test.go)\nChanged files (14): ddl/db_change_test.go, executor/adapter.go, expression/explain.go, expression/expression.go, expression/util_test.go, planner/core/common_plans.go, planner/core/encode.go, planner/core/explain.go, planner/core/plan.go, planner/core/plan_test.go, planner/core/point_get_plan.go, planner/core/testdata/plan_normalized_suite_in.json, planner/core/testdata/plan_normalized_suite_out.json, util/plancodec/codec.go\nPatch url: https://github.com/pingcap/tidb/pull/13124.patch\nPicked test: type=unit path=planner/core/plan_test.go name=plan_test"
+}

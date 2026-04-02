@@ -1,0 +1,49 @@
+{
+  "id": "pr-67308",
+  "source_pr": {
+    "number": 67308,
+    "url": "https://github.com/pingcap/tidb/pull/67308",
+    "title": "executor, session, server/tests: stabilize audit retry reporting",
+    "body": "<!--\n\nThank you for contributing to TiDB!\n\nPR Title Format:\n1. pkg [, pkg2, pkg3]: what's changed\n2. *: what's changed\n\n-->\n\n### What problem does this PR solve?\n<!--\n\nPlease create an issue first to describe the problem.\n\nThere MUST be one line starting with \"Issue Number:  \" and\nlinking the relevant issues via the \"close\" or \"ref\".\n\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\n\n-->\n\nIssue Number: ref #66342\n\nProblem Summary:\n\n`TestAuditPluginRetrying` depended on unstable retry timing, and the completed audit event for no-result statements was emitted before retry bookkeeping finished. That could associate the retry signal with replayed internal executions instead of the final user statement.\n\n### What changed and how does it work?\n\n- emit the completed audit event from `FinishExecuteStmt`, after retry bookkeeping is settled\n- preserve the outer statement context and retry count across `session.retry`\n- make `TestAuditPluginRetrying` deterministic and assert the retry flag on the final user-visible statement path\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [x] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n  > <!-- Or your custom  \"No need to test\" reasons -->\n\nExecuted locally:\n- `go test -run '^(TestAuditPluginInfoForStarting|TestAuditPluginRetrying)$' -count=1 -tags=intest,deadlock ./pkg/server/tests/commontest`\n- `go test -run '^TestPrepareAndCompleteSlowLogItemsForRules$' -count=1 -tags=intest,deadlock ./pkg/executor`\n- `make lint`\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\n\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\n\n```release-note\nNone\n```\n\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n## Summary by CodeRabbit\n\n* **Bug Fixes**\n  * Retry counts are now accumulated and preserved so slow-query and audit logs reflect the final retry state; statement summaries no longer over-count optimistic autocommit retries and respect configured retry limits.\n\n* **Tests**\n  * Added deterministic tests validating retry-count reporting, retry-limit enforcement, and isolated statement-summary metrics.\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-28T09:31:01+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/server/tests/commontest/tidb_test.go",
+    "name": "TestAuditPluginRetrying"
+  },
+  "symptoms": [
+    "- make `TestAuditPluginRetrying` deterministic and assert the retry flag on the final user-visible statement path | // Usually the following retry-loop will succeed in the first try. However, if we are lucky | // enough, it might need more times to trigger the retry. | require.Eventually(t, func() bool {"
+  ],
+  "failure_signature": "- make `TestAuditPluginRetrying` deterministic and assert the retry flag on the final user-visible statement path | // Usually the following retry-loop will succeed in the first try. However, if we are lucky | // enough, it might need more times to trigger the retry. | require.Eventually(t, func() bool {",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "- make `TestAuditPluginRetrying` deterministic and assert the retry flag on the final user-visible statement path | // Usually the following retry-loop will succeed in the first try. However, if we are lucky | // enough, it might need more times to trigger the retry. | require.Eventually(t, func() bool {",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/67308",
+    "https://github.com/pingcap/tidb/pull/67308.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/67308.patch",
+  "changed_files": [
+    "pkg/executor/adapter.go",
+    "pkg/executor/adapter_test.go",
+    "pkg/server/tests/commontest/tidb_test.go",
+    "pkg/session/session.go",
+    "pkg/session/tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: - make `TestAuditPluginRetrying` deterministic and assert the retry flag on the final user-visible statement path | // Usually the following retry-loop will succeed in the first try. However, if we are lucky | // enough, it might need more times to trigger the retry. | require.Eventually(t, func() bool {",
+      "files: pkg/server/tests/commontest/tidb_test.go, pkg/executor/adapter_test.go, pkg/session/tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: executor, session, server/tests: stabilize audit retry reporting\nPR url: https://github.com/pingcap/tidb/pull/67308\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: - make `TestAuditPluginRetrying` deterministic and assert the retry flag on the final user-visible statement path | // Usually the following retry-loop will succeed in the first try. However, if we are lucky | // enough, it might need more times to trigger the retry. | require.Eventually(t, func() bool {\nChanged files (5): pkg/executor/adapter.go, pkg/executor/adapter_test.go, pkg/server/tests/commontest/tidb_test.go, pkg/session/session.go, pkg/session/tidb_test.go\nDiff highlights (excerpt):\n- ctx = context.WithValue(ctx, plugin.IsRetryingCtxKey, a.retryCount > 0 || sessVars.RetryInfo.Retrying)\n- ctx = context.WithValue(ctx, plugin.IsRetryingCtxKey, sessVars.StmtCtx.ExecRetryCount > 0 || sessVars.RetryInfo.Retrying)\n- sessVars.StmtCtx.ExecRetryCount += uint64(a.retryCount)\n- sessVars.StmtCtx.ExecRetryCount = uint64(a.retryCount)\n- stmtExecInfo.ExecRetryCount = a.retryCount\n- stmtExecInfo.ExecRetryCount = uint(sessVars.StmtCtx.ExecRetryCount)\n- // Usually the following retry-loop will succeed in the first try. However, if we are lucky\n- // enough, it might need more times to trigger the retry.\nFull patch analyzed; see patch_url."
+}

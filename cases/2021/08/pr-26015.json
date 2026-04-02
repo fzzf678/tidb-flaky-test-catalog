@@ -1,0 +1,47 @@
+{
+  "id": "pr-26015",
+  "source_pr": {
+    "number": 26015,
+    "url": "https://github.com/pingcap/tidb/pull/26015",
+    "title": "planner: logically delete the bindinfo when create the new binding",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #25842 \r\n\r\nProblem Summary:\r\nIn this [PR](https://github.com/pingcap/tidb/pull/21349), we physically delete the bindings when we create a new binding to prevent some problems of inconsistent cache. But this method can not solve all the problems, for example [issue#25842](https://github.com/pingcap/tidb/issues/25842). So after we introduce the table lock for `mysql.bind_info` in this [PR](https://github.com/pingcap/tidb/pull/21629), we can revert the origin change.\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\nLogically delete the binding when we create a new binding.\r\n\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n- https://github.com/pingcap/tidb/issues/21288 We need to test this issue.\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note\r\n"
+  },
+  "pr_merged_at": "2021-08-06T11:17:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "bindinfo/bind_test.go",
+    "name": "bind_test"
+  },
+  "symptoms": [
+    "\"collation , source from `mysql` . `bind_info` where `update_time` > ? order by `update_time` , `create_time`\")) (infoschema/tables_test.go)"
+  ],
+  "failure_signature": "\"collation , source from `mysql` . `bind_info` where `update_time` > ? order by `update_time` , `create_time`\")) (infoschema/tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "\"collation , source from `mysql` . `bind_info` where `update_time` > ? order by `update_time` , `create_time`\")) (infoschema/tables_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/26015",
+    "https://github.com/pingcap/tidb/pull/26015.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/26015.patch",
+  "changed_files": [
+    "bindinfo/bind_test.go",
+    "bindinfo/handle.go",
+    "infoschema/tables_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: \"collation , source from `mysql` . `bind_info` where `update_time` > ? order by `update_time` , `create_time`\")) (infoschema/tables_test.go)",
+      "files: bindinfo/bind_test.go, bindinfo/handle.go, infoschema/tables_test.go"
+    ]
+  },
+  "analysis": "PR title: planner: logically delete the bindinfo when create the new binding\nPR url: https://github.com/pingcap/tidb/pull/26015\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"collation , source from `mysql` . `bind_info` where `update_time` > ? order by `update_time` , `create_time`\")) (infoschema/tables_test.go)\nChanged files (3): bindinfo/bind_test.go, bindinfo/handle.go, infoschema/tables_test.go\nPatch series analyzed; see patch_url."
+}

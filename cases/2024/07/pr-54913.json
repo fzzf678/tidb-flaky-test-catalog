@@ -1,0 +1,51 @@
+{
+  "id": "pr-54913",
+  "source_pr": {
+    "number": 54913,
+    "url": "https://github.com/pingcap/tidb/pull/54913",
+    "title": "ddl: init global vars from system tables before start domain",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #54868, close #54860\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\nas title, see this for root cause https://github.com/pingcap/tidb/issues/54868#issuecomment-2249663873\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test, only fix existing ones, should cover it\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\nbootstrap with TiKV, test some ddl/dml, they should work and check no error logs.\r\nbootstrap with unistore, same test as above.\r\n\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-07-29T15:37:17+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/session/bootstrap_test.go",
+    "name": "bootstrap_test"
+  },
+  "symptoms": [
+    "query = `select (select group_concat(column_name) from information_schema.columns where table_name='tidb_global_task' order by ordinal_position) (pkg/session/bootstrap_test.go)"
+  ],
+  "failure_signature": "query = `select (select group_concat(column_name) from information_schema.columns where table_name='tidb_global_task' order by ordinal_position) (pkg/session/bootstrap_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/54913",
+    "https://github.com/pingcap/tidb/pull/54913.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/54913.patch",
+  "changed_files": [
+    "pkg/domain/domain.go",
+    "pkg/domain/domain_test.go",
+    "pkg/expression/context/context.go",
+    "pkg/session/bootstrap_test.go",
+    "pkg/session/bootstraptest/bootstrap_upgrade_test.go",
+    "pkg/session/session.go",
+    "pkg/session/tidb.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: query = `select (select group_concat(column_name) from information_schema.columns where table_name='tidb_global_task' order by ordinal_position) (pkg/session/bootstrap_test.go)",
+      "files: pkg/domain/domain.go, pkg/domain/domain_test.go, pkg/expression/context/context.go, pkg/session/bootstrap_test.go, pkg/session/bootstraptest/bootstrap_upgrade_test.go, pkg/session/session.go, pkg/session/tidb.go"
+    ]
+  },
+  "analysis": "PR title: ddl: init global vars from system tables before start domain\nPR url: https://github.com/pingcap/tidb/pull/54913\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: query = `select (select group_concat(column_name) from information_schema.columns where table_name='tidb_global_task' order by ordinal_position) (pkg/session/bootstrap_test.go)\nChanged files (7): pkg/domain/domain.go, pkg/domain/domain_test.go, pkg/expression/context/context.go, pkg/session/bootstrap_test.go, pkg/session/bootstraptest/bootstrap_upgrade_test.go, pkg/session/session.go, pkg/session/tidb.go\nPatch url: https://github.com/pingcap/tidb/pull/54913.patch\nPicked test: type=unit path=pkg/session/bootstrap_test.go name=bootstrap_test"
+}

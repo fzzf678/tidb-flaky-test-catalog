@@ -1,0 +1,46 @@
+{
+  "id": "pr-18468",
+  "source_pr": {
+    "number": 18468,
+    "url": "https://github.com/pingcap/tidb/pull/18468",
+    "title": "ddl: fix mix DDLs blocks 2*lease on unistore",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #18456 <!-- REMOVE this line if no issue to close -->\r\n\r\nDo the test in #18456, this will block 90s(2*lease), and it means `OwnerCheckAllVersions` returns \"context deadline exceeded\". And this problem will happen on unistore, not on TiKV.\r\n<img width=\"1906\" alt=\"Screen Shot 2020-07-10 at 12 26 50\" src=\"https://user-images.githubusercontent.com/4242506/87116611-cb571e80-c2a8-11ea-8c89-b1804db60499.png\">\r\n\r\nProblem Summary:\r\nOn unistore we use `MockSchemaSyncer`, we need to do `MockSchemaSyncer.OwnerCheckAllVersions` like [`schemaVersionSyncer.OwnerCheckAllVersions`](https://github.com/pingcap/tidb/blob/master/ddl/util/syncer.go#L397).\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Local test\r\nUsing the test in #18456.\r\nThis case hard to test, because it only blocks 2*lease and the lease in the test only 200ms. Even if we add a test, it must be unstable.\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- <!-- Please write a release note here to describe the change you made when it is released to the users of TiDB. If your PR doesn't involve any change to TiDB(like test enhancements, RFC proposals...), you can write `No release note`. -->\r\n"
+  },
+  "pr_merged_at": "2020-07-14T14:23:06+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/mock.go",
+    "name": "mock"
+  },
+  "symptoms": [
+    "PR body: mixed DDLs on unistore can block 2*lease (context deadline exceeded) due to MockSchemaSyncer behavior."
+  ],
+  "failure_signature": "PR body: mixed DDLs on unistore can block 2*lease (context deadline exceeded) due to MockSchemaSyncer behavior.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: fix mix DDLs blocks 2*lease on unistore",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/18468",
+    "https://github.com/pingcap/tidb/pull/18468.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/18468.patch",
+  "changed_files": [
+    "ddl/mock.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body: mixed DDLs on unistore can block 2*lease (context deadline exceeded) due to MockSchemaSyncer behavior.",
+      "evidence: MockSchemaSyncer.OwnerCheckAllVersions uses ver>=latestVer instead of ver==latestVer to avoid unnecessary blocking (ddl/mock.go).",
+      "files: ddl/mock.go"
+    ]
+  },
+  "analysis": "PR title: ddl: fix mix DDLs blocks 2*lease on unistore\nPR url: https://github.com/pingcap/tidb/pull/18468\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body: mixed DDLs on unistore can block 2*lease (context deadline exceeded) due to MockSchemaSyncer behavior.\nChanged files (1): ddl/mock.go\nPatch url: https://github.com/pingcap/tidb/pull/18468.patch\nPicked test: type=unit path=ddl/mock.go name=mock"
+}

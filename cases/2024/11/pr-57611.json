@@ -1,0 +1,70 @@
+{
+  "id": "pr-57611",
+  "source_pr": {
+    "number": 57611,
+    "url": "https://github.com/pingcap/tidb/pull/57611",
+    "title": "ddl: dynamically adjusting the max write speed of reorganization job",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref  #57526 #57229\r\n\r\nProblem Summary: See #57229\r\n\r\n### What changed and how does it work?\r\nSupply later\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\nUse sysbench prepare table with 50000000 rows, create index and tune the max_write_speed and check the TiKV IO panel import. To see the result clearly, set the initial `@@global.tidb_ddl_reorg_max_write_speed = '5MiB'`\r\n```\r\nsysbench --db-driver=mysql --mysql-db=test --report-interval=10 --mysql-user=root  --mysql-password=''  --time=0 --mysql-port=4000 --mysql-host=127.0.0.1 --tables=1 --table-size=50000000 --threads=1 oltp_read_write prepare\r\n```\r\nAdd index in session 1.\r\n```\r\nalter table sbtest1 drop index(k);\r\n```\r\n\r\nAlter the `max_write_speed` in session 2.\r\n```\r\nadmin alter ddl jobs 115 max_write_speed = '20MiB';  -- 5MiB, 20MiB, 10MiB, 0\r\n```\r\n\r\nAnd check the grafana panel, the config can works\r\n![img_v3_02gu_294ea1d6-dd32-4c49-8f53-11c8049399fg](https://github.com/user-attachments/assets/11df71be-b3b8-4a62-a55c-f9cab501ed80)\r\n\r\n\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-11-25T22:13:35+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "tests/realtikvtest/addindextest3/functional_test.go",
+    "name": "TestTuneStoreWriteLimiter"
+  },
+  "symptoms": [
+    "+ // But we allow a little of error to avoid the test being flaky."
+  ],
+  "failure_signature": "+ // But we allow a little of error to avoid the test being flaky.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: dynamically adjusting the max write speed of reorganization job",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/57611",
+    "https://github.com/pingcap/tidb/pull/57611.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/57611.patch",
+  "changed_files": [
+    "pkg/ddl/backfilling.go",
+    "pkg/ddl/backfilling_dist_executor.go",
+    "pkg/ddl/backfilling_read_index.go",
+    "pkg/ddl/backfilling_test.go",
+    "pkg/ddl/db_test.go",
+    "pkg/ddl/executor.go",
+    "pkg/ddl/index.go",
+    "pkg/ddl/ingest/backend_mgr.go",
+    "pkg/ddl/ingest/config.go",
+    "pkg/ddl/ingest/mock.go",
+    "pkg/ddl/job_worker.go",
+    "pkg/executor/operate_ddl_jobs.go",
+    "pkg/executor/show_ddl_jobs.go",
+    "pkg/executor/show_ddl_jobs_test.go",
+    "pkg/lightning/backend/local/local.go",
+    "pkg/lightning/backend/local/local_test.go",
+    "pkg/lightning/backend/local/localhelper.go",
+    "pkg/lightning/backend/local/localhelper_test.go",
+    "pkg/lightning/backend/local/region_job.go",
+    "pkg/lightning/backend/local/region_job_test.go",
+    "pkg/meta/model/BUILD.bazel",
+    "pkg/meta/model/reorg.go",
+    "pkg/planner/core/BUILD.bazel",
+    "pkg/planner/core/planbuilder.go",
+    "pkg/planner/core/planbuilder_test.go",
+    "tests/realtikvtest/addindextest3/functional_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: + // But we allow a little of error to avoid the test being flaky.",
+      "files: pkg/ddl/backfilling.go, pkg/ddl/backfilling_dist_executor.go, pkg/ddl/backfilling_read_index.go, pkg/ddl/backfilling_test.go, pkg/ddl/db_test.go, pkg/ddl/executor.go, pkg/ddl/index.go, pkg/ddl/ingest/backend_mgr.go, pkg/ddl/ingest/config.go, pkg/ddl/ingest/mock.go, pkg/ddl/job_worker.go, pkg/executor/operate_ddl_jobs.go, pkg/executor/show_ddl_jobs.go, pkg/executor/show_ddl_jobs_test.go, pkg/lightning/backend/local/local.go, pkg/lightning/backend/local/local_test.go, pkg/lightning/backend/local/localhelper.go, pkg/lightning/backend/local/localhelper_test.go, pkg/lightning/backend/local/region_job.go, pkg/lightning/backend/local/region_job_test.go, pkg/meta/model/BUILD.bazel, pkg/meta/model/reorg.go, pkg/planner/core/BUILD.bazel, pkg/planner/core/planbuilder.go, pkg/planner/core/planbuilder_test.go, tests/realtikvtest/addindextest3/functional_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl: dynamically adjusting the max write speed of reorganization job\nPR url: https://github.com/pingcap/tidb/pull/57611\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + // But we allow a little of error to avoid the test being flaky.\nChanged files (26): pkg/ddl/backfilling.go, pkg/ddl/backfilling_dist_executor.go, pkg/ddl/backfilling_read_index.go, pkg/ddl/backfilling_test.go, pkg/ddl/db_test.go, pkg/ddl/executor.go, pkg/ddl/index.go, pkg/ddl/ingest/backend_mgr.go, pkg/ddl/ingest/config.go, pkg/ddl/ingest/mock.go, pkg/ddl/job_worker.go, pkg/executor/operate_ddl_jobs.go, pkg/executor/show_ddl_jobs.go, pkg/executor/show_ddl_jobs_test.go, pkg/lightning/backend/local/local.go, pkg/lightning/backend/local/local_test.go, pkg/lightning/backend/local/localhelper.go, pkg/lightning/backend/local/localhelper_test.go, pkg/lightning/backend/local/region_job.go, pkg/lightning/backend/local/region_job_test.go, pkg/meta/model/BUILD.bazel, pkg/meta/model/reorg.go, pkg/planner/core/BUILD.bazel, pkg/planner/core/planbuilder.go, pkg/planner/core/planbuilder_test.go, tests/realtikvtest/addindextest3/functional_test.go\nPatch url: https://github.com/pingcap/tidb/pull/57611.patch\nPicked test: type=realtikv path=tests/realtikvtest/addindextest3/functional_test.go name=TestTuneStoreWriteLimiter"
+}

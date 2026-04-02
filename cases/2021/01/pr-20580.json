@@ -1,0 +1,70 @@
+{
+  "id": "pr-20580",
+  "source_pr": {
+    "number": 20580,
+    "url": "https://github.com/pingcap/tidb/pull/20580",
+    "title": "statistics: add bucket ndv for index histogram",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #xxx <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\n\r\nadd bucket ndv for hist to improve its accuracy.\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: [xxx](url) <!-- REMOVE this line if not applicable -->\r\n\r\nWhat's Changed:\r\n\r\nAdd new stats version number to solve compability problem. if the hist is in old version number, we estimate row count using the old way.\r\n\r\nWhen build index hist, record the NDV. And update the NDV when merging buckets.\r\n\r\nWhen estimate row counts, if the bucket ndv is zero, fallback to cm sketch currently.(After @qw4990 decouple the cmsketch and ndv. This part will be changed to use topn to estimate.).\r\n\r\nWhen updating feedback, collect ndv infomation at coprocessor's reader. And use it to update the current histogram.\r\n\r\nWhen dumping feedback, since the estimation logic is changed, just dump the index's feedback instead of the original way.\r\n\r\nHow it Works:\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit tests\r\n\r\nSide effects\r\n\r\n- Performance regression\r\n    - Consumes more CPU\r\n    - Consumes more MEM\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- `No release note`"
+  },
+  "pr_merged_at": "2021-01-13T18:24:21+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/analyze_test.go",
+    "name": "explain_complex_stats"
+  },
+  "symptoms": [
+    "@@ -1281,6 +1281,7 @@ gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mo"
+  ],
+  "failure_signature": "@@ -1281,6 +1281,7 @@ gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mo",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "@@ -1281,6 +1281,7 @@ gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mo",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/20580",
+    "https://github.com/pingcap/tidb/pull/20580.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/20580.patch",
+  "changed_files": [
+    "cmd/explaintest/run-tests.sh",
+    "distsql/select_result.go",
+    "distsql/stream.go",
+    "executor/analyze.go",
+    "executor/analyze_test.go",
+    "executor/show_stats.go",
+    "executor/show_stats_test.go",
+    "planner/core/planbuilder.go",
+    "session/bootstrap.go",
+    "statistics/builder.go",
+    "statistics/feedback.go",
+    "statistics/feedback_test.go",
+    "statistics/handle/handle.go",
+    "statistics/handle/update.go",
+    "statistics/handle/update_test.go",
+    "statistics/histogram.go",
+    "statistics/histogram_test.go",
+    "statistics/sample_test.go",
+    "statistics/statistics_test.go",
+    "statistics/table.go",
+    "statistics/testdata/stats_suite_out.json",
+    "store/mockstore/mocktikv/analyze.go",
+    "store/mockstore/unistore/cophandler/analyze.go",
+    "store/mockstore/unistore/cophandler/closure_exec.go",
+    "store/mockstore/unistore/cophandler/cop_handler.go",
+    "util/testkit/testkit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: @@ -1281,6 +1281,7 @@ gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mo",
+      "files: cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy_stats.result, cmd/explaintest/r/explain_indexmerge.result, cmd/explaintest/r/explain_join_stats.result, distsql/select_result.go, distsql/stream.go, executor/analyze.go, executor/analyze_test.go, executor/show_stats.go, executor/show_stats_test.go, go.mod, go.sum, planner/core/cbo_test.go, planner/core/planbuilder.go, planner/core/testdata/analyze_suite_out.json, planner/core/testdata/integration_serial_suite_out.json, planner/core/testdata/integration_suite_out.json, session/bootstrap.go, session/session.go, statistics/builder.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle/dump.go, statistics/handle/dump_test.go, statistics/handle/handle.go, statistics/handle/update.go, statistics/handle/update_test.go, statistics/histogram.go, statistics/histogram_test.go, statistics/sample_test.go, statistics/statistics_test.go, statistics/table.go, statistics/testdata/stats_suite_out.json, store/mockstore/mocktikv/analyze.go, store/mockstore/unistore/cophandler/analyze.go, store/mockstore/unistore/cophandler/closure_exec.go, store/mockstore/unistore/cophandler/cop_handler.go, util/testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: statistics: add bucket ndv for index histogram\nPR url: https://github.com/pingcap/tidb/pull/20580\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: @@ -1281,6 +1281,7 @@ gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mo\nChanged files (26): cmd/explaintest/run-tests.sh, distsql/select_result.go, distsql/stream.go, executor/analyze.go, executor/analyze_test.go, executor/show_stats.go, executor/show_stats_test.go, planner/core/planbuilder.go, session/bootstrap.go, statistics/builder.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle/handle.go, statistics/handle/update.go, statistics/handle/update_test.go, statistics/histogram.go, statistics/histogram_test.go, statistics/sample_test.go, statistics/statistics_test.go, statistics/table.go, statistics/testdata/stats_suite_out.json, store/mockstore/mocktikv/analyze.go, store/mockstore/unistore/cophandler/analyze.go, store/mockstore/unistore/cophandler/closure_exec.go, store/mockstore/unistore/cophandler/cop_handler.go, util/testkit/testkit.go\nPatch series analyzed; see patch_url."
+}

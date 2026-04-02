@@ -1,0 +1,46 @@
+{
+  "id": "pr-8442",
+  "source_pr": {
+    "number": 8442,
+    "url": "https://github.com/pingcap/tidb/pull/8442",
+    "title": "planner, executor: fix tp.Flen size when union with castIntAsString",
+    "body": "### What problem does this PR solve?\r\n\r\nfix #8231, fix tp.Flen size when union with castIntAsString \r\n\r\n### What is changed and how it works?\r\nWhen execute `func unionJoinFieldType(a, b *types.FieldType) *types.FieldType`, if any union type is int and result.Flen is less than mysql.MaxIntWidth then set `resultTp.Flen = mysql.MaxIntWidth`\r\n\r\n### Check List \r\n\r\nTests \r\n\r\n - Unit test\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8442)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2018-11-27T11:35:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"SELECT 'a' UNION SELECT uid FROM t1 order by 1 desc;\").Check(testkit.Rows(\"a\", \"150\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"SELECT 'a' UNION SELECT uid FROM t1 order by 1 desc;\").Check(testkit.Rows(\"a\", \"150\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8442",
+    "https://github.com/pingcap/tidb/pull/8442.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8442.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "planner/core/logical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"SELECT 'a' UNION SELECT uid FROM t1 order by 1 desc;\").Check(testkit.Rows(\"a\", \"150\")) (executor/executor_test.go)",
+      "files: executor/executor_test.go, planner/core/logical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: planner, executor: fix tp.Flen size when union with castIntAsString\nPR url: https://github.com/pingcap/tidb/pull/8442\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"SELECT 'a' UNION SELECT uid FROM t1 order by 1 desc;\").Check(testkit.Rows(\"a\", \"150\")) (executor/executor_test.go)\nChanged files (2): executor/executor_test.go, planner/core/logical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/8442.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

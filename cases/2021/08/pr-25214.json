@@ -1,0 +1,46 @@
+{
+  "id": "pr-25214",
+  "source_pr": {
+    "number": 25214,
+    "url": "https://github.com/pingcap/tidb/pull/25214",
+    "title": "planner: don't push down topn to nil table plan side",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/23965\r\n\r\nProblem Summary:\r\n\r\nPanic caused by pushing topn down to nil table plan side.\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\n\r\nCheck if the order by clause contains no column at all before pushing it down.\r\n\r\n### Related changes\r\n\r\nN/A\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n\r\nSide effects\r\n\r\nN/A\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- Don't push down topn to nil table plan side"
+  },
+  "pr_merged_at": "2021-08-18T10:33:59+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/physical_plan_test.go",
+    "name": "physical_plan_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select extract(day_hour from 'ziy') as res from t order by res limit 1\").Check(testkit.Rows()) (planner/core/physical_plan_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select extract(day_hour from 'ziy') as res from t order by res limit 1\").Check(testkit.Rows()) (planner/core/physical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select extract(day_hour from 'ziy') as res from t order by res limit 1\").Check(testkit.Rows()) (planner/core/physical_plan_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/25214",
+    "https://github.com/pingcap/tidb/pull/25214.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/25214.patch",
+  "changed_files": [
+    "planner/core/physical_plan_test.go",
+    "planner/core/task.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select extract(day_hour from 'ziy') as res from t order by res limit 1\").Check(testkit.Rows()) (planner/core/physical_plan_test.go)",
+      "files: planner/core/physical_plan_test.go, planner/core/task.go"
+    ]
+  },
+  "analysis": "PR title: planner: don't push down topn to nil table plan side\nPR url: https://github.com/pingcap/tidb/pull/25214\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select extract(day_hour from 'ziy') as res from t order by res limit 1\").Check(testkit.Rows()) (planner/core/physical_plan_test.go)\nChanged files (2): planner/core/physical_plan_test.go, planner/core/task.go\nPatch series analyzed; see patch_url."
+}

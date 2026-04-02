@@ -1,0 +1,60 @@
+{
+  "id": "pr-39156",
+  "source_pr": {
+    "number": 39156,
+    "url": "https://github.com/pingcap/tidb/pull/39156",
+    "title": "planner: add sqlDigest and planDigest field when show bindings",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\nPrint `sqlDigest` and `planDigest` when show bindings, which can be used to create binding and set binding status in the future.\r\n\r\nIssue Number: ref #39199\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\nAdd two fields to mysql.bind_info.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-11-30T00:04:00+08:00",
+  "test": {
+    "type": "unit",
+    "path": "infoschema/tables_test.go",
+    "name": "tables_test"
+  },
+  "symptoms": [
+    "\"collation , source , `sql_digest` , `plan_digest` from `mysql` . `bind_info` where `update_time` > ? order by `update_time` , `create_time`\")) (infoschema/tables_test.go)"
+  ],
+  "failure_signature": "\"collation , source , `sql_digest` , `plan_digest` from `mysql` . `bind_info` where `update_time` > ? order by `update_time` , `create_time`\")) (infoschema/tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/39156",
+    "https://github.com/pingcap/tidb/pull/39156.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/39156.patch",
+  "changed_files": [
+    "bindinfo/bind_record.go",
+    "bindinfo/bind_test.go",
+    "bindinfo/capture_test.go",
+    "bindinfo/handle.go",
+    "bindinfo/handle_test.go",
+    "bindinfo/session_handle_test.go",
+    "executor/bind.go",
+    "executor/builder.go",
+    "executor/show.go",
+    "executor/showtest/show_test.go",
+    "infoschema/tables_test.go",
+    "planner/core/common_plans.go",
+    "planner/core/planbuilder.go",
+    "planner/optimize.go",
+    "session/bootstrap.go",
+    "session/bootstrap_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: \"collation , source , `sql_digest` , `plan_digest` from `mysql` . `bind_info` where `update_time` > ? order by `update_time` , `create_time`\")) (infoschema/tables_test.go)",
+      "files: bindinfo/bind_record.go, bindinfo/bind_test.go, bindinfo/capture_test.go, bindinfo/handle.go, bindinfo/handle_test.go, bindinfo/session_handle_test.go, executor/bind.go, executor/builder.go, executor/show.go, executor/showtest/show_test.go, infoschema/tables_test.go, planner/core/common_plans.go, planner/core/planbuilder.go, planner/optimize.go, session/bootstrap.go, session/bootstrap_test.go"
+    ]
+  },
+  "analysis": "PR title: planner: add sqlDigest and planDigest field when show bindings\nPR url: https://github.com/pingcap/tidb/pull/39156\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"collation , source , `sql_digest` , `plan_digest` from `mysql` . `bind_info` where `update_time` > ? order by `update_time` , `create_time`\")) (infoschema/tables_test.go)\nChanged files (16): bindinfo/bind_record.go, bindinfo/bind_test.go, bindinfo/capture_test.go, bindinfo/handle.go, bindinfo/handle_test.go, bindinfo/session_handle_test.go, executor/bind.go, executor/builder.go, executor/show.go, executor/showtest/show_test.go, infoschema/tables_test.go, planner/core/common_plans.go, planner/core/planbuilder.go, planner/optimize.go, session/bootstrap.go, session/bootstrap_test.go\nPatch url: https://github.com/pingcap/tidb/pull/39156.patch\nPicked test: type=unit path=infoschema/tables_test.go name=tables_test"
+}

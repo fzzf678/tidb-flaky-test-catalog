@@ -1,0 +1,48 @@
+{
+  "id": "pr-53794",
+  "source_pr": {
+    "number": 53794,
+    "url": "https://github.com/pingcap/tidb/pull/53794",
+    "title": "planner: fix column evaluator can not detect input's column-ref and thus swapping and destroying later column ref projection logic",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/53713\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\nuse the valid SQL and error SQL inside issue to produce result\r\nand compare it with MySQL output, both them output like below:\r\n```\r\nmysql> source /Users/arenatlx/Downloads/error.txt\r\n+------+------+------+------+\r\n| c1   | c3   | c4   | c5   |\r\n+------+------+------+------+\r\n| NULL | NULL | 4    | NULL |\r\n+------+------+------+------+\r\n1 row in set (0.04 sec)\r\n```\r\n\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nFixed an issue where the column evaluator could not detect column references in the input chunk. This bug caused the column evaluator to potentially lose the original input column data during projection, disrupting subsequent reference projection logic.\r\n修复了 column evaluator 无法识别输入 chunk 中的列引用的问题。该问题会导致在投影过程中，column evaluator 可能丢失原始输入列的内容，从而破坏后续引用投影逻辑。\r\n\r\n\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-08-02T14:04:20+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/expression/evaluator_test.go",
+    "name": "TestMergeInputIdxToOutputIdxes"
+  },
+  "symptoms": [
+    "slices.Sort((*columnEval.mergedInputIdxToOutputIdxes.Load())[0]) (pkg/expression/evaluator_test.go)"
+  ],
+  "failure_signature": "slices.Sort((*columnEval.mergedInputIdxToOutputIdxes.Load())[0]) (pkg/expression/evaluator_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/53794",
+    "https://github.com/pingcap/tidb/pull/53794.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/53794.patch",
+  "changed_files": [
+    "pkg/expression/evaluator.go",
+    "pkg/expression/evaluator_test.go",
+    "pkg/util/disjointset/int_set.go",
+    "pkg/util/disjointset/set.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: slices.Sort((*columnEval.mergedInputIdxToOutputIdxes.Load())[0]) (pkg/expression/evaluator_test.go)",
+      "files: pkg/expression/evaluator.go, pkg/expression/evaluator_test.go, pkg/util/disjointset/int_set.go, pkg/util/disjointset/set.go"
+    ]
+  },
+  "analysis": "PR title: planner: fix column evaluator can not detect input's column-ref and thus swapping and destroying later column ref projection logic\nPR url: https://github.com/pingcap/tidb/pull/53794\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: slices.Sort((*columnEval.mergedInputIdxToOutputIdxes.Load())[0]) (pkg/expression/evaluator_test.go)\nChanged files (4): pkg/expression/evaluator.go, pkg/expression/evaluator_test.go, pkg/util/disjointset/int_set.go, pkg/util/disjointset/set.go\nPatch url: https://github.com/pingcap/tidb/pull/53794.patch\nPicked test: type=unit path=pkg/expression/evaluator_test.go name=TestMergeInputIdxToOutputIdxes"
+}

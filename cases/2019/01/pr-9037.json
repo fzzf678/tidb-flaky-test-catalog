@@ -1,0 +1,48 @@
+{
+  "id": "pr-9037",
+  "source_pr": {
+    "number": 9037,
+    "url": "https://github.com/pingcap/tidb/pull/9037",
+    "title": "plan/executor: handle optimizer hint properly for cartesian join",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nFix https://github.com/pingcap/tidb/issues/9032\r\n\r\n### What is changed and how it works?\r\n\r\n- allow merge join executor to handle cartesian product;\r\n- raise warning and choose other join implementations if TIDB_INLJ is specified;\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\nN/A\r\n\r\nSide effects\r\n\r\nN/A\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n"
+  },
+  "pr_merged_at": "2019-01-14T18:00:33+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/merge_join_test.go",
+    "name": "merge_join_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select /*+ TIDB_SMJ(t1, t2) */ * from t t1 join t t2 order by t1.a, t2.a\").Check(testkit.Rows( (executor/merge_join_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select /*+ TIDB_SMJ(t1, t2) */ * from t t1 join t t2 order by t1.a, t2.a\").Check(testkit.Rows( (executor/merge_join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9037",
+    "https://github.com/pingcap/tidb/pull/9037.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9037.patch",
+  "changed_files": [
+    "executor/merge_join.go",
+    "executor/merge_join_test.go",
+    "planner/core/exhaust_physical_plans.go",
+    "planner/core/physical_plan_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select /*+ TIDB_SMJ(t1, t2) */ * from t t1 join t t2 order by t1.a, t2.a\").Check(testkit.Rows( (executor/merge_join_test.go)",
+      "files: executor/merge_join.go, executor/merge_join_test.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plan_test.go"
+    ]
+  },
+  "analysis": "PR title: plan/executor: handle optimizer hint properly for cartesian join\nPR url: https://github.com/pingcap/tidb/pull/9037\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select /*+ TIDB_SMJ(t1, t2) */ * from t t1 join t t2 order by t1.a, t2.a\").Check(testkit.Rows( (executor/merge_join_test.go)\nChanged files (4): executor/merge_join.go, executor/merge_join_test.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/9037.patch\nPicked test: type=unit path=executor/merge_join_test.go name=merge_join_test"
+}

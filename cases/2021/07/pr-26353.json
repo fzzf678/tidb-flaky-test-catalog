@@ -1,0 +1,51 @@
+{
+  "id": "pr-26353",
+  "source_pr": {
+    "number": 26353,
+    "url": "https://github.com/pingcap/tidb/pull/26353",
+    "title": "executor: Support read operation for local temporary table",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #25920 \r\n\r\nProblem Summary:\r\n\r\nSupport read operation for local temporary table. PointGet/BatchPointGet are already supported in previous pr #26053 and #2629. So this pr finished last read operation for table scan.\r\n\r\n\r\n### What is changed and how it works?\r\n\r\nFor local temporary table, we force to use UnionScanExec to scan table for all data are in memory. We also introduced `UnionIter` to merge two  MemBuff iters from session and transaction into one. \r\n\r\nBecause `UnionScanExec` does not support index merge, so it is forbidden on local temporary table.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n\r\nSide effects\r\n\r\n- N/A\r\n\r\nDocumentation\r\n\r\n- N/A\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note\r\n"
+  },
+  "pr_merged_at": "2021-07-20T18:39:35+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/union_iter_test.go",
+    "name": "union_iter_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from tmp1 where id>3 order by id\").Check(testkit.Rows( (session/session_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from tmp1 where id>3 order by id\").Check(testkit.Rows( (session/session_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select * from tmp1 where id>3 order by id\").Check(testkit.Rows( (session/session_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/26353",
+    "https://github.com/pingcap/tidb/pull/26353.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/26353.patch",
+  "changed_files": [
+    "executor/mem_reader.go",
+    "executor/union_iter.go",
+    "executor/union_iter_test.go",
+    "planner/core/logical_plan_builder.go",
+    "planner/core/logical_plans.go",
+    "planner/core/stats.go",
+    "session/session_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from tmp1 where id>3 order by id\").Check(testkit.Rows( (session/session_test.go)",
+      "files: executor/mem_reader.go, executor/union_iter.go, executor/union_iter_test.go, planner/core/logical_plan_builder.go, planner/core/logical_plans.go, planner/core/stats.go, session/session_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: Support read operation for local temporary table\nPR url: https://github.com/pingcap/tidb/pull/26353\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from tmp1 where id>3 order by id\").Check(testkit.Rows( (session/session_test.go)\nChanged files (7): executor/mem_reader.go, executor/union_iter.go, executor/union_iter_test.go, planner/core/logical_plan_builder.go, planner/core/logical_plans.go, planner/core/stats.go, session/session_test.go\nPatch series analyzed; see patch_url."
+}

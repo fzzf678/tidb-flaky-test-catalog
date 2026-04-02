@@ -1,0 +1,47 @@
+{
+  "id": "pr-9529",
+  "source_pr": {
+    "number": 9529,
+    "url": "https://github.com/pingcap/tidb/pull/9529",
+    "title": "type/compatibility: check `KEY` option for generated column.",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\ncheck `KEY` option for generated column in `create table`\r\n\r\nTiDB:\r\n```sql\r\nmysql> CREATE TABLE t1 (id INT NOT NULL,\r\n    ->   c1 VARCHAR(20) AS ('foo') VIRTUAL KEY NULL, PRIMARY KEY (id));\r\nERROR 1068 (42000): Multiple primary key defined\r\nmysql> CREATE TABLE t1 (id INT NOT NULL,\r\n    ->   c1 VARCHAR(20) AS ('foo') VIRTUAL KEY NOT NULL, PRIMARY KEY (id));\r\nERROR 1068 (42000): Multiple primary key defined\r\n```\r\n\r\nMySQL:\r\n```sql\r\nmysql> CREATE TABLE t1 (id INT NOT NULL,\r\n    ->   c1 VARCHAR(20) AS ('foo') VIRTUAL KEY NULL, PRIMARY KEY (id));\r\nERROR 3106 (HY000): 'Defining a virtual generated column as primary key' is not supported for generated columns.\r\nmysql> CREATE TABLE t1 (id INT NOT NULL,\r\n    ->   c1 VARCHAR(20) AS ('foo') VIRTUAL KEY NOT NULL, PRIMARY KEY (id));\r\nERROR 3106 (HY000): 'Defining a virtual generated column as primary key' is not supported for generated columns.\r\nmysql> select version();\r\n+-------------------------+\r\n| version()               |\r\n+-------------------------+\r\n| 5.7.25-0ubuntu0.18.04.2 |\r\n+-------------------------+\r\n1 row in set (0.00 sec)\r\n\r\nmysql> \r\n```\r\n\r\nrelated issue: #9464 \r\n\r\n### What is changed and how it works?\r\nadd checking of `KEY` option on generated column for `CREATE TABLE`\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n - Manual Test\r\n```sql\r\nmysql> CREATE TABLE t1 (id INT NOT NULL,\r\n    ->   c1 VARCHAR(20) AS ('foo') VIRTUAL KEY NULL, PRIMARY KEY (id));\r\nERROR 3106 (HY000): 'Defining a virtual generated column as primary key' is not supported for generated columns.\r\nmysql> CREATE TABLE t1 (id INT NOT NULL,\r\n    ->   c1 VARCHAR(20) AS ('foo') VIRTUAL KEY NOT NULL, PRIMARY KEY (id));\r\nERROR 3106 (HY000): 'Defining a virtual generated column as primary key' is not supported for generated columns.\r\nmysql> select TiDB_version();\r\n+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\r\n| TiDB_version()                                                                                                                                                                                                                                                                                                                             |\r\n+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\r\n| Release Version: v3.0.0-beta-144-g560e8cfe5-dirty\r\nGit Commit Hash: 560e8cfe57d102d52918fd609e4e865ebdfb7159\r\nGit Branch: master\r\nUTC Build Time: 2019-03-03 05:20:02\r\nGoVersion: go version go1.11.2 darwin/amd64\r\nRace Enabled: false\r\nTiKV Min Version: 2.1.0-alpha.1-ff3dd160846b7d1aed9079c389fc188f7f5ea13e\r\nCheck Table Before Drop: false |\r\n+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\r\n1 row in set (0.00 sec)\r\n\r\nmysql> \r\n```\r\n\r\n - Unit test\r\n"
+  },
+  "pr_merged_at": "2019-04-10T19:24:30+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/preprocess_test.go",
+    "name": "preprocess_test"
+  },
+  "symptoms": [
+    "Race Enabled: false"
+  ],
+  "failure_signature": "Race Enabled: false",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "type/compatibility: check `KEY` option for generated column.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9529",
+    "https://github.com/pingcap/tidb/pull/9529.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9529.patch",
+  "changed_files": [
+    "planner/core/errors.go",
+    "planner/core/preprocess.go",
+    "planner/core/preprocess_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: Race Enabled: false",
+      "files: planner/core/errors.go, planner/core/preprocess.go, planner/core/preprocess_test.go"
+    ]
+  },
+  "analysis": "PR title: type/compatibility: check `KEY` option for generated column.\nPR url: https://github.com/pingcap/tidb/pull/9529\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Race Enabled: false\nChanged files (3): planner/core/errors.go, planner/core/preprocess.go, planner/core/preprocess_test.go\nPatch url: https://github.com/pingcap/tidb/pull/9529.patch\nPicked test: type=unit path=planner/core/preprocess_test.go name=preprocess_test"
+}

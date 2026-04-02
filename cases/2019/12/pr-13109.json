@@ -1,0 +1,55 @@
+{
+  "id": "pr-13109",
+  "source_pr": {
+    "number": 13109,
+    "url": "https://github.com/pingcap/tidb/pull/13109",
+    "title": "*: support flashback dropped/truncated table",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n* Support flashback dropped/truncated table.\r\n* Parser PR: https://github.com/pingcap/parser/pull/611\r\neg:\r\n```sql\r\ntest> create table t (a int key,b int);\r\ntest> insert into t values (1,1);\r\ntest> truncate table t; -- truncate the table;\r\ntest> admin show ddl jobs 3; -- look for the start_time of the truncate job. \r\n+--------+---------+--------------------+----------------+--------------+-----------+----------+-----------+-----------------------------------+-----------------------------------+--------+\r\n| JOB_ID | DB_NAME | TABLE_NAME         | JOB_TYPE       | SCHEMA_STATE | SCHEMA_ID | TABLE_ID | ROW_COUNT | START_TIME                        | END_TIME                          | STATE  |\r\n+--------+---------+--------------------+----------------+--------------+-----------+----------+-----------+-----------------------------------+-----------------------------------+--------+\r\n| 46     | test    | t                  | truncate table | public       | 1         | 43       | 0         | 2019-11-04 11:56:49.497 +0800 CST | 2019-11-04 11:56:49.598 +0800 CST | synced |\r\n| 44     | test    | t                  | create table   | public       | 1         | 43       | 0         | 2019-11-04 11:56:11.647 +0800 CST | 2019-11-04 11:56:11.747 +0800 CST | synced |\r\n| 42     | mysql   | opt_rule_blacklist | create table   | public       | 3         | 41       | 0         | 2019-11-04 11:48:04.137 +0800 CST | 2019-11-04 11:48:04.19 +0800 CST  | synced |\r\n+--------+---------+--------------------+----------------+--------------+-----------+----------+-----------+-----------------------------------+-----------------------------------+--------+\r\ntest> select * from t;\r\n+---+---+\r\n| a | b |\r\n+---+---+\r\ntest> flashback table t until timestamp '2019-11-04 11:56:49.497 +0800 CST' to t1;  \r\ntest> select * from t1;\r\n+---+---+\r\n| a | b |\r\n+---+---+\r\n| 1 | 1 |\r\n+---+---+\r\ntest> insert into t1 values (2,2)\r\ntest> select * from t1;\r\n+---+---+\r\n| a | b |\r\n+---+---+\r\n| 1 | 1 |\r\n| 2 | 2 |\r\n+---+---+\r\ntest> select * from t;\r\n+---+---+\r\n| a | b |\r\n+---+---+\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\nRelated changes\r\n\r\n\r\nRelease note\r\n\r\n -  Support flashback dropped/truncated table.\r\n"
+  },
+  "pr_merged_at": "2019-12-03T19:49:48+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t_p_flashback order by a;\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t_p_flashback order by a;\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13109",
+    "https://github.com/pingcap/tidb/pull/13109.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13109.patch",
+  "changed_files": [
+    "ddl/db_change_test.go",
+    "ddl/delete_range.go",
+    "ddl/mock.go",
+    "ddl/table.go",
+    "ddl/util/util.go",
+    "executor/ddl.go",
+    "executor/executor_test.go",
+    "go.mod",
+    "go.sum",
+    "planner/core/planbuilder.go",
+    "planner/core/preprocess.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t_p_flashback order by a;\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/executor_test.go)",
+      "files: ddl/db_change_test.go, ddl/delete_range.go, ddl/mock.go, ddl/table.go, ddl/util/util.go, executor/ddl.go, executor/executor_test.go, go.mod, go.sum, planner/core/planbuilder.go, planner/core/preprocess.go"
+    ]
+  },
+  "analysis": "PR title: *: support flashback dropped/truncated table\nPR url: https://github.com/pingcap/tidb/pull/13109\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t_p_flashback order by a;\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/executor_test.go)\nChanged files (11): ddl/db_change_test.go, ddl/delete_range.go, ddl/mock.go, ddl/table.go, ddl/util/util.go, executor/ddl.go, executor/executor_test.go, go.mod, go.sum, planner/core/planbuilder.go, planner/core/preprocess.go\nPatch url: https://github.com/pingcap/tidb/pull/13109.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

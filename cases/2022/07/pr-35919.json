@@ -1,0 +1,49 @@
+{
+  "id": "pr-35919",
+  "source_pr": {
+    "number": 35919,
+    "url": "https://github.com/pingcap/tidb/pull/35919",
+    "title": "executor: fix incorrect runtime stats when there are `apply`s",
+    "body": "\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #35911 ref #35889\r\n\r\nProblem Summary: please see #35911 for the incorrect behavior.\r\n\r\n1. The `concurrency` of runtime stats of `IndexLookUp` and `IndexMerge` is aggregated in the `Merge()` method. This is different from other operators.\r\n2. If it's in the probe side of an `Apply`, an executor may be reused (be `Open()`ed and `Close()`ed multiple times), so the runtime stats for display should be the aggregated sum of them.\r\nBut for `HashAgg`, `IndexLookUp`, and `IndexMerge`, we incorrectly aggregated two times, which makes the numbers in the runtime stats larger than the correct ones:\r\n    1. For each execution, the runtime stats is not reset, which means we aggregated all information into one runtime stats.\r\n    2. For each execution, we also register them once more, as if there are new runtime stats for each execution.\r\n\r\n\r\n### What is changed and how it works?\r\n\r\n1. Do not aggregate the `concurrency` in the `Merge()` method.\r\n2. Reset runtime stats for each execution for  `HashAgg`, `IndexLookUp`, and `IndexMerge`.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-07-07T00:49:02+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/distsql_test.go",
+    "name": "distsql_test"
+  },
+  "symptoms": [
+    "fix data race"
+  ],
+  "failure_signature": "fix data race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "executor: fix incorrect runtime stats when there are `apply`s",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/35919",
+    "https://github.com/pingcap/tidb/pull/35919.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/35919.patch",
+  "changed_files": [
+    "executor/aggregate.go",
+    "executor/distsql.go",
+    "executor/distsql_test.go",
+    "executor/explain_test.go",
+    "executor/index_merge_reader.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix data race",
+      "files: executor/aggregate.go, executor/distsql.go, executor/distsql_test.go, executor/explain_test.go, executor/index_merge_reader.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix incorrect runtime stats when there are `apply`s\nPR url: https://github.com/pingcap/tidb/pull/35919\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (5): executor/aggregate.go, executor/distsql.go, executor/distsql_test.go, executor/explain_test.go, executor/index_merge_reader.go\nPatch url: https://github.com/pingcap/tidb/pull/35919.patch\nPicked test: type=unit path=executor/distsql_test.go name=distsql_test"
+}

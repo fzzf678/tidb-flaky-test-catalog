@@ -1,0 +1,46 @@
+{
+  "id": "pr-1681",
+  "source_pr": {
+    "number": 1681,
+    "url": "https://github.com/pingcap/tidb/pull/1681",
+    "title": "fix the bug of double read with order and limit",
+    "body": "When the index scanner want to keep datas order, it shouldn't set limit to table scan read.\n@shenli @zimulala @coocood PTAL\n"
+  },
+  "pr_merged_at": "2016-09-02T17:53:14+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select * from t order by a limit 3\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select * from t order by a limit 3\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1681",
+    "https://github.com/pingcap/tidb/pull/1681.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1681.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "executor/executor_xapi.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select * from t order by a limit 3\") (executor/executor_test.go)",
+      "files: executor/executor_test.go, executor/executor_xapi.go"
+    ]
+  },
+  "analysis": "PR title: fix the bug of double read with order and limit\nPR url: https://github.com/pingcap/tidb/pull/1681\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select * from t order by a limit 3\") (executor/executor_test.go)\nChanged files (2): executor/executor_test.go, executor/executor_xapi.go\nPatch url: https://github.com/pingcap/tidb/pull/1681.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

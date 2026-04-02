@@ -1,0 +1,48 @@
+{
+  "id": "pr-48343",
+  "source_pr": {
+    "number": 48343,
+    "url": "https://github.com/pingcap/tidb/pull/48343",
+    "title": "disttask: correct the usage of context",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #48303\r\n\r\nProblem Summary:\r\n\r\nAfter cancelling the job, I found that the ingest worker did not stop. Instead, it was waiting for the server side(TiKV):\r\n\r\n```\r\n11 @ 0x1c2d6ee 0x1c3e185 0x21cf23c 0x225699a 0x2256987 0x2255c1f 0x22548da 0x2255a73 0x3d9bb96 0x3d999f1 0x3d98066 0x3d8942b 0x3d88f47 0x3d8be0e 0x3ac2a96 0x1c625c1\r\n#\t0x21cf23b\tgoogle.golang.org/grpc/internal/transport.(*Stream).waitOnHeader+0x7b\t\t\t/go/pkg/mod/google.golang.org/grpc@v1.59.0/internal/transport/transport.go:327\r\n#\t0x2256999\tgoogle.golang.org/grpc/internal/transport.(*Stream).RecvCompress+0xb9\t\t\t/go/pkg/mod/google.golang.org/grpc@v1.59.0/internal/transport/transport.go:342\r\n#\t0x2256986\tgoogle.golang.org/grpc.(*csAttempt).recvMsg+0xa6\t\t\t\t\t/go/pkg/mod/google.golang.org/grpc@v1.59.0/stream.go:1070\r\n#\t0x2255c1e\tgoogle.golang.org/grpc.(*clientStream).RecvMsg.func1+0x1e\t\t\t\t/go/pkg/mod/google.golang.org/grpc@v1.59.0/stream.go:927\r\n#\t0x22548d9\tgoogle.golang.org/grpc.(*clientStream).withRetry+0x139\t\t\t\t\t/go/pkg/mod/google.golang.org/grpc@v1.59.0/stream.go:776\r\n#\t0x2255a72\tgoogle.golang.org/grpc.(*clientStream).RecvMsg+0x112\t\t\t\t\t/go/pkg/mod/google.golang.org/grpc@v1.59.0/stream.go:926\r\n#\t0x3d9bb95\tgithub.com/pingcap/tidb/br/pkg/lightning/backend/local.(*Backend).doWrite.func5+0x2b5\t/home/jenkins/agent/workspace/build-common/go/src/github.com/pingcap/tidb/br/pkg/lightning/backend/local/region_job.go:354\r\n#\t0x3d999f0\tgithub.com/pingcap/tidb/br/pkg/lightning/backend/local.(*Backend).doWrite+0x1890\t/home/jenkins/agent/workspace/build-common/go/src/github.com/pingcap/tidb/br/pkg/lightning/backend/local/region_job.go:389\r\n#\t0x3d98065\tgithub.com/pingcap/tidb/br/pkg/lightning/backend/local.(*Backend).writeToTiKV+0x25\t/home/jenkins/agent/workspace/build-common/go/src/github.com/pingcap/tidb/br/pkg/lightning/backend/local/region_job.go:189\r\n#\t0x3d8942a\tgithub.com/pingcap/tidb/br/pkg/lightning/backend/local.(*Backend).executeJob+0xaa\t/home/jenkins/agent/workspace/build-common/go/src/github.com/pingcap/tidb/br/pkg/lightning/backend/local/local.go:1435\r\n#\t0x3d88f46\tgithub.com/pingcap/tidb/br/pkg/lightning/backend/local.(*Backend).startWorker+0x1c6\t/home/jenkins/agent/workspace/build-common/go/src/github.com/pingcap/tidb/br/pkg/lightning/backend/local/local.go:1344\r\n#\t0x3d8be0d\tgithub.com/pingcap/tidb/br/pkg/lightning/backend/local.(*Backend).doImport.func5+0x2d\t/home/jenkins/agent/workspace/build-common/go/src/github.com/pingcap/tidb/br/pkg/lightning/backend/local/local.go:1677\r\n#\t0x3ac2a95\tgolang.org/x/sync/errgroup.(*Group).Go.func1+0x55\r\n```\r\n\r\nNormally, it should quit when the related context is canceled.\r\n\r\n```go\r\nfunc (s *Stream) waitOnHeader() {\r\n\tif s.headerChan == nil {\r\n\t\t// On the server headerChan is always nil since a stream originates\r\n\t\t// only after having received headers.\r\n\t\treturn\r\n\t}\r\n\tselect {\r\n\tcase <-s.ctx.Done():\r\n\t\t// Close the stream to prevent headers/trailers from changing after\r\n\t\t// this function returns.\r\n\t\ts.ct.CloseStream(s, ContextErr(s.ctx.Err()))\r\n\t\t// headerChan could possibly not be closed yet if closeStream raced\r\n\t\t// with operateHeaders; wait until it is closed explicitly here.\r\n\t\t<-s.headerChan\r\n\tcase <-s.headerChan:\r\n\t}\r\n}\r\n```\r\n\r\nFinally I found that the context passed to the local backend is wrong. It should be \"task context\" instead of \"manager context\", because the latter will only be canceled when the TiDB process exits.\r\n\r\nAs for the problem of getting stuck, there should be other solutions: https://github.com/pingcap/tidb/issues/48352.\r\n\r\n### What is changed and how it works?\r\n\r\n- For scheduler methods such as `Init()`, `Run()`, `Pause()`, etc., we pass the task context.\r\n- For interactions with the task table, we pass the manager context.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->  \r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-11-07T19:53:12+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "tests/realtikvtest/addindextest1/disttask_test.go",
+    "name": "disttask_test"
+  },
+  "symptoms": [
+    "-// TODO: flaky test which can't find the root cause, will run it later."
+  ],
+  "failure_signature": "-// TODO: flaky test which can't find the root cause, will run it later.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "-// TODO: flaky test which can't find the root cause, will run it later.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/48343",
+    "https://github.com/pingcap/tidb/pull/48343.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/48343.patch",
+  "changed_files": [
+    "pkg/disttask/framework/scheduler/manager.go",
+    "pkg/disttask/framework/scheduler/scheduler.go",
+    "tests/realtikvtest/addindextest1/BUILD.bazel",
+    "tests/realtikvtest/addindextest1/disttask_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: -// TODO: flaky test which can't find the root cause, will run it later.",
+      "files: pkg/disttask/framework/scheduler/manager.go, pkg/disttask/framework/scheduler/scheduler.go, tests/realtikvtest/addindextest1/BUILD.bazel, tests/realtikvtest/addindextest1/disttask_test.go"
+    ]
+  },
+  "analysis": "PR title: disttask: correct the usage of context\nPR url: https://github.com/pingcap/tidb/pull/48343\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: -// TODO: flaky test which can't find the root cause, will run it later.\nChanged files (4): pkg/disttask/framework/scheduler/manager.go, pkg/disttask/framework/scheduler/scheduler.go, tests/realtikvtest/addindextest1/BUILD.bazel, tests/realtikvtest/addindextest1/disttask_test.go\nPatch series analyzed; see patch_url."
+}

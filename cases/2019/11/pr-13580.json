@@ -1,0 +1,52 @@
+{
+  "id": "pr-13580",
+  "source_pr": {
+    "number": 13580,
+    "url": "https://github.com/pingcap/tidb/pull/13580",
+    "title": "test: optimize session&planner/core unit test",
+    "body": "What problem does this PR solve?\r\nmake several package unit test support run unit test parallel to speed up unit test running\r\n\r\nWhat is changed and how it works?\r\noptimize session&planner/core unit test and fix parallel run test problem.\r\n- split session `testSessionSuite` into 2 test suites\r\n- enable session & planner/core  unit test run in parallel by move cases depend on changing global variables into  serialSuite \r\n- fix several case that change global variables directly while it should be wrap by lock\r\n\r\noptimize result:\r\n```\r\n>  go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core\r\nok  \tgithub.com/pingcap/tidb/planner/core\t116.440s\r\n\r\n> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/session\r\nok  \tgithub.com/pingcap/tidb/session\t93.397s\r\n```\r\n\r\nAfter change:\r\n```\r\n> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core -check.p=true\r\nok  \tgithub.com/pingcap/tidb/planner/core\t31.602s\r\n\r\n> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/session -check.p=true\r\nok  \tgithub.com/pingcap/tidb/session\t65.009s\r\n```\r\n\r\nCheck List\r\nTests\r\n\r\nunit tests\r\nCode changes\r\n\r\nSide effects\r\n\r\nRelated changes"
+  },
+  "pr_merged_at": "2019-11-27T17:25:56+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_test.go",
+    "name": "db_test"
+  },
+  "symptoms": [
+    "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core"
+  ],
+  "failure_signature": "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test: optimize session&planner/core unit test",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13580",
+    "https://github.com/pingcap/tidb/pull/13580.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13580.patch",
+  "changed_files": [
+    "planner/core/physical_plan_test.go",
+    "planner/core/prepare_test.go",
+    "session/bootstrap_test.go",
+    "session/session.go",
+    "session/session_fail_test.go",
+    "session/session_test.go",
+    "session/tidb.go",
+    "session/tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: > go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core",
+      "files: ddl/db_test.go, planner/core/physical_plan_test.go, planner/core/prepare_test.go, session/bootstrap_test.go, session/isolation_test.go, session/session.go, session/session_fail_test.go, session/session_test.go, session/tidb.go, session/tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: test: optimize session&planner/core unit test\nPR url: https://github.com/pingcap/tidb/pull/13580\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: > go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core\nChanged files (8): planner/core/physical_plan_test.go, planner/core/prepare_test.go, session/bootstrap_test.go, session/session.go, session/session_fail_test.go, session/session_test.go, session/tidb.go, session/tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/13580.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+}

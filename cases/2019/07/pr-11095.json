@@ -1,0 +1,47 @@
+{
+  "id": "pr-11095",
+  "source_pr": {
+    "number": 11095,
+    "url": "https://github.com/pingcap/tidb/pull/11095",
+    "title": "planner/core: stabilize the execution order of window functions",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nThe execution order of window functions is not stable, which may lead to an unstable result.\r\n\r\n### What is changed and how it works?\r\n\r\nSort the window functions by the partition by and order by clauses of specifications, which may also lead to a more efficient execution plan because it will require less `Sort` operators.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\n - None\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n"
+  },
+  "pr_merged_at": "2019-07-08T16:33:15+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "planner/core: stabilize the execution order of window functions | sql: \"select sum(a) over (partition by a order by b), sum(b) over (order by a, b, c), sum(c) over(partition by a order by c), sum(d) over() from t\", (planner/core/logical_plan_test.go)"
+  ],
+  "failure_signature": "planner/core: stabilize the execution order of window functions | sql: \"select sum(a) over (partition by a order by b), sum(b) over (order by a, b, c), sum(c) over(partition by a order by c), sum(d) over() from t\", (planner/core/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/11095",
+    "https://github.com/pingcap/tidb/pull/11095.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/11095.patch",
+  "changed_files": [
+    "planner/core/logical_plan_builder.go",
+    "planner/core/logical_plan_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: planner/core: stabilize the execution order of window functions | sql: \"select sum(a) over (partition by a order by b), sum(b) over (order by a, b, c), sum(c) over(partition by a order by c), sum(d) over() from t\", (planner/core/logical_plan_test.go)",
+      "files: planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go"
+    ]
+  },
+  "analysis": "PR title: planner/core: stabilize the execution order of window functions\nPR url: https://github.com/pingcap/tidb/pull/11095\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: planner/core: stabilize the execution order of window functions | sql: \"select sum(a) over (partition by a order by b), sum(b) over (order by a, b, c), sum(c) over(partition by a order by c), sum(d) over() from t\", (planner/core/logical_plan_test.go)\nChanged files (2): planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11095.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
+}

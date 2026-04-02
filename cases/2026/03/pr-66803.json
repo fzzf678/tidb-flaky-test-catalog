@@ -1,0 +1,50 @@
+{
+  "id": "pr-66803",
+  "source_pr": {
+    "number": 66803,
+    "url": "https://github.com/pingcap/tidb/pull/66803",
+    "title": "executor/join, util/hack: stabilize concurrent map memory usage tests",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close #66725\r\n\r\nProblem Summary:\r\n\r\n`TestConcurrentMapHashTableMemoryUsage` in `pkg/executor/join` is flaky because the test asserts exact memory usage, while the underlying `MemAwareMap` layout depends on Go map seed randomness. That makes the initial memory footprint nondeterministic in test runs.\r\n\r\n### What changed and how does it work?\r\n\r\nThis PR makes the concurrent map memory-usage tests deterministic by fixing the map seed in test mode.\r\n\r\n- Initialize each shard map in `newConcurrentMap()` with a fixed test seed when `intest.InTest` is enabled.\r\n- Move the fixed seed into `pkg/util/hack` as a shared test-only constant.\r\n- Simplify `MemAwareMap.MockSeedForTest()` to use the shared fixed seed directly.\r\n- Keep the safety check that `MockSeedForTest` can only be called on an empty map.\r\n- Remove the per-test manual seed setup in `TestConcurrentMapMemoryUsage`, since the constructor now handles it consistently.\r\n\r\nThis keeps production behavior unchanged and only stabilizes test-time memory layout.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nTest commands:\r\n\r\n```bash\r\ngo test ./pkg/executor/join -run TestConcurrentMapHashTableMemoryUsage -tags=intest,deadlock -count=20\r\ngo test ./pkg/executor/join -run TestConcurrentMapMemoryUsage -tags=intest,deadlock -count=20\r\ngo test ./pkg/util/hack -run TestSwissTable -tags=intest,deadlock -count=5\r\n```\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n\n## Summary by CodeRabbit\n\n* **Refactor**\n  * Simplified test seeding mechanism for internal map structures by standardizing on a fixed internal seed constant rather than accepting variable parameters, streamlining testing infrastructure.\n\n* **Tests**\n  * Updated test implementations to align with refined seeding approach.\n\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-10T03:06:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/executor/join/concurrent_map_test.go",
+    "name": "TestConcurrentMapHashTableMemoryUsage"
+  },
+  "symptoms": [
+    "executor/join, util/hack: stabilize concurrent map memory usage tests | `TestConcurrentMapHashTableMemoryUsage` in `pkg/executor/join` is flaky because the test asserts exact memory usage, while the underlying `MemAwareMap` layout depends on Go map seed randomness. That makes the initial memory footprint nondeterministic in test runs."
+  ],
+  "failure_signature": "executor/join, util/hack: stabilize concurrent map memory usage tests | `TestConcurrentMapHashTableMemoryUsage` in `pkg/executor/join` is flaky because the test asserts exact memory usage, while the underlying `MemAwareMap` layout depends on Go map seed randomness. That makes the initial memory footprint nondeterministic in test runs.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "executor/join, util/hack: stabilize concurrent map memory usage tests | `TestConcurrentMapHashTableMemoryUsage` in `pkg/executor/join` is flaky because the test asserts exact memory usage, while the underlying `MemAwareMap` layout depends on Go map seed randomness. That makes the initial memory footprint nondeterministic in test runs.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66803",
+    "https://github.com/pingcap/tidb/pull/66803.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66803.patch",
+  "changed_files": [
+    "pkg/executor/join/concurrent_map.go",
+    "pkg/executor/join/concurrent_map_test.go",
+    "pkg/util/hack/map_abi.go",
+    "pkg/util/hack/map_abi_go126.go",
+    "pkg/util/hack/map_abi_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: executor/join, util/hack: stabilize concurrent map memory usage tests | `TestConcurrentMapHashTableMemoryUsage` in `pkg/executor/join` is flaky because the test asserts exact memory usage, while the underlying `MemAwareMap` layout depends on Go map seed randomness. That makes the initial memory footprint nondeterministic in test runs.",
+      "files: pkg/executor/join/concurrent_map_test.go, pkg/util/hack/map_abi_test.go"
+    ]
+  },
+  "analysis": "PR title: executor/join, util/hack: stabilize concurrent map memory usage tests\nPR url: https://github.com/pingcap/tidb/pull/66803\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: executor/join, util/hack: stabilize concurrent map memory usage tests | `TestConcurrentMapHashTableMemoryUsage` in `pkg/executor/join` is flaky because the test asserts exact memory usage, while the underlying `MemAwareMap` layout depends on Go map seed randomness. That makes the initial memory footprint nondeterministic in test runs.\nChanged files (5): pkg/executor/join/concurrent_map.go, pkg/executor/join/concurrent_map_test.go, pkg/util/hack/map_abi.go, pkg/util/hack/map_abi_go126.go, pkg/util/hack/map_abi_test.go\nFull patch analyzed; see patch_url."
+}

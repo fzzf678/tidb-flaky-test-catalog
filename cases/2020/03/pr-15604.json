@@ -1,0 +1,46 @@
+{
+  "id": "pr-15604",
+  "source_pr": {
+    "number": 15604,
+    "url": "https://github.com/pingcap/tidb/pull/15604",
+    "title": "config: make the test `TestPDConfHandler` stable",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #15330 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary: make the test `TestPDConfHandler` stable\r\n\r\n### What is changed and how it works?\r\nThe root cause is that the config manager updates the global config pointer after finishing reload:\r\n```\r\n    ...\r\n    ch.reloadFunc(oldConf, mergedConf)\r\n    ch.curConf.Store(mergedConf)\r\n    ...\r\n```\r\nBut in `TestPDConfHandler`, we will check the global config immediately after reloading in another goroutine, and at that time, the update operation `Store(conf)` may not be processed.\r\n\r\n```\r\nreloadFunc = fund() {\r\n    ...\r\n    reloadWg.Done()\r\n}\r\nNewConfManager(reloadFunc)\r\n...\r\nreloadWg.Wait()\r\nCheck the config ...\r\n```\r\n\r\n|  time   | conf manager goroutine  | test goroutine |\r\n|  ----  | ----  | ---- |\r\n| 1  | reload | |\r\n| 2  |  | check << fail |\r\n| 3  | store | |\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n"
+  },
+  "pr_merged_at": "2020-03-25T20:51:18+08:00",
+  "test": {
+    "type": "unit",
+    "path": "config/config_handler_test.go",
+    "name": "TestPDConfHandler"
+  },
+  "symptoms": [
+    "PR body explains TestPDConfHandler race (reloadFunc done before global config pointer Store), causing intermittent check failure."
+  ],
+  "failure_signature": "PR body explains TestPDConfHandler race (reloadFunc done before global config pointer Store), causing intermittent check failure.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "config: make the test `TestPDConfHandler` stable",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/15604",
+    "https://github.com/pingcap/tidb/pull/15604.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/15604.patch",
+  "changed_files": [
+    "config/config_handler_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body explains TestPDConfHandler race (reloadFunc done before global config pointer Store), causing intermittent check failure.",
+      "evidence: diff adds an extra reload tick + wait group (`reloadWg2`) to ensure global config updated before assertions (config/config_handler_test.go).",
+      "files: config/config_handler_test.go"
+    ]
+  },
+  "analysis": "PR title: config: make the test `TestPDConfHandler` stable\nPR url: https://github.com/pingcap/tidb/pull/15604\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body explains TestPDConfHandler race (reloadFunc done before global config pointer Store), causing intermittent check failure.\nChanged files (1): config/config_handler_test.go\nPatch url: https://github.com/pingcap/tidb/pull/15604.patch\nPicked test: type=unit path=config/config_handler_test.go name=TestPDConfHandler"
+}

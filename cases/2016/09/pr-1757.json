@@ -1,0 +1,49 @@
+{
+  "id": "pr-1757",
+  "source_pr": {
+    "number": 1757,
+    "url": "https://github.com/pingcap/tidb/pull/1757",
+    "title": "executor: split big test file into smaller files.",
+    "body": "One big test file makes it hard to locate a specific test case.\n"
+  },
+  "pr_merged_at": "2016-09-22T21:55:24+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select max(c) from t group by d having sum(c) > 3 order by avg(c) desc\") (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select max(c) from t group by d having sum(c) > 3 order by avg(c) desc\") (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1757",
+    "https://github.com/pingcap/tidb/pull/1757.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1757.patch",
+  "changed_files": [
+    "executor/aggregate_test.go",
+    "executor/executor_test.go",
+    "executor/executor_write_test.go",
+    "executor/prepared_test.go",
+    "executor/union_scan_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select max(c) from t group by d having sum(c) > 3 order by avg(c) desc\") (executor/aggregate_test.go)",
+      "files: executor/aggregate_test.go, executor/executor_test.go, executor/executor_write_test.go, executor/prepared_test.go, executor/union_scan_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: split big test file into smaller files.\nPR url: https://github.com/pingcap/tidb/pull/1757\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select max(c) from t group by d having sum(c) > 3 order by avg(c) desc\") (executor/aggregate_test.go)\nChanged files (5): executor/aggregate_test.go, executor/executor_test.go, executor/executor_write_test.go, executor/prepared_test.go, executor/union_scan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/1757.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

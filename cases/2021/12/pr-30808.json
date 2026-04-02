@@ -1,0 +1,51 @@
+{
+  "id": "pr-30808",
+  "source_pr": {
+    "number": 30808,
+    "url": "https://github.com/pingcap/tidb/pull/30808",
+    "title": "topsql: support multiple datasinks",
+    "body": "Signed-off-by: Zhenchi <zhongzc_arch@outlook.com>\r\n\r\n### What problem does this PR solve?\r\n\r\nPart of #29020 \r\n\r\nProblem Summary:\r\n\r\nNow the datasink is hardcoded.\r\n\r\n### What is changed and how it works?\r\n\r\nAdd datasink registration mechanism:\r\n* Add `DataSinkRegHandle` method to interface `TopSQLReporter`. Users can access the registration handle provided by the reporter, then register a datasink.\r\n* Add registration handle logic for `RemoteTopSQLReporter`.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n\r\n### Release note\r\n\r\n```release-note\r\nSupport multiple datasinks for TopSQL\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-12-18T00:32:36+08:00",
+  "test": {
+    "type": "unit",
+    "path": "server/tidb_test.go",
+    "name": "tidb_test"
+  },
+  "symptoms": [
+    "Close may be called multiple times, fix potential data race"
+  ],
+  "failure_signature": "Close may be called multiple times, fix potential data race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Close may be called multiple times, fix potential data race",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/30808",
+    "https://github.com/pingcap/tidb/pull/30808.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/30808.patch",
+  "changed_files": [
+    "server/tidb_test.go",
+    "util/topsql/reporter/datasink.go",
+    "util/topsql/reporter/reporter.go",
+    "util/topsql/reporter/reporter_test.go",
+    "util/topsql/reporter/single_target.go",
+    "util/topsql/topsql.go",
+    "util/topsql/topsql_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: Close may be called multiple times, fix potential data race",
+      "files: server/tidb_test.go, sessionctx/variable/tidb_vars.go, util/topsql/reporter/datasink.go, util/topsql/reporter/reporter.go, util/topsql/reporter/reporter_test.go, util/topsql/reporter/single_target.go, util/topsql/topsql.go, util/topsql/topsql_test.go, util/topsql/tracecpu/mock/mock.go"
+    ]
+  },
+  "analysis": "PR title: topsql: support multiple datasinks\nPR url: https://github.com/pingcap/tidb/pull/30808\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Close may be called multiple times, fix potential data race\nChanged files (7): server/tidb_test.go, util/topsql/reporter/datasink.go, util/topsql/reporter/reporter.go, util/topsql/reporter/reporter_test.go, util/topsql/reporter/single_target.go, util/topsql/topsql.go, util/topsql/topsql_test.go\nPatch series analyzed; see patch_url."
+}

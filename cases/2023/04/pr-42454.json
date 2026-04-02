@@ -1,0 +1,53 @@
+{
+  "id": "pr-42454",
+  "source_pr": {
+    "number": 42454,
+    "url": "https://github.com/pingcap/tidb/pull/42454",
+    "title": "disttask: support `detectTask` in parallel and do some updates for dispatcher",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/42383, close https://github.com/pingcap/tidb/issues/42369\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n- `detectTask` in parallel \r\n  - Every gTask using a goroutine when detecting a task state(call `detectTask`) \r\n \r\n- Using `spool.Pool` instead of `tidbutil.WaitGroupWrapper` to new a goroutine.\r\n\r\n- Handle the TODO of `Consider get all unfinished tasks.`\r\n\r\n- If updating task/subtasks to the storage fails, ensure that the gTask state is not changed in cache.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-04-03T08:32:56+08:00",
+  "test": {
+    "type": "unit",
+    "path": "disttask/framework/dispatcher/dispatcher_test.go",
+    "name": "dispatcher_test"
+  },
+  "symptoms": [
+    "dispatcher: fix data race in test"
+  ],
+  "failure_signature": "dispatcher: fix data race in test",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "dispatcher: fix data race in test",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/42454",
+    "https://github.com/pingcap/tidb/pull/42454.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/42454.patch",
+  "changed_files": [
+    "disttask/framework/dispatcher/BUILD.bazel",
+    "disttask/framework/dispatcher/dispatcher.go",
+    "disttask/framework/dispatcher/dispatcher_test.go",
+    "disttask/framework/dispatcher/main_test.go",
+    "disttask/framework/dispatcher/register.go",
+    "disttask/framework/proto/task.go",
+    "disttask/framework/storage/BUILD.bazel",
+    "disttask/framework/storage/task_table.go",
+    "resourcemanager/util/util.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: dispatcher: fix data race in test",
+      "files: disttask/framework/dispatcher/BUILD.bazel, disttask/framework/dispatcher/dispatcher.go, disttask/framework/dispatcher/dispatcher_test.go, disttask/framework/dispatcher/main_test.go, disttask/framework/dispatcher/register.go, disttask/framework/proto/task.go, disttask/framework/storage/BUILD.bazel, disttask/framework/storage/task_table.go, resourcemanager/util/util.go"
+    ]
+  },
+  "analysis": "PR title: disttask: support `detectTask` in parallel and do some updates for dispatcher\nPR url: https://github.com/pingcap/tidb/pull/42454\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: dispatcher: fix data race in test\nChanged files (9): disttask/framework/dispatcher/BUILD.bazel, disttask/framework/dispatcher/dispatcher.go, disttask/framework/dispatcher/dispatcher_test.go, disttask/framework/dispatcher/main_test.go, disttask/framework/dispatcher/register.go, disttask/framework/proto/task.go, disttask/framework/storage/BUILD.bazel, disttask/framework/storage/task_table.go, resourcemanager/util/util.go\nPatch series analyzed; see patch_url."
+}

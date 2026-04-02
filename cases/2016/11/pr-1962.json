@@ -1,0 +1,46 @@
+{
+  "id": "pr-1962",
+  "source_pr": {
+    "number": 1962,
+    "url": "https://github.com/pingcap/tidb/pull/1962",
+    "title": "plan: adjust cost factor to make right agg plan.",
+    "body": "Consider query: \r\n> select sum(a.b), sum(b.b) from t a join t b on a.c = b.c group by a.d order by a.d\r\n\r\nWe got the plan LeftHashJoin{Table(t)->Table(t)}(a.c,b.c)->Sort->StreamAgg->Trim\r\nInstead, we should get LeftHashJoin{Table(t)->Table(t)}(a.c,b.c)->HashAgg->Sort->Trim.\r\nObviously we calculate wrong cost, in Sort operator we use \"c*log(c)*cpu_factor\" to calcuate sort cost.\r\nBut in enforce function we use \"c*cpu_factor\" to calculate sort cost. We should adopt a uniform formula to calcuate.\r\n@shenli @zimulala @coocood @XuHuaiyu PTAL"
+  },
+  "pr_merged_at": "2016-11-08T14:18:44+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/plan_test.go",
+    "name": "plan_test"
+  },
+  "symptoms": [
+    "sql: \"select sum(a.b), sum(b.b) from t a join t b on a.c = b.c group by a.d order by a.d\", (plan/plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select sum(a.b), sum(b.b) from t a join t b on a.c = b.c group by a.d order by a.d\", (plan/plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1962",
+    "https://github.com/pingcap/tidb/pull/1962.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1962.patch",
+  "changed_files": [
+    "plan/physical_plan_builder.go",
+    "plan/plan_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select sum(a.b), sum(b.b) from t a join t b on a.c = b.c group by a.d order by a.d\", (plan/plan_test.go)",
+      "files: plan/physical_plan_builder.go, plan/plan_test.go"
+    ]
+  },
+  "analysis": "PR title: plan: adjust cost factor to make right agg plan.\nPR url: https://github.com/pingcap/tidb/pull/1962\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select sum(a.b), sum(b.b) from t a join t b on a.c = b.c group by a.d order by a.d\", (plan/plan_test.go)\nChanged files (2): plan/physical_plan_builder.go, plan/plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/1962.patch\nPicked test: type=unit path=plan/plan_test.go name=plan_test"
+}

@@ -1,0 +1,50 @@
+{
+  "id": "pr-12220",
+  "source_pr": {
+    "number": 12220,
+    "url": "https://github.com/pingcap/tidb/pull/12220",
+    "title": "expression: make the selection executor support vectorized expression evaluation",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nMake the selection executor support vectorized expression evaluation.\r\n\r\n### What is changed and how it works?\r\nUsing filter conditions that implement the vectorized evaluation function as a parameter to the vecEvalBool function.\r\n\r\nAll the types gain some performance benefits, and here is the benchmark:\r\n```\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Vec-int/-4             134923              8892 ns/op              64 B/op          2 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Row-int/-4             106368             11785 ns/op               0 B/op          0 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Vec-real/-4            116634              9682 ns/op              64 B/op          2 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Row-real/-4             27681             42377 ns/op               0 B/op          0 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Vec-decimal/-4           3194            401937 ns/op           61807 B/op       1974 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Row-decimal/-4           2876            440534 ns/op           61712 B/op       1972 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Vec-string/-4           22010             55648 ns/op              64 B/op          2 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Row-string/-4           14310             78311 ns/op               0 B/op          0 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Vec-datetime/-4         46197             25607 ns/op              64 B/op          2 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Row-datetime/-4          9694            111008 ns/op           31040 B/op        970 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Vec-timestamp/-4        46048             25711 ns/op              64 B/op          2 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Row-timestamp/-4        10000            110404 ns/op           31360 B/op        980 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Vec-duration/-4        133914              8702 ns/op              64 B/op          2 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Row-duration/-4         30522             40181 ns/op               0 B/op          0 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Vec-special_case-4      75487             14114 ns/op              64 B/op          2 allocs/op\r\nBenchmarkRowBasedFilterAndVectorizedFilter/Row-special_case-4      39448             31301 ns/op               0 B/op          0 allocs/op\r\n```\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test"
+  },
+  "pr_merged_at": "2019-10-14T23:03:58+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/bench_test.go",
+    "name": "bench_test"
+  },
+  "symptoms": [
+    "rand.Seed(int64(time.Now().UnixNano())) (expression/bench_test.go)"
+  ],
+  "failure_signature": "rand.Seed(int64(time.Now().UnixNano())) (expression/bench_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/12220",
+    "https://github.com/pingcap/tidb/pull/12220.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/12220.patch",
+  "changed_files": [
+    "expression/bench_test.go",
+    "expression/chunk_executor.go",
+    "expression/expression.go",
+    "types/datum_test.go",
+    "util/chunk/column.go",
+    "util/chunk/iterator.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rand.Seed(int64(time.Now().UnixNano())) (expression/bench_test.go)",
+      "files: expression/bench_test.go, expression/chunk_executor.go, expression/expression.go, go.mod, tools/check/go.mod, types/datum_test.go, util/chunk/chunk.go, util/chunk/column.go, util/chunk/iterator.go"
+    ]
+  },
+  "analysis": "PR title: expression: make the selection executor support vectorized expression evaluation\nPR url: https://github.com/pingcap/tidb/pull/12220\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(int64(time.Now().UnixNano())) (expression/bench_test.go)\nChanged files (6): expression/bench_test.go, expression/chunk_executor.go, expression/expression.go, types/datum_test.go, util/chunk/column.go, util/chunk/iterator.go\nPatch url: https://github.com/pingcap/tidb/pull/12220.patch\nPicked test: type=unit path=expression/bench_test.go name=bench_test"
+}

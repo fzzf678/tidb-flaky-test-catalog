@@ -1,0 +1,58 @@
+{
+  "id": "pr-53630",
+  "source_pr": {
+    "number": 53630,
+    "url": "https://github.com/pingcap/tidb/pull/53630",
+    "title": "tests: add some test cases for global index",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #45133\r\n\r\nProblem Summary:\r\n1. Move all global index related integration test to `tests/integrationtest/t/globalindex`\r\n2. Add some tests related with `expression_index` and `aggregate`\r\n\r\n### What changed and how does it work?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-05-29T19:26:51+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/ddl/global_index.result",
+    "name": "global_index"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from test_global use index(idx_b) order by a\").Check(testkit.Rows(\"11 11 11\", \"12 12 12\")) (pkg/ddl/tests/partition/db_partition_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from test_global use index(idx_b) order by a\").Check(testkit.Rows(\"11 11 11\", \"12 12 12\")) (pkg/ddl/tests/partition/db_partition_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/53630",
+    "https://github.com/pingcap/tidb/pull/53630.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/53630.patch",
+  "changed_files": [
+    "pkg/ddl/tests/partition/db_partition_test.go",
+    "pkg/executor/point_get_test.go",
+    "tests/integrationtest/r/ddl/global_index.result",
+    "tests/integrationtest/r/globalindex/aggregate.result",
+    "tests/integrationtest/r/globalindex/expression_index.result",
+    "tests/integrationtest/r/globalindex/index_join.result",
+    "tests/integrationtest/r/globalindex/misc.result",
+    "tests/integrationtest/r/globalindex/update.result",
+    "tests/integrationtest/t/ddl/global_index.test",
+    "tests/integrationtest/t/globalindex/aggregate.test",
+    "tests/integrationtest/t/globalindex/expression_index.test",
+    "tests/integrationtest/t/globalindex/index_join.test",
+    "tests/integrationtest/t/globalindex/misc.test",
+    "tests/integrationtest/t/globalindex/update.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from test_global use index(idx_b) order by a\").Check(testkit.Rows(\"11 11 11\", \"12 12 12\")) (pkg/ddl/tests/partition/db_partition_test.go)",
+      "files: pkg/ddl/tests/partition/db_partition_test.go, pkg/executor/point_get_test.go, tests/integrationtest/r/ddl/global_index.result, tests/integrationtest/r/globalindex/aggregate.result, tests/integrationtest/r/globalindex/expression_index.result, tests/integrationtest/r/globalindex/index_join.result, tests/integrationtest/r/globalindex/misc.result, tests/integrationtest/r/globalindex/update.result, tests/integrationtest/t/ddl/global_index.test, tests/integrationtest/t/globalindex/aggregate.test, tests/integrationtest/t/globalindex/expression_index.test, tests/integrationtest/t/globalindex/index_join.test, tests/integrationtest/t/globalindex/misc.test, tests/integrationtest/t/globalindex/update.test"
+    ]
+  },
+  "analysis": "PR title: tests: add some test cases for global index\nPR url: https://github.com/pingcap/tidb/pull/53630\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from test_global use index(idx_b) order by a\").Check(testkit.Rows(\"11 11 11\", \"12 12 12\")) (pkg/ddl/tests/partition/db_partition_test.go)\nChanged files (14): pkg/ddl/tests/partition/db_partition_test.go, pkg/executor/point_get_test.go, tests/integrationtest/r/ddl/global_index.result, tests/integrationtest/r/globalindex/aggregate.result, tests/integrationtest/r/globalindex/expression_index.result, tests/integrationtest/r/globalindex/index_join.result, tests/integrationtest/r/globalindex/misc.result, tests/integrationtest/r/globalindex/update.result, tests/integrationtest/t/ddl/global_index.test, tests/integrationtest/t/globalindex/aggregate.test, tests/integrationtest/t/globalindex/expression_index.test, tests/integrationtest/t/globalindex/index_join.test, tests/integrationtest/t/globalindex/misc.test, tests/integrationtest/t/globalindex/update.test\nPatch url: https://github.com/pingcap/tidb/pull/53630.patch\nPicked test: type=integration path=tests/integrationtest/r/ddl/global_index.result name=global_index"
+}

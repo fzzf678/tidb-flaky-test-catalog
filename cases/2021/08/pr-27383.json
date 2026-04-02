@@ -1,0 +1,46 @@
+{
+  "id": "pr-27383",
+  "source_pr": {
+    "number": 27383,
+    "url": "https://github.com/pingcap/tidb/pull/27383",
+    "title": "planner: fix tablesample 'order by' clause from partitioned table",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #27349 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\n\r\n```sql\r\ndrop table if exists t;\r\ncreate table t (a int, b int, unique key idx(a)) partition by range (a) (\r\n    partition p0 values less than (0),\r\n    partition p1 values less than (10),\r\n    partition p2 values less than (30),\r\n    partition p3 values less than (maxvalue)\r\n);\r\ninsert into t values (2, 2), (31, 31), (12, 12);\r\nselect _tidb_rowid from t tablesample regions() order by _tidb_rowid;\r\n\r\n+-------------+\r\n| _tidb_rowid |\r\n+-------------+\r\n|           1 |\r\n|           3 |\r\n|           2 |\r\n+-------------+\r\n3 rows in set (0.01 sec)\r\n\r\n```\r\n\r\nThe result is not sorted by _tidb_rowid. For details, see https://github.com/pingcap/tidb/issues/27349#issuecomment-901703168.\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed: \r\n\r\nPrevent generating a keep-ordered `PhysicalTableSample` plan for partitioned tables. \r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n```release-note\r\nFix an issue that the `TABLESAMPLE` query result from partitioned tables is not sorted as expected.\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-08-20T11:54:01+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/sample_test.go",
+    "name": "sample_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select _tidb_rowid from t tablesample regions() order by _tidb_rowid;\"). (executor/sample_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select _tidb_rowid from t tablesample regions() order by _tidb_rowid;\"). (executor/sample_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select _tidb_rowid from t tablesample regions() order by _tidb_rowid;\"). (executor/sample_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/27383",
+    "https://github.com/pingcap/tidb/pull/27383.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/27383.patch",
+  "changed_files": [
+    "executor/sample_test.go",
+    "planner/core/find_best_task.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select _tidb_rowid from t tablesample regions() order by _tidb_rowid;\"). (executor/sample_test.go)",
+      "files: executor/sample_test.go, planner/core/find_best_task.go"
+    ]
+  },
+  "analysis": "PR title: planner: fix tablesample 'order by' clause from partitioned table\nPR url: https://github.com/pingcap/tidb/pull/27383\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select _tidb_rowid from t tablesample regions() order by _tidb_rowid;\"). (executor/sample_test.go)\nChanged files (2): executor/sample_test.go, planner/core/find_best_task.go\nPatch series analyzed; see patch_url."
+}

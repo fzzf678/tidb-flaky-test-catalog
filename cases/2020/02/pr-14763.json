@@ -1,0 +1,46 @@
+{
+  "id": "pr-14763",
+  "source_pr": {
+    "number": 14763,
+    "url": "https://github.com/pingcap/tidb/pull/14763",
+    "title": "test: fix unit test TestInDecimal",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nfix unit test `TestInDecimal`\r\n\r\n\r\n### What is changed and how it works?\r\nwhen a float64 values is small enough, the `fmt` will format is like 「3.242530532696997e-05」 thus the 「0」 appended will contribute to the exponents instead of fraction cause parse decimal return error 「`ErrTruncated`」\r\n\r\nclose #14758  \r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n - Manual test (add detailed scripts or steps below)\r\n - No code\r\n"
+  },
+  "pr_merged_at": "2020-02-13T19:45:06+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/builtin_other_vec_test.go",
+    "name": "TestInDecimal"
+  },
+  "symptoms": [
+    "PR body: small float64 may format like \"3.2425e-05\"; appending \"00\" makes exponent parse fail (ErrTruncated)."
+  ],
+  "failure_signature": "PR body: small float64 may format like \"3.2425e-05\"; appending \"00\" makes exponent parse fail (ErrTruncated).",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test: fix unit test TestInDecimal",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/14763",
+    "https://github.com/pingcap/tidb/pull/14763.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/14763.patch",
+  "changed_files": [
+    "expression/builtin_other_vec_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body: small float64 may format like \"3.2425e-05\"; appending \"00\" makes exponent parse fail (ErrTruncated).",
+      "evidence: diff changes random value generation from fmt.Sprintf(\"%v\", float64(rand.Intn(1000))+rand.Float64()) to fmt.Sprintf(\"%d.%d\", rand.Intn(1000), rand.Int31()) to avoid scientific notation (expression/builtin_other_vec_test.go).",
+      "files: expression/builtin_other_vec_test.go"
+    ]
+  },
+  "analysis": "PR title: test: fix unit test TestInDecimal\nPR url: https://github.com/pingcap/tidb/pull/14763\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body: small float64 may format like \"3.2425e-05\"; appending \"00\" makes exponent parse fail (ErrTruncated).\nChanged files (1): expression/builtin_other_vec_test.go\nPatch url: https://github.com/pingcap/tidb/pull/14763.patch\nPicked test: type=unit path=expression/builtin_other_vec_test.go name=TestInDecimal"
+}

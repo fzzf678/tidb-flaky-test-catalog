@@ -1,0 +1,74 @@
+{
+  "id": "pr-64100",
+  "source_pr": {
+    "number": 64100,
+    "url": "https://github.com/pingcap/tidb/pull/64100",
+    "title": "dxf: add metrics for alert purpose in nextgen",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #61702\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n- 4 new series of metrics are added, 2 of which have `task_id` as labels, so they are deleted when related scheduler or executor exit\r\n- fix the issue that DXF and import-into metrics doesn't contain the global const labels(currently, only keyspace_name)\r\n- enlarge the update interval of metric related info to 15s\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\n<details><summary>below are the test for related alerts</summary>\r\n<p>\r\n\r\n![img_v3_02ra_5a41962d-ea55-4e51-b089-7acda3f1dceg](https://github.com/user-attachments/assets/8171edb2-ec8a-4cf9-9eaa-f4d95940e895)\r\n![img_v3_02ra_623fd456-1f57-44c8-94d4-a78cc579ac4g](https://github.com/user-attachments/assets/b827fad2-7124-446c-9044-261b9620f412)\r\n![img_v3_02ra_85ae1525-cce8-47f1-8556-7b947bbf8beg](https://github.com/user-attachments/assets/fc1a07ea-4b5a-4337-a72a-589a2ef448c6)\r\n![img_v3_02ra_f1f68fdc-c9f3-4631-bd7b-c591a9daa76g](https://github.com/user-attachments/assets/714c6217-1411-4f40-9c90-dad3a6abb5b3)\r\n![img_v3_02ra_f892ad92-51ef-423f-9a69-225d6e3fa4eg](https://github.com/user-attachments/assets/c874707a-f730-43f5-8d5f-a79e9f11764b)\r\n![img_v3_02ra_0a6a8333-543f-415e-bc1b-c6a10773625g](https://github.com/user-attachments/assets/6a55e758-4637-4bb6-8276-357461d629c5)\r\n![img_v3_02ra_375d18bc-cade-492b-9f73-b3e92f85b13g](https://github.com/user-attachments/assets/df855eaa-140c-4f35-a65a-ce9811b11423)\r\n![img_v3_02ra_f8ac452e-30b9-4016-b656-65792549666g](https://github.com/user-attachments/assets/6599a414-16f5-435b-99bb-52ebbd274024)\r\n\r\n\r\n</p>\r\n</details> \r\n\r\nsome metrics during import. we can see the old metrics have the `keyspace_name` label now\r\n```\r\ntidb_disttask_task_status{keyspace_name=\"SYSTEM\",status=\"running\",task_type=\"ImportInto\"} 1\r\ntidb_disttask_used_slots{keyspace_name=\"SYSTEM\",service_scope=\"dxf_service\"} 1\r\ntidb_dxf_execute_event_total{event=\"subtask-slow\",keyspace_name=\"SYSTEM\",task_id=\"2\"} 1\r\ntidb_dxf_finished_task_total{keyspace_name=\"SYSTEM\",state=\"all\"} 1\r\ntidb_dxf_finished_task_total{keyspace_name=\"SYSTEM\",state=\"succeed\"} 1\r\ntidb_dxf_schedule_event_total{event=\"subtask-slow\",keyspace_name=\"SYSTEM\",task_id=\"2\"} 1\r\ntidb_dxf_schedule_event_total{event=\"too-many-idx\",keyspace_name=\"SYSTEM\",task_id=\"2\"} 1\r\ntidb_dxf_worker_count{keyspace_name=\"SYSTEM\",type=\"current\"} 1\r\ntidb_dxf_worker_count{keyspace_name=\"SYSTEM\",type=\"required\"} 1\r\ntidb_import_block_deliver_bytes_bucket{keyspace_name=\"SYSTEM\",kind=\"data\",task_id=\"2\",le=\"512\"} 0\r\ntidb_import_block_deliver_bytes_bucket{keyspace_name=\"SYSTEM\",kind=\"data\",task_id=\"2\",le=\"1024\"} 0\r\ntidb_import_block_deliver_bytes_bucket{keyspace_name=\"SYSTEM\",kind=\"data\",task_id=\"2\",le=\"2048\"} 0\r\ntidb_import_block_deliver_bytes_bucket{keyspace_name=\"SYSTEM\",kind=\"data\",task_id=\"2\",le=\"4096\"} 0\r\n```\r\n\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-10-27T15:27:32+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/ddl/tests/partition/error_injection_test.go",
+    "name": "error_injection_test"
+  },
+  "symptoms": [
+    "t.Cleanup(func() { (pkg/disttask/framework/scheduler/scheduler_nokit_test.go)"
+  ],
+  "failure_signature": "t.Cleanup(func() { (pkg/disttask/framework/scheduler/scheduler_nokit_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "4 new series of metrics are added, 2 of which have `task_id` as labels, so they are deleted when related scheduler or executor exit fix the issue that DXF and import-into metrics doesn't contain the global const labels(currently, only keyspace_name) enlarge the update interval of metric related info to 15s",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/64100",
+    "https://github.com/pingcap/tidb/pull/64100.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/64100.patch",
+  "changed_files": [
+    "pkg/ddl/BUILD.bazel",
+    "pkg/ddl/backfilling_dist_scheduler.go",
+    "pkg/ddl/tests/partition/error_injection_test.go",
+    "pkg/disttask/framework/dxfmetric/BUILD.bazel",
+    "pkg/disttask/framework/dxfmetric/collector.go",
+    "pkg/disttask/framework/dxfmetric/metric.go",
+    "pkg/disttask/framework/handle/status.go",
+    "pkg/disttask/framework/handle/status_test.go",
+    "pkg/disttask/framework/scheduler/BUILD.bazel",
+    "pkg/disttask/framework/scheduler/scheduler.go",
+    "pkg/disttask/framework/scheduler/scheduler_manager.go",
+    "pkg/disttask/framework/scheduler/scheduler_nokit_test.go",
+    "pkg/disttask/framework/scheduler/scheduler_test.go",
+    "pkg/disttask/framework/taskexecutor/BUILD.bazel",
+    "pkg/disttask/framework/taskexecutor/manager.go",
+    "pkg/disttask/framework/taskexecutor/task_executor.go",
+    "pkg/disttask/importinto/BUILD.bazel",
+    "pkg/disttask/importinto/scheduler.go",
+    "pkg/domain/ru_stats_test.go",
+    "pkg/executor/point_get_test.go",
+    "pkg/executor/sortexec/sort_test.go",
+    "pkg/metrics/BUILD.bazel",
+    "pkg/metrics/common/BUILD.bazel",
+    "pkg/metrics/common/wrapper.go",
+    "pkg/metrics/common/wrapper_test.go",
+    "pkg/metrics/disttask.go",
+    "pkg/metrics/import.go",
+    "pkg/metrics/metrics.go",
+    "pkg/planner/core/plan_cache_test.go",
+    "pkg/server/tests/cursor/cursor_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: t.Cleanup(func() { (pkg/disttask/framework/scheduler/scheduler_nokit_test.go)",
+      "files: pkg/ddl/BUILD.bazel, pkg/ddl/backfilling_dist_scheduler.go, pkg/ddl/tests/partition/error_injection_test.go, pkg/disttask/framework/dxfmetric/BUILD.bazel, pkg/disttask/framework/dxfmetric/collector.go, pkg/disttask/framework/dxfmetric/metric.go, pkg/disttask/framework/handle/status.go, pkg/disttask/framework/handle/status_test.go, pkg/disttask/framework/scheduler/BUILD.bazel, pkg/disttask/framework/scheduler/scheduler.go, pkg/disttask/framework/scheduler/scheduler_manager.go, pkg/disttask/framework/scheduler/scheduler_nokit_test.go, ..."
+    ]
+  },
+  "analysis": "PR title: dxf: add metrics for alert purpose in nextgen\nPR url: https://github.com/pingcap/tidb/pull/64100\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: t.Cleanup(func() { (pkg/disttask/framework/scheduler/scheduler_nokit_test.go)\nChanged files (30): pkg/ddl/BUILD.bazel, pkg/ddl/backfilling_dist_scheduler.go, pkg/ddl/tests/partition/error_injection_test.go, pkg/disttask/framework/dxfmetric/BUILD.bazel, pkg/disttask/framework/dxfmetric/collector.go, pkg/disttask/framework/dxfmetric/metric.go, pkg/disttask/framework/handle/status.go, pkg/disttask/framework/handle/status_test.go, pkg/disttask/framework/scheduler/BUILD.bazel, pkg/disttask/framework/scheduler/scheduler.go, pkg/disttask/framework/scheduler/scheduler_manager.go, pkg/disttask/framework/scheduler/scheduler_nokit_test.go, pkg/disttask/framework/scheduler/scheduler_test.go, pkg/disttask/framework/taskexecutor/BUILD.bazel, pkg/disttask/framework/taskexecutor/manager.go, pkg/disttask/framework/taskexecutor/task_executor.go, pkg/disttask/importinto/BUILD.bazel, pkg/disttask/importinto/scheduler.go, pkg/domain/ru_stats_test.go, pkg/executor/point_get_test.go, pkg/executor/sortexec/sort_test.go, pkg/metrics/BUILD.bazel, pkg/metrics/common/BUILD.bazel, pkg/metrics/common/wrapper.go, pkg/metrics/common/wrapper_test.go, pkg/metrics/disttask.go, pkg/metrics/import.go, pkg/metrics/metrics.go, pkg/planner/core/plan_cache_test.go, pkg/server/tests/cursor/cursor_test.go\nPatch series analyzed; see patch_url."
+}

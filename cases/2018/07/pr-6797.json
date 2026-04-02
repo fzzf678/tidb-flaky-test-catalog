@@ -1,0 +1,63 @@
+{
+  "id": "pr-6797",
+  "source_pr": {
+    "number": 6797,
+    "url": "https://github.com/pingcap/tidb/pull/6797",
+    "title": "*: check the schema-validity when the DDL fails",
+    "body": "Thank you for working on TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n\r\n## What have you changed? (mandatory)\r\n\r\nThe schema in the file of  ddl_api.go may not be the latest. \r\n- If we can't pass the check in ddl_api.go, it will return an error. The reason for this error may be due to the schema version is outdated. So we need to distinguish the error. If the schema is out of date, we will return the error of \"ErrInfoSchemaExpired\" or \"ErrInfoSchemaChanged\".\r\n- If we can pass the check in ddl_api.go, we will check again in ddl_worker.go with the latest schema.\r\n\r\nMove the structure of schemaLeaseChecker to util/schemachecker/schema_checker.go.\r\n\r\n## What are the type of the changes (mandatory)?\r\n\r\n- Improvement (non-breaking change which is an improvement to an existing feature)\r\n- Bug fix (non-breaking change which fixes an issue)\r\n\r\n## How has this PR been tested (mandatory)?\r\n\r\nunit tests.\r\n\r\n## Does this PR affect documentation (docs/docs-cn) update? (optional)\r\n\r\nNo.\r\n\r\n"
+  },
+  "pr_merged_at": "2018-07-09T17:35:05+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/callback_test.go",
+    "name": "callback_test"
+  },
+  "symptoms": [
+    "// It's used for fixing data race in tests."
+  ],
+  "failure_signature": "// It's used for fixing data race in tests.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: check the schema-validity when the DDL fails",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6797",
+    "https://github.com/pingcap/tidb/pull/6797.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6797.patch",
+  "changed_files": [
+    "ddl/callback.go",
+    "ddl/callback_test.go",
+    "ddl/ddl.go",
+    "ddl/ddl_api.go",
+    "ddl/ddl_db_change_test.go",
+    "ddl/ddl_test.go",
+    "ddl/ddl_worker.go",
+    "domain/schema_checker.go",
+    "domain/schema_checker_test.go",
+    "domain/schema_validator.go",
+    "domain/schema_validator_test.go",
+    "executor/ddl.go",
+    "kv/kv.go",
+    "server/server_test.go",
+    "session/session.go",
+    "session/session_test.go",
+    "session/tidb_test.go",
+    "sessionctx/stmtctx/stmtctx.go",
+    "store/tikv/2pc.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: // It's used for fixing data race in tests.",
+      "files: ddl/callback.go, ddl/callback_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_db_change_test.go, ddl/ddl_test.go, ddl/ddl_worker.go, domain/domain.go, domain/schema_checker.go, domain/schema_checker_test.go, domain/schema_validator.go, domain/schema_validator_test.go, executor/ddl.go, executor/ddl_fail_test.go, kv/kv.go, server/server_test.go, session/session.go, session/session_test.go, session/tidb_test.go, sessionctx/stmtctx/stmtctx.go, store/tikv/2pc.go, util/schema_checker/schema_checker.go, util/schema_checker/schema_checker_test.go, util/schemachecker/schema_checker.go, util/schemachecker/schema_checker_test.go"
+    ]
+  },
+  "analysis": "PR title: *: check the schema-validity when the DDL fails\nPR url: https://github.com/pingcap/tidb/pull/6797\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // It's used for fixing data race in tests.\nChanged files (19): ddl/callback.go, ddl/callback_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_db_change_test.go, ddl/ddl_test.go, ddl/ddl_worker.go, domain/schema_checker.go, domain/schema_checker_test.go, domain/schema_validator.go, domain/schema_validator_test.go, executor/ddl.go, kv/kv.go, server/server_test.go, session/session.go, session/session_test.go, session/tidb_test.go, sessionctx/stmtctx/stmtctx.go, store/tikv/2pc.go\nPatch url: https://github.com/pingcap/tidb/pull/6797.patch\nPicked test: type=unit path=ddl/callback_test.go name=callback_test"
+}

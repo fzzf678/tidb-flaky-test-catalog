@@ -1,0 +1,56 @@
+{
+  "id": "pr-13908",
+  "source_pr": {
+    "number": 13908,
+    "url": "https://github.com/pingcap/tidb/pull/13908",
+    "title": "tables: basic support for hidden column",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nExpression index is based on hidden column.\r\nThis PR will basicly support hidden column(insert and other functions will be supported in next few PRs):\r\n1. Hidden column can't be selected.\r\n2. Hidden column can't be updated or used as update condition.\r\n3. Hidden column can't be used as delete condition.\r\n4. Hidden column can't be drop by `ALTER TABLE DROP COLUMN` statement.\r\n5. `SHOW CREATE TABLE` statement wouldn't display hidden columns.\r\n\r\n### What is changed and how it works?\r\n1. Add a method `VisibleCols` for interface `table` which will ignore hidden column and replace it with `Cols` in `buildDatasourece`.  Then the hidden columns will not display in plan.schema, and can not be selected, even in order by, group by statement.\r\n2. (1) Since hidden column is used only by generate column, we check that if the generate column is hidden and be modified.  If it is, raise an error.\r\n(2) For `where` and `order by` clause in update statement, we can't skip hidden column in `writableCols`, because we need to fill the assignment and do the update, which need the column infomation of the hidden column. So we skip the hidden column in `toColumn` of `expression_rewriter`.\r\n3. After `1` is done, hidden column can't be used as delete condition.\r\n4. Replace `Cols` with `VisibleCols` in `DropColumn`, then we can't drop the hidden column.\r\n5. After read the public columns by `tableInfo.Cols`(Not the `Cols` mention before) , skip it if it is a hidden column.\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test ( Contained in Integration test)\r\n - Integration test\r\n\r\nCode changes\r\n\r\n\r\n - Has exported variable/fields change\r\n\r\nSide effects\r\n\r\n - Possible performance regression\r\n - Increased code complexity\r\n - Breaking backward compatibility\r\n\r\nRelated changes\r\n\r\n\r\nRelease note\r\n\r\n"
+  },
+  "pr_merged_at": "2019-12-17T21:48:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "+ // We remove this case to stabilize CI, and will reopen this when we fix the issue above. | //_, err = tk.Exec(\"select * from hidden order by b;\") (expression/integration_test.go)"
+  ],
+  "failure_signature": "+ // We remove this case to stabilize CI, and will reopen this when we fix the issue above. | //_, err = tk.Exec(\"select * from hidden order by b;\") (expression/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13908",
+    "https://github.com/pingcap/tidb/pull/13908.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13908.patch",
+  "changed_files": [
+    "ddl/column.go",
+    "ddl/ddl_api.go",
+    "executor/show.go",
+    "expression/column.go",
+    "infoschema/perfschema/tables.go",
+    "infoschema/tables.go",
+    "planner/core/expression_rewriter.go",
+    "planner/core/logical_plan_builder.go",
+    "table/table.go",
+    "table/tables/tables.go",
+    "table/tables/tables_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: + // We remove this case to stabilize CI, and will reopen this when we fix the issue above. | //_, err = tk.Exec(\"select * from hidden order by b;\") (expression/integration_test.go)",
+      "files: ddl/column.go, ddl/column_test.go, ddl/db_integration_test.go, ddl/ddl_api.go, domain/schema_validator_test.go, executor/adapter.go, executor/analyze.go, executor/analyze_test.go, executor/bind.go, executor/compiler.go, executor/executor.go, executor/executor_test.go, executor/load_stats.go, executor/metrics_test.go, executor/prepared.go, executor/show.go, executor/show_stats_test.go, executor/simple.go, executor/table_readers_required_rows_test.go, expression/builtin.go, expression/builtin_json.go, expression/builtin_json_vec.go, expression/builtin_json_vec_test.go, expression/builtin_math.go, expression/builtin_time_vec_test.go, expression/column.go, expression/constant.go, expression/errors.go, expression/expression.go, expression/integration_test.go, expression/scalar_function.go, expression/util_test.go, go.mod, go.sum, infoschema/infoschema.go, infoschema/perfschema/tables.go, infoschema/tables.go, planner/cascades/testdata/integration_suite_out.json, planner/cascades/testdata/transformation_rules_suite_in.json, planner/cascades/testdata/transformation_rules_suite_out.json, planner/cascades/transformation_rules.go, planner/cascades/transformation_rules_test.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, session/session.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session.go, sessionctx/variable/varsutil.go, statistics/feedback.go, statistics/handle/update.go, store/tikv/oracle/oracles/pd.go, table/column.go, table/table.go, table/tables/partition.go, table/tables/tables.go, table/tables/tables_test.go, types/datum.go, types/datum_test.go, types/json/binary_functions.go, types/mydecimal.go, util/expensivequery/expensivequery.go"
+    ]
+  },
+  "analysis": "PR title: tables: basic support for hidden column\nPR url: https://github.com/pingcap/tidb/pull/13908\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: + // We remove this case to stabilize CI, and will reopen this when we fix the issue above. | //_, err = tk.Exec(\"select * from hidden order by b;\") (expression/integration_test.go)\nChanged files (11): ddl/column.go, ddl/ddl_api.go, executor/show.go, expression/column.go, infoschema/perfschema/tables.go, infoschema/tables.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, table/table.go, table/tables/tables.go, table/tables/tables_test.go\nPatch url: https://github.com/pingcap/tidb/pull/13908.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+}

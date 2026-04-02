@@ -1,0 +1,63 @@
+{
+  "id": "pr-51652",
+  "source_pr": {
+    "number": 51652,
+    "url": "https://github.com/pingcap/tidb/pull/51652",
+    "title": "txn: save RPCs for Pipelined-DML",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #51625\r\n\r\nProblem Summary:\r\n\r\nFor pipelined DML, `membuffer.Get()` may involve a RPC which is too expensive.\r\n\r\nI searched all places in TiDB where this method is used:\r\n- `batch_point_get.go`: this is used for cached table, which is incompatible by design, ignore it.\r\n- `point_get.go`: a pipelined-dml is not designed for point-get, do not optimize it now.\r\n- `unionstore_driver.go`: pass-through methods, ignore it.\r\n- `index.go`\r\n  - `index.Create`: **for untouched flag**. We disable the untouched optimization temporarily.\r\n  - `index.Create`: **Read value**. We enforce that P-DML must lazily do existence check, and set `PresumeNotExist` flag if local memory doesn't contain the value.\r\n  - `index.Delete` for partition id. This is not a common case. We do not optimize it in this PR.\r\n- `tables.go`: **AddRecord**. We enforce that P-DML must lazily do existence check, and set `PresumeNotExist` flag if local memory doesn't contain the value.\r\n\r\nThis PR handles \r\n1. The **bold** items listed above. It solves the performance problem for the basic `INSERT` statement. \r\n2. For `REPLACE`, `INSERT IGNORE` and `INSERT ON DUPLICATE KEY UPDATE` statements, we do BatchGet to prefetch the keys just like the snapshot cache, so that later `membuffer.Get()` can use the cache to reduce RPCs.\r\n\r\nDepends on https://github.com/tikv/client-go/pull/1212\r\n\r\n### What changed and how does it work?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test: we set `tidb_dml_type=bulk` for all TiDB UT and checked all failures.\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-03-16T19:59:11+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "tests/realtikvtest/pipelineddmltest/pipelineddml_test.go",
+    "name": "TestReplaceRowCheck"
+  },
+  "symptoms": [
+    "err := tk.ExecToErr(\"insert into _t1 select * from t1 order by rand()\") (tests/realtikvtest/pipelineddmltest/pipelineddml_test.go)"
+  ],
+  "failure_signature": "err := tk.ExecToErr(\"insert into _t1 select * from t1 order by rand()\") (tests/realtikvtest/pipelineddmltest/pipelineddml_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/51652",
+    "https://github.com/pingcap/tidb/pull/51652.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/51652.patch",
+  "changed_files": [
+    "DEPS.bzl",
+    "br/pkg/lightning/backend/kv/session.go",
+    "go.mod",
+    "go.sum",
+    "pkg/executor/delete.go",
+    "pkg/executor/insert.go",
+    "pkg/executor/replace.go",
+    "pkg/executor/update.go",
+    "pkg/kv/interface_mock_test.go",
+    "pkg/kv/kv.go",
+    "pkg/session/session.go",
+    "pkg/store/driver/txn/batch_getter.go",
+    "pkg/store/driver/txn/batch_getter_test.go",
+    "pkg/store/driver/txn/txn_driver.go",
+    "pkg/store/driver/txn/unionstore_driver.go",
+    "pkg/store/mockstore/unistore/tikv/mvcc.go",
+    "pkg/table/tables/index.go",
+    "pkg/table/tables/tables.go",
+    "tests/realtikvtest/pipelineddmltest/pipelineddml_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: err := tk.ExecToErr(\"insert into _t1 select * from t1 order by rand()\") (tests/realtikvtest/pipelineddmltest/pipelineddml_test.go)",
+      "files: DEPS.bzl, br/pkg/lightning/backend/kv/session.go, go.mod, go.sum, pkg/executor/delete.go, pkg/executor/insert.go, pkg/executor/replace.go, pkg/executor/update.go, pkg/kv/interface_mock_test.go, pkg/kv/kv.go, pkg/session/session.go, pkg/store/driver/txn/batch_getter.go, pkg/store/driver/txn/batch_getter_test.go, pkg/store/driver/txn/txn_driver.go, pkg/store/driver/txn/unionstore_driver.go, pkg/store/mockstore/unistore/tikv/mvcc.go, pkg/table/tables/index.go, pkg/table/tables/tables.go, tests/realtikvtest/pipelineddmltest/pipelineddml_test.go"
+    ]
+  },
+  "analysis": "PR title: txn: save RPCs for Pipelined-DML\nPR url: https://github.com/pingcap/tidb/pull/51652\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: err := tk.ExecToErr(\"insert into _t1 select * from t1 order by rand()\") (tests/realtikvtest/pipelineddmltest/pipelineddml_test.go)\nChanged files (19): DEPS.bzl, br/pkg/lightning/backend/kv/session.go, go.mod, go.sum, pkg/executor/delete.go, pkg/executor/insert.go, pkg/executor/replace.go, pkg/executor/update.go, pkg/kv/interface_mock_test.go, pkg/kv/kv.go, pkg/session/session.go, pkg/store/driver/txn/batch_getter.go, pkg/store/driver/txn/batch_getter_test.go, pkg/store/driver/txn/txn_driver.go, pkg/store/driver/txn/unionstore_driver.go, pkg/store/mockstore/unistore/tikv/mvcc.go, pkg/table/tables/index.go, pkg/table/tables/tables.go, tests/realtikvtest/pipelineddmltest/pipelineddml_test.go\nPatch url: https://github.com/pingcap/tidb/pull/51652.patch\nPicked test: type=realtikv path=tests/realtikvtest/pipelineddmltest/pipelineddml_test.go name=TestReplaceRowCheck"
+}

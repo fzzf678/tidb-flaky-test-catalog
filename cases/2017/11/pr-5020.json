@@ -1,0 +1,48 @@
+{
+  "id": "pr-5020",
+  "source_pr": {
+    "number": 5020,
+    "url": "https://github.com/pingcap/tidb/pull/5020",
+    "title": "executor,util/testkit: fix data race in test TestOnlyFullGroupBy",
+    "body": "It should use `MustQuery` rather than `MustExec`, so `result.Close()` would be called."
+  },
+  "pr_merged_at": "2017-11-06T14:59:12+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "TestOnlyFullGroupBy"
+  },
+  "symptoms": [
+    "executor,util/testkit: fix data race in test TestOnlyFullGroupBy | tk.MustQuery(\"select c from t group by c,d order by d\") (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "executor,util/testkit: fix data race in test TestOnlyFullGroupBy | tk.MustQuery(\"select c from t group by c,d order by d\") (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5020",
+    "https://github.com/pingcap/tidb/pull/5020.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5020.patch",
+  "changed_files": [
+    "executor/aggregate_test.go",
+    "structure/structure_test.go",
+    "util/testkit/testkit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: executor,util/testkit: fix data race in test TestOnlyFullGroupBy | tk.MustQuery(\"select c from t group by c,d order by d\") (executor/aggregate_test.go)",
+      "files: executor/aggregate_test.go, structure/structure_test.go, util/testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: executor,util/testkit: fix data race in test TestOnlyFullGroupBy\nPR url: https://github.com/pingcap/tidb/pull/5020\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: executor,util/testkit: fix data race in test TestOnlyFullGroupBy | tk.MustQuery(\"select c from t group by c,d order by d\") (executor/aggregate_test.go)\nChanged files (3): executor/aggregate_test.go, structure/structure_test.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/5020.patch\nPicked test: type=unit path=executor/aggregate_test.go name=TestOnlyFullGroupBy"
+}

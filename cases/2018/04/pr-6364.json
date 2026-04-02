@@ -1,0 +1,47 @@
+{
+  "id": "pr-6364",
+  "source_pr": {
+    "number": 6364,
+    "url": "https://github.com/pingcap/tidb/pull/6364",
+    "title": "distsql: make behavior of `TableHandlesToKVRanges` correct.",
+    "body": "current master cannot pass the added test.\r\nPTAL @zz-jason @lamxTyler @XuHuaiyu "
+  },
+  "pr_merged_at": "2018-04-24T23:36:13+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/distsql_test.go",
+    "name": "distsql_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t use index(idx) order by a\").Check(testkit.Rows(\"1 1 1\", \"9223372036854775807 2 2\")) (executor/distsql_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t use index(idx) order by a\").Check(testkit.Rows(\"1 1 1\", \"9223372036854775807 2 2\")) (executor/distsql_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6364",
+    "https://github.com/pingcap/tidb/pull/6364.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6364.patch",
+  "changed_files": [
+    "distsql/request_builder.go",
+    "distsql/request_builder_test.go",
+    "executor/distsql_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t use index(idx) order by a\").Check(testkit.Rows(\"1 1 1\", \"9223372036854775807 2 2\")) (executor/distsql_test.go)",
+      "files: distsql/request_builder.go, distsql/request_builder_test.go, executor/distsql_test.go"
+    ]
+  },
+  "analysis": "PR title: distsql: make behavior of `TableHandlesToKVRanges` correct.\nPR url: https://github.com/pingcap/tidb/pull/6364\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t use index(idx) order by a\").Check(testkit.Rows(\"1 1 1\", \"9223372036854775807 2 2\")) (executor/distsql_test.go)\nChanged files (3): distsql/request_builder.go, distsql/request_builder_test.go, executor/distsql_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6364.patch\nPicked test: type=unit path=executor/distsql_test.go name=distsql_test"
+}

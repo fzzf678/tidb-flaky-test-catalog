@@ -1,0 +1,45 @@
+{
+  "id": "pr-65330",
+  "source_pr": {
+    "number": 65330,
+    "url": "https://github.com/pingcap/tidb/pull/65330",
+    "title": "server/tests: fix flaky test TestIssue57531",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #65228\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\nIn [TestIssue57531](https://github.com/pingcap/tidb/blob/c51109cbbdec00619066e8afaf5347f926d77eea/pkg/server/tests/commontest/tidb_test.go#L3441), a time-based assertion was introduced to check if the killed session is not shown:\r\n\r\n```\r\n\t\ttime.Sleep(10 * time.Millisecond)\r\n\r\n\t\t// the `select sleep(300)` is killed\r\n\t\tts.RunTests(t, nil, func(dbt *testkit.DBTestKit) {\r\n\t\t\trsCnt = 0\r\n\t\t\trs := dbt.MustQuery(\"show processlist\")\r\n\t\t\tfor rs.Next() {\r\n\t\t\t\trsCnt++\r\n\t\t\t}\r\n\t\t\trequire.Equal(t, rsCnt, 1)\r\n\t\t})\r\n```\r\n\r\nWhen there's a high workload, a sleep of 10 ms is not enough (I can always reproduce the failure when running with 100% CPU usage). I think it is reasonable to loosen this time to 5s for such a situation and still treat it as 'immediate' compared with `select sleep(300)`. \r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- None(test only)\r\n\r\nDocumentation\r\n\r\n- None(test only)\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-12-30T10:33:41+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/server/tests/commontest/tidb_test.go",
+    "name": "TestIssue57531"
+  },
+  "symptoms": [
+    "server/tests: fix flaky test TestIssue57531"
+  ],
+  "failure_signature": "server/tests: fix flaky test TestIssue57531",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "In [TestIssue57531](https://github.com/pingcap/tidb/blob/c51109cbbdec00619066e8afaf5347f926d77eea/pkg/server/tests/commontest/tidb_test.go#L3441), a time-based assertion was introduced to check if the killed session is not shown:",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/65330",
+    "https://github.com/pingcap/tidb/pull/65330.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/65330.patch",
+  "changed_files": [
+    "pkg/server/tests/commontest/tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: server/tests: fix flaky test TestIssue57531",
+      "files: pkg/server/tests/commontest/tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: server/tests: fix flaky test TestIssue57531\nPR url: https://github.com/pingcap/tidb/pull/65330\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: server/tests: fix flaky test TestIssue57531\nChanged files (1): pkg/server/tests/commontest/tidb_test.go\nPatch series analyzed; see patch_url."
+}

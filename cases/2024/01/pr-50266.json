@@ -1,0 +1,60 @@
+{
+  "id": "pr-50266",
+  "source_pr": {
+    "number": 50266,
+    "url": "https://github.com/pingcap/tidb/pull/50266",
+    "title": "disttask: change extra running subtasks to pending",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #49008\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n- change extra running subtasks to pending, so they could be balanced to other node\r\n- fix bug that `startCancelCheck` queries all subtasks, but we only schedule subtasks of current step during balance.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-01-12T11:48:25+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/disttask/framework/storage/table_test.go",
+    "name": "TestWaitGroupWrapperGo"
+  },
+  "symptoms": [
+    "order by task_key, exec_id, state`) (pkg/disttask/framework/storage/table_test.go)"
+  ],
+  "failure_signature": "order by task_key, exec_id, state`) (pkg/disttask/framework/storage/table_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/50266",
+    "https://github.com/pingcap/tidb/pull/50266.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/50266.patch",
+  "changed_files": [
+    "pkg/ddl/backfilling_dist_executor.go",
+    "pkg/disttask/framework/mock/task_executor_mock.go",
+    "pkg/disttask/framework/proto/subtask.go",
+    "pkg/disttask/framework/storage/BUILD.bazel",
+    "pkg/disttask/framework/storage/table_test.go",
+    "pkg/disttask/framework/storage/task_table.go",
+    "pkg/disttask/framework/taskexecutor/BUILD.bazel",
+    "pkg/disttask/framework/taskexecutor/interface.go",
+    "pkg/disttask/framework/taskexecutor/main_test.go",
+    "pkg/disttask/framework/taskexecutor/task_executor.go",
+    "pkg/disttask/framework/taskexecutor/task_executor_test.go",
+    "pkg/disttask/framework/testutil/disttest_util.go",
+    "pkg/disttask/framework/testutil/executor_util.go",
+    "pkg/disttask/importinto/task_executor.go",
+    "pkg/util/wait_group_wrapper.go",
+    "pkg/util/wait_group_wrapper_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: order by task_key, exec_id, state`) (pkg/disttask/framework/storage/table_test.go)",
+      "files: pkg/ddl/backfilling_dist_executor.go, pkg/disttask/framework/mock/task_executor_mock.go, pkg/disttask/framework/proto/subtask.go, pkg/disttask/framework/storage/BUILD.bazel, pkg/disttask/framework/storage/table_test.go, pkg/disttask/framework/storage/task_table.go, pkg/disttask/framework/taskexecutor/BUILD.bazel, pkg/disttask/framework/taskexecutor/interface.go, pkg/disttask/framework/taskexecutor/main_test.go, pkg/disttask/framework/taskexecutor/task_executor.go, pkg/disttask/framework/taskexecutor/task_executor_test.go, pkg/disttask/framework/testutil/disttest_util.go, pkg/disttask/framework/testutil/executor_util.go, pkg/disttask/importinto/task_executor.go, pkg/util/wait_group_wrapper.go, pkg/util/wait_group_wrapper_test.go"
+    ]
+  },
+  "analysis": "PR title: disttask: change extra running subtasks to pending\nPR url: https://github.com/pingcap/tidb/pull/50266\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: order by task_key, exec_id, state`) (pkg/disttask/framework/storage/table_test.go)\nChanged files (16): pkg/ddl/backfilling_dist_executor.go, pkg/disttask/framework/mock/task_executor_mock.go, pkg/disttask/framework/proto/subtask.go, pkg/disttask/framework/storage/BUILD.bazel, pkg/disttask/framework/storage/table_test.go, pkg/disttask/framework/storage/task_table.go, pkg/disttask/framework/taskexecutor/BUILD.bazel, pkg/disttask/framework/taskexecutor/interface.go, pkg/disttask/framework/taskexecutor/main_test.go, pkg/disttask/framework/taskexecutor/task_executor.go, pkg/disttask/framework/taskexecutor/task_executor_test.go, pkg/disttask/framework/testutil/disttest_util.go, pkg/disttask/framework/testutil/executor_util.go, pkg/disttask/importinto/task_executor.go, pkg/util/wait_group_wrapper.go, pkg/util/wait_group_wrapper_test.go\nPatch url: https://github.com/pingcap/tidb/pull/50266.patch\nPicked test: type=unit path=pkg/disttask/framework/storage/table_test.go name=TestWaitGroupWrapperGo"
+}

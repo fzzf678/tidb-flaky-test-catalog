@@ -1,0 +1,46 @@
+{
+  "id": "pr-14879",
+  "source_pr": {
+    "number": 14879,
+    "url": "https://github.com/pingcap/tidb/pull/14879",
+    "title": "case: make TestSkipLargeTxnLock more stable",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nThe lock_test.go will set lock-related global variables to small values\r\n```\r\n\t// Speed up tests.\r\n\tdefaultLockTTL = 3\r\n\tmaxLockTTL = 120\r\n\tttlFactor = 6\r\n\toracleUpdateInterval = 2\r\n``` \r\n\r\nFor case `testSnapshotSuite.TestSkipLargeTxnLock`, the original logic will calculate lock ttl as `18`, \r\nwhich may cause the lock expire testing with tikv, integration tests may fail like\r\n[link](https://internal.pingcap.net/idc-jenkins/blue/rest/organizations/jenkins/pipelines/tidb_ghpr_integration_common_test/runs/9616/nodes/119/steps/313/log/?start=0)\r\n```\r\nFAIL: snapshot_test.go:213: testSnapshotSuite.TestSkipLargeTxnLock^M\r\nsnapshot_test.go:237:^M\r\nc.Assert(committer.commitKeys(bo, committer.keys), IsNil)^M\r\n... value *errors.withStack = [kv:8022]Error: KV error safe to retry Txn(Mvcc(TxnLockNotFound { start_ts: TimeStamp(414697167142256691), commit_ts: TimeStamp(414697167142256692), key: [120, 95, 107, 101, 121, 95, 84, 101, 115, 116, 83, 107, 105, 112, 76, 97, 114, 103, 101, 84, 120, 110, 76, 111, 99, 107] })) []byte{0x78, 0x5f, 0x6b, 0x65, 0x79, 0x5f, 0x54, 0x65, 0x73, 0x74, 0x53, 0x6b, 0x69, 0x70, 0x4c, 0x61, 0x72, 0x67, 0x65, 0x54, 0x78, 0x6e, 0x4c, 0x6f, 0x63, 0x6b} [try again later] (\"[kv:8022]Error: KV error safe to retry Txn(Mvcc(TxnLockNotFound { start_ts: TimeStamp(414697167142256691), commit_ts: TimeStamp(414697167142256692), key: [120, 95, 107, 101, 121, 95, 84, 101, 115, 116, 83, 107, 105, 112, 76, 97, 114, 103, 101, 84, 120, 110, 76, 111, 99, 107] })) []byte{0x78, 0x5f, 0x6b, 0x65, 0x79, 0x5f, 0x54, 0x65, 0x73, 0x74, 0x53, 0x6b, 0x69, 0x70, 0x4c, 0x61, 0x72, 0x67, 0x65, 0x54, 0x78, 0x6e, 0x4c, 0x6f, 0x63, 0x6b} [try again later]\")^M\r\n```\r\n\r\n### What is changed and how it works?\r\n\r\nSet lock ttl to original default value as constant\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\n\r\nCode changes\r\n\r\n\r\n\r\nSide effects\r\n\r\n\r\n\r\nRelated changes\r\n\r\n\r\n\r\nRelease note\r\n\r\n\r\n"
+  },
+  "pr_merged_at": "2020-02-21T15:49:42+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/snapshot_test.go",
+    "name": "TestSkipLargeTxnLock"
+  },
+  "symptoms": [
+    "PR body explains integration test failures when lock-related global variables are set small; lock ttl may expire in CI."
+  ],
+  "failure_signature": "PR body explains integration test failures when lock-related global variables are set small; lock ttl may expire in CI.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "case: make TestSkipLargeTxnLock more stable",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/14879",
+    "https://github.com/pingcap/tidb/pull/14879.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/14879.patch",
+  "changed_files": [
+    "store/tikv/snapshot_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body explains integration test failures when lock-related global variables are set small; lock ttl may expire in CI.",
+      "evidence: diff sets committer.lockTTL to a constant 3000 to avoid expiry (store/tikv/snapshot_test.go).",
+      "files: store/tikv/snapshot_test.go"
+    ]
+  },
+  "analysis": "PR title: case: make TestSkipLargeTxnLock more stable\nPR url: https://github.com/pingcap/tidb/pull/14879\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body explains integration test failures when lock-related global variables are set small; lock ttl may expire in CI.\nChanged files (1): store/tikv/snapshot_test.go\nPatch url: https://github.com/pingcap/tidb/pull/14879.patch\nPicked test: type=unit path=store/tikv/snapshot_test.go name=TestSkipLargeTxnLock"
+}

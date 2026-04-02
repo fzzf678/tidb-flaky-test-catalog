@@ -1,0 +1,69 @@
+{
+  "id": "pr-32922",
+  "source_pr": {
+    "number": 32922,
+    "url": "https://github.com/pingcap/tidb/pull/32922",
+    "title": "txn: support read consistency read with ts checking",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #33159 \r\n\r\nProblem Summary:\r\nTry to support the read-consistency read with tso checking optimization.\r\n\r\n### What is changed and how it works?\r\n\r\n- A new execution path for in-transaction read-consistency read is added, in which the first time execution last valid ts will be used as the `for_update_ts`. If the read check has failed, the select statement will be retried only if no result chunk has been sent back to the mysql client yet , a new global ts will be fetched doing retry.\r\n- A new system variable `tidb_rc_read_check_ts` is added to control whether the new path will be used, the default value is false.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n\r\n\r\nSide effects\r\n\r\n\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains variable changes\r\n\r\n\r\n### Release note\r\n\r\n<!-- bugfix or new feature needs a release note -->\r\n\r\n```release-note\r\nSupport the read-consistency read with ts checking optimization.\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-03-16T20:49:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "server/tidb_test.go",
+    "name": "tidb_test"
+  },
+  "symptoms": [
+    "rows = tk.MustQuery(\"select * from t1 order by c1 desc\") (server/tidb_test.go)"
+  ],
+  "failure_signature": "rows = tk.MustQuery(\"select * from t1 order by c1 desc\") (server/tidb_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/32922",
+    "https://github.com/pingcap/tidb/pull/32922.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/32922.patch",
+  "changed_files": [
+    "distsql/request_builder.go",
+    "executor/adapter.go",
+    "executor/batch_point_get.go",
+    "executor/builder.go",
+    "executor/executor.go",
+    "executor/point_get.go",
+    "kv/kv.go",
+    "server/conn.go",
+    "server/conn_stmt.go",
+    "server/tidb_test.go",
+    "session/session.go",
+    "sessionctx/stmtctx/stmtctx.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "store/copr/coprocessor.go",
+    "store/driver/txn/snapshot.go",
+    "store/mockstore/unistore/cophandler/cop_handler.go",
+    "store/mockstore/unistore/tikv/dbreader/db_reader.go",
+    "store/mockstore/unistore/tikv/deadlock.go",
+    "store/mockstore/unistore/tikv/detector.go",
+    "store/mockstore/unistore/tikv/kverrors/errors.go",
+    "store/mockstore/unistore/tikv/mvcc.go",
+    "store/mockstore/unistore/tikv/mvcc_test.go",
+    "store/mockstore/unistore/tikv/server.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rows = tk.MustQuery(\"select * from t1 order by c1 desc\") (server/tidb_test.go)",
+      "files: distsql/request_builder.go, executor/adapter.go, executor/batch_point_get.go, executor/builder.go, executor/executor.go, executor/point_get.go, kv/kv.go, server/conn.go, server/conn_stmt.go, server/tidb_test.go, session/session.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, store/copr/coprocessor.go, store/driver/txn/snapshot.go, store/mockstore/unistore/cophandler/cop_handler.go, store/mockstore/unistore/tikv/dbreader/db_reader.go, store/mockstore/unistore/tikv/deadlock.go, store/mockstore/unistore/tikv/detector.go, store/mockstore/unistore/tikv/kverrors/errors.go, store/mockstore/unistore/tikv/mvcc.go, store/mockstore/unistore/tikv/mvcc_test.go, store/mockstore/unistore/tikv/server.go"
+    ]
+  },
+  "analysis": "PR title: txn: support read consistency read with ts checking\nPR url: https://github.com/pingcap/tidb/pull/32922\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rows = tk.MustQuery(\"select * from t1 order by c1 desc\") (server/tidb_test.go)\nChanged files (25): distsql/request_builder.go, executor/adapter.go, executor/batch_point_get.go, executor/builder.go, executor/executor.go, executor/point_get.go, kv/kv.go, server/conn.go, server/conn_stmt.go, server/tidb_test.go, session/session.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, store/copr/coprocessor.go, store/driver/txn/snapshot.go, store/mockstore/unistore/cophandler/cop_handler.go, store/mockstore/unistore/tikv/dbreader/db_reader.go, store/mockstore/unistore/tikv/deadlock.go, store/mockstore/unistore/tikv/detector.go, store/mockstore/unistore/tikv/kverrors/errors.go, store/mockstore/unistore/tikv/mvcc.go, store/mockstore/unistore/tikv/mvcc_test.go, store/mockstore/unistore/tikv/server.go\nPatch url: https://github.com/pingcap/tidb/pull/32922.patch\nPicked test: type=unit path=server/tidb_test.go name=tidb_test"
+}

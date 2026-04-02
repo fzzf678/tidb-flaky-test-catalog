@@ -1,0 +1,49 @@
+{
+  "id": "pr-56970",
+  "source_pr": {
+    "number": 56970,
+    "url": "https://github.com/pingcap/tidb/pull/56970",
+    "title": "util/collate, util/ranger: move and update `IsPadSpaceCollation()`",
+    "body": "\r\n\r\n### What problem does this PR solve?\r\n\r\n\r\nIssue Number: N/A\r\n\r\nProblem Summary:\r\n\r\nSince `IsPadSpaceCollation` was introduced into the planner originally, two new PAD SPACE collations have been supported by tidb.\r\nProbably it's a proper time now to move this method to `util/collate` to be maintained by the SQL infra team.\r\n\r\nNote that although the checking is wrong in recent versions, there are no correctness issues. There is just some unnecessary accessing and filtering.\r\n\r\n### What changed and how does it work?\r\n\r\n- Update `IsPadSpaceCollation()` for the newly introduced `utf8mb4_0900_*` collations.\r\n- Move `IsPadSpaceCollation()` from `util/ranger` to `util/collate`.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-10-29T22:41:05+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/planner/core/range_scan_for_like.result",
+    "name": "range_scan_for_like"
+  },
+  "symptoms": [
+    "explain format = brief select *, length(a) from t use index (ia) where a like '测试%' order by a,_tidb_rowid; (tests/integrationtest/r/planner/core/range_scan_for_like.result)"
+  ],
+  "failure_signature": "explain format = brief select *, length(a) from t use index (ia) where a like '测试%' order by a,_tidb_rowid; (tests/integrationtest/r/planner/core/range_scan_for_like.result)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/56970",
+    "https://github.com/pingcap/tidb/pull/56970.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/56970.patch",
+  "changed_files": [
+    "pkg/util/collate/collate.go",
+    "pkg/util/ranger/checker.go",
+    "pkg/util/ranger/points.go",
+    "tests/integrationtest/r/planner/core/range_scan_for_like.result",
+    "tests/integrationtest/t/planner/core/range_scan_for_like.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: explain format = brief select *, length(a) from t use index (ia) where a like '测试%' order by a,_tidb_rowid; (tests/integrationtest/r/planner/core/range_scan_for_like.result)",
+      "files: pkg/util/collate/collate.go, pkg/util/ranger/checker.go, pkg/util/ranger/points.go, tests/integrationtest/r/planner/core/range_scan_for_like.result, tests/integrationtest/t/planner/core/range_scan_for_like.test"
+    ]
+  },
+  "analysis": "PR title: util/collate, util/ranger: move and update `IsPadSpaceCollation()`\nPR url: https://github.com/pingcap/tidb/pull/56970\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: explain format = brief select *, length(a) from t use index (ia) where a like '测试%' order by a,_tidb_rowid; (tests/integrationtest/r/planner/core/range_scan_for_like.result)\nChanged files (5): pkg/util/collate/collate.go, pkg/util/ranger/checker.go, pkg/util/ranger/points.go, tests/integrationtest/r/planner/core/range_scan_for_like.result, tests/integrationtest/t/planner/core/range_scan_for_like.test\nPatch url: https://github.com/pingcap/tidb/pull/56970.patch\nPicked test: type=integration path=tests/integrationtest/r/planner/core/range_scan_for_like.result name=range_scan_for_like"
+}

@@ -1,0 +1,52 @@
+{
+  "id": "pr-7112",
+  "source_pr": {
+    "number": 7112,
+    "url": "https://github.com/pingcap/tidb/pull/7112",
+    "title": "*: fix union result when mix signed/unsigned columns",
+    "body": "## What have you changed? (mandatory)\r\n\r\nfix #7075 \r\n\r\n- make logical_plan_builder infer `unsigned_flag` right\r\n- mark resultType need be zero if it's an unsigned num but < 0\r\n- union builder also consider unsigned_flag to determine whether add cast projection\r\n- make cast expression cast zero if type marked in step 2 for int/bigint/double/float/decimal\r\n\r\n## What is the type of the changes? (mandatory)\r\n\r\n- Bug fix (non-breaking change which fixes an issue)\r\n\r\n## How has this PR been tested? (mandatory)\r\n\r\n- unit tests\r\n- integration tests\r\n\r\n## Does this PR affect documentation (docs/docs-cn) update? (mandatory)\r\n\r\nNo\r\n\r\n## Does this PR affect tidb-ansible update? (mandatory)\r\n\r\nNo\r\n\r\n## Does this PR need to be added to the release notes? (mandatory)\r\n\r\n```\r\nfix union result when mix signed/unsigned columns\r\n```\r\n\r\n## Refer to a related PR or issue link (optional)\r\n\r\n#7075 \r\n\r\n## Add a few positive/negative examples (optional)\r\n\r\nsee #7075  and unit test\n\n<!-- Reviewable:start -->\n---\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/7112)\n<!-- Reviewable:end -->\n"
+  },
+  "pr_merged_at": "2018-07-30T13:48:44+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t1 union select * from t2 order by id\"). (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t1 union select * from t2 order by id\"). (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7112",
+    "https://github.com/pingcap/tidb/pull/7112.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7112.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "expression/builtin.go",
+    "expression/builtin_cast.go",
+    "expression/builtin_cast_test.go",
+    "expression/chunk_executor.go",
+    "expression/distsql_builtin.go",
+    "plan/logical_plan_builder.go",
+    "types/field_type.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t1 union select * from t2 order by id\"). (executor/executor_test.go)",
+      "files: executor/executor_test.go, expression/builtin.go, expression/builtin_cast.go, expression/builtin_cast_test.go, expression/chunk_executor.go, expression/distsql_builtin.go, plan/logical_plan_builder.go, server/util.go, types/field_type.go"
+    ]
+  },
+  "analysis": "PR title: *: fix union result when mix signed/unsigned columns\nPR url: https://github.com/pingcap/tidb/pull/7112\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t1 union select * from t2 order by id\"). (executor/executor_test.go)\nChanged files (8): executor/executor_test.go, expression/builtin.go, expression/builtin_cast.go, expression/builtin_cast_test.go, expression/chunk_executor.go, expression/distsql_builtin.go, plan/logical_plan_builder.go, types/field_type.go\nPatch url: https://github.com/pingcap/tidb/pull/7112.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

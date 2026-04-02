@@ -1,0 +1,52 @@
+{
+  "id": "pr-8885",
+  "source_pr": {
+    "number": 8885,
+    "url": "https://github.com/pingcap/tidb/pull/8885",
+    "title": "planner,expression: use constraint propagation in partition pruning",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nFix https://github.com/pingcap/tidb/issues/7516\r\n\r\nNow we can prune some of the `to_days` function:\r\n\r\n```\r\nCREATE TABLE t1 (\r\na int(10) unsigned NOT NULL,\r\nb DATETIME NOT NULL,\r\nPRIMARY KEY (a, b)\r\n) PARTITION BY RANGE (TO_DAYS(b))\r\n(PARTITION p20090401 VALUES LESS THAN (TO_DAYS('2009-04-02')),\r\nPARTITION p20090402 VALUES LESS THAN (TO_DAYS('2009-04-03')),\r\nPARTITION p20090403 VALUES LESS THAN (TO_DAYS('2009-04-04')),\r\nPARTITION p20090404 VALUES LESS THAN (TO_DAYS('2009-04-05')),\r\nPARTITION p20090405 VALUES LESS THAN MAXVALUE);\r\n```\r\n\r\nThe partition expression is `TO_DAYS(b) < XXX and TO_DAYS(b) >= YYY`, it has a **function `to_days`**.\r\n\r\n```\r\nEXPLAIN SELECT * FROM t1 WHERE b <= CAST('2009-04-03' AS DATE);\r\nid\tcount\ttask\toperator info\r\nUnion_9\t9970.00\troot\t\r\n├─TableReader_12\t3323.33\troot\tdata:Selection_11\r\n│ └─Selection_11\t3323.33\tcop\tle(test.t1.b, 2009-04-03)\r\n│   └─TableScan_10\t10000.00\tcop\ttable:t1, partition:p20090401, range:[-inf,+inf], keep order:false, stats:pseudo\r\n├─TableReader_15\t3323.33\troot\tdata:Selection_14\r\n│ └─Selection_14\t3323.33\tcop\tle(test.t1.b, 2009-04-03)\r\n│   └─TableScan_13\t10000.00\tcop\ttable:t1, partition:p20090402, range:[-inf,+inf], keep order:false, stats:pseudo\r\n└─TableReader_18\t3323.33\troot\tdata:Selection_17\r\n  └─Selection_17\t3323.33\tcop\tle(test.t1.b, 2009-04-03)\r\n    └─TableScan_16\t10000.00\tcop\ttable:t1, partition:p20090403, range:[-inf,+inf], keep order:false, stats:pseudo\r\n```\r\n\r\nFrom the result we can see that `p20090404`, `p20090405` is pruned.\r\n\r\n### What is changed and how it works?\r\n\r\nFix those two restrictions mentioned in the issue:\r\n\r\n> 1. it doesn't support filter conditions that can't be push down to datasource\r\n> 2. it doesn't support expressions that can't calculate range\r\n\r\nNow prune will consider both push down conditions and the filter conditions in the `selection`.\r\nLeverage the constraint propagate rule in https://github.com/pingcap/tidb/pull/8640\r\nto handle expressions (function) that can't calculate range.\r\n\r\nThere are still two minor problems, but they are not introduced by this commit:\r\n\r\n1. The partition expressions for the first partition is `col < const or col is null`, current partition pruning can't prune `or col is null`\r\n2. Range calculating is still kept in the code, we should get rid of it eventually\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8885)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2019-01-17T11:09:42+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/constant_test.go",
+    "name": "constant_test"
+  },
+  "symptoms": [
+    "sort.Strings(result) (expression/constant_test.go)"
+  ],
+  "failure_signature": "sort.Strings(result) (expression/constant_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8885",
+    "https://github.com/pingcap/tidb/pull/8885.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8885.patch",
+  "changed_files": [
+    "cmd/explaintest/r/partition_pruning.result",
+    "expression/constraint_propagation.go",
+    "go.mod",
+    "go.sum",
+    "planner/core/logical_plans.go",
+    "planner/core/partition_pruning_test.go",
+    "planner/core/rule_partition_processor.go",
+    "planner/core/rule_predicate_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Strings(result) (expression/constant_test.go)",
+      "files: cmd/explaintest/r/partition_pruning.result, expression/constant_test.go, expression/constraint_propagation.go, go.mod, go.sum, planner/core/logical_plans.go, planner/core/partition_pruning_test.go, planner/core/planbuilder_test.go, planner/core/rule_partition_processor.go, planner/core/rule_predicate_push_down.go"
+    ]
+  },
+  "analysis": "PR title: planner,expression: use constraint propagation in partition pruning\nPR url: https://github.com/pingcap/tidb/pull/8885\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Strings(result) (expression/constant_test.go)\nChanged files (8): cmd/explaintest/r/partition_pruning.result, expression/constraint_propagation.go, go.mod, go.sum, planner/core/logical_plans.go, planner/core/partition_pruning_test.go, planner/core/rule_partition_processor.go, planner/core/rule_predicate_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/8885.patch\nPicked test: type=unit path=expression/constant_test.go name=constant_test"
+}

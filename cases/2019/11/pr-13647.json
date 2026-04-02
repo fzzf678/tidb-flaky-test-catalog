@@ -1,0 +1,48 @@
+{
+  "id": "pr-13647",
+  "source_pr": {
+    "number": 13647,
+    "url": "https://github.com/pingcap/tidb/pull/13647",
+    "title": "stats: fix data race when updating stats cache",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nWhen stats update cache, it does not consider that there maybe another writter at the same time, so it is possible that the newer updates maybe rewritten by older updates, which lead to after a call of `Update`, it does has the latest stats cache.\r\n\r\n### What is changed and how it works?\r\n\r\nStore the `latestVersion` at the same place with stats cache, so we need to updat e them together and check their versions when updating.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\n - None\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n\r\nRelease note\r\n\r\n - Fix data race when updating stats cache.\r\n"
+  },
+  "pr_merged_at": "2019-11-22T15:28:38+08:00",
+  "test": {
+    "type": "unit",
+    "path": "statistics/handle/dump_test.go",
+    "name": "dump_test"
+  },
+  "symptoms": [
+    "stats: fix data race when updating stats cache"
+  ],
+  "failure_signature": "stats: fix data race when updating stats cache",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "stats: fix data race when updating stats cache",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13647",
+    "https://github.com/pingcap/tidb/pull/13647.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13647.patch",
+  "changed_files": [
+    "statistics/handle/bootstrap.go",
+    "statistics/handle/dump_test.go",
+    "statistics/handle/handle.go",
+    "statistics/handle/update.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: stats: fix data race when updating stats cache",
+      "files: statistics/handle/bootstrap.go, statistics/handle/dump_test.go, statistics/handle/handle.go, statistics/handle/update.go"
+    ]
+  },
+  "analysis": "PR title: stats: fix data race when updating stats cache\nPR url: https://github.com/pingcap/tidb/pull/13647\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: stats: fix data race when updating stats cache\nChanged files (4): statistics/handle/bootstrap.go, statistics/handle/dump_test.go, statistics/handle/handle.go, statistics/handle/update.go\nPatch url: https://github.com/pingcap/tidb/pull/13647.patch\nPicked test: type=unit path=statistics/handle/dump_test.go name=dump_test"
+}

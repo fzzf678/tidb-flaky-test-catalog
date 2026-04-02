@@ -1,0 +1,46 @@
+{
+  "id": "pr-21415",
+  "source_pr": {
+    "number": 21415,
+    "url": "https://github.com/pingcap/tidb/pull/21415",
+    "title": "sessionctx/variable: fix a DATA RACE to make CI more stable",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/20573\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nThe data race between here https://github.com/pingcap/tidb/blob/fb80822390c49aabf2c220d4892f3bc0c7b1c113/executor/executor.go#L1705 and here https://github.com/pingcap/tidb/blob/fb80822390c49aabf2c220d4892f3bc0c7b1c113/sessionctx/variable/session.go#L1569\r\n\r\nFound in this test https://github.com/pingcap/tidb/blob/fb80822390c49aabf2c220d4892f3bc0c7b1c113/executor/explainfor_test.go#L81 and here is the stack:\r\n\r\n```\r\n[2020-11-26T09:25:00.286Z] ==================\r\n[2020-11-26T09:25:00.286Z] WARNING: DATA RACE\r\n[2020-11-26T09:25:00.286Z] Write at 0x00c08a9ca585 by goroutine 950:\r\n[2020-11-26T09:25:00.286Z]   github.com/pingcap/tidb/sessionctx/variable.(*SessionVars).SetSystemVar()\r\n[2020-11-26T09:25:00.286Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/sessionctx/variable/session.go:1566 +0x49b3\r\n[2020-11-26T09:25:00.286Z]   github.com/pingcap/tidb/sessionctx/variable.SetSessionSystemVar()\r\n[2020-11-26T09:25:00.286Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/sessionctx/variable/varsutil.go:225 +0x188\r\n[2020-11-26T09:25:00.286Z]   github.com/pingcap/tidb/executor.(*SetExecutor).setSysVariable()\r\n[2020-11-26T09:25:00.286Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/set.go:191 +0x1a8f\r\n[2020-11-26T09:25:00.286Z]   github.com/pingcap/tidb/executor.(*SetExecutor).Next()\r\n[2020-11-26T09:25:00.286Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/set.go:108 +0x302\r\n[2020-11-26T09:25:00.286Z]   github.com/pingcap/tidb/executor.Next()\r\n[2020-11-26T09:25:00.286Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/executor.go:277 +0x27d\r\n[2020-11-26T09:25:00.286Z]   github.com/pingcap/tidb/executor.(*ExecStmt).handleNoDelayExecutor()\r\n[2020-11-26T09:25:00.286Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/adapter.go:522 +0x38e\r\n[2020-11-26T09:25:00.286Z]   github.com/pingcap/tidb/executor.(*ExecStmt).handleNoDelay()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/adapter.go:404 +0x254\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/executor.(*ExecStmt).Exec()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/adapter.go:354 +0x3f6\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/session.runStmt()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:1312 +0x2c1\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/session.(*session).ExecuteStmt()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:1256 +0x9ff\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/util/testkit.(*TestKit).Exec()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/util/testkit/testkit.go:170 +0x2f1\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/util/testkit.(*TestKit).MustExec()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/util/testkit/testkit.go:216 +0x91\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/executor_test.(*testSerialSuite).TestExplainFor()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/explainfor_test.go:81 +0x6a5\r\n[2020-11-26T09:25:00.287Z]   runtime.call32()\r\n[2020-11-26T09:25:00.287Z]       /usr/local/go/src/runtime/asm_amd64.s:539 +0x3a\r\n[2020-11-26T09:25:00.287Z]   reflect.Value.Call()\r\n[2020-11-26T09:25:00.287Z]       /usr/local/go/src/reflect/value.go:321 +0xd3\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/check.(*suiteRunner).forkTest.func1()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20200212061837-5e12011dc712/check.go:850 +0x9aa\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/check.(*suiteRunner).forkCall.func1()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/pkg/mod/github.com/pingcap/check@v0.0.0-20200212061837-5e12011dc712/check.go:739 +0x113\r\n[2020-11-26T09:25:00.287Z] \r\n[2020-11-26T09:25:00.287Z] Previous read at 0x00c08a9ca585 by goroutine 164:\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/executor.ResetContextOfStmt()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/executor.go:1705 +0xb66\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/session.(*session).ExecuteStmt()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:1228 +0x1f1\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/session.(*session).Execute()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:1168 +0x2a1\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/session.execRestrictedSQL()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:882 +0x18f\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/session.(*session).ExecRestrictedSQLWithContext()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:821 +0x3c0\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/session.(*session).ExecRestrictedSQL()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:787 +0x92\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/bindinfo.(*BindHandle).Update()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/bindinfo/handle.go:137 +0x16c\r\n[2020-11-26T09:25:00.287Z]   github.com/pingcap/tidb/domain.(*Domain).globalBindHandleWorkerLoop.func1()\r\n[2020-11-26T09:25:00.287Z]       /home/jenkins/agent/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/domain/domain.go:976 +0x254\r\n[2020-11-26T09:25:00.287Z] \r\n```\r\n\r\n\r\nWhat's Changed:\r\n\r\nFix a data race\r\n\r\nHow it Works:\r\n\r\n`config.StoreGlobalConfig(&newConfig)` is atomic, so it can get rid of the DATA RACE.\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note\r\n"
+  },
+  "pr_merged_at": "2020-12-02T11:16:19+08:00",
+  "test": {
+    "type": "unit",
+    "path": "sessionctx/variable/session.go",
+    "name": "session"
+  },
+  "symptoms": [
+    "PR title: sessionctx/variable: fix a DATA RACE to make CI more stable"
+  ],
+  "failure_signature": "PR title: sessionctx/variable: fix a DATA RACE to make CI more stable",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "sessionctx/variable: fix a DATA RACE to make CI more stable",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/21415",
+    "https://github.com/pingcap/tidb/pull/21415.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/21415.patch",
+  "changed_files": [
+    "sessionctx/variable/session.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR title: sessionctx/variable: fix a DATA RACE to make CI more stable",
+      "evidence: avoid in-place mutation of global config; copy + `config.StoreGlobalConfig` to fix data race (sessionctx/variable/session.go)",
+      "files: sessionctx/variable/session.go"
+    ]
+  },
+  "analysis": "PR title: sessionctx/variable: fix a DATA RACE to make CI more stable\nPR url: https://github.com/pingcap/tidb/pull/21415\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: sessionctx/variable: fix a DATA RACE to make CI more stable\nChanged files (1): sessionctx/variable/session.go\nPatch url: https://github.com/pingcap/tidb/pull/21415.patch\nPicked test: type=unit path=sessionctx/variable/session.go name=session"
+}

@@ -1,0 +1,47 @@
+{
+  "id": "pr-29477",
+  "source_pr": {
+    "number": 29477,
+    "url": "https://github.com/pingcap/tidb/pull/29477",
+    "title": "*: insert/update or explain should not trigger table cache condition",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\nClose #29528.\r\n\r\nProblem Summary:\r\n\r\nA tiny fix after https://github.com/pingcap/tidb/pull/29184\r\n\r\n```\r\nmysql> explain select * from t;\r\n+-----------------------+---------+-----------+---------------+--------------------------------+\r\n| id                    | estRows | task      | access object | operator info                  |\r\n+-----------------------+---------+-----------+---------------+--------------------------------+\r\n| TableReader_5         | 1.00    | root      |               | data:TableFullScan_4           |\r\n| └─TableFullScan_4     | 1.00    | cop[tikv] | table:t       | keep order:false, stats:pseudo |\r\n+-----------------------+---------+-----------+---------------+--------------------------------+\r\n2 rows in set (0.00 sec)\r\n\r\nmysql> explain select * from t;\r\n+-------------------------+---------+-----------+---------------+--------------------------------+\r\n| id                      | estRows | task      | access object | operator info                  |\r\n+-------------------------+---------+-----------+---------------+--------------------------------+\r\n| UnionScan_5             | 1.00    | root      |               |                                |\r\n| └─TableReader_7         | 1.00    | root      |               | data:TableFullScan_6           |\r\n|   └─TableFullScan_6     | 1.00    | cop[tikv] | table:t       | keep order:false, stats:pseudo |\r\n+-------------------------+---------+-----------+---------------+--------------------------------+\r\n3 rows in set (0.00 sec)\r\n```\r\n\r\nThe explain query shouldn't trigger the cache table condition, because explain doesn't mean execute the query.\r\n\r\n```\r\nmysql> explain update t set c = c + 1 where id > 3;\r\n+----------------------------+---------+-----------+---------------+------------------------------------------------+\r\n| id                         | estRows | task      | access object | operator info                                  |\r\n+----------------------------+---------+-----------+---------------+------------------------------------------------+\r\n| Update_5                   | N/A     | root      |               | N/A                                            |\r\n| └─UnionScan_7              | 1.00    | root      |               | gt(test.t.id, 3)                               |\r\n|   └─TableReader_9          | 1.00    | root      |               | data:TableRangeScan_8                          |\r\n|     └─TableRangeScan_8     | 1.00    | cop[tikv] | table:t       | range:(3,+inf], keep order:false, stats:pseudo |\r\n+----------------------------+---------+-----------+---------------+------------------------------------------------+\r\n4 rows in set (0.00 sec)\r\n\r\nmysql> explain delete from t where id > 6;\r\n+----------------------------+---------+-----------+---------------+------------------------------------------------+\r\n| id                         | estRows | task      | access object | operator info                                  |\r\n+----------------------------+---------+-----------+---------------+------------------------------------------------+\r\n| Delete_5                   | N/A     | root      |               | N/A                                            |\r\n| └─UnionScan_7              | 1.00    | root      |               | gt(test.t.id, 6)                               |\r\n|   └─TableReader_9          | 1.00    | root      |               | data:TableRangeScan_8                          |\r\n|     └─TableRangeScan_8     | 1.00    | cop[tikv] | table:t       | range:(6,+inf], keep order:false, stats:pseudo |\r\n+----------------------------+---------+-----------+---------------+------------------------------------------------+\r\n4 rows in set (0.00 sec)\r\n```\r\n\r\nInsert/Delete/Update should not trigger cache table condition too.\r\nBecause they are write operation, if  `UpdateLockForRead` add the read lock, the write operation will wait for the lock to expire.\r\n\r\n\r\n\r\n### What is changed and how it works?\r\n\r\n- if the operation is write, or explain, do not notify the table to update the read meta lock and load cache data\r\n- defer panic to avoid the whole TiDB process exit\r\n- make the test more stable\r\n\r\nCheck the `UnionScan` executor in the  explain result is not a stable way to check whether the table cache is used by the query. Because the the notification is in another goroutine, when it runs is undetermined.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [X] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n```release-note\r\nNone\r\n```\r\n\r\nNot bug fix of released feature."
+  },
+  "pr_merged_at": "2021-11-08T12:35:04+08:00",
+  "test": {
+    "type": "unit",
+    "path": "table/tables/cache_test.go",
+    "name": "cache_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from tmp1 where id>4 order by id\").Check(testkit.Rows( (table/tables/cache_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from tmp1 where id>4 order by id\").Check(testkit.Rows( (table/tables/cache_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select * from tmp1 where id>4 order by id\").Check(testkit.Rows( (table/tables/cache_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/29477",
+    "https://github.com/pingcap/tidb/pull/29477.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/29477.patch",
+  "changed_files": [
+    "planner/core/logical_plan_builder.go",
+    "sessionctx/stmtctx/stmtctx.go",
+    "table/tables/cache_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from tmp1 where id>4 order by id\").Check(testkit.Rows( (table/tables/cache_test.go)",
+      "files: planner/core/logical_plan_builder.go, sessionctx/stmtctx/stmtctx.go, table/tables/cache_test.go"
+    ]
+  },
+  "analysis": "PR title: *: insert/update or explain should not trigger table cache condition\nPR url: https://github.com/pingcap/tidb/pull/29477\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from tmp1 where id>4 order by id\").Check(testkit.Rows( (table/tables/cache_test.go)\nChanged files (3): planner/core/logical_plan_builder.go, sessionctx/stmtctx/stmtctx.go, table/tables/cache_test.go\nPatch series analyzed; see patch_url."
+}

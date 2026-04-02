@@ -1,0 +1,47 @@
+{
+  "id": "pr-19580",
+  "source_pr": {
+    "number": 19580,
+    "url": "https://github.com/pingcap/tidb/pull/19580",
+    "title": "ddl, ci: force domain to reload schema before execute SQL.",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: #19481 #19480 #19479 \r\n\r\nProblem Summary:\r\n\r\nDDL test may fail on high CPU load. After do some test, we found that golang's timer will generate a huge bias on high CPU load. So we need to force call `Domain.Reload()` manually.\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\n\r\nAdd `Domain.Reload()` function call on failed cases.\r\n\r\n### Related changes\r\n\r\n- No changes\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n- Integration test\r\n\r\nSide effects\r\n\r\n- No\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- ddl: make CI test more stable."
+  },
+  "pr_merged_at": "2020-11-03T12:07:12+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_change_test.go",
+    "name": "db_change_test"
+  },
+  "symptoms": [
+    "PR body: DDL test may fail on high CPU load due to Golang timer bias; force call Domain.Reload() manually"
+  ],
+  "failure_signature": "PR body: DDL test may fail on high CPU load due to Golang timer bias; force call Domain.Reload() manually",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl, ci: force domain to reload schema before execute SQL.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/19580",
+    "https://github.com/pingcap/tidb/pull/19580.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/19580.patch",
+  "changed_files": [
+    "ddl/db_change_test.go",
+    "ddl/db_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body: DDL test may fail on high CPU load due to Golang timer bias; force call Domain.Reload() manually",
+      "evidence: add `forceReloadDomain` helper and call `dom.Reload()` before executing SQL / checking table lock in tests (ddl/db_change_test.go, ddl/db_test.go)",
+      "files: ddl/db_change_test.go, ddl/db_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl, ci: force domain to reload schema before execute SQL.\nPR url: https://github.com/pingcap/tidb/pull/19580\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body: DDL test may fail on high CPU load due to Golang timer bias; force call Domain.Reload() manually\nChanged files (2): ddl/db_change_test.go, ddl/db_test.go\nPatch url: https://github.com/pingcap/tidb/pull/19580.patch\nPicked test: type=unit path=ddl/db_change_test.go name=db_change_test"
+}

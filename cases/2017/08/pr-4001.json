@@ -1,0 +1,46 @@
+{
+  "id": "pr-4001",
+  "source_pr": {
+    "number": 4001,
+    "url": "https://github.com/pingcap/tidb/pull/4001",
+    "title": "executor: Make union test stable",
+    "body": "Union executor will read multiple data source parallelly.\r\nLine 622 is unstable and duplicate with line 633."
+  },
+  "pr_merged_at": "2017-08-03T13:57:40+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "Line 622 is unstable and duplicate with line 633. | r = tk.MustQuery(\"SELECT 1 AS c UNION select a as c FROM t order by c\") (executor/executor_test.go)"
+  ],
+  "failure_signature": "Line 622 is unstable and duplicate with line 633. | r = tk.MustQuery(\"SELECT 1 AS c UNION select a as c FROM t order by c\") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4001",
+    "https://github.com/pingcap/tidb/pull/4001.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4001.patch",
+  "changed_files": [
+    "executor/executor_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: Line 622 is unstable and duplicate with line 633. | r = tk.MustQuery(\"SELECT 1 AS c UNION select a as c FROM t order by c\") (executor/executor_test.go)",
+      "files: executor/executor_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: Make union test stable\nPR url: https://github.com/pingcap/tidb/pull/4001\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: Line 622 is unstable and duplicate with line 633. | r = tk.MustQuery(\"SELECT 1 AS c UNION select a as c FROM t order by c\") (executor/executor_test.go)\nChanged files (1): executor/executor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4001.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

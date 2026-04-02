@@ -1,0 +1,47 @@
+{
+  "id": "pr-8635",
+  "source_pr": {
+    "number": 8635,
+    "url": "https://github.com/pingcap/tidb/pull/8635",
+    "title": "plan: build separate required physical property for children",
+    "body": "\r\n<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nFix https://github.com/pingcap/tidb/issues/8634\r\n\r\n### What is changed and how it works?\r\n\r\nRCA is provided here https://github.com/pingcap/tidb/issues/8634#issuecomment-445703564\r\n\r\nFor logical operator which passes the required physical property down to its children, make a copy for it instead of direct assignment using the original pointer.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\nN/A\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/8635)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2018-12-10T17:45:38+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/merge_join_test.go",
+    "name": "merge_join_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select /*+ TIDB_SMJ(a, b) */ a.c1 from t a , (select * from t1 limit 3) b where a.c1 = b.c1 and b.c1 is not null order by b.c1;\") (executor/merge_join_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select /*+ TIDB_SMJ(a, b) */ a.c1 from t a , (select * from t1 limit 3) b where a.c1 = b.c1 and b.c1 is not null order by b.c1;\") (executor/merge_join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8635",
+    "https://github.com/pingcap/tidb/pull/8635.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8635.patch",
+  "changed_files": [
+    "executor/merge_join_test.go",
+    "planner/core/exhaust_physical_plans.go",
+    "planner/property/physical_property.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select /*+ TIDB_SMJ(a, b) */ a.c1 from t a , (select * from t1 limit 3) b where a.c1 = b.c1 and b.c1 is not null order by b.c1;\") (executor/merge_join_test.go)",
+      "files: executor/merge_join_test.go, planner/core/exhaust_physical_plans.go, planner/property/physical_property.go"
+    ]
+  },
+  "analysis": "PR title: plan: build separate required physical property for children\nPR url: https://github.com/pingcap/tidb/pull/8635\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select /*+ TIDB_SMJ(a, b) */ a.c1 from t a , (select * from t1 limit 3) b where a.c1 = b.c1 and b.c1 is not null order by b.c1;\") (executor/merge_join_test.go)\nChanged files (3): executor/merge_join_test.go, planner/core/exhaust_physical_plans.go, planner/property/physical_property.go\nPatch url: https://github.com/pingcap/tidb/pull/8635.patch\nPicked test: type=unit path=executor/merge_join_test.go name=merge_join_test"
+}

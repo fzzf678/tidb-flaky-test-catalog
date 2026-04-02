@@ -1,0 +1,76 @@
+{
+  "id": "pr-5027",
+  "source_pr": {
+    "number": 5027,
+    "url": "https://github.com/pingcap/tidb/pull/5027",
+    "title": "*: begin opentracing from dispatch() and change interface to Execute(ctx, sql)",
+    "body": "If we start trace from `session.Execute()`,  some background session would make a lot of noise. \r\n`server.dispatch` should be a better beginning for each trace."
+  },
+  "pr_merged_at": "2017-11-07T16:52:15+08:00",
+  "test": {
+    "type": "unit",
+    "path": "bench_test.go",
+    "name": "bench_test"
+  },
+  "symptoms": [
+    "rs, err := se.Execute(goCtx, \"select * from t order by col limit 50\") (bench_test.go)"
+  ],
+  "failure_signature": "rs, err := se.Execute(goCtx, \"select * from t order by col limit 50\") (bench_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5027",
+    "https://github.com/pingcap/tidb/pull/5027.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5027.patch",
+  "changed_files": [
+    "bench_test.go",
+    "bootstrap.go",
+    "cmd/benchdb/main.go",
+    "ddl/ddl_db_change_test.go",
+    "ddl/ddl_db_test.go",
+    "ddl/delete_range.go",
+    "ddl/util/util.go",
+    "executor/distsql_test.go",
+    "executor/grant.go",
+    "executor/join_test.go",
+    "executor/set_test.go",
+    "executor/simple.go",
+    "executor/simple_test.go",
+    "new_session_test.go",
+    "plan/dag_plan_test.go",
+    "plan/preprocess_test.go",
+    "privilege/privileges/cache.go",
+    "privilege/privileges/privileges_test.go",
+    "server/conn.go",
+    "server/driver.go",
+    "server/driver_tidb.go",
+    "server/tidb_test.go",
+    "session.go",
+    "statistics/ddl.go",
+    "statistics/histogram.go",
+    "statistics/update.go",
+    "store/tikv/gcworker/gc_worker.go",
+    "store/tikv/sql_test.go",
+    "table/tables/tables_test.go",
+    "tidb_test.go",
+    "util/sqlexec/restricted_sql_executor.go",
+    "util/testkit/testkit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rs, err := se.Execute(goCtx, \"select * from t order by col limit 50\") (bench_test.go)",
+      "files: bench_test.go, bootstrap.go, cmd/benchdb/main.go, ddl/ddl_db_change_test.go, ddl/ddl_db_test.go, ddl/delete_range.go, ddl/util/util.go, executor/distsql_test.go, executor/grant.go, executor/join_test.go, executor/set_test.go, executor/simple.go, executor/simple_test.go, new_session_test.go, plan/dag_plan_test.go, plan/preprocess_test.go, privilege/privileges/cache.go, privilege/privileges/privileges_test.go, server/conn.go, server/driver.go, server/driver_tidb.go, server/tidb_test.go, session.go, statistics/ddl.go, statistics/histogram.go, statistics/update.go, store/tikv/gcworker/gc_worker.go, store/tikv/sql_test.go, table/tables/tables_test.go, tidb_test.go, util/sqlexec/restricted_sql_executor.go, util/testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: *: begin opentracing from dispatch() and change interface to Execute(ctx, sql)\nPR url: https://github.com/pingcap/tidb/pull/5027\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rs, err := se.Execute(goCtx, \"select * from t order by col limit 50\") (bench_test.go)\nChanged files (32): bench_test.go, bootstrap.go, cmd/benchdb/main.go, ddl/ddl_db_change_test.go, ddl/ddl_db_test.go, ddl/delete_range.go, ddl/util/util.go, executor/distsql_test.go, executor/grant.go, executor/join_test.go, executor/set_test.go, executor/simple.go, executor/simple_test.go, new_session_test.go, plan/dag_plan_test.go, plan/preprocess_test.go, privilege/privileges/cache.go, privilege/privileges/privileges_test.go, server/conn.go, server/driver.go, server/driver_tidb.go, server/tidb_test.go, session.go, statistics/ddl.go, statistics/histogram.go, statistics/update.go, store/tikv/gcworker/gc_worker.go, store/tikv/sql_test.go, table/tables/tables_test.go, tidb_test.go, util/sqlexec/restricted_sql_executor.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/5027.patch\nPicked test: type=unit path=bench_test.go name=bench_test"
+}

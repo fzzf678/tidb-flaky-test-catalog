@@ -1,0 +1,46 @@
+{
+  "id": "pr-26714",
+  "source_pr": {
+    "number": 26714,
+    "url": "https://github.com/pingcap/tidb/pull/26714",
+    "title": "domain, executor: fix sysvar cache race",
+    "body": "### What problem does this PR solve?\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/25272 close https://github.com/pingcap/tidb/issues/25781\r\n\r\nProblem Summary:\r\n\r\nThis fixes a race condition in the sysvar cache whilch could lead to lost updates with sysvar changes.\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\n\r\nA bug in the sysvar cache identified by flaky test cases has been fixed.\r\n\r\nThe fix includes using a separate mutex to protect against concurrent rebuilding of the sysvar cache. I originally considered using the same `svc.Lock()`, but this would likely lead to performance regressions since calls to `GetGlobalVar()` might block waiting for longer.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n~Unfortunately this could lead to performance regressions because `GetGlobalVar()` checks if the cache needs rebuilding (`rebuildCacheIfNeeded()`). This requires a read-lock, which will block waiting for longer because the lock is now held while reading the data. If this becomes observable, we may need to change the design to use 2 locks: one to protect the structures svc.session / svc.global and one to protect against rebuilding the cache.~\r\n\r\n**This has been fixed.** I added a new mutex to protect against concurrent rebuild instead.\r\n\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n```release-note\r\nA race condition could occur in the sysvar cache that led to lost updates with the statement 'SET GLOBAL'.\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-08-04T13:23:07+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/set_test.go",
+    "name": "set_test"
+  },
+  "symptoms": [
+    "A bug in the sysvar cache identified by flaky test cases has been fixed."
+  ],
+  "failure_signature": "A bug in the sysvar cache identified by flaky test cases has been fixed.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "A bug in the sysvar cache identified by flaky test cases has been fixed.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/26714",
+    "https://github.com/pingcap/tidb/pull/26714.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/26714.patch",
+  "changed_files": [
+    "domain/sysvar_cache.go",
+    "executor/set_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: A bug in the sysvar cache identified by flaky test cases has been fixed.",
+      "files: domain/sysvar_cache.go, executor/set_test.go"
+    ]
+  },
+  "analysis": "PR title: domain, executor: fix sysvar cache race\nPR url: https://github.com/pingcap/tidb/pull/26714\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: A bug in the sysvar cache identified by flaky test cases has been fixed.\nChanged files (2): domain/sysvar_cache.go, executor/set_test.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,47 @@
+{
+  "id": "pr-14681",
+  "source_pr": {
+    "number": 14681,
+    "url": "https://github.com/pingcap/tidb/pull/14681",
+    "title": "executor: fix executor tests for TestFlushPrivilegesPanic and TestSortSpillDisk",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nfix executor unit test\r\n\r\n### What is changed and how it works?\r\nsome tests have side effect:\r\n- test `testFlushSuite.TestFlushPrivilegesPanic` set `config.GetGlobalConfig().Security.SkipGrantTable` to true, thus cause a lot other test which depend on auth fail when run in parallel. \r\n- test `TestSortSpillDisk` change the global variable `MemQuotaQuery` to 1, thus will cause other test OOM.\r\n\r\nBy make theses tests suite as `serial`, we can make sure the side effect will not influent other tests.\r\n\r\nclose #14684 \r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n - Manual test (add detailed scripts or steps below)\r\n - No code\r\n"
+  },
+  "pr_merged_at": "2020-02-08T01:20:27+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_pkg_test.go",
+    "name": "TestFlushPrivilegesPanic"
+  },
+  "symptoms": [
+    "PR body: tests have global side effects (config.GetGlobalConfig().Security.SkipGrantTable / MemQuotaQuery) causing other tests fail when run in parallel; fix by making suites serial."
+  ],
+  "failure_signature": "PR body: tests have global side effects (config.GetGlobalConfig().Security.SkipGrantTable / MemQuotaQuery) causing other tests fail when run in parallel; fix by making suites serial.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "executor: fix executor tests for TestFlushPrivilegesPanic and TestSortSpillDisk",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/14681",
+    "https://github.com/pingcap/tidb/pull/14681.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/14681.patch",
+  "changed_files": [
+    "executor/executor_pkg_test.go",
+    "executor/executor_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body: tests have global side effects (config.GetGlobalConfig().Security.SkipGrantTable / MemQuotaQuery) causing other tests fail when run in parallel; fix by making suites serial.",
+      "evidence: diff moves TestSortSpillDisk to a SerialSuites suite (executor/executor_pkg_test.go) and marks testFlushSuite as SerialSuites (executor/executor_test.go).",
+      "files: executor/executor_pkg_test.go, executor/executor_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix executor tests for TestFlushPrivilegesPanic and TestSortSpillDisk\nPR url: https://github.com/pingcap/tidb/pull/14681\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body: tests have global side effects (config.GetGlobalConfig().Security.SkipGrantTable / MemQuotaQuery) causing other tests fail when run in parallel; fix by making suites serial.\nChanged files (2): executor/executor_pkg_test.go, executor/executor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/14681.patch\nPicked test: type=unit path=executor/executor_pkg_test.go name=TestFlushPrivilegesPanic"
+}

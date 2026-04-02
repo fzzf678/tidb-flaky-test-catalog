@@ -1,0 +1,46 @@
+{
+  "id": "pr-16511",
+  "source_pr": {
+    "number": 16511,
+    "url": "https://github.com/pingcap/tidb/pull/16511",
+    "title": "ddl: make TestTransactionOnAddDropColumn and  TestTransactionWithWriteOnlyColumn  stable",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\nIssue Number: close #16485 and #16488, and it may handle #13641 <!-- REMOVE this line if no issue to close -->\r\n\r\n```\r\n[2020-04-16T10:24:51.537Z] ----------------------------------------------------------------------\r\n[2020-04-16T10:24:51.537Z] FAIL: db_test.go:3379: testDBSuite2.TestTransactionOnAddDropColumn\r\n[2020-04-16T10:24:51.537Z]\r\n[2020-04-16T10:24:51.537Z] db_test.go:3431:\r\n[2020-04-16T10:24:51.537Z]     c.Assert(checkErr, IsNil)\r\n[2020-04-16T10:24:51.537Z] ... value *errors.fundamental = err: previous statement: update t1 set b=1 where a=1: [domain:8028]Information schema is changed during the execution of the statement(for example, table definition may be updated by other DDL ran in parallel). If you see this error often, try increasing `tidb_max_delta_schema_count`. [try again later], sql: commit, job schema state: write only (\"err: previous statement: update t1 set b=1 where a=1: [domain:8028]Information schema is changed during the execution of the statement(for example, table definition may be updated by other DDL ran in parallel). If you see this error often, try increasing `tidb_max_delta_schema_count`. [try again later], sql: commit, job schema state: write only\")\r\n[2020-04-16T10:24:51.537Z]\r\n```\r\n\r\nIssue Number: close #16485 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\nFor adding column operation, when the job with the schema state of `write only` put to `OnJobRunBeforeExported`, but the current TiDB doesn't load the schema(the new column is write-only state). Then we begin a transaction and do some operations. After that, we may load the schema. When we commit this transaction, we will find the schema is changed.\r\n\r\n![WeChatWorkScreenshot_ce18f7ae-8909-458f-a3b7-24b02e5aa510](https://user-images.githubusercontent.com/4242506/79530237-5b6a3b00-80a1-11ea-8b61-8fc3e0973031.png)\r\n\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\nIncrease the value of DDL lease. \r\n\r\nThe test execution speed has remained basically unchanged. Using `go test -v -vet=off -p 20 -timeout 3m -race  -check.f testDBSuite` to check. The following are the results of two executions：\r\nBefore this PR\r\n`--- PASS: TestT (52.01s)`\r\n`--- PASS: TestT (44.07)`\r\nAfter this PR\r\n`--- PASS: TestT (47.06s)`\r\n`--- PASS: TestT (44.86s)`\r\n\r\nHow it Works:\r\nMake TiDB has more time to load schema.\r\n\r\n### Related changes\r\n\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n- No code\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\nMake TestTransactionOnAddDropColumn stable"
+  },
+  "pr_merged_at": "2020-04-17T15:20:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_test.go",
+    "name": "TestTransactionOnAddDropColumn"
+  },
+  "symptoms": [
+    "PR title: make TestTransactionOnAddDropColumn stable."
+  ],
+  "failure_signature": "PR title: make TestTransactionOnAddDropColumn stable.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl: make TestTransactionOnAddDropColumn and  TestTransactionWithWriteOnlyColumn  stable",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/16511",
+    "https://github.com/pingcap/tidb/pull/16511.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/16511.patch",
+  "changed_files": [
+    "ddl/db_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR title: make TestTransactionOnAddDropColumn stable.",
+      "evidence: increases schema lease from 100ms to 600ms in DDL test suite setup to reduce timing instability (ddl/db_test.go).",
+      "files: ddl/db_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl: make TestTransactionOnAddDropColumn and  TestTransactionWithWriteOnlyColumn  stable\nPR url: https://github.com/pingcap/tidb/pull/16511\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: make TestTransactionOnAddDropColumn stable.\nChanged files (1): ddl/db_test.go\nPatch url: https://github.com/pingcap/tidb/pull/16511.patch\nPicked test: type=unit path=ddl/db_test.go name=TestTransactionOnAddDropColumn"
+}

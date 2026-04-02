@@ -1,0 +1,48 @@
+{
+  "id": "pr-3886",
+  "source_pr": {
+    "number": 3886,
+    "url": "https://github.com/pingcap/tidb/pull/3886",
+    "title": "store/tikv: optimize testing",
+    "body": "1. remove file coprocessor_slow_test.go to reduce memory\r\n2. accelerate some tests by setting a small commitMaxBackoff\r\n\r\nWhen I `go test store/tikv`, it **eat up the whole memory** and make my laptop hang.\r\nIt makes me uncomfortable so I did some optimizing. \r\nAfter that:\r\n```\r\nPASS\r\nok  \tgithub.com/pingcap/tidb/store/tikv\t14.597s\r\n```\r\nIt takes more than 80s before!"
+  },
+  "pr_merged_at": "2017-07-27T13:39:07+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/2pc_test.go",
+    "name": "2pc_test"
+  },
+  "symptoms": [
+    "-// The test takes too long under the race detector."
+  ],
+  "failure_signature": "-// The test takes too long under the race detector.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "store/tikv: optimize testing",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3886",
+    "https://github.com/pingcap/tidb/pull/3886.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3886.patch",
+  "changed_files": [
+    "store/tikv/2pc_test.go",
+    "store/tikv/backoff.go",
+    "store/tikv/coprocessor_slow_test.go",
+    "store/tikv/store_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: -// The test takes too long under the race detector.",
+      "files: store/tikv/2pc.go, store/tikv/2pc_test.go, store/tikv/backoff.go, store/tikv/coprocessor_slow_test.go, store/tikv/store_test.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv: optimize testing\nPR url: https://github.com/pingcap/tidb/pull/3886\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: -// The test takes too long under the race detector.\nChanged files (4): store/tikv/2pc_test.go, store/tikv/backoff.go, store/tikv/coprocessor_slow_test.go, store/tikv/store_test.go\nPatch url: https://github.com/pingcap/tidb/pull/3886.patch\nPicked test: type=unit path=store/tikv/2pc_test.go name=2pc_test"
+}

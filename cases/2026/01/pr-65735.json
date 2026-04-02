@@ -1,0 +1,45 @@
+{
+  "id": "pr-65735",
+  "source_pr": {
+    "number": 65735,
+    "url": "https://github.com/pingcap/tidb/pull/65735",
+    "title": "pkg/server/handler/optimizor: stabilize plan replayer tests",
+    "body": "<!--\n\nThank you for contributing to TiDB!\n\nPR Title Format:\n1. pkg [, pkg2, pkg3]: what's changed\n2. *: what's changed\n\n-->\n\n### What problem does this PR solve?\n<!--\n\nPlease create an issue first to describe the problem.\n\nThere MUST be one line starting with \"Issue Number:  \" and\nlinking the relevant issues via the \"close\" or \"ref\".\n\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\n\n-->\n\nIssue Number: close #65729\n\nProblem Summary:\n\nPlan replayer unit tests were flaky due to shared global server startup state, implicit default DB after `PLAN REPLAYER LOAD`, and async binding propagation/caching.\n\n### What changed and how does it work?\n\n- Recreate `server.RunInGoTestChan` before starting a server in the test helper.\n- After `PLAN REPLAYER LOAD`, explicitly `USE planReplayer` and enable plan baselines.\n- Use `require.Eventually` to wait until the binding takes effect.\n- Cleanup dump-created global bindings to avoid interference.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [ ] Unit test\n  - `go test ./pkg/server/handler/optimizor -run '^TestPlanReplayerWithMultiForeignKey$' -tags=intest`\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [x] No need to test\n  > - [x] The change is for stabilizing unit tests; CI will cover it.\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\n\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\n\n```release-note\nNone\n```\n"
+  },
+  "pr_merged_at": "2026-01-24T13:24:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/server/handler/optimizor/plan_replayer_test.go",
+    "name": "TestPlanReplayerWithMultiForeignKey"
+  },
+  "symptoms": [
+    "Number: close #65729  Problem Summary:  Plan replayer unit tests were flaky due to shared global server startup state, implicit default DB after `PLAN REPLAYER LOAD`"
+  ],
+  "failure_signature": "Number: close #65729  Problem Summary:  Plan replayer unit tests were flaky due to shared global server startup state, implicit default DB after `PLAN REPLAYER LOAD`",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/65735",
+    "https://github.com/pingcap/tidb/pull/65735.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/65735.patch",
+  "changed_files": [
+    "pkg/server/handler/optimizor/plan_replayer_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: Number: close #65729  Problem Summary:  Plan replayer unit tests were flaky due to shared global server startup state, implicit default DB after `PLAN REPLAYER LOAD`",
+      "files: pkg/server/handler/optimizor/plan_replayer_test.go"
+    ]
+  },
+  "analysis": "PR title: pkg/server/handler/optimizor: stabilize plan replayer tests\nPR url: https://github.com/pingcap/tidb/pull/65735\nTriage summary: Number: close #65729  Problem Summary:  Plan replayer unit tests were flaky due to shared global server startup state, implicit default DB after `PLAN REPLAYER LOAD`\nChanged files (1): pkg/server/handler/optimizor/plan_replayer_test.go\nFull patch analyzed; see patch_url."
+}

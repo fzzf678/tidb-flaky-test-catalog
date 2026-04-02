@@ -7,7 +7,7 @@ This repository catalogs historical flaky tests in TiDB as structured JSON cases
 
 ## Layout
 
-- `cases/`: one flaky case per JSON file
+- `cases/`: one flaky case per JSON file (suggested: `cases/<YYYY>/<MM>/pr-<PR>.json`)
 - `taxonomy.json`: root-cause taxonomy dictionary
 - `review_smells.json`: review-smells dictionary
 - `schemas/`: JSON Schemas for the above files
@@ -30,4 +30,3 @@ python scripts/validate.py
 ```bash
 make check
 ```
-

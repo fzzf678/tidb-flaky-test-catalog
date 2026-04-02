@@ -1,0 +1,53 @@
+{
+  "id": "pr-1245",
+  "source_pr": {
+    "number": 1245,
+    "url": "https://github.com/pingcap/tidb/pull/1245",
+    "title": "executor: makes dirty table supports XAPI.",
+    "body": "Currently, if a transaction has written some data, XAPI can not be used, this PR fixes this issue.\n"
+  },
+  "pr_merged_at": "2016-05-24T10:53:17+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t order by a desc\").Check(testkit.Rows(\"7 6\", \"6 8\", \"4 8\", \"3 4\", \"2 3\", \"1 5\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t order by a desc\").Check(testkit.Rows(\"7 6\", \"6 8\", \"4 8\", \"3 4\", \"2 3\", \"1 5\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1245",
+    "https://github.com/pingcap/tidb/pull/1245.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1245.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/executor.go",
+    "executor/executor_ddl.go",
+    "executor/executor_test.go",
+    "executor/executor_write.go",
+    "executor/union_scan.go",
+    "mysql/set.go",
+    "session.go",
+    "store/tikv/mock-tikv/cop_handler.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t order by a desc\").Check(testkit.Rows(\"7 6\", \"6 8\", \"4 8\", \"3 4\", \"2 3\", \"1 5\")) (executor/executor_test.go)",
+      "files: executor/builder.go, executor/executor.go, executor/executor_ddl.go, executor/executor_test.go, executor/executor_write.go, executor/union_scan.go, mysql/set.go, session.go, store/tikv/mock-tikv/cop_handler.go"
+    ]
+  },
+  "analysis": "PR title: executor: makes dirty table supports XAPI.\nPR url: https://github.com/pingcap/tidb/pull/1245\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t order by a desc\").Check(testkit.Rows(\"7 6\", \"6 8\", \"4 8\", \"3 4\", \"2 3\", \"1 5\")) (executor/executor_test.go)\nChanged files (9): executor/builder.go, executor/executor.go, executor/executor_ddl.go, executor/executor_test.go, executor/executor_write.go, executor/union_scan.go, mysql/set.go, session.go, store/tikv/mock-tikv/cop_handler.go\nPatch url: https://github.com/pingcap/tidb/pull/1245.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

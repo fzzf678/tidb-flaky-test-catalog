@@ -1,0 +1,46 @@
+{
+  "id": "pr-27199",
+  "source_pr": {
+    "number": 27199,
+    "url": "https://github.com/pingcap/tidb/pull/27199",
+    "title": "restore: remove restore meta sql in create table",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nSpeed up create tables via omit a DDL job.\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed: Remove all DDLs of rebasing autos.\r\n\r\nHow it Works: When creating table with `CreateTableWithInfo`, TiDB has rebased the auto ids via the table info:\r\n\r\nhttps://github.com/pingcap/tidb/blob/a9cba7c8e8b6da512609863b56ee7265c06c50dc/ddl/ddl_api.go#L1924-L1937\r\n\r\nIt's no meaning for rebasing the auto ids again.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Integration test (at `br_views_and_sequences`)\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n```release-note\r\nMerged the rebase auto id operation into create table.\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-08-30T14:38:12+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/restore/db.go",
+    "name": "restore: remove restore meta sql in create table"
+  },
+  "symptoms": [
+    "last_id=$(run_sql \"select n from $DB.auto_inc order by n desc limit 1\" | tail -n1) (br/tests/br_views_and_sequences/run.sh)"
+  ],
+  "failure_signature": "last_id=$(run_sql \"select n from $DB.auto_inc order by n desc limit 1\" | tail -n1) (br/tests/br_views_and_sequences/run.sh)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "last_id=$(run_sql \"select n from $DB.auto_inc order by n desc limit 1\" | tail -n1) (br/tests/br_views_and_sequences/run.sh)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/27199",
+    "https://github.com/pingcap/tidb/pull/27199.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/27199.patch",
+  "changed_files": [
+    "br/pkg/restore/db.go",
+    "br/tests/br_views_and_sequences/run.sh"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: last_id=$(run_sql \"select n from $DB.auto_inc order by n desc limit 1\" | tail -n1) (br/tests/br_views_and_sequences/run.sh)",
+      "files: br/pkg/restore/db.go, br/tests/br_views_and_sequences/run.sh"
+    ]
+  },
+  "analysis": "PR title: restore: remove restore meta sql in create table\nPR url: https://github.com/pingcap/tidb/pull/27199\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: last_id=$(run_sql \"select n from $DB.auto_inc order by n desc limit 1\" | tail -n1) (br/tests/br_views_and_sequences/run.sh)\nChanged files (2): br/pkg/restore/db.go, br/tests/br_views_and_sequences/run.sh\nPatch series analyzed; see patch_url."
+}

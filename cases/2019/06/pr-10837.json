@@ -1,0 +1,51 @@
+{
+  "id": "pr-10837",
+  "source_pr": {
+    "number": 10837,
+    "url": "https://github.com/pingcap/tidb/pull/10837",
+    "title": "*: add a column describing memory usage for table information_schema.processlist",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nCloses #10199\r\n\r\n### What is changed and how it works?\r\n\r\nAdd a column describing memory usage for table `information_schema.processlist` and keep `show processlist` acting as before.\r\n\r\n```mysql\r\nmysql> SELECT * FROM information_schema.processlist;\r\n+------+------+-----------+------+---------+------+-------+----------------------------------------------+------+\r\n| ID   | USER | HOST      | DB   | COMMAND | TIME | STATE | INFO                                         | MEM  |\r\n+------+------+-----------+------+---------+------+-------+----------------------------------------------+------+\r\n|    1 | root | 127.0.0.1 | test | Query   |    1 | 2     | select * from t, ta                          |  856 |\r\n|    2 | root | 127.0.0.1 | test | Query   |    0 | 2     | SELECT * FROM information_schema.processlist |    0 |\r\n+------+------+-----------+------+---------+------+-------+----------------------------------------------+------+\r\n2 rows in set (0.00 sec)\r\n\r\nmysql> show processlist;\r\n+------+------+-----------+------+---------+------+-------+----------------------+\r\n| Id   | User | Host      | db   | Command | Time | State | Info                 |\r\n+------+------+-----------+------+---------+------+-------+----------------------+\r\n|    2 | root | 127.0.0.1 | test | Query   |    0 | 2     | show processlist     |\r\n|    1 | root | 127.0.0.1 | test | Query   |    1 | 2     | select *  from t, ta |\r\n+------+------+-----------+------+---------+------+-------+----------------------+\r\n2 rows in set (0.01 sec)\r\n```\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Manual test (see above)\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\n - Increased code complexity\r\n\r\nRelated changes\r\n\r\n - Need to update the documentation\r\n - Need to be included in the release note?\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/10837)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2019-06-20T11:48:50+08:00",
+  "test": {
+    "type": "unit",
+    "path": "infoschema/tables_test.go",
+    "name": "tables_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from information_schema.PROCESSLIST order by ID;\").Sort().Check( (infoschema/tables_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from information_schema.PROCESSLIST order by ID;\").Sort().Check( (infoschema/tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/10837",
+    "https://github.com/pingcap/tidb/pull/10837.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/10837.patch",
+  "changed_files": [
+    "executor/show.go",
+    "infoschema/tables.go",
+    "infoschema/tables_test.go",
+    "planner/core/logical_plans.go",
+    "session/session.go",
+    "util/misc_test.go",
+    "util/processinfo.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from information_schema.PROCESSLIST order by ID;\").Sort().Check( (infoschema/tables_test.go)",
+      "files: executor/show.go, infoschema/tables.go, infoschema/tables_test.go, planner/core/logical_plans.go, session/session.go, util/misc_test.go, util/processinfo.go"
+    ]
+  },
+  "analysis": "PR title: *: add a column describing memory usage for table information_schema.processlist\nPR url: https://github.com/pingcap/tidb/pull/10837\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from information_schema.PROCESSLIST order by ID;\").Sort().Check( (infoschema/tables_test.go)\nChanged files (7): executor/show.go, infoschema/tables.go, infoschema/tables_test.go, planner/core/logical_plans.go, session/session.go, util/misc_test.go, util/processinfo.go\nPatch url: https://github.com/pingcap/tidb/pull/10837.patch\nPicked test: type=unit path=infoschema/tables_test.go name=tables_test"
+}

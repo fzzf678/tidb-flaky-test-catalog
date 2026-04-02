@@ -1,0 +1,48 @@
+{
+  "id": "pr-9681",
+  "source_pr": {
+    "number": 9681,
+    "url": "https://github.com/pingcap/tidb/pull/9681",
+    "title": "session,executor: performance improvement in SetProcessInfo",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nCloses #9638 \r\n\r\n### What is changed and how it works?\r\n\r\nSearch in the map only in `Showprocess`\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n - manual test\r\n```sql\r\nxiekeyi@ubuntu:~/main$ mysql -u root -P 4000 -h 127.0.0.1\r\nWelcome to the MySQL monitor.  Commands end with ; or \\g.\r\nYour MySQL connection id is 3\r\nServer version: 5.7.25-TiDB-v3.0.0-beta-210-g8fa2716dc-dirty MySQL Community Server (Apache License 2.0)\r\n\r\nCopyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.\r\n\r\nOracle is a registered trademark of Oracle Corporation and/or its\r\naffiliates. Other names may be trademarks of their respective\r\nowners.\r\n\r\nType 'help;' or '\\h' for help. Type '\\c' to clear the current input statement.\r\n\r\nmysql> show processlist;\r\n+------+------+-----------+------+---------+------+-------+------------------+\r\n| Id   | User | Host      | db   | Command | Time | State | Info             |\r\n+------+------+-----------+------+---------+------+-------+------------------+\r\n|    2 | root | 127.0.0.1 | test | Sleep   |    6 | 2     |                  |\r\n|    3 | root | 127.0.0.1 |      | Query   |    0 | 2     | show processlist |\r\n+------+------+-----------+------+---------+------+-------+------------------+\r\n2 rows in set (0.00 sec)\r\n\r\nmysql> show processlist;\r\n+------+------+-----------+------+---------+------+-------+------------------+\r\n| Id   | User | Host      | db   | Command | Time | State | Info             |\r\n+------+------+-----------+------+---------+------+-------+------------------+\r\n|    3 | root | 127.0.0.1 |      | Query   |    0 | 2     | show processlist |\r\n|    2 | root | 127.0.0.1 | test | Sleep   |    0 | 2     |                  |\r\n+------+------+-----------+------+---------+------+-------+------------------+\r\n2 rows in set (0.00 sec)\r\n\r\nmysql> show processlist;\r\n+------+------+-----------+------+---------+------+-------+------------------------------+\r\n| Id   | User | Host      | db   | Command | Time | State | Info                         |\r\n+------+------+-----------+------+---------+------+-------+------------------------------+\r\n|    3 | root | 127.0.0.1 |      | Query   |    0 | 2     | show processlist             |\r\n|    2 | root | 127.0.0.1 | test | Sleep   |  171 | 2     |                              |\r\n|   13 | root | 127.0.0.1 | test | Query   |    0 | 2     | CREATE TABLE aebcfd (ID int) |\r\n|   14 | root | 127.0.0.1 |      | Sleep   |   10 | 2     |                              |\r\n+------+------+-----------+------+---------+------+-------+------------------------------+\r\n4 rows in set (0.00 sec)\r\n\r\nmysql> show processlist;\r\n+------+------+-----------+------+---------+------+-------+------------------------------+\r\n| Id   | User | Host      | db   | Command | Time | State | Info                         |\r\n+------+------+-----------+------+---------+------+-------+------------------------------+\r\n|    2 | root | 127.0.0.1 | test | Sleep   |  172 | 2     |                              |\r\n|   13 | root | 127.0.0.1 | test | Query   |    0 | 2     | CREATE TABLE afcdbe (ID int) |\r\n|   14 | root | 127.0.0.1 |      | Sleep   |   11 | 2     |                              |\r\n|    3 | root | 127.0.0.1 |      | Query   |    0 | 2     | show processlist             |\r\n+------+------+-----------+------+---------+------+-------+------------------------------+\r\n4 rows in set (0.01 sec)\r\n\r\nmysql> show processlist;\r\n+------+------+-----------+------+---------+------+-------+------------------------------+\r\n| Id   | User | Host      | db   | Command | Time | State | Info                         |\r\n+------+------+-----------+------+---------+------+-------+------------------------------+\r\n|    3 | root | 127.0.0.1 |      | Query   |    0 | 2     | show processlist             |\r\n|    2 | root | 127.0.0.1 | test | Sleep   |  173 | 2     |                              |\r\n|   13 | root | 127.0.0.1 | test | Query   |    0 | 2     | CREATE TABLE badfce (ID int) |\r\n|   14 | root | 127.0.0.1 |      | Sleep   |   12 | 2     |                              |\r\n+------+------+-----------+------+---------+------+-------+------------------------------+\r\n4 rows in set (0.00 sec)\r\n\r\nmysql> select tidb_version()\\G\r\n*************************** 1. row ***************************\r\ntidb_version(): Release Version: v3.0.0-beta-210-g8fa2716dc-dirty\r\nGit Commit Hash: 8fa2716dccaaeb1ecaddf8da69a2b366f3a78aeb\r\nGit Branch: issue#9638\r\nUTC Build Time: 2019-03-13 03:47:32\r\nGoVersion: go version go1.12 linux/amd64\r\nRace Enabled: false\r\nTiKV Min Version: 2.1.0-alpha.1-ff3dd160846b7d1aed9079c389fc188f7f5ea13e\r\nCheck Table Before Drop: false\r\n1 row in set (0.00 sec)\r\n\r\nmysql> \r\n```\r\n"
+  },
+  "pr_merged_at": "2019-03-13T17:24:40+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_pkg_test.go",
+    "name": "executor_pkg_test"
+  },
+  "symptoms": [
+    "Race Enabled: false"
+  ],
+  "failure_signature": "Race Enabled: false",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "session,executor: performance improvement in SetProcessInfo",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9681",
+    "https://github.com/pingcap/tidb/pull/9681.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9681.patch",
+  "changed_files": [
+    "executor/executor_pkg_test.go",
+    "executor/show.go",
+    "session/session.go",
+    "util/processinfo.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: Race Enabled: false",
+      "files: executor/executor_pkg_test.go, executor/show.go, session/session.go, util/processinfo.go"
+    ]
+  },
+  "analysis": "PR title: session,executor: performance improvement in SetProcessInfo\nPR url: https://github.com/pingcap/tidb/pull/9681\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Race Enabled: false\nChanged files (4): executor/executor_pkg_test.go, executor/show.go, session/session.go, util/processinfo.go\nPatch url: https://github.com/pingcap/tidb/pull/9681.patch\nPicked test: type=unit path=executor/executor_pkg_test.go name=executor_pkg_test"
+}

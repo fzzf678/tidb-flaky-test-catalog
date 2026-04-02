@@ -1,0 +1,46 @@
+{
+  "id": "pr-22183",
+  "source_pr": {
+    "number": 22183,
+    "url": "https://github.com/pingcap/tidb/pull/22183",
+    "title": "executor: fix data too long in union statement with select null and select varchar",
+    "body": "Signed-off-by: AilinKid <314806019@qq.com>\r\n\r\n<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close https://github.com/pingcap/tidb/issues/22179\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed:\r\nFor type null column, although the eval type is a string, it still should be returned with `CoercibilityIgnorable` rather than `CoercibilityImplicit` in deriveCoercibilityForColumn(),  which will lead it to use high coercibility with `utf8mb4` collation rather than `binary` itself in DeriveCollationFromExprs() when a null column is unioned with a utf8mb4 column.\r\n\r\n### Related changes\r\n\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n- Integration test\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- executor: fix data too long in union statement with select null and select varchar.\r\n"
+  },
+  "pr_merged_at": "2021-01-06T13:34:36+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from (select null as a union all select a from t) aaa order by a\").Check(testkit.Rows(\"<nil>\", \"aaaaaaaaa\", \"天王盖地虎宝塔镇河妖\")) (expression/integration_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from (select null as a union all select a from t) aaa order by a\").Check(testkit.Rows(\"<nil>\", \"aaaaaaaaa\", \"天王盖地虎宝塔镇河妖\")) (expression/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select * from (select null as a union all select a from t) aaa order by a\").Check(testkit.Rows(\"<nil>\", \"aaaaaaaaa\", \"天王盖地虎宝塔镇河妖\")) (expression/integration_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22183",
+    "https://github.com/pingcap/tidb/pull/22183.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22183.patch",
+  "changed_files": [
+    "expression/collation.go",
+    "expression/integration_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from (select null as a union all select a from t) aaa order by a\").Check(testkit.Rows(\"<nil>\", \"aaaaaaaaa\", \"天王盖地虎宝塔镇河妖\")) (expression/integration_test.go)",
+      "files: expression/collation.go, expression/integration_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix data too long in union statement with select null and select varchar\nPR url: https://github.com/pingcap/tidb/pull/22183\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from (select null as a union all select a from t) aaa order by a\").Check(testkit.Rows(\"<nil>\", \"aaaaaaaaa\", \"天王盖地虎宝塔镇河妖\")) (expression/integration_test.go)\nChanged files (2): expression/collation.go, expression/integration_test.go\nPatch series analyzed; see patch_url."
+}

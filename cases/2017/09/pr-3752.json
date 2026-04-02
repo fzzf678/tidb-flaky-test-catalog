@@ -1,0 +1,46 @@
+{
+  "id": "pr-3752",
+  "source_pr": {
+    "number": 3752,
+    "url": "https://github.com/pingcap/tidb/pull/3752",
+    "title": "util/goroutine_pool: add a goroutine pool package utilities",
+    "body": "Reuse goroutine in a pool can avoid `runtime.morestack`. It may be useful sometimes.\r\n\r\n```\r\nBenchmarkGoPool-4          \t 5000000\t       392 ns/op\r\nBenchmarkGo-4              \t10000000\t       161 ns/op\r\nBenchmarkMorestackPool-4   \t 2000000\t       706 ns/op\r\nBenchmarkMoreStack-4       \t  500000\t      3018 ns/op\r\n```"
+  },
+  "pr_merged_at": "2017-09-12T15:44:28+08:00",
+  "test": {
+    "type": "unit",
+    "path": "util/goroutine_pool/gp_test.go",
+    "name": "gp_test"
+  },
+  "symptoms": [
+    "+ statusDying int32 = 2 // Intermediate state used to avoid race: Idle => Dying => Dead"
+  ],
+  "failure_signature": "+ statusDying int32 = 2 // Intermediate state used to avoid race: Idle => Dying => Dead",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "util/goroutine_pool: add a goroutine pool package utilities",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3752",
+    "https://github.com/pingcap/tidb/pull/3752.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3752.patch",
+  "changed_files": [
+    "util/goroutine_pool/gp.go",
+    "util/goroutine_pool/gp_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: + statusDying int32 = 2 // Intermediate state used to avoid race: Idle => Dying => Dead",
+      "files: util/goroutine_pool/gp.go, util/goroutine_pool/gp_test.go"
+    ]
+  },
+  "analysis": "PR title: util/goroutine_pool: add a goroutine pool package utilities\nPR url: https://github.com/pingcap/tidb/pull/3752\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + statusDying int32 = 2 // Intermediate state used to avoid race: Idle => Dying => Dead\nChanged files (2): util/goroutine_pool/gp.go, util/goroutine_pool/gp_test.go\nPatch url: https://github.com/pingcap/tidb/pull/3752.patch\nPicked test: type=unit path=util/goroutine_pool/gp_test.go name=gp_test"
+}

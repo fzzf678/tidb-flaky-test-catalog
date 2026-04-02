@@ -1,0 +1,46 @@
+{
+  "id": "pr-15526",
+  "source_pr": {
+    "number": 15526,
+    "url": "https://github.com/pingcap/tidb/pull/15526",
+    "title": "*: fix data race caused by analyzeStatus.",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #15510，close #15521 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: [xxx](url) <!-- REMOVE this line if not applicable -->\r\n\r\nWhat's Changed:\r\nThe global variable `analyzeStatus ` which not be locked in `analyze_jobs.go:89` caused data race among the UT.\r\nNow locked it.\r\n\r\n"
+  },
+  "pr_merged_at": "2020-03-21T16:49:31+08:00",
+  "test": {
+    "type": "unit",
+    "path": "statistics/analyze_jobs.go",
+    "name": "analyze_jobs"
+  },
+  "symptoms": [
+    "PR body: analyzeStatus caused data race in UT; needs locking when reading updateTime."
+  ],
+  "failure_signature": "PR body: analyzeStatus caused data race in UT; needs locking when reading updateTime.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: fix data race caused by analyzeStatus.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/15526",
+    "https://github.com/pingcap/tidb/pull/15526.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/15526.patch",
+  "changed_files": [
+    "statistics/analyze_jobs.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body: analyzeStatus caused data race in UT; needs locking when reading updateTime.",
+      "evidence: diff changes sort comparator to call `job.getUpdateTime()` which locks job.Mutex before reading updateTime (statistics/analyze_jobs.go).",
+      "files: statistics/analyze_jobs.go"
+    ]
+  },
+  "analysis": "PR title: *: fix data race caused by analyzeStatus.\nPR url: https://github.com/pingcap/tidb/pull/15526\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body: analyzeStatus caused data race in UT; needs locking when reading updateTime.\nChanged files (1): statistics/analyze_jobs.go\nPatch url: https://github.com/pingcap/tidb/pull/15526.patch\nPicked test: type=unit path=statistics/analyze_jobs.go name=analyze_jobs"
+}

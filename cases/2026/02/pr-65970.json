@@ -1,0 +1,52 @@
+{
+  "id": "pr-65970",
+  "source_pr": {
+    "number": 65970,
+    "url": "https://github.com/pingcap/tidb/pull/65970",
+    "title": "dxf/importinto: run table-empty check once per task",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #65954\r\n\r\nProblem Summary:\r\nAfter integrated the table mode feature #61200, we also added another round of table emptyness check, but for `IMPORT INTO` (classic mode), the target-table-empty check should be done at task start boundary, before starting import job execution, instead of inside later step-specific logic.\r\n\r\n### What changed and how does it work?\r\n\r\n- Moved the table-empty precheck to the beginning of `OnNextSubtasksBatch` in `pkg/dxf/importinto/scheduler.go`.\r\n- Added guard conditions so it only runs when:\r\n  - `kerneltype.IsClassic()`\r\n  - `task.Step == proto.StepInit`\r\n- Removed the old check from the `ImportStepImport/ImportStepEncodeAndSort` switch branch.\r\n- This makes the check happen earlier in the first-step planning path and keeps later-step flow unchanged.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2026-02-27T12:10:42+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "tests/realtikvtest/importintotest/import_into_test.go",
+    "name": "TestSchedulerExtLocalSort"
+  },
+  "symptoms": [
+    "diff shows determinism stabilization in tests/realtikvtest/importintotest/import_into_test.go"
+  ],
+  "failure_signature": "diff shows determinism stabilization in tests/realtikvtest/importintotest/import_into_test.go",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/65970",
+    "https://github.com/pingcap/tidb/pull/65970.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/65970.patch",
+  "changed_files": [
+    "pkg/ddl/index.go",
+    "pkg/dxf/importinto/scheduler.go",
+    "pkg/dxf/importinto/scheduler_testkit_test.go",
+    "pkg/dxf/importinto/task_executor.go",
+    "pkg/executor/importer/BUILD.bazel",
+    "pkg/executor/importer/job.go",
+    "pkg/executor/importer/job_test.go",
+    "tests/realtikvtest/importintotest/import_into_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: diff shows determinism stabilization in tests/realtikvtest/importintotest/import_into_test.go",
+      "files: pkg/dxf/importinto/scheduler_testkit_test.go, tests/realtikvtest/importintotest/import_into_test.go"
+    ]
+  },
+  "analysis": "PR title: dxf/importinto: run table-empty check once per task\nPR url: https://github.com/pingcap/tidb/pull/65970\nTriage summary: diff shows determinism stabilization in tests/realtikvtest/importintotest/import_into_test.go\nChanged files (8): pkg/ddl/index.go, pkg/dxf/importinto/scheduler.go, pkg/dxf/importinto/scheduler_testkit_test.go, pkg/dxf/importinto/task_executor.go, pkg/executor/importer/BUILD.bazel, pkg/executor/importer/job.go, pkg/executor/importer/job_test.go, tests/realtikvtest/importintotest/import_into_test.go\nFull patch analyzed; see patch_url."
+}

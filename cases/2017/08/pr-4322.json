@@ -1,0 +1,47 @@
+{
+  "id": "pr-4322",
+  "source_pr": {
+    "number": 4322,
+    "url": "https://github.com/pingcap/tidb/pull/4322",
+    "title": "*: fix bug of union type cast",
+    "body": "We forgot to set charset and collate for union's result."
+  },
+  "pr_merged_at": "2017-08-26T15:24:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "result.Sort().Check(testkit.Rows(\"abc abc\")) (executor/join_test.go)"
+  ],
+  "failure_signature": "result.Sort().Check(testkit.Rows(\"abc abc\")) (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4322",
+    "https://github.com/pingcap/tidb/pull/4322.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4322.patch",
+  "changed_files": [
+    "executor/join_test.go",
+    "expression/builtin_string.go",
+    "plan/logical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result.Sort().Check(testkit.Rows(\"abc abc\")) (executor/join_test.go)",
+      "files: executor/join_test.go, expression/builtin_string.go, plan/logical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: *: fix bug of union type cast\nPR url: https://github.com/pingcap/tidb/pull/4322\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result.Sort().Check(testkit.Rows(\"abc abc\")) (executor/join_test.go)\nChanged files (3): executor/join_test.go, expression/builtin_string.go, plan/logical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/4322.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

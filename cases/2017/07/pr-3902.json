@@ -1,0 +1,52 @@
+{
+  "id": "pr-3902",
+  "source_pr": {
+    "number": 3902,
+    "url": "https://github.com/pingcap/tidb/pull/3902",
+    "title": "plan, statistics: plan topn more precisely.",
+    "body": "For table t (a, b) which col a is pk, and b is index key, we were hard to choose IndexScan or TableScan.\r\nNow we add a new dimension called `expectedCnt` for dynamic programming, which means the operator will be closed after returning `expectedCnt` records.\r\nFor SQL like `select * from t where b < 10 order by a limit 1`, if we choose to push the order to data source, the expected count will be 1, and the table scan expects to scan about `1/selectivity(b<10)`'s records. Index scan will sure to scan `Count * selectivity(b<10)`'s records. This will make cost more precise.\r\n\r\n@winoros @lamxTyler PTAL"
+  },
+  "pr_merged_at": "2017-07-27T10:53:23+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/cbo_test.go",
+    "name": "cbo_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t where t.b <= 100 order by t.a limit 1\", (plan/cbo_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t where t.b <= 100 order by t.a limit 1\", (plan/cbo_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3902",
+    "https://github.com/pingcap/tidb/pull/3902.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3902.patch",
+  "changed_files": [
+    "plan/cbo_test.go",
+    "plan/logical_plans.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/optimizer.go",
+    "plan/physical_plan_test.go",
+    "plan/plan.go",
+    "statistics/statistics_test.go",
+    "statistics/table.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t where t.b <= 100 order by t.a limit 1\", (plan/cbo_test.go)",
+      "files: plan/cbo_test.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/optimizer.go, plan/physical_plan_test.go, plan/plan.go, statistics/statistics_test.go, statistics/table.go"
+    ]
+  },
+  "analysis": "PR title: plan, statistics: plan topn more precisely.\nPR url: https://github.com/pingcap/tidb/pull/3902\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t where t.b <= 100 order by t.a limit 1\", (plan/cbo_test.go)\nChanged files (8): plan/cbo_test.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/optimizer.go, plan/physical_plan_test.go, plan/plan.go, statistics/statistics_test.go, statistics/table.go\nPatch url: https://github.com/pingcap/tidb/pull/3902.patch\nPicked test: type=unit path=plan/cbo_test.go name=cbo_test"
+}

@@ -1,0 +1,51 @@
+{
+  "id": "pr-1790",
+  "source_pr": {
+    "number": 1790,
+    "url": "https://github.com/pingcap/tidb/pull/1790",
+    "title": "*: support history read with old schema",
+    "body": "When user set 'tidb_snapshot' variable, load and use the schema at the snapshot time.\n"
+  },
+  "pr_merged_at": "2016-10-08T19:54:48+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from history_read order by a\").Check(testkit.Rows(\"2 <nil>\", \"4 <nil>\", \"8 8\", \"9 9\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from history_read order by a\").Check(testkit.Rows(\"2 <nil>\", \"4 <nil>\", \"8 8\", \"9 9\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1790",
+    "https://github.com/pingcap/tidb/pull/1790.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1790.patch",
+  "changed_files": [
+    "domain/domain.go",
+    "executor/compiler.go",
+    "executor/executor_simple.go",
+    "executor/executor_test.go",
+    "infoschema/infoschema.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from history_read order by a\").Check(testkit.Rows(\"2 <nil>\", \"4 <nil>\", \"8 8\", \"9 9\")) (executor/executor_test.go)",
+      "files: domain/domain.go, executor/compiler.go, executor/executor_simple.go, executor/executor_test.go, infoschema/infoschema.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go"
+    ]
+  },
+  "analysis": "PR title: *: support history read with old schema\nPR url: https://github.com/pingcap/tidb/pull/1790\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from history_read order by a\").Check(testkit.Rows(\"2 <nil>\", \"4 <nil>\", \"8 8\", \"9 9\")) (executor/executor_test.go)\nChanged files (7): domain/domain.go, executor/compiler.go, executor/executor_simple.go, executor/executor_test.go, infoschema/infoschema.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go\nPatch url: https://github.com/pingcap/tidb/pull/1790.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

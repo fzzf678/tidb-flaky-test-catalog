@@ -1,0 +1,47 @@
+{
+  "id": "pr-11793",
+  "source_pr": {
+    "number": 11793,
+    "url": "https://github.com/pingcap/tidb/pull/11793",
+    "title": "tikv: do not update regionTxnSize on retries",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nRetries are done concurrently so the `regionTxnSize` map is also updated concurrently. This can cause data race and make TiDB panic.\r\n\r\ncaused by https://github.com/pingcap/tidb/pull/11725\r\n\r\n### What is changed and how it works?\r\n\r\nDo not update `regionTxnSize` on retries. The size is not used when building a retrying PrewriteRequest.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\nUnit test"
+  },
+  "pr_merged_at": "2019-08-21T10:01:47+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/2pc_fail_test.go",
+    "name": "TestFailPrewriteRegionError"
+  },
+  "symptoms": [
+    "+// TestFailPrewriteRegionError tests data race does not happen on retries"
+  ],
+  "failure_signature": "+// TestFailPrewriteRegionError tests data race does not happen on retries",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tikv: do not update regionTxnSize on retries",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/11793",
+    "https://github.com/pingcap/tidb/pull/11793.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/11793.patch",
+  "changed_files": [
+    "store/mockstore/mocktikv/rpc.go",
+    "store/tikv/2pc.go",
+    "store/tikv/2pc_fail_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: +// TestFailPrewriteRegionError tests data race does not happen on retries",
+      "files: store/mockstore/mocktikv/rpc.go, store/tikv/2pc.go, store/tikv/2pc_fail_test.go"
+    ]
+  },
+  "analysis": "PR title: tikv: do not update regionTxnSize on retries\nPR url: https://github.com/pingcap/tidb/pull/11793\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: +// TestFailPrewriteRegionError tests data race does not happen on retries\nChanged files (3): store/mockstore/mocktikv/rpc.go, store/tikv/2pc.go, store/tikv/2pc_fail_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11793.patch\nPicked test: type=unit path=store/tikv/2pc_fail_test.go name=TestFailPrewriteRegionError"
+}

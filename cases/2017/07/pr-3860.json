@@ -1,0 +1,46 @@
+{
+  "id": "pr-3860",
+  "source_pr": {
+    "number": 3860,
+    "url": "https://github.com/pingcap/tidb/pull/3860",
+    "title": "executor: fix a bug in index join.",
+    "body": "When the types keys of index join are different, we should converts outer key to index key's types.\r\n\r\n@winoros @lamxTyler PTAL"
+  },
+  "pr_merged_at": "2017-07-23T15:42:20+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "result.Sort().Check(testkit.Rows(\"0.0 0.00\", \"2.0 <nil>\")) (executor/join_test.go)"
+  ],
+  "failure_signature": "result.Sort().Check(testkit.Rows(\"0.0 0.00\", \"2.0 <nil>\")) (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3860",
+    "https://github.com/pingcap/tidb/pull/3860.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3860.patch",
+  "changed_files": [
+    "executor/join_test.go",
+    "executor/new_join.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result.Sort().Check(testkit.Rows(\"0.0 0.00\", \"2.0 <nil>\")) (executor/join_test.go)",
+      "files: executor/join_test.go, executor/new_join.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix a bug in index join.\nPR url: https://github.com/pingcap/tidb/pull/3860\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result.Sort().Check(testkit.Rows(\"0.0 0.00\", \"2.0 <nil>\")) (executor/join_test.go)\nChanged files (2): executor/join_test.go, executor/new_join.go\nPatch url: https://github.com/pingcap/tidb/pull/3860.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

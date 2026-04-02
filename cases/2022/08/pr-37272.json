@@ -1,0 +1,47 @@
+{
+  "id": "pr-37272",
+  "source_pr": {
+    "number": 37272,
+    "url": "https://github.com/pingcap/tidb/pull/37272",
+    "title": "*: fix the order of `FallbackOldAndSetNewAction`",
+    "body": "Signed-off-by: YangKeao <yangkeao@chunibyo.icu>\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #37058\r\n\r\nProblem Summary:\r\n\r\n1. The order of `FallbackOldAndSetNewAction` is wrong. It should set the current action to the new one, and set the original one as its fallback (as how it's used, and described in the comments). However, it acts in the opposite way now :facepalm: , and cause the unstable test.\r\n2. The bytes limit of the third test is too low, which may cause two partitions. I increased the bytes limit, and it will only spill one partition now.\r\n\r\n### What is changed and how it works?\r\n\r\nI rearrange the arguments order of the `FallbackOldAndSetNewAction`\r\n\r\n### Check List\r\n\r\nTests\r\n\r\n- [x] Unit test\r\n- [ ]Integration test\r\n- [x] Manual test\r\n- [ ] No code\r\n\r\nI manually, repeatedly run this test multiple times (in parallel, 32 jobs) for several minutes, and it seems that it's stable now :heart: .\r\n\r\n### Release note\r\n\r\n```release-note\r\nFix the issue that the action order of \r\n```\r\n"
+  },
+  "pr_merged_at": "2022-08-23T19:08:21+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_pkg_test.go",
+    "name": "executor_pkg_test"
+  },
+  "symptoms": [
+    "1. The order of `FallbackOldAndSetNewAction` is wrong. It should set the current action to the new one, and set the original one as its fallback (as how it's used, and described in the comments). However, it acts in the opposite way now :facepalm: , and cause the unstable test."
+  ],
+  "failure_signature": "1. The order of `FallbackOldAndSetNewAction` is wrong. It should set the current action to the new one, and set the original one as its fallback (as how it's used, and described in the comments). However, it acts in the opposite way now :facepalm: , and cause the unstable test.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: fix the order of `FallbackOldAndSetNewAction`",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/37272",
+    "https://github.com/pingcap/tidb/pull/37272.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/37272.patch",
+  "changed_files": [
+    "executor/executor_pkg_test.go",
+    "util/memory/tracker.go",
+    "util/memory/tracker_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: 1. The order of `FallbackOldAndSetNewAction` is wrong. It should set the current action to the new one, and set the original one as its fallback (as how it's used, and described in the comments). However, it acts in the opposite way now :facepalm: , and cause the unstable test.",
+      "files: executor/executor_pkg_test.go, util/memory/tracker.go, util/memory/tracker_test.go"
+    ]
+  },
+  "analysis": "PR title: *: fix the order of `FallbackOldAndSetNewAction`\nPR url: https://github.com/pingcap/tidb/pull/37272\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: 1. The order of `FallbackOldAndSetNewAction` is wrong. It should set the current action to the new one, and set the original one as its fallback (as how it's used, and described in the comments). However, it acts in the opposite way now :facepalm: , and cause the unstable test.\nChanged files (3): executor/executor_pkg_test.go, util/memory/tracker.go, util/memory/tracker_test.go\nPatch url: https://github.com/pingcap/tidb/pull/37272.patch\nPicked test: type=unit path=executor/executor_pkg_test.go name=executor_pkg_test"
+}

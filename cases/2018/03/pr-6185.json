@@ -1,0 +1,47 @@
+{
+  "id": "pr-6185",
+  "source_pr": {
+    "number": 6185,
+    "url": "https://github.com/pingcap/tidb/pull/6185",
+    "title": "executor, plan: convert Limit to TableDual when meet `limit 0`",
+    "body": "Fix #5341 \r\nBefore this PR: \r\n``` sql\r\ncreate table t(a char);\r\ninsert into t value('a');\r\nselect * from test.t where a < 1 order by a limit 0;\r\n```\r\n``` sql\r\n+----------------+--------------+----------------+------+----------------------------------------------+-------+\r\n| id             | parents      | children       | task | operator info                                | count |\r\n+----------------+--------------+----------------+------+----------------------------------------------+-------+\r\n| TableScan_15   |              |                | cop  | table:t, range:[-inf,+inf], keep order:false | 1.00  |\r\n| TableReader_16 | Selection_14 |                | root | data:TableScan_15                            | 1.00  |\r\n| Selection_14   | TopN_10      | TableReader_16 | root | lt(cast(test.t.a), 1)                        | 0.80  |\r\n| TopN_10        |              | Selection_14   | root | test.t.a:asc, offset:0, count:0              | 0.00  |\r\n+----------------+--------------+----------------+------+----------------------------------------------+-------+\r\n```\r\nThis sql will get panic message as #5341 shows,\r\ncause TopN cannot be pushed down, and the check [here](https://github.com/pingcap/tidb/blob/master/executor/sort.go#L401) will be true.\r\n\r\nPTAL @coocood @zz-jason "
+  },
+  "pr_merged_at": "2018-03-29T21:56:35+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from test.t where a < 1 order by a limit 0;\").Check(testkit.Rows()) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from test.t where a < 1 order by a limit 0;\").Check(testkit.Rows()) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6185",
+    "https://github.com/pingcap/tidb/pull/6185.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6185.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "plan/cbo_test.go",
+    "plan/logical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from test.t where a < 1 order by a limit 0;\").Check(testkit.Rows()) (executor/executor_test.go)",
+      "files: executor/executor_test.go, plan/cbo_test.go, plan/logical_plan_builder.go, plan/logical_plan_test.go"
+    ]
+  },
+  "analysis": "PR title: executor, plan: convert Limit to TableDual when meet `limit 0`\nPR url: https://github.com/pingcap/tidb/pull/6185\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from test.t where a < 1 order by a limit 0;\").Check(testkit.Rows()) (executor/executor_test.go)\nChanged files (3): executor/executor_test.go, plan/cbo_test.go, plan/logical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/6185.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

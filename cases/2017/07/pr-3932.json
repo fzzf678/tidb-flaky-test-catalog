@@ -1,0 +1,46 @@
+{
+  "id": "pr-3932",
+  "source_pr": {
+    "number": 3932,
+    "url": "https://github.com/pingcap/tidb/pull/3932",
+    "title": "executor: fix bug when sort meets apply.",
+    "body": "I forgot to set sort's Idx.\r\n@winoros @lamxTyler PTAL"
+  },
+  "pr_merged_at": "2017-07-28T14:33:12+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select (select id from s where s.id = t.id order by s.id) from t\") (executor/join_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select (select id from s where s.id = t.id order by s.id) from t\") (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3932",
+    "https://github.com/pingcap/tidb/pull/3932.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3932.patch",
+  "changed_files": [
+    "executor/join_test.go",
+    "executor/sort.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select (select id from s where s.id = t.id order by s.id) from t\") (executor/join_test.go)",
+      "files: executor/join_test.go, executor/sort.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix bug when sort meets apply.\nPR url: https://github.com/pingcap/tidb/pull/3932\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select (select id from s where s.id = t.id order by s.id) from t\") (executor/join_test.go)\nChanged files (2): executor/join_test.go, executor/sort.go\nPatch url: https://github.com/pingcap/tidb/pull/3932.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

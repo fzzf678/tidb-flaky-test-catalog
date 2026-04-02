@@ -1,0 +1,49 @@
+{
+  "id": "pr-57629",
+  "source_pr": {
+    "number": 57629,
+    "url": "https://github.com/pingcap/tidb/pull/57629",
+    "title": "planner: fix that vector index output empty result when pk is non-int type",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #57627 \r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\nWhen pk is clustered and non-int, the full range should be `[MinNotNull, MaxValue]`. But it's `[MinInt64, MaxInt64]` currently. So it will output an empty result.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-11-27T09:38:29+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/planner/core/casetest/vectorsearch/vector_index_test.go",
+    "name": "TestANNIndexWithNonIntClusteredPk"
+  },
+  "symptoms": [
+    "stmts, err := session.Parse(sctx, \"select * from t1 use index(vector_index) order by vec_cosine_distance(vec, '[1,1,1]') limit 1\") (pkg/planner/core/casetest/vectorsearch/vector_index_test.go)"
+  ],
+  "failure_signature": "stmts, err := session.Parse(sctx, \"select * from t1 use index(vector_index) order by vec_cosine_distance(vec, '[1,1,1]') limit 1\") (pkg/planner/core/casetest/vectorsearch/vector_index_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/57629",
+    "https://github.com/pingcap/tidb/pull/57629.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/57629.patch",
+  "changed_files": [
+    "pkg/planner/core/casetest/vectorsearch/BUILD.bazel",
+    "pkg/planner/core/casetest/vectorsearch/vector_index_test.go",
+    "pkg/planner/core/find_best_task.go",
+    "pkg/planner/core/planbuilder.go",
+    "pkg/planner/util/path.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: stmts, err := session.Parse(sctx, \"select * from t1 use index(vector_index) order by vec_cosine_distance(vec, '[1,1,1]') limit 1\") (pkg/planner/core/casetest/vectorsearch/vector_index_test.go)",
+      "files: pkg/planner/core/casetest/vectorsearch/BUILD.bazel, pkg/planner/core/casetest/vectorsearch/vector_index_test.go, pkg/planner/core/find_best_task.go, pkg/planner/core/planbuilder.go, pkg/planner/util/path.go"
+    ]
+  },
+  "analysis": "PR title: planner: fix that vector index output empty result when pk is non-int type\nPR url: https://github.com/pingcap/tidb/pull/57629\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: stmts, err := session.Parse(sctx, \"select * from t1 use index(vector_index) order by vec_cosine_distance(vec, '[1,1,1]') limit 1\") (pkg/planner/core/casetest/vectorsearch/vector_index_test.go)\nChanged files (5): pkg/planner/core/casetest/vectorsearch/BUILD.bazel, pkg/planner/core/casetest/vectorsearch/vector_index_test.go, pkg/planner/core/find_best_task.go, pkg/planner/core/planbuilder.go, pkg/planner/util/path.go\nPatch url: https://github.com/pingcap/tidb/pull/57629.patch\nPicked test: type=unit path=pkg/planner/core/casetest/vectorsearch/vector_index_test.go name=TestANNIndexWithNonIntClusteredPk"
+}

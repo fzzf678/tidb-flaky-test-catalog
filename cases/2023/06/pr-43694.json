@@ -1,0 +1,56 @@
+{
+  "id": "pr-43694",
+  "source_pr": {
+    "number": 43694,
+    "url": "https://github.com/pingcap/tidb/pull/43694",
+    "title": "*: use a new algorithm to improve the speed of admin check table/index",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #43693\r\n\r\nProblem Summary:\r\nIn the scenario of very large tables (more than 1 billion rows, more than 1000 regions), after a series of optimizations, adding indexes has become very fast. However, verifying the correctness of the index by admin check table (index) is still slow.\r\n\r\n### What is changed and how it works?\r\n\r\n1. - Use crc32(md5(concat_ws(0x2, indexColumn))) to check if the data are consistent between the table and index.\r\n    - Group by bucket so that we can locate the inconsistent handle.\r\n    - Continue the compute the checksum if a bucket is found inconsistent between the checksums.\r\n    - If the count of rows in a bucket is lower than a threshold, don't group by anymore, compute the checksum for every row in this bucket.\r\n    - report error if the checksum is inconsistent for a row.\r\n3. Add a variable 'tidb_enable_fast_table_check' to control whether to use the new algorithm and set it's default to true.\r\n4. New algorithm doesn't work for multi-value index and prefixed index.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [x] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nimprove the speed of admin check table/index\r\n```\r\n"
+  },
+  "pr_merged_at": "2023-06-20T16:05:43+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "rand := rand.New(rand.NewSource(seed)) (executor/test/admintest/admin_test.go)"
+  ],
+  "failure_signature": "rand := rand.New(rand.NewSource(seed)) (executor/test/admintest/admin_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "rand := rand.New(rand.NewSource(seed)) (executor/test/admintest/admin_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/43694",
+    "https://github.com/pingcap/tidb/pull/43694.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/43694.patch",
+  "changed_files": [
+    "executor/BUILD.bazel",
+    "executor/builder.go",
+    "executor/executor.go",
+    "executor/executor_test.go",
+    "executor/test/admintest/BUILD.bazel",
+    "executor/test/admintest/admin_test.go",
+    "resourcemanager/util/util.go",
+    "server/tidb_test.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "tests/realtikvtest/brietest/binlog_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rand := rand.New(rand.NewSource(seed)) (executor/test/admintest/admin_test.go)",
+      "files: executor/BUILD.bazel, executor/builder.go, executor/distsql.go, executor/executor.go, executor/executor_test.go, executor/test/admintest/BUILD.bazel, executor/test/admintest/admin_test.go, resourcemanager/util/util.go, server/tidb_test.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, tests/realtikvtest/brietest/binlog_test.go, util/admin/admin_integration_test.go"
+    ]
+  },
+  "analysis": "PR title: *: use a new algorithm to improve the speed of admin check table/index\nPR url: https://github.com/pingcap/tidb/pull/43694\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand := rand.New(rand.NewSource(seed)) (executor/test/admintest/admin_test.go)\nChanged files (12): executor/BUILD.bazel, executor/builder.go, executor/executor.go, executor/executor_test.go, executor/test/admintest/BUILD.bazel, executor/test/admintest/admin_test.go, resourcemanager/util/util.go, server/tidb_test.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, tests/realtikvtest/brietest/binlog_test.go\nPatch series analyzed; see patch_url."
+}

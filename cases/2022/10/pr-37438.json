@@ -1,0 +1,63 @@
+{
+  "id": "pr-37438",
+  "source_pr": {
+    "number": 37438,
+    "url": "https://github.com/pingcap/tidb/pull/37438",
+    "title": "ddl: Support flashback schema",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #20463\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n1.Add RecoverSchemaInfo struct contains SchemaInfo and TableInfo.\r\n2.Add recoverSchema code logical like the recovertable .\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n```\r\nmysql> drop database m;\r\nQuery OK, 0 rows affected (0.43 sec)\r\nmysql> create database m;\r\nQuery OK, 0 rows affected (0.20 sec)\r\nmysql> use m;\r\nDatabase changed\r\nmysql> CREATE TABLE t(id int PRIMARY KEY AUTO_INCREMENT, c int);\r\nQuery OK, 0 rows affected (0.19 sec)\r\nmysql> INSERT INTO t(c) VALUES (1);\r\nQuery OK, 1 row affected (0.03 sec)\r\nmysql> INSERT INTO t(c) VALUES (2);\r\nQuery OK, 1 row affected (0.01 sec)\r\nmysql> drop database m;\r\nQuery OK, 0 rows affected (0.42 sec)\r\nmysql> flashback database m;\r\nQuery OK, 0 rows affected (0.97 sec)\r\nmysql> use m ;\r\nDatabase changed\r\nmysql> select * from t;\r\n+----+------+\r\n| id | c    |\r\n+----+------+\r\n|  1 |    1 |\r\n|  2 |    2 |\r\n+----+------+\r\n2 rows in set (0.01 sec)\r\nmysql>\r\n```\r\n\r\nSide effects\r\n\r\n- N/A\r\n\r\nDocumentation\r\n\r\n- N/A\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nAdd support `flashback database` command.\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-10-19T15:03:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/recover_test.go",
+    "name": "recover_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select a from t order by a\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/recover_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select a from t order by a\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/recover_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/37438",
+    "https://github.com/pingcap/tidb/pull/37438.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/37438.patch",
+  "changed_files": [
+    "ddl/ddl.go",
+    "ddl/ddl_api.go",
+    "ddl/ddl_worker.go",
+    "ddl/rollingback.go",
+    "ddl/schema.go",
+    "ddl/schematracker/checker.go",
+    "ddl/schematracker/dm_tracker.go",
+    "ddl/table.go",
+    "executor/ddl.go",
+    "executor/recover_test.go",
+    "infoschema/builder.go",
+    "parser/ast/ddl.go",
+    "parser/ast/ddl_test.go",
+    "parser/model/ddl.go",
+    "parser/parser.go",
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "planner/core/planbuilder.go",
+    "planner/core/preprocess.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select a from t order by a\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/recover_test.go)",
+      "files: ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/rollingback.go, ddl/schema.go, ddl/schematracker/checker.go, ddl/schematracker/dm_tracker.go, ddl/table.go, executor/ddl.go, executor/recover_test.go, infoschema/builder.go, parser/ast/ddl.go, parser/ast/ddl_test.go, parser/model/ddl.go, parser/parser.go, parser/parser.y, parser/parser_test.go, planner/core/planbuilder.go, planner/core/preprocess.go"
+    ]
+  },
+  "analysis": "PR title: ddl: Support flashback schema\nPR url: https://github.com/pingcap/tidb/pull/37438\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select a from t order by a\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/recover_test.go)\nChanged files (19): ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/rollingback.go, ddl/schema.go, ddl/schematracker/checker.go, ddl/schematracker/dm_tracker.go, ddl/table.go, executor/ddl.go, executor/recover_test.go, infoschema/builder.go, parser/ast/ddl.go, parser/ast/ddl_test.go, parser/model/ddl.go, parser/parser.go, parser/parser.y, parser/parser_test.go, planner/core/planbuilder.go, planner/core/preprocess.go\nPatch url: https://github.com/pingcap/tidb/pull/37438.patch\nPicked test: type=unit path=executor/recover_test.go name=recover_test"
+}

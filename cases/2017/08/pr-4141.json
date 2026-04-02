@@ -1,0 +1,56 @@
+{
+  "id": "pr-4141",
+  "source_pr": {
+    "number": 4141,
+    "url": "https://github.com/pingcap/tidb/pull/4141",
+    "title": "*: implement auto analyze",
+    "body": "This PR implements the auto analyze.\r\n\r\n- It uses the `OwnerManager` to choose the stats owner, and only the stats owner can do auto analyze.\r\n\r\n- It will only auto analyze for the newly created table and index. For the table, only after `20*statsLease` with no insert, the analyze operation will be triggered. For the index, we will analyze immediately after we know it's existence.\r\n\r\n- To reduce the impact on the system, it will only analyze only one table or index in one time. Also, the priority of the `analyze` is set to low priority.\r\n\r\nPTAL @hanfei1991 @winoros "
+  },
+  "pr_merged_at": "2017-08-18T18:42:28+08:00",
+  "test": {
+    "type": "unit",
+    "path": "statistics/update_test.go",
+    "name": "update_test"
+  },
+  "symptoms": [
+    "fix race"
+  ],
+  "failure_signature": "fix race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: implement auto analyze",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4141",
+    "https://github.com/pingcap/tidb/pull/4141.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4141.patch",
+  "changed_files": [
+    "ddl/ddl.go",
+    "ddl/mock.go",
+    "ddl/syncer.go",
+    "domain/domain.go",
+    "executor/adapter.go",
+    "executor/analyze.go",
+    "executor/builder.go",
+    "owner/manager.go",
+    "owner/mock.go",
+    "statistics/builder.go",
+    "statistics/update.go",
+    "statistics/update_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix race",
+      "files: ddl/ddl.go, ddl/mock.go, ddl/owner_manager.go, ddl/syncer.go, domain/domain.go, executor/adapter.go, executor/analyze.go, executor/builder.go, owner/manager.go, owner/mock.go, owner/owner_manager.go, statistics/builder.go, statistics/out, statistics/update.go, statistics/update_test.go, util/owner/mock.go, util/owner/owner_manager.go"
+    ]
+  },
+  "analysis": "PR title: *: implement auto analyze\nPR url: https://github.com/pingcap/tidb/pull/4141\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix race\nChanged files (12): ddl/ddl.go, ddl/mock.go, ddl/syncer.go, domain/domain.go, executor/adapter.go, executor/analyze.go, executor/builder.go, owner/manager.go, owner/mock.go, statistics/builder.go, statistics/update.go, statistics/update_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4141.patch\nPicked test: type=unit path=statistics/update_test.go name=update_test"
+}

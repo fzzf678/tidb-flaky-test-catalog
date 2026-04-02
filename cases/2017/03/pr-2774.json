@@ -1,0 +1,56 @@
+{
+  "id": "pr-2774",
+  "source_pr": {
+    "number": 2774,
+    "url": "https://github.com/pingcap/tidb/pull/2774",
+    "title": "http: get region's info",
+    "body": "Hi,all,\r\n    This PR is used to list regions for table && get region by ID through http request.\r\n\r\n@coocood @disksing @siddontang PTAL\r\n\r\nDetails:\r\n\r\n## List table's Regions\r\n\r\n### Requests\r\n\r\n#### Syntax\r\n\r\n```\r\nGET /tables/${db}/${table}/regions HTTP/1.1\r\nHost: status.tidb.domain\r\nDate: date\r\n```\r\n#### Request Parameters\r\n\r\n|Name|Description|Required|\r\n|:--|:--|:--|\r\n|db|database's name|YES|\r\n|table|table's name|YES|\r\n\r\n### Response\r\n\r\n#### Response Elements\r\n\r\n|Parent|Name|Type|Description|\r\n|:--|:--|:--|:--|\r\n|－|name|string|table's name|\r\n|－|id|int|table's ID|\r\n|－|record_regions|[]object| regions which table's record key convered|\r\n|－|indices|[]object|list of table's indices|\r\n|indices[]|name|string|index's name|\r\n|indices[]|id|int|index's ID|\r\n|indices[]|regions|[]object| regions which current index covered|\r\n\r\n\r\n#### Response Sample\r\n\r\n\r\n```\r\nHTTP/1.1 200 OK\r\nContent-Length:244\r\nContent-Type:application/json\r\nDate:Tue, 07 Mar 2017 07:50:31 GMT\r\n{\r\n    \"name\": \"mcc_access\",\r\n    \"id\": 19,\r\n    \"record_regions\": [\r\n        {\r\n            \"region_id\": 7,\r\n            \"leader\": {\r\n                \"id\": 10,\r\n                \"store_id\": 1\r\n            },\r\n            \"peers\": [\r\n                {\r\n                    \"id\": 8,\r\n                    \"store_id\": 2\r\n                },\r\n                {\r\n                    \"id\": 10,\r\n                    \"store_id\": 1\r\n                }\r\n            ],\r\n            \"region_epoch\": {\r\n                \"conf_ver\": 2,\r\n                \"version\": 2\r\n            }\r\n        }\r\n    ],\r\n    \"indices\": [\r\n        {\r\n            \"name\": \"access_key\",\r\n            \"id\": 1,\r\n            \"regions\": [\r\n                {\r\n                    \"region_id\": 7,\r\n                    \"leader\": {\r\n                        \"id\": 10,\r\n                        \"store_id\": 1\r\n                    },\r\n                    \"peers\": [\r\n                        {\r\n                            \"id\": 8,\r\n                            \"store_id\": 2\r\n                        },\r\n                        {\r\n                            \"id\": 10,\r\n                            \"store_id\": 1\r\n                        }\r\n                    ],\r\n                    \"region_epoch\": {\r\n                        \"conf_ver\": 2,\r\n                        \"version\": 2\r\n                    }\r\n                }\r\n            ]\r\n        }\r\n    ]\r\n}\r\n```\r\n\r\n## GET Region By ID\r\n\r\n### Requests\r\n\r\n#### Syntax\r\n\r\n```\r\nGET /regions/${regionID} HTTP/1.1\r\nHost: status.tidb.domain\r\nDate: date\r\n```\r\n#### Request Parameters\r\n\r\n|Name|Description|Required|\r\n|:--|:--|:--|\r\n|regionID|ID of region to get|YES|\r\n\r\n\r\n### Response\r\n\r\n#### Response Elements\r\n\r\n|Parent|Name|Type|Description|\r\n|:--|:--|:--|:--|\r\n|－|region_id|int|region's id|\r\n|－|start_key|string|region's start_key|\r\n|--|end_key|string|region's end_key|\r\n|－|frames|[]object|list of frames current region covered|\r\n|frames[]|table_name|string|table's name|\r\n|frames[]|table_id|int|table's ID|\r\n|frames[]|is_record|bool|whether current frame is a record|\r\n|frames[]|index_name|string|index's name|\r\n|frames[]|index_id|int|index's ID|\r\n\r\n#### Response Sample\r\n\r\n\r\n```\r\nHTTP/1.1 200 OK\r\nContent-Length:244\r\nContent-Type:application/json\r\nDate:Tue, 07 Mar 2017 07:50:31 GMT\r\n{\r\n  region_id: 7,\r\n  start_key: \"bURETEpvYkj/af9zdG9yeQD/AAD8AAAAAAD/AABoAAAAAAD/AAAG/wAAAAD/AAAAAPcAAAD8\",\r\n  end_key: \"\",\r\n  frames: [\r\n      {\r\n      db_name: \"INFORMATION_SCHEMA\",\r\n      table_name: \"STATISTICS\",\r\n      table_id: 9223372036854776000,\r\n      is_record: true\r\n      },\r\n      {\r\n        db_name: \"test\",\r\n        table_name: \"mcc_access\",\r\n        table_id: 19,\r\n        is_record: false,\r\n        index_name: \"access_key\",\r\n        index_id: 1\r\n      }\r\n  ]\r\n}\r\n```"
+  },
+  "pr_merged_at": "2017-03-17T12:08:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "server/region_handler_test.go",
+    "name": "region_handler_test"
+  },
+  "symptoms": [
+    "+// +build !race"
+  ],
+  "failure_signature": "+// +build !race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "http: get region's info",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/2774",
+    "https://github.com/pingcap/tidb/pull/2774.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/2774.patch",
+  "changed_files": [
+    "glide.lock",
+    "server/config.go",
+    "server/http_status.go",
+    "server/region_handler.go",
+    "server/region_handler_test.go",
+    "server/server.go",
+    "store/tikv/kv.go",
+    "store/tikv/region_cache.go",
+    "store/tikv/region_cache_test.go",
+    "tablecodec/tablecodec.go",
+    "tablecodec/tablecodec_test.go",
+    "tidb-server/main.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: +// +build !race",
+      "files: _vendor/src/github.com/dustin/go-humanize/LICENSE, _vendor/src/github.com/dustin/go-humanize/big.go, _vendor/src/github.com/dustin/go-humanize/bigbytes.go, _vendor/src/github.com/dustin/go-humanize/bytes.go, _vendor/src/github.com/dustin/go-humanize/comma.go, _vendor/src/github.com/dustin/go-humanize/ftoa.go, _vendor/src/github.com/dustin/go-humanize/humanize.go, _vendor/src/github.com/dustin/go-humanize/number.go, _vendor/src/github.com/dustin/go-humanize/ordinals.go, _vendor/src/github.com/dustin/go-humanize/si.go, _vendor/src/github.com/dustin/go-humanize/times.go, _vendor/src/github.com/gorilla/context/LICENSE, _vendor/src/github.com/gorilla/context/context.go, _vendor/src/github.com/gorilla/context/doc.go, _vendor/src/github.com/gorilla/mux/LICENSE, _vendor/src/github.com/gorilla/mux/context_gorilla.go, _vendor/src/github.com/gorilla/mux/context_native.go, _vendor/src/github.com/gorilla/mux/doc.go, _vendor/src/github.com/gorilla/mux/mux.go, _vendor/src/github.com/gorilla/mux/regexp.go, _vendor/src/github.com/gorilla/mux/route.go, _vendor/src/github.com/pingcap/kvproto/pkg/pdpb/pdpb.pb.go, _vendor/src/github.com/pingcap/kvproto/pkg/raft_cmdpb/raft_cmdpb.pb.go, _vendor/src/github.com/pingcap/pd/pd-client/client.go, _vendor/src/github.com/pingcap/pd/pd-client/rpc_worker.go, _vendor/src/github.com/pingcap/pd/pkg/apiutil/apiutil.go, _vendor/src/github.com/pingcap/pd/pkg/metricutil/metricutil.go, _vendor/src/github.com/pingcap/pd/pkg/typeutil/duration.go, _vendor/src/github.com/pingcap/pd/pkg/typeutil/size.go, _vendor/src/github.com/pingcap/tipb/go-tipb/select.pb.go, glide.lock, glide.yaml, server/config.go, server/http_status.go, server/region_handler.go, server/region_handler_test.go, server/regions_handler.go, server/server.go, store/tikv/kv.go, store/tikv/mock-tikv/cluster.go, store/tikv/mock-tikv/pd.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, store/tikv/store_test.go, tablecodec/tablecodec.go, tablecodec/tablecodec_test.go, tidb-server/main.go"
+    ]
+  },
+  "analysis": "PR title: http: get region's info\nPR url: https://github.com/pingcap/tidb/pull/2774\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: +// +build !race\nChanged files (12): glide.lock, server/config.go, server/http_status.go, server/region_handler.go, server/region_handler_test.go, server/server.go, store/tikv/kv.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, tablecodec/tablecodec.go, tablecodec/tablecodec_test.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/2774.patch\nPicked test: type=unit path=server/region_handler_test.go name=region_handler_test"
+}

@@ -1,0 +1,47 @@
+{
+  "id": "pr-391",
+  "source_pr": {
+    "number": 391,
+    "url": "https://github.com/pingcap/tidb/pull/391",
+    "title": "fix using index and where bug.",
+    "body": "- Must use a new index plan for index filter, we cannot change origin index spans when used in join next.\n- Must check where condition after FROM phase even using index, because outer join may add extra NULL value.  \n"
+  },
+  "pr_merged_at": "2015-10-15T10:43:04+08:00",
+  "test": {
+    "type": "unit",
+    "path": "tidb_test.go",
+    "name": "tidb_test"
+  },
+  "symptoms": [
+    "r = mustExecSQL(c, se, \"select * from t1 left join t2 on t1.c1 = t2.c2 order by t1.c1\") (tidb_test.go)"
+  ],
+  "failure_signature": "r = mustExecSQL(c, se, \"select * from t1 left join t2 on t1.c1 = t2.c2 order by t1.c1\") (tidb_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/391",
+    "https://github.com/pingcap/tidb/pull/391.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/391.patch",
+  "changed_files": [
+    "plan/plans/index.go",
+    "rset/rsets/where.go",
+    "tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: r = mustExecSQL(c, se, \"select * from t1 left join t2 on t1.c1 = t2.c2 order by t1.c1\") (tidb_test.go)",
+      "files: plan/plans/index.go, rset/rsets/where.go, tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: fix using index and where bug.\nPR url: https://github.com/pingcap/tidb/pull/391\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: r = mustExecSQL(c, se, \"select * from t1 left join t2 on t1.c1 = t2.c2 order by t1.c1\") (tidb_test.go)\nChanged files (3): plan/plans/index.go, rset/rsets/where.go, tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/391.patch\nPicked test: type=unit path=tidb_test.go name=tidb_test"
+}

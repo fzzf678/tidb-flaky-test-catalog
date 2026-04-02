@@ -1,0 +1,51 @@
+{
+  "id": "pr-33173",
+  "source_pr": {
+    "number": 33173,
+    "url": "https://github.com/pingcap/tidb/pull/33173",
+    "title": "planner: Add control flag to keep or remove ORDER BY in subquery",
+    "body": "### What problem does this PR solve?\r\nIssue Number: close #32900\r\nUnnecessary OrderBy not removed resulting in poor performance.\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\nWe introduced a new control flag \"tidb_remove_orderby_in_subquery\" to indicate\r\nwhether to remove ORDER BY clause in subquery if the subquery doesn't have LIMIT\r\nclause. The default value is OFF, which means no behavior change in current\r\nsystem, unless users explicitly change this setting.\r\n\r\n### Check List\r\n\r\nTests\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [x] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n```release-note\r\nAdd a variable \"tidb_remove_orderby_in_subquery\" to indicate whether\r\nto remove ORDER BY clause in subquery if possible. Default value is OFF.\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-04-01T14:08:30+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "// TiDBEnableOrderedResultMode indicates if stabilize query results. | sql: \"select * from t order by a\", (planner/core/logical_plan_test.go)"
+  ],
+  "failure_signature": "// TiDBEnableOrderedResultMode indicates if stabilize query results. | sql: \"select * from t order by a\", (planner/core/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/33173",
+    "https://github.com/pingcap/tidb/pull/33173.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/33173.patch",
+  "changed_files": [
+    "executor/set_test.go",
+    "planner/core/logical_plan_builder.go",
+    "planner/core/logical_plan_test.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: // TiDBEnableOrderedResultMode indicates if stabilize query results. | sql: \"select * from t order by a\", (planner/core/logical_plan_test.go)",
+      "files: executor/set_test.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go"
+    ]
+  },
+  "analysis": "PR title: planner: Add control flag to keep or remove ORDER BY in subquery\nPR url: https://github.com/pingcap/tidb/pull/33173\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: // TiDBEnableOrderedResultMode indicates if stabilize query results. | sql: \"select * from t order by a\", (planner/core/logical_plan_test.go)\nChanged files (6): executor/set_test.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go\nPatch url: https://github.com/pingcap/tidb/pull/33173.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
+}

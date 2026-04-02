@@ -1,0 +1,51 @@
+{
+  "id": "pr-39371",
+  "source_pr": {
+    "number": 39371,
+    "url": "https://github.com/pingcap/tidb/pull/39371",
+    "title": "ddl: properly handle existence checks for deleted records in temp index",
+    "body": "### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #39321\r\n\r\nProblem Summary:\r\nWhen set fast reorg variable on, some ut will failed. \r\n\r\n### What is changed and how it works?\r\n\r\n> TestCreateUniqueExpressionIndex\r\n\r\nWhen user issue` insert on dulplicate update` statement during add index processing.\r\n\r\n1. During `insert on dulplicate update`, it need check unique key exists.  when this check processing is in fast_reorg add index period,  the check key exists should be done on temp index.\r\n2. Also the deleted key in temp index is not real delete, it is marked delete. So if this key was return, it should be skiped. \r\n3. When user insert one row in unique index, we also need check if there is marked deleted key exist, if this deleted key exist, then we skip unique conflict check and then let insert could be successful.\r\n\r\n> TestIndexChange\r\n\r\nThis case has some trick place, it test different  adding index schema stage to see if key is exist or not.  But here still has above problem. In non-public status index, all changes on table that is adding index will reflect to temp idx. \r\nSo we have to change key exist also on temp index first.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [X] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-11-28T21:14:00+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/index_merge_tmp_test.go",
+    "name": "index_merge_tmp_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t order by a, b\").Check(testkit.Rows(\"0 9\", \"1 7\", \"2 7\", \"5 7\", \"8 8\", \"10 10\")) (ddl/index_merge_tmp_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t order by a, b\").Check(testkit.Rows(\"0 9\", \"1 7\", \"2 7\", \"5 7\", \"8 8\", \"10 10\")) (ddl/index_merge_tmp_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/39371",
+    "https://github.com/pingcap/tidb/pull/39371.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/39371.patch",
+  "changed_files": [
+    "ddl/db_change_test.go",
+    "ddl/index_change_test.go",
+    "ddl/index_merge_tmp_test.go",
+    "executor/batch_checker.go",
+    "executor/insert.go",
+    "table/tables/index.go",
+    "tablecodec/tablecodec.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t order by a, b\").Check(testkit.Rows(\"0 9\", \"1 7\", \"2 7\", \"5 7\", \"8 8\", \"10 10\")) (ddl/index_merge_tmp_test.go)",
+      "files: ddl/db_change_test.go, ddl/index_change_test.go, ddl/index_merge_tmp_test.go, executor/batch_checker.go, executor/insert.go, table/tables/index.go, tablecodec/tablecodec.go"
+    ]
+  },
+  "analysis": "PR title: ddl: properly handle existence checks for deleted records in temp index\nPR url: https://github.com/pingcap/tidb/pull/39371\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t order by a, b\").Check(testkit.Rows(\"0 9\", \"1 7\", \"2 7\", \"5 7\", \"8 8\", \"10 10\")) (ddl/index_merge_tmp_test.go)\nChanged files (7): ddl/db_change_test.go, ddl/index_change_test.go, ddl/index_merge_tmp_test.go, executor/batch_checker.go, executor/insert.go, table/tables/index.go, tablecodec/tablecodec.go\nPatch url: https://github.com/pingcap/tidb/pull/39371.patch\nPicked test: type=unit path=ddl/index_merge_tmp_test.go name=index_merge_tmp_test"
+}

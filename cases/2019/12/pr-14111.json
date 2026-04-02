@@ -1,0 +1,48 @@
+{
+  "id": "pr-14111",
+  "source_pr": {
+    "number": 14111,
+    "url": "https://github.com/pingcap/tidb/pull/14111",
+    "title": "planner/core: fix bug when using generated column in aggregate statement",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nFix #14072 \r\n\r\n### What is changed and how it works?\r\n\r\nWhen checking if aggregate operator can be push-down, it should also check that if `groupByItem` contained generated columns, if true, current aggregate operator should not be push-down.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - None\r\n\r\nSide effects\r\n\r\n - None\r\nRelated changes\r\n\r\n - None\r\n\r\nRelease note\r\n\r\n - None\r\n"
+  },
+  "pr_merged_at": "2019-12-18T14:46:48+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select sum(a) from t1 group by b order by b;\").Check(testkit.Rows(\"<nil>\", \"3\", \"2\", \"2\")) (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select sum(a) from t1 group by b order by b;\").Check(testkit.Rows(\"<nil>\", \"3\", \"2\", \"2\")) (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/14111",
+    "https://github.com/pingcap/tidb/pull/14111.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/14111.patch",
+  "changed_files": [
+    "cmd/explaintest/r/generated_columns.result",
+    "cmd/explaintest/t/generated_columns.test",
+    "executor/aggregate_test.go",
+    "planner/core/task.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select sum(a) from t1 group by b order by b;\").Check(testkit.Rows(\"<nil>\", \"3\", \"2\", \"2\")) (executor/aggregate_test.go)",
+      "files: cmd/explaintest/r/generated_columns.result, cmd/explaintest/t/generated_columns.test, executor/aggregate_test.go, planner/core/task.go"
+    ]
+  },
+  "analysis": "PR title: planner/core: fix bug when using generated column in aggregate statement\nPR url: https://github.com/pingcap/tidb/pull/14111\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select sum(a) from t1 group by b order by b;\").Check(testkit.Rows(\"<nil>\", \"3\", \"2\", \"2\")) (executor/aggregate_test.go)\nChanged files (4): cmd/explaintest/r/generated_columns.result, cmd/explaintest/t/generated_columns.test, executor/aggregate_test.go, planner/core/task.go\nPatch url: https://github.com/pingcap/tidb/pull/14111.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

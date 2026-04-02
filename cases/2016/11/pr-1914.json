@@ -1,0 +1,46 @@
+{
+  "id": "pr-1914",
+  "source_pr": {
+    "number": 1914,
+    "url": "https://github.com/pingcap/tidb/pull/1914",
+    "title": "plan: fix a panic bug.",
+    "body": "If we push order by across group by, we should use group by column in order to keep index right. Otherwise it may cause a panic.\r\n@shenli @coocood @zimulala @XuHuaiyu @tiancaiamao PTAL"
+  },
+  "pr_merged_at": "2016-11-01T14:38:14+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select sum(b.c), count(b.d), a.c from t a left join t b on a.c = b.d group by b.d order by b.d\") (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select sum(b.c), count(b.d), a.c from t a left join t b on a.c = b.d group by b.d order by b.d\") (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1914",
+    "https://github.com/pingcap/tidb/pull/1914.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1914.patch",
+  "changed_files": [
+    "executor/aggregate_test.go",
+    "plan/physical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select sum(b.c), count(b.d), a.c from t a left join t b on a.c = b.d group by b.d order by b.d\") (executor/aggregate_test.go)",
+      "files: executor/aggregate_test.go, plan/physical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix a panic bug.\nPR url: https://github.com/pingcap/tidb/pull/1914\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select sum(b.c), count(b.d), a.c from t a left join t b on a.c = b.d group by b.d order by b.d\") (executor/aggregate_test.go)\nChanged files (2): executor/aggregate_test.go, plan/physical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/1914.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

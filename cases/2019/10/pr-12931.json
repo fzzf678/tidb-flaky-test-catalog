@@ -1,0 +1,46 @@
+{
+  "id": "pr-12931",
+  "source_pr": {
+    "number": 12931,
+    "url": "https://github.com/pingcap/tidb/pull/12931",
+    "title": "test: fix ddl_test and make auto id test stable",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nSuch situation always occur recently:\r\n\r\n```\r\n[2019-10-25T05:40:05.087Z] ... obtained string = \"\" +\r\n[2019-10-25T05:40:05.087Z] ...     \"[1]\\n\" +\r\n[2019-10-25T05:40:05.087Z] ...     \"[100000]\\n\" +\r\n[2019-10-25T05:40:05.087Z] ...     \"[2000001]\\n\"\r\n[2019-10-25T05:40:05.087Z] ... expected string = \"\" +\r\n[2019-10-25T05:40:05.087Z] ...     \"[1]\\n\" +\r\n[2019-10-25T05:40:05.087Z] ...     \"[100000]\\n\" +\r\n[2019-10-25T05:40:05.087Z] ...     \"[100001]\\n\"\r\n```\r\nThis is because `mockAutoIDChange`  failpoint changed by another test.\r\n\r\n### What is changed and how it works?\r\n\r\nMove `TestRenameTable` to `seq_executor_test` to avoid race.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n\r\nSide effects\r\n\r\n - Increased code complexity\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n\r\nRelease note\r\n\r\n"
+  },
+  "pr_merged_at": "2019-10-28T11:50:00+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/ddl_test.go",
+    "name": "TestRenameTable"
+  },
+  "symptoms": [
+    "Move `TestRenameTable` to `seq_executor_test` to avoid race."
+  ],
+  "failure_signature": "Move `TestRenameTable` to `seq_executor_test` to avoid race.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "test: fix ddl_test and make auto id test stable",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/12931",
+    "https://github.com/pingcap/tidb/pull/12931.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/12931.patch",
+  "changed_files": [
+    "executor/ddl_test.go",
+    "go.sum"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: Move `TestRenameTable` to `seq_executor_test` to avoid race.",
+      "files: executor/ddl_test.go, executor/seqtest/seq_executor_test.go, go.sum, res.txt"
+    ]
+  },
+  "analysis": "PR title: test: fix ddl_test and make auto id test stable\nPR url: https://github.com/pingcap/tidb/pull/12931\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Move `TestRenameTable` to `seq_executor_test` to avoid race.\nChanged files (2): executor/ddl_test.go, go.sum\nPatch url: https://github.com/pingcap/tidb/pull/12931.patch\nPicked test: type=unit path=executor/ddl_test.go name=TestRenameTable"
+}

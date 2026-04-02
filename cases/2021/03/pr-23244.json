@@ -1,0 +1,53 @@
+{
+  "id": "pr-23244",
+  "source_pr": {
+    "number": 23244,
+    "url": "https://github.com/pingcap/tidb/pull/23244",
+    "title": "store/tikv: Support forwarding via follower when the region's leader is unreachable",
+    "body": "Signed-off-by: MyonKeminta <MyonKeminta@users.noreply.github.com>\r\n\r\n<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nProblem Summary:\r\n\r\nCurrently a region may be unavailable when the leader is network-isolated to the TiDB. In this case, we can try forwarding the request via a follower.\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed: Once the config `tikvclient.enable-redirection` is enabled, when it cannot connect to a TiKV node to access a region's leader, it will try asking a follower to forward the request to the leader.\r\n\r\n### Related changes\r\n\r\n- Need to cherry-pick to the release branch\r\n  - Maybe 4.0\r\n- Requires merging #23362 first\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests (Not yet done)<!-- At least one of them must be included. -->\r\n\r\n- Unit test \r\n- Integration test\r\n\r\nSide effects\r\n\r\n- Performance regression\r\n    - Consumes more CPU\r\n    - Consumes more MEM\r\n- Breaking backward compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- Support forwarding region requests to the leader via a follower in case there's network isolation.\r\n"
+  },
+  "pr_merged_at": "2021-03-18T20:34:14+08:00",
+  "test": {
+    "type": "unit",
+    "path": "config/config_test.go",
+    "name": "config_test"
+  },
+  "symptoms": [
+    "Replace failpoint with hook to avoid unstable tests"
+  ],
+  "failure_signature": "Replace failpoint with hook to avoid unstable tests",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Replace failpoint with hook to avoid unstable tests",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/23244",
+    "https://github.com/pingcap/tidb/pull/23244.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/23244.patch",
+  "changed_files": [
+    "config/config.toml.example",
+    "metrics/grafana/tidb.json",
+    "store/tikv/backoff.go",
+    "store/tikv/config/client.go",
+    "store/tikv/metrics/metrics.go",
+    "store/tikv/region_cache.go",
+    "store/tikv/region_cache_test.go",
+    "store/tikv/region_request.go",
+    "store/tikv/region_request_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: Replace failpoint with hook to avoid unstable tests",
+      "files: config/config.toml.example, config/config_test.go, metrics/grafana/tidb.json, store/tikv/backoff.go, store/tikv/config/client.go, store/tikv/metrics/metrics.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, store/tikv/region_request.go, store/tikv/region_request_test.go, store/tikv/tikvrpc/tikvrpc.go, tidb-server/main.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv: Support forwarding via follower when the region's leader is unreachable\nPR url: https://github.com/pingcap/tidb/pull/23244\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Replace failpoint with hook to avoid unstable tests\nChanged files (9): config/config.toml.example, metrics/grafana/tidb.json, store/tikv/backoff.go, store/tikv/config/client.go, store/tikv/metrics/metrics.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, store/tikv/region_request.go, store/tikv/region_request_test.go\nPatch series analyzed; see patch_url."
+}

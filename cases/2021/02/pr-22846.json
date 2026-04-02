@@ -1,0 +1,49 @@
+{
+  "id": "pr-22846",
+  "source_pr": {
+    "number": 22846,
+    "url": "https://github.com/pingcap/tidb/pull/22846",
+    "title": "stats, planner, sessionctx: handle compatibility between feedback and ver2 stats",
+    "body": "### What problem does this PR solve?\r\n\r\nProblem Summary:\r\nWe will change the default analyze version to 2 at some point. But we don't want feedbacks applied on version2 stats, and we also don't want to break the feedback feature for version1 stats.\r\n\r\nThere're 2 things that make this complicated:\r\n1. Analyze version is controlled by variable `tidb_analyze_version`, feedback is controlled by `feedback-probability` in the config file and can't be changed after tidb server started.\r\n2. Different tidb server can set different `feedback-probability` (0 = disable, (0,1] = enable), but all tidb servers share the same statistics.\r\n\r\n### What is changed and how it works?\r\nEssentially, feedback will be incompatible with version2 statistics.\r\n\r\n1. When you try to set tidb_analyze_version to 2 on a tidb where feedback is enabled, you will receive a warning and tidb_analyze_version will stay unchanged.\r\n2. Eventually, feedback will never be applied to version2 statistics. Warnings will be logged to notify the user when this happened. Note that warnings will only be logged in `HandleUpdateStats()` but not in `UpdateStatsByLocalFeedback()` because I think that would cause a lot of logs. (These functions run every 5 * stats-lease, feedback dumped to tikv every 200 * stats-lease)\r\n3. If feedback is enabled on a tidb server, this tidb server won't change version1 stats to version2 stats, even when `tidb_analyze_version` set to 2 and running `analyze table` explicitly. When this happened, a warning will be appended to notify the user.\r\n4. Version1 stats + enabled feedback should continue to work normally.\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n- Integration test\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- no release note.\r\n"
+  },
+  "pr_merged_at": "2021-02-23T13:46:49+08:00",
+  "test": {
+    "type": "unit",
+    "path": "statistics/handle/handle_test.go",
+    "name": "handle_test"
+  },
+  "symptoms": [
+    "testKit.MustExec(\"select * from t where t.a <= 5 order by a desc\") (statistics/handle/update_test.go)"
+  ],
+  "failure_signature": "testKit.MustExec(\"select * from t where t.a <= 5 order by a desc\") (statistics/handle/update_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "testKit.MustExec(\"select * from t where t.a <= 5 order by a desc\") (statistics/handle/update_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/22846",
+    "https://github.com/pingcap/tidb/pull/22846.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/22846.patch",
+  "changed_files": [
+    "planner/core/planbuilder.go",
+    "sessionctx/variable/sysvar.go",
+    "statistics/feedback.go",
+    "statistics/handle/update.go",
+    "statistics/handle/update_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: testKit.MustExec(\"select * from t where t.a <= 5 order by a desc\") (statistics/handle/update_test.go)",
+      "files: planner/core/planbuilder.go, sessionctx/variable/sysvar.go, statistics/feedback.go, statistics/handle/handle_test.go, statistics/handle/update.go, statistics/handle/update_test.go"
+    ]
+  },
+  "analysis": "PR title: stats, planner, sessionctx: handle compatibility between feedback and ver2 stats\nPR url: https://github.com/pingcap/tidb/pull/22846\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: testKit.MustExec(\"select * from t where t.a <= 5 order by a desc\") (statistics/handle/update_test.go)\nChanged files (5): planner/core/planbuilder.go, sessionctx/variable/sysvar.go, statistics/feedback.go, statistics/handle/update.go, statistics/handle/update_test.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,51 @@
+{
+  "id": "pr-7232",
+  "source_pr": {
+    "number": 7232,
+    "url": "https://github.com/pingcap/tidb/pull/7232",
+    "title": "*: fix data race in the file of prepare_test.go",
+    "body": "## What have you changed? (mandatory)\r\nFix data race in the file of prepare_test.go\r\n```\r\nRead at 0x0000028eb742 by goroutine 35:\r\n  github.com/pingcap/tidb/plan.tryFastPlan()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/plan/point_get_plan.go:117 +0x3e\r\n  github.com/pingcap/tidb/plan.Optimize()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/plan/optimizer.go:62 +0x77\r\n  github.com/pingcap/tidb/executor.(*Compiler).Compile()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/compiler.go:48 +0x221\r\n  github.com/pingcap/tidb/session.(*session).execute()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:807 +0x80f\r\n  github.com/pingcap/tidb/session.(*session).Execute()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/session/session.go:765 +0x79\r\n  github.com/pingcap/tidb/ddl/util.CompleteDeleteRange()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/util/util.go:94 +0x1f9\r\n  github.com/pingcap/tidb/ddl.(*delRange).doTask()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/delete_range.go:200 +0x432\r\n  github.com/pingcap/tidb/ddl.(*delRange).doDelRangeWork()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/delete_range.go:151 +0x541\r\n  github.com/pingcap/tidb/ddl.(*delRange).doTask()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/ddl/delete_range.go:200 +0x432\r\n  github.com/pingcap/tidb/ddl.(*delRange).doDelRangeWork()\r\n...\r\n\r\nPrevious write at 0x0000028eb742 by goroutine 749:\r\n  github.com/pingcap/tidb/executor_test.(*testSuite).TestPreparedNullParam.func1()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/prepared_test.go:229 +0x3a\r\n  github.com/pingcap/tidb/executor_test.(*testSuite).TestPreparedNullParam()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/prepared_test.go:259 +0x5d3\r\n  github.com/pingcap/tidb/executor_test.(*testSuite).TestPreparedNullParam()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/prepared_test.go:256 +0x544\r\n  github.com/pingcap/tidb/executor_test.(*testSuite).TestPreparedNullParam()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/prepared_test.go:253 +0x4ee\r\n  github.com/pingcap/tidb/executor_test.(*testSuite).TestPreparedNullParam()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/prepared_test.go:250 +0x43b\r\n  github.com/pingcap/tidb/executor_test.(*testSuite).TestPreparedNullParam()\r\n      /home/jenkins/workspace/tidb_ghpr_unit_test/go/src/github.com/pingcap/tidb/executor/prepared_test.go:249 +0x404\r\n  github.com/pingcap/tidb/executor_test.(*testSuite).TestPreparedNullParam()\r\n    \r\n```\r\n\r\n## What is the type of the changes? (mandatory)\r\n- Improvement (non-breaking change which is an improvement to an existing feature)\r\n\r\n## How has this PR been tested? (mandatory)\r\nYes.\r\n\r\n## Does this PR affect documentation (docs/docs-cn) update? (mandatory)\r\nNo.\r\n## Does this PR affect tidb-ansible update? (mandatory)\r\nNo.\r\n\r\n## Does this PR need to be added to the release notes? (mandatory)\r\nNo.\r\n\r\n## Refer to a related PR or issue link (optional)\r\n\r\n## Benchmark result if necessary (optional)\r\n\r\n## Add a few positive/negative examples (optional)\r\n\r\n"
+  },
+  "pr_merged_at": "2018-08-02T17:07:50+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/prepared_test.go",
+    "name": "prepared_test"
+  },
+  "symptoms": [
+    "*: fix data race in the file of prepare_test.go"
+  ],
+  "failure_signature": "*: fix data race in the file of prepare_test.go",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: fix data race in the file of prepare_test.go",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7232",
+    "https://github.com/pingcap/tidb/pull/7232.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7232.patch",
+  "changed_files": [
+    "executor/prepared.go",
+    "executor/prepared_test.go",
+    "plan/cache.go",
+    "plan/point_get_plan.go",
+    "plan/prepare_test.go",
+    "session/session.go",
+    "tidb-server/main.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: *: fix data race in the file of prepare_test.go",
+      "files: executor/prepared.go, executor/prepared_test.go, plan/cache.go, plan/point_get_plan.go, plan/prepare_test.go, session/session.go, tidb-server/main.go"
+    ]
+  },
+  "analysis": "PR title: *: fix data race in the file of prepare_test.go\nPR url: https://github.com/pingcap/tidb/pull/7232\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: *: fix data race in the file of prepare_test.go\nChanged files (7): executor/prepared.go, executor/prepared_test.go, plan/cache.go, plan/point_get_plan.go, plan/prepare_test.go, session/session.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/7232.patch\nPicked test: type=unit path=executor/prepared_test.go name=prepared_test"
+}

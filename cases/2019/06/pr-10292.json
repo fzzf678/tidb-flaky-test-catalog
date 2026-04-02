@@ -1,0 +1,48 @@
+{
+  "id": "pr-10292",
+  "source_pr": {
+    "number": 10292,
+    "url": "https://github.com/pingcap/tidb/pull/10292",
+    "title": "support resolve specified lock keys",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nCurrently `ResolveLock` command will scan the whole range and trying to resolve all keys that transaction involved. In the case of read write conflict is heavy in a hot region, `ResolveLock` will called very frequently, and this will cause TiKV `scheduler` in very heavy load, and then write requests will be blocked for a long while.\r\n\r\n### What is changed and how it works?\r\n\r\n- Add a txn_size in `Prewrite` request to indicate how many keys this transaction involved.\r\n- For small transaction(involve small number of keys) only resolve specified lock keys, this is much more faster than scan a region.\r\n\r\nShould merge after https://github.com/pingcap/kvproto/pull/386 and https://github.com/tikv/tikv/pull/4589\r\n\r\n"
+  },
+  "pr_merged_at": "2019-06-10T11:02:47+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/mockstore/mocktikv/mock_tikv_test.go",
+    "name": "mock_tikv_test"
+  },
+  "symptoms": [
+    "gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA="
+  ],
+  "failure_signature": "gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "support resolve specified lock keys",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/10292",
+    "https://github.com/pingcap/tidb/pull/10292.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/10292.patch",
+  "changed_files": [
+    "store/mockstore/mocktikv/mvcc.go",
+    "store/mockstore/mocktikv/mvcc_leveldb.go",
+    "store/tikv/2pc.go",
+    "store/tikv/lock_resolver.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=",
+      "files: go.mod, go.sum, store/mockstore/mocktikv/mock_tikv_test.go, store/mockstore/mocktikv/mvcc.go, store/mockstore/mocktikv/mvcc_leveldb.go, store/mockstore/mocktikv/rpc.go, store/tikv/2pc.go, store/tikv/lock_resolver.go"
+    ]
+  },
+  "analysis": "PR title: support resolve specified lock keys\nPR url: https://github.com/pingcap/tidb/pull/10292\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=\nChanged files (4): store/mockstore/mocktikv/mvcc.go, store/mockstore/mocktikv/mvcc_leveldb.go, store/tikv/2pc.go, store/tikv/lock_resolver.go\nPatch url: https://github.com/pingcap/tidb/pull/10292.patch\nPicked test: type=unit path=store/mockstore/mocktikv/mock_tikv_test.go name=mock_tikv_test"
+}

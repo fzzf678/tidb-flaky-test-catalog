@@ -1,0 +1,67 @@
+{
+  "id": "pr-43182",
+  "source_pr": {
+    "number": 43182,
+    "url": "https://github.com/pingcap/tidb/pull/43182",
+    "title": "*: format the error message when query/instance exceeds memory quota",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #42044\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\nAs described in the issue description.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nRefine the error message when a query is killed because of exceeding the memory limit. When a query is killed because of exceeding `tidb_mem_quota_query`, error message `Your query has been cancelled due to exceeding the allowed memory limit for a single SQL query. Please try narrowing your query scope or increase the tidb_mem_quota_query limit and try again.` will be returend. When a query is killed because of the instance memory exceeds `tidb_server_memory_limit`, error message `Your query has been cancelled due to exceeding the allowed memory limit for the tidb-server instance and this query is currently using the most memory. Please try narrowing your query scope or increase the tidb_server_memory_limit and try again.` will be returned.\r\n``` \r\n"
+  },
+  "pr_merged_at": "2023-04-19T23:13:33+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/analyzetest/analyze_test.go",
+    "name": "analyze_test"
+  },
+  "symptoms": [
+    "tk.MustMatchErrMsg(\"insert into t select a from t1 order by a desc;\", memory.PanicMemoryExceedWarnMsg) (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustMatchErrMsg(\"insert into t select a from t1 order by a desc;\", memory.PanicMemoryExceedWarnMsg) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustMatchErrMsg(\"insert into t select a from t1 order by a desc;\", memory.PanicMemoryExceedWarnMsg) (executor/executor_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/43182",
+    "https://github.com/pingcap/tidb/pull/43182.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/43182.patch",
+  "changed_files": [
+    "ddl/BUILD.bazel",
+    "ddl/ddl_api.go",
+    "executor/adapter.go",
+    "executor/analyze_utils.go",
+    "executor/analyzetest/BUILD.bazel",
+    "executor/analyzetest/analyze_test.go",
+    "executor/compiler.go",
+    "executor/executor_test.go",
+    "executor/fktest/BUILD.bazel",
+    "executor/fktest/foreign_key_test.go",
+    "executor/index_merge_reader_test.go",
+    "executor/issuetest/executor_issue_test.go",
+    "executor/jointest/BUILD.bazel",
+    "executor/jointest/join_test.go",
+    "executor/partition_table_test.go",
+    "executor/tiflashtest/BUILD.bazel",
+    "executor/tiflashtest/tiflash_test.go",
+    "executor/unstabletest/unstable_test.go",
+    "infoschema/cluster_tables_test.go",
+    "server/conn.go",
+    "session/sessiontest/session_test.go",
+    "util/memory/action.go",
+    "util/memory/tracker.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustMatchErrMsg(\"insert into t select a from t1 order by a desc;\", memory.PanicMemoryExceedWarnMsg) (executor/executor_test.go)",
+      "files: ddl/BUILD.bazel, ddl/ddl_api.go, executor/adapter.go, executor/analyze_utils.go, executor/analyzetest/BUILD.bazel, executor/analyzetest/analyze_test.go, executor/compiler.go, executor/executor_test.go, executor/fktest/BUILD.bazel, executor/fktest/foreign_key_test.go, executor/index_merge_reader_test.go, executor/issuetest/executor_issue_test.go, executor/jointest/BUILD.bazel, executor/jointest/join_test.go, executor/partition_table_test.go, executor/tiflashtest/BUILD.bazel, executor/tiflashtest/tiflash_test.go, executor/unstabletest/unstable_test.go, infoschema/cluster_tables_test.go, server/conn.go, session/sessiontest/session_test.go, util/memory/action.go, util/memory/tracker.go"
+    ]
+  },
+  "analysis": "PR title: *: format the error message when query/instance exceeds memory quota\nPR url: https://github.com/pingcap/tidb/pull/43182\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustMatchErrMsg(\"insert into t select a from t1 order by a desc;\", memory.PanicMemoryExceedWarnMsg) (executor/executor_test.go)\nChanged files (23): ddl/BUILD.bazel, ddl/ddl_api.go, executor/adapter.go, executor/analyze_utils.go, executor/analyzetest/BUILD.bazel, executor/analyzetest/analyze_test.go, executor/compiler.go, executor/executor_test.go, executor/fktest/BUILD.bazel, executor/fktest/foreign_key_test.go, executor/index_merge_reader_test.go, executor/issuetest/executor_issue_test.go, executor/jointest/BUILD.bazel, executor/jointest/join_test.go, executor/partition_table_test.go, executor/tiflashtest/BUILD.bazel, executor/tiflashtest/tiflash_test.go, executor/unstabletest/unstable_test.go, infoschema/cluster_tables_test.go, server/conn.go, session/sessiontest/session_test.go, util/memory/action.go, util/memory/tracker.go\nPatch series analyzed; see patch_url."
+}

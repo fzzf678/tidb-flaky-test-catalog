@@ -1,0 +1,55 @@
+{
+  "id": "pr-7680",
+  "source_pr": {
+    "number": 7680,
+    "url": "https://github.com/pingcap/tidb/pull/7680",
+    "title": "plan: fix a problem caused by union's schema",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nBefore this commit. Union use the schema of its `Children[0]`.\r\nThe `Columns` information is correct.\r\nBut the `unique key information` is not, obviously.\r\n\r\n### What is changed and how it works?\r\n\r\nGive it a schema held by itself.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has exported variable/fields change\r\n - Has persistent data change\r\n\r\nThis is found by https://github.com/pingcap/tidb/pull/7676"
+  },
+  "pr_merged_at": "2018-09-20T19:36:15+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/aggregate_test.go",
+    "name": "aggregate_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select max(a) from t group by a order by a\") (executor/aggregate_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select max(a) from t group by a order by a\") (executor/aggregate_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7680",
+    "https://github.com/pingcap/tidb/pull/7680.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7680.patch",
+  "changed_files": [
+    "cmd/explaintest/r/explain_complex.result",
+    "cmd/explaintest/r/explain_complex_stats.result",
+    "cmd/explaintest/r/explain_easy.result",
+    "executor/aggregate_test.go",
+    "plan/exhaust_physical_plans.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plan_test.go",
+    "plan/logical_plans.go",
+    "plan/physical_plans.go",
+    "plan/rule_column_pruning.go",
+    "plan/rule_partition_processor.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select max(a) from t group by a order by a\") (executor/aggregate_test.go)",
+      "files: cmd/explaintest/r/explain_complex.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, executor/aggregate_test.go, plan/exhaust_physical_plans.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/logical_plans.go, plan/physical_plans.go, plan/rule_column_pruning.go, plan/rule_partition_processor.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix a problem caused by union's schema\nPR url: https://github.com/pingcap/tidb/pull/7680\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select max(a) from t group by a order by a\") (executor/aggregate_test.go)\nChanged files (11): cmd/explaintest/r/explain_complex.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, executor/aggregate_test.go, plan/exhaust_physical_plans.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/logical_plans.go, plan/physical_plans.go, plan/rule_column_pruning.go, plan/rule_partition_processor.go\nPatch url: https://github.com/pingcap/tidb/pull/7680.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+}

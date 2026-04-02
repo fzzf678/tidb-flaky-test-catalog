@@ -1,0 +1,70 @@
+{
+  "id": "pr-13229",
+  "source_pr": {
+    "number": 13229,
+    "url": "https://github.com/pingcap/tidb/pull/13229",
+    "title": "*: support adding/dropping the primary key by a configuration",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nSupport adding/dropping the primary key by a configuration.\r\n\r\n### What is changed and how it works?\r\nUsing enable-pk-is-handle to control alter primary key feature. The default is true, which means that the alter primary key feature is disabled.\r\nIf we set this configuration item to false, we can add a primary key through \"alter table\", but we may not be able to drop the primary key. In order to support the \"drop primary key\" operation, this configuration must be false, and the table does not have the pkIsHandle flag.\r\n\r\nIts implementation is similar to the \"add/drop index\" except that \"add primary key\" requires an additional check for not null.\r\n\r\nRelated PR pingcap/parser#617\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n\r\nRelease note\r\n\r\n - Support adding/dropping the primary key by the configuration of `enable-pk-is-handle`.\r\n"
+  },
+  "pr_merged_at": "2019-11-15T01:10:51+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_test.go",
+    "name": "db_test"
+  },
+  "symptoms": [
+    "ddl: address comments and fix data race | rows := s.mustQuery(c, \"select c1 from test_add_index where c3 >= ? order by c1 limit 3\", keys[index]) (ddl/db_test.go)"
+  ],
+  "failure_signature": "ddl: address comments and fix data race | rows := s.mustQuery(c, \"select c1 from test_add_index where c3 >= ? order by c1 limit 3\", keys[index]) (ddl/db_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/13229",
+    "https://github.com/pingcap/tidb/pull/13229.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/13229.patch",
+  "changed_files": [
+    "config/config.go",
+    "config/config.toml.example",
+    "config/config_test.go",
+    "ddl/column.go",
+    "ddl/db_change_test.go",
+    "ddl/db_integration_test.go",
+    "ddl/db_partition_test.go",
+    "ddl/db_test.go",
+    "ddl/ddl.go",
+    "ddl/ddl_api.go",
+    "ddl/ddl_test.go",
+    "ddl/ddl_worker.go",
+    "ddl/ddl_worker_test.go",
+    "ddl/delete_range.go",
+    "ddl/index.go",
+    "ddl/partition.go",
+    "ddl/rollingback.go",
+    "ddl/serial_test.go",
+    "executor/executor_test.go",
+    "executor/show.go",
+    "meta/meta.go",
+    "meta/meta_test.go",
+    "planner/core/preprocess.go",
+    "util/admin/admin.go",
+    "util/admin/admin_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: ddl: address comments and fix data race | rows := s.mustQuery(c, \"select c1 from test_add_index where c3 >= ? order by c1 limit 3\", keys[index]) (ddl/db_test.go)",
+      "files: config/config.go, config/config.toml.example, config/config_test.go, ddl/column.go, ddl/db_change_test.go, ddl/db_integration_test.go, ddl/db_partition_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_test.go, ddl/ddl_worker.go, ddl/ddl_worker_test.go, ddl/delete_range.go, ddl/index.go, ddl/partition.go, ddl/rollingback.go, ddl/serial_test.go, executor/executor_test.go, executor/show.go, go.mod, go.sum, meta/meta.go, meta/meta_test.go, planner/core/preprocess.go, table/tables/index.go, util/admin/admin.go, util/admin/admin_test.go"
+    ]
+  },
+  "analysis": "PR title: *: support adding/dropping the primary key by a configuration\nPR url: https://github.com/pingcap/tidb/pull/13229\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: ddl: address comments and fix data race | rows := s.mustQuery(c, \"select c1 from test_add_index where c3 >= ? order by c1 limit 3\", keys[index]) (ddl/db_test.go)\nChanged files (25): config/config.go, config/config.toml.example, config/config_test.go, ddl/column.go, ddl/db_change_test.go, ddl/db_integration_test.go, ddl/db_partition_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_test.go, ddl/ddl_worker.go, ddl/ddl_worker_test.go, ddl/delete_range.go, ddl/index.go, ddl/partition.go, ddl/rollingback.go, ddl/serial_test.go, executor/executor_test.go, executor/show.go, meta/meta.go, meta/meta_test.go, planner/core/preprocess.go, util/admin/admin.go, util/admin/admin_test.go\nPatch url: https://github.com/pingcap/tidb/pull/13229.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+}

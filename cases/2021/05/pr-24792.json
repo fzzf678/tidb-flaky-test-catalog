@@ -1,0 +1,57 @@
+{
+  "id": "pr-24792",
+  "source_pr": {
+    "number": 24792,
+    "url": "https://github.com/pingcap/tidb/pull/24792",
+    "title": "planner: build plan for CTE",
+    "body": "Signed-off-by: wjhuang2016 <huangwenjun1997@gmail.com>\r\n\r\n<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nBuild logical plan and physical plans for CTE, and forbid illegal usage.\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: https://github.com/pingcap/tidb/pull/24147\r\n\r\n- Add two logical plans: LogicalCTE and LogicalCTETable.\r\n- Add two physical plans:  PhysicalCTE and PhysicalCTETable\r\n- Build the plan for CTE.\r\n\r\nLimit support will be added in the following PR.\r\n\r\n### Related changes\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\nOther tests are in https://github.com/pingcap/tidb/pull/24907\r\n\r\nSide effects\r\n\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note\r\n"
+  },
+  "pr_merged_at": "2021-05-28T16:47:36+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "tk.MustGetErrCode(\"with recursive cte(n) as (select 1 union (select * from cte order by n)) select * from cte;\", errno.ErrNotSupportedYet) (expression/integration_test.go)"
+  ],
+  "failure_signature": "tk.MustGetErrCode(\"with recursive cte(n) as (select 1 union (select * from cte order by n)) select * from cte;\", errno.ErrNotSupportedYet) (expression/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustGetErrCode(\"with recursive cte(n) as (select 1 union (select * from cte order by n)) select * from cte;\", errno.ErrNotSupportedYet) (expression/integration_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/24792",
+    "https://github.com/pingcap/tidb/pull/24792.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/24792.patch",
+  "changed_files": [
+    "expression/integration_test.go",
+    "planner/core/exhaust_physical_plans.go",
+    "planner/core/expression_rewriter.go",
+    "planner/core/find_best_task.go",
+    "planner/core/find_best_task_test.go",
+    "planner/core/initialize.go",
+    "planner/core/logical_plan_builder.go",
+    "planner/core/logical_plans.go",
+    "planner/core/physical_plans.go",
+    "planner/core/plan.go",
+    "planner/core/planbuilder.go",
+    "planner/core/preprocess.go",
+    "util/plancodec/id.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustGetErrCode(\"with recursive cte(n) as (select 1 union (select * from cte order by n)) select * from cte;\", errno.ErrNotSupportedYet) (expression/integration_test.go)",
+      "files: expression/integration_test.go, planner/core/exhaust_physical_plans.go, planner/core/expression_rewriter.go, planner/core/find_best_task.go, planner/core/find_best_task_test.go, planner/core/initialize.go, planner/core/logical_plan_builder.go, planner/core/logical_plans.go, planner/core/physical_plans.go, planner/core/plan.go, planner/core/planbuilder.go, planner/core/preprocess.go, util/plancodec/id.go"
+    ]
+  },
+  "analysis": "PR title: planner: build plan for CTE\nPR url: https://github.com/pingcap/tidb/pull/24792\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustGetErrCode(\"with recursive cte(n) as (select 1 union (select * from cte order by n)) select * from cte;\", errno.ErrNotSupportedYet) (expression/integration_test.go)\nChanged files (13): expression/integration_test.go, planner/core/exhaust_physical_plans.go, planner/core/expression_rewriter.go, planner/core/find_best_task.go, planner/core/find_best_task_test.go, planner/core/initialize.go, planner/core/logical_plan_builder.go, planner/core/logical_plans.go, planner/core/physical_plans.go, planner/core/plan.go, planner/core/planbuilder.go, planner/core/preprocess.go, util/plancodec/id.go\nPatch series analyzed; see patch_url."
+}

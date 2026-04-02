@@ -1,0 +1,48 @@
+{
+  "id": "pr-9671",
+  "source_pr": {
+    "number": 9671,
+    "url": "https://github.com/pingcap/tidb/pull/9671",
+    "title": "executor: add window function PERCENT_RANK",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nAdd window function support for `PERCENT_RANK`.  Part of https://github.com/pingcap/tidb/issues/9499\r\n\r\n### What is changed and how it works?\r\n\r\nFollowing the calculation formula `percent_rank = (rank - 1) / (rows_in_set - 1)`\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test"
+  },
+  "pr_merged_at": "2019-03-13T11:34:10+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/window_test.go",
+    "name": "window_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select a, percent_rank() over(order by a) from t\") (executor/window_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select a, percent_rank() over(order by a) from t\") (executor/window_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9671",
+    "https://github.com/pingcap/tidb/pull/9671.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9671.patch",
+  "changed_files": [
+    "executor/aggfuncs/builder.go",
+    "executor/aggfuncs/func_percent_rank.go",
+    "executor/window_test.go",
+    "expression/aggregation/base_func.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select a, percent_rank() over(order by a) from t\") (executor/window_test.go)",
+      "files: executor/aggfuncs/builder.go, executor/aggfuncs/func_percent_rank.go, executor/window_test.go, expression/aggregation/base_func.go"
+    ]
+  },
+  "analysis": "PR title: executor: add window function PERCENT_RANK\nPR url: https://github.com/pingcap/tidb/pull/9671\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select a, percent_rank() over(order by a) from t\") (executor/window_test.go)\nChanged files (4): executor/aggfuncs/builder.go, executor/aggfuncs/func_percent_rank.go, executor/window_test.go, expression/aggregation/base_func.go\nPatch url: https://github.com/pingcap/tidb/pull/9671.patch\nPicked test: type=unit path=executor/window_test.go name=window_test"
+}

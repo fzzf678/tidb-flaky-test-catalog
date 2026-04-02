@@ -1,0 +1,47 @@
+{
+  "id": "pr-7306",
+  "source_pr": {
+    "number": 7306,
+    "url": "https://github.com/pingcap/tidb/pull/7306",
+    "title": "ddl:support drop index for the partitioned table.",
+    "body": "## What have you changed? (mandatory)\r\nsupport drop index for the partitioned table\r\n* We first need to get all the partition IDs and then we need to delete the index in each partition.\r\n* Fix issue #7222 \r\n\r\nTake this as an example:\r\n```sql\r\nmysql> set @@tidb_enable_table_partition = 1;\r\nQuery OK, 0 rows affected (0.00 sec)\r\n\r\nmysql> create table tr(\r\n    ->         id int, name varchar(50),\r\n    ->         purchased date\r\n    ->     )\r\n    ->     partition by range( year(purchased) ) (\r\n    ->         partition p0 values less than (1990),\r\n    ->         partition p1 values less than (1995),\r\n    ->         partition p2 values less than (2000),\r\n    ->         partition p3 values less than (2005),\r\n    ->         partition p4 values less than (2010),\r\n    ->         partition p5 values less than (2015)\r\n    ->        );\r\nQuery OK, 0 rows affected (0.01 sec)\r\n\r\nmysql>  INSERT INTO tr VALUES\r\n    ->     (1, 'desk organiser', '2003-10-15'),\r\n    ->     (2, 'alarm clock', '1997-11-05'),\r\n    ->     (3, 'chair', '2009-03-10'),\r\n    ->     (4, 'bookcase', '1989-01-10'),\r\n    ->     (5, 'exercise bike', '2014-05-09'),\r\n    ->     (6, 'sofa', '1987-06-05'),\r\n    ->     (7, 'espresso maker', '2011-11-22'),\r\n    ->     (8, 'aquarium', '1992-08-04'),\r\n    ->     (9, 'study desk', '2006-09-16'),\r\n    ->     (10, 'lava lamp', '1998-12-25');\r\nQuery OK, 10 rows affected (0.10 sec)\r\n\r\nmysql> create index idx1 on tr (purchased);\r\nQuery OK, 0 rows affected (0.04 sec)\r\n\r\nmysql> select count(purchased) from tr use index(idx1);\r\n+------------------+\r\n| count(purchased) |\r\n+------------------+\r\n|               10 |\r\n+------------------+\r\n1 row in set (0.00 sec)\r\n\r\nmysql> drop index idx1 on tr;\r\nQuery OK, 0 rows affected (0.03 sec)\r\n\r\nmysql> select count(purchased) from tr use index(idx1);\r\nERROR 1176 (42000): Key 'idx1' doesn't exist in table 'tr'\r\n```\r\n\r\n## What is the type of the changes? (mandatory)\r\n\r\nNew feature\r\n- New feature (non-breaking change which adds functionality)\r\n\r\n## How has this PR been tested? (mandatory)\r\nUnit tests.\r\n\r\n## Does this PR affect documentation (docs/docs-cn) update? (mandatory)\r\n\r\nNo\r\n\r\n## Does this PR affect tidb-ansible update? (mandatory)\r\n\r\nNo\r\n\r\n## Does this PR need to be added to the release notes? (mandatory)\r\nNo\r\n\r\n\r\n\r\n"
+  },
+  "pr_merged_at": "2018-08-17T14:14:20+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_test.go",
+    "name": "db_test"
+  },
+  "symptoms": [
+    "rand.Seed(time.Now().Unix()) (ddl/db_test.go)"
+  ],
+  "failure_signature": "rand.Seed(time.Now().Unix()) (ddl/db_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7306",
+    "https://github.com/pingcap/tidb/pull/7306.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7306.patch",
+  "changed_files": [
+    "ddl/db_test.go",
+    "ddl/delete_range.go",
+    "ddl/index.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rand.Seed(time.Now().Unix()) (ddl/db_test.go)",
+      "files: ddl/db_test.go, ddl/delete_range.go, ddl/index.go"
+    ]
+  },
+  "analysis": "PR title: ddl:support drop index for the partitioned table.\nPR url: https://github.com/pingcap/tidb/pull/7306\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(time.Now().Unix()) (ddl/db_test.go)\nChanged files (3): ddl/db_test.go, ddl/delete_range.go, ddl/index.go\nPatch url: https://github.com/pingcap/tidb/pull/7306.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+}

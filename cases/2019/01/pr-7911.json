@@ -1,0 +1,49 @@
+{
+  "id": "pr-7911",
+  "source_pr": {
+    "number": 7911,
+    "url": "https://github.com/pingcap/tidb/pull/7911",
+    "title": "executor: support parallel partition for HashJoinExec",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nSupport parallel partition phase for Radix Hash Join.\r\n\r\n### What is changed and how it works?\r\nAdd parallel partition phase for the inner relation in HashJoinExec.\r\nWe pre-calculate and pre-allocate the memory for every row in `HashJoinExec.innerResult`, and parallel copy the rows to the specified location.\r\n\r\nTo accomplish the above work, we introduced a struct `type partition = *chunk.List` to store the sub-relations of inner relation or outer relation after partition phase, and we also introduced a struct `ptr4Partition` to store the address of every row in HashJoinExec.innerResults.\r\n\r\nThe bench result for parallel partition is listed in [this comment](https://github.com/pingcap/tidb/pull/7911/files#r241385256).\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\n - Increased code complexity\r\n\r\nRelated changes\r\n\r\nnone\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/7911)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2019-01-03T13:17:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/pkg_test.go",
+    "name": "pkg_test"
+  },
+  "symptoms": [
+    "// when the Insert() function is called parallelly, the data race on a byte"
+  ],
+  "failure_signature": "// when the Insert() function is called parallelly, the data race on a byte",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "executor: support parallel partition for HashJoinExec",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7911",
+    "https://github.com/pingcap/tidb/pull/7911.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7911.patch",
+  "changed_files": [
+    "executor/join.go",
+    "executor/pkg_test.go",
+    "util/chunk/chunk.go",
+    "util/chunk/list.go",
+    "util/chunk/list_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: // when the Insert() function is called parallelly, the data race on a byte",
+      "files: executor/builder.go, executor/cpu.prof, executor/executor.test, executor/join.go, executor/mem.prof, executor/pkg_test.go, executor/torch.svg, util/chunk/chunk.go, util/chunk/list.go, util/chunk/list_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: support parallel partition for HashJoinExec\nPR url: https://github.com/pingcap/tidb/pull/7911\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // when the Insert() function is called parallelly, the data race on a byte\nChanged files (5): executor/join.go, executor/pkg_test.go, util/chunk/chunk.go, util/chunk/list.go, util/chunk/list_test.go\nPatch url: https://github.com/pingcap/tidb/pull/7911.patch\nPicked test: type=unit path=executor/pkg_test.go name=pkg_test"
+}

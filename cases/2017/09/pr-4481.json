@@ -1,0 +1,55 @@
+{
+  "id": "pr-4481",
+  "source_pr": {
+    "number": 4481,
+    "url": "https://github.com/pingcap/tidb/pull/4481",
+    "title": "*: Support stream aggregation in new plan",
+    "body": "support stream aggregation in the new plan and clean the tests."
+  },
+  "pr_merged_at": "2017-09-14T14:22:30+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by c order by k\", (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by c order by k\", (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/4481",
+    "https://github.com/pingcap/tidb/pull/4481.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/4481.patch",
+  "changed_files": [
+    "executor/analyze_test.go",
+    "plan/cbo_test.go",
+    "plan/dag_plan_test.go",
+    "plan/explain_test.go",
+    "plan/logical_plan_test.go",
+    "plan/logical_plans.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/physical_plan_builder.go",
+    "plan/physical_plans.go",
+    "plan/stats.go",
+    "plan/task.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by c order by k\", (plan/dag_plan_test.go)",
+      "files: executor/analyze_test.go, plan/cbo_test.go, plan/dag_plan_test.go, plan/explain_test.go, plan/join_reorder.go, plan/logical_plan_test.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plan_test.go, plan/physical_plans.go, plan/stats.go, plan/task.go"
+    ]
+  },
+  "analysis": "PR title: *: Support stream aggregation in new plan\nPR url: https://github.com/pingcap/tidb/pull/4481\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by c order by k\", (plan/dag_plan_test.go)\nChanged files (11): executor/analyze_test.go, plan/cbo_test.go, plan/dag_plan_test.go, plan/explain_test.go, plan/logical_plan_test.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/stats.go, plan/task.go\nPatch url: https://github.com/pingcap/tidb/pull/4481.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

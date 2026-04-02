@@ -1,0 +1,50 @@
+{
+  "id": "pr-1843",
+  "source_pr": {
+    "number": 1843,
+    "url": "https://github.com/pingcap/tidb/pull/1843",
+    "title": "*: support common aggregation functions elimination.",
+    "body": "For query \"select sum(a), sum(b) , sum(a) + sum(b) from t;\", currently we put sum(a), sum(b), sum(a), sum(b) to aggregation. Instead, we should only consider sum(a) and sum(b).\n\n@shenli @coocood @XuHuaiyu PTAL\n"
+  },
+  "pr_merged_at": "2016-10-20T15:58:34+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/plan_test.go",
+    "name": "plan_test"
+  },
+  "symptoms": [
+    "sql: \"select sum(t.a + t.b), sum(t.a + t.c), sum(t.a + t.b), count(t.a) from t having sum(t.a + t.b) > 0 order by sum(t.a + t.c)\", (plan/plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select sum(t.a + t.b), sum(t.a + t.c), sum(t.a + t.b), count(t.a) from t having sum(t.a + t.b) > 0 order by sum(t.a + t.c)\", (plan/plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1843",
+    "https://github.com/pingcap/tidb/pull/1843.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1843.patch",
+  "changed_files": [
+    "executor/aggregate_test.go",
+    "expression/aggregation.go",
+    "expression/expression.go",
+    "plan/logical_plan_builder.go",
+    "plan/plan_test.go",
+    "plan/stringer.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select sum(t.a + t.b), sum(t.a + t.c), sum(t.a + t.b), count(t.a) from t having sum(t.a + t.b) > 0 order by sum(t.a + t.c)\", (plan/plan_test.go)",
+      "files: executor/aggregate_test.go, expression/aggregation.go, expression/expression.go, plan/logical_plan_builder.go, plan/plan_test.go, plan/stringer.go"
+    ]
+  },
+  "analysis": "PR title: *: support common aggregation functions elimination.\nPR url: https://github.com/pingcap/tidb/pull/1843\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select sum(t.a + t.b), sum(t.a + t.c), sum(t.a + t.b), count(t.a) from t having sum(t.a + t.b) > 0 order by sum(t.a + t.c)\", (plan/plan_test.go)\nChanged files (6): executor/aggregate_test.go, expression/aggregation.go, expression/expression.go, plan/logical_plan_builder.go, plan/plan_test.go, plan/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/1843.patch\nPicked test: type=unit path=plan/plan_test.go name=plan_test"
+}

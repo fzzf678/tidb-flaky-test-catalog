@@ -1,0 +1,46 @@
+{
+  "id": "pr-6498",
+  "source_pr": {
+    "number": 6498,
+    "url": "https://github.com/pingcap/tidb/pull/6498",
+    "title": "executor: fix a wrong result of limit operator when offset is a multiple of MaxChunkSize",
+    "body": "If the offset of the `Limit` clause is a multiple of the global session variable `tidb_max_chunk_size`, the limit operator implementation returns 0 row to its parent as the first batch, which is not correct since we use a batch with 0 row to indicate no more data.\r\n\r\nConsider the following table:\r\n```sql\r\ndrop table if exists t;\r\ncreate table t(a bigint, b bigint);\r\ninsert into t values(1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6);\r\n\r\n```\r\n\r\nBefore this PR:\r\n```sql\r\nTiDB(localhost:4000) > set @@tidb_max_chunk_size=2;\r\nQuery OK, 0 rows affected (0.00 sec)\r\n\r\nTiDB(localhost:4000) > select * from t limit 2, 1;\r\nEmpty set (0.00 sec)\r\n\r\n```\r\n\r\nAfter this PR:\r\n```sql\r\nTiDB(localhost:4000) > set @@tidb_max_chunk_size=2;\r\nQuery OK, 0 rows affected (0.00 sec)\r\n\r\nTiDB(localhost:4000) > select * from t limit 2, 1;\r\n+------+------+\r\n| a    | b    |\r\n+------+------+\r\n|    3 |    3 |\r\n+------+------+\r\n1 row in set (0.00 sec)\r\n\r\n```"
+  },
+  "pr_merged_at": "2018-05-08T16:16:32+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(`select * from t order by a limit 1, 1;`).Check(testkit.Rows( (executor/executor_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(`select * from t order by a limit 1, 1;`).Check(testkit.Rows( (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6498",
+    "https://github.com/pingcap/tidb/pull/6498.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6498.patch",
+  "changed_files": [
+    "executor/executor.go",
+    "executor/executor_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(`select * from t order by a limit 1, 1;`).Check(testkit.Rows( (executor/executor_test.go)",
+      "files: executor/executor.go, executor/executor_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: fix a wrong result of limit operator when offset is a multiple of MaxChunkSize\nPR url: https://github.com/pingcap/tidb/pull/6498\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(`select * from t order by a limit 1, 1;`).Check(testkit.Rows( (executor/executor_test.go)\nChanged files (2): executor/executor.go, executor/executor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6498.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

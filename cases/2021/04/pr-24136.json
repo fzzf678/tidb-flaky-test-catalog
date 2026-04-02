@@ -1,0 +1,64 @@
+{
+  "id": "pr-24136",
+  "source_pr": {
+    "number": 24136,
+    "url": "https://github.com/pingcap/tidb/pull/24136",
+    "title": "store/tikv:use tikv.error.ErrNotExist instead of kv.ErrNotExist",
+    "body": "Signed-off-by: AndreMouche\r\n\r\n### What problem does this PR solve?\r\nIt is blocked by #24273 \r\nThis PR uses `tikv/error/ErrNotExist` instead of `kv.ErrNotExist` so we needn't import tidb/kv package in these situtations in tikv package.\r\nPart of https://github.com/pingcap/tidb/issues/22513\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\nTests \r\n- Unit test\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n- No release note"
+  },
+  "pr_merged_at": "2021-04-28T12:59:56+08:00",
+  "test": {
+    "type": "unit",
+    "path": "config/config_util_test.go",
+    "name": "explain_easy"
+  },
+  "symptoms": [
+    "+ c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go)"
+  ],
+  "failure_signature": "+ c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "+ c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/24136",
+    "https://github.com/pingcap/tidb/pull/24136.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/24136.patch",
+  "changed_files": [
+    "store/driver/txn/error.go",
+    "store/driver/txn/snapshot.go",
+    "store/driver/txn/txn_driver.go",
+    "store/driver/txn/unionstore_driver.go",
+    "store/tikv/error/errcode.go",
+    "store/tikv/error/error.go",
+    "store/tikv/scan.go",
+    "store/tikv/snapshot.go",
+    "store/tikv/tests/2pc_test.go",
+    "store/tikv/tests/async_commit_test.go",
+    "store/tikv/tests/lock_test.go",
+    "store/tikv/tests/snapshot_fail_test.go",
+    "store/tikv/tests/snapshot_test.go",
+    "store/tikv/txn.go",
+    "store/tikv/unionstore/memdb.go",
+    "store/tikv/unionstore/memdb_snapshot.go",
+    "store/tikv/unionstore/mock.go",
+    "store/tikv/unionstore/union_store.go",
+    "store/tikv/unionstore/union_store_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: + c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go)",
+      "files: Makefile, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/explain_join_stats.result, config/config.go, config/config_util.go, config/config_util_test.go, ddl/callback.go, ddl/callback_test.go, ddl/db_integration_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_test.go, ddl/ddl_worker.go, ddl/failtest/fail_db_test.go, ddl/placement/constraints.go, ddl/placement/constraints_test.go, ddl/placement/errors.go, ddl/placement/types.go, ddl/placement/utils.go, ddl/placement/utils_test.go, ddl/placement_rule_test.go, ddl/placement_sql_test.go, ddl/serial_test.go, ddl/split_region.go, distsql/distsql.go, distsql/distsql_test.go, docs/design/2018-10-08-online-DDL.md, docs/design/README.md, docs/design/TEMPLATE.md, domain/domain.go, executor/adapter.go, executor/aggfuncs/func_group_concat_test.go, executor/aggregate_test.go, executor/analyze.go, executor/analyze_test.go, executor/builder.go, executor/ddl.go, executor/distsql.go, executor/distsql_test.go, executor/executor.go, executor/executor_pkg_test.go, executor/executor_test.go, executor/hash_table_test.go, executor/index_merge_reader.go, executor/index_merge_reader_test.go, executor/infoschema_reader.go, executor/insert_common.go, executor/insert_test.go, executor/inspection_result.go, executor/join.go, executor/merge_join_test.go, executor/partition_table.go, executor/partition_table_test.go, executor/point_get.go, executor/point_get_test.go, executor/prepared_test.go, executor/seqtest/seq_executor_test.go, executor/set.go, executor/set_test.go, executor/show.go, executor/show_test.go, executor/simple.go, executor/sort_test.go, executor/tiflash_test.go, executor/union_scan_test.go, executor/write.go, expression/bench_test.go, expression/builtin_cast.go, expression/builtin_cast_vec.go, expression/builtin_encryption_test.go, expression/builtin_time_test.go, expression/builtin_time_vec_test.go, expression/chunk_executor.go, expression/constant_propagation_test.go, expression/distsql_builtin.go, expression/distsql_builtin_test.go, expression/expr_to_pb.go, expression/expr_to_pb_test.go, expression/expression.go, expression/flag_simplify_test.go, expression/helper_test.go, expression/integration_test.go, expression/scalar_function.go, expression/typeinfer_test.go, expression/util_test.go, go.mod, go.sum, kv/checker.go, kv/error.go, kv/interface_mock_test.go, kv/kv.go, kv/mpp.go, kv/txn.go, kv/utils_test.go, kv/variables.go, planner/core/find_best_task.go, planner/core/integration_test.go, planner/core/logical_plan_test.go, planner/core/partition_pruner_test.go, planner/core/planbuilder.go, planner/core/point_get_plan.go, planner/core/rule_aggregation_elimination.go, planner/core/rule_column_pruning.go, planner/core/rule_eliminate_projection.go, planner/core/rule_join_reorder.go, planner/core/testdata/integration_serial_suite_in.json, planner/core/testdata/integration_serial_suite_out.json, planner/core/testdata/integration_suite_in.json, planner/core/testdata/integration_suite_out.json, planner/core/testdata/plan_suite_unexported_out.json, server/conn.go, server/conn_stmt.go, server/http_handler.go, server/http_handler_test.go, server/http_status.go, session/bootstrap.go, session/pessimistic_test.go, session/session.go, session/session_fail_test.go, session/session_test.go, sessionctx/binloginfo/binloginfo_test.go, sessionctx/stmtctx/stmtctx.go, sessionctx/stmtctx/stmtctx_test.go, sessionctx/variable/noop.go, sessionctx/variable/session.go, sessionctx/variable/session_test.go, sessionctx/variable/statusvar.go, sessionctx/variable/sysvar.go, sessionctx/variable/sysvar_test.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, sessionctx/variable/varsutil_test.go, statistics/cmsketch_test.go, statistics/fmsketch.go, statistics/handle/handle.go, statistics/handle/handle_test.go, statistics/handle/update_test.go, statistics/row_sampler.go, statistics/sample_test.go, statistics/scalar_test.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, store/copr/batch_coprocessor.go, store/copr/batch_request_sender.go, store/copr/coprocessor.go, store/copr/coprocessor_cache_test.go, store/copr/coprocessor_test.go, store/copr/mpp.go, store/driver/txn/batch_getter.go, store/driver/txn/batch_getter_test.go, store/driver/txn/error.go, store/driver/txn/snapshot.go, store/driver/txn/txn_driver.go, store/driver/txn/unionstore_driver.go, store/driver/util_test.go, store/gcworker/gc_worker.go, store/mockstore/cluster_test.go, store/mockstore/mockcopr/executor_test.go, store/mockstore/unistore/cophandler/analyze.go, store/mockstore/unistore/cophandler/closure_exec.go, store/mockstore/unistore/cophandler/cop_handler.go, store/mockstore/unistore/cophandler/mpp.go, store/mockstore/unistore/cophandler/topn.go, store/mockstore/unistore/lockstore/lockstore.go, store/mockstore/unistore/tikv/mvcc_test.go, store/mockstore/unistore/tikv/region.go, store/mockstore/unistore/tikv/server.go, store/tikv/2pc.go, store/tikv/backoff.go, store/tikv/commit.go, store/tikv/config/config.go, store/tikv/config/config_test.go, store/tikv/delete_range.go, store/tikv/errno/errcode.go, store/tikv/error/errcode.go, store/tikv/error/error.go, store/tikv/kv.go, store/tikv/kv/variables.go, store/tikv/lock_resolver.go, store/tikv/mockstore/cluster/cluster.go, store/tikv/mockstore/mocktikv/cluster.go, store/tikv/oracle/oracle.go, store/tikv/oracle/oracles/export_test.go, store/tikv/pessimistic.go, store/tikv/prewrite.go, store/tikv/rawkv.go, store/tikv/region_request.go, store/tikv/scan.go, store/tikv/snapshot.go, store/tikv/split_region.go, store/tikv/tests/2pc_test.go, store/tikv/tests/async_commit_fail_test.go, store/tikv/tests/async_commit_test.go, store/tikv/tests/lock_test.go, store/tikv/tests/safepoint_test.go, store/tikv/tests/snapshot_fail_test.go, store/tikv/tests/snapshot_test.go, store/tikv/tests/split_test.go, store/tikv/tests/ticlient_test.go, store/tikv/tests/util_test.go, store/tikv/txn.go, store/tikv/unionstore/memdb.go, store/tikv/unionstore/memdb_bench_test.go, store/tikv/unionstore/memdb_snapshot.go, store/tikv/unionstore/memdb_test.go, store/tikv/unionstore/mock.go, store/tikv/unionstore/union_store.go, store/tikv/unionstore/union_store_test.go, store/tikv/util/execdetails.go, store/tikv/util/misc.go, store/tikv/util/testleak/add-leaktest.sh, store/tikv/util/testleak/check-leaktest.sh, store/tikv/util/testleak/fake.go, store/tikv/util/testleak/leaktest.go, table/tables/index.go, table/tables/tables.go, tablecodec/tablecodec_test.go, telemetry/data_feature_usage.go, telemetry/telemetry.go, tests/globalkilltest/go.sum, types/field_type.go, util/codec/codec.go, util/collate/collate.go, util/execdetails/execdetails.go, util/execdetails/execdetails_test.go, util/fastrand/random_test.go, util/gcutil/gcutil.go, util/kvcache/simple_lru.go, util/kvcache/simple_lru_test.go, util/mock/client.go, util/ranger/checker.go, util/rowcodec/rowcodec_test.go, util/sem/sem.go, util/stmtsummary/statement_summary_test.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv:use tikv.error.ErrNotExist instead of kv.ErrNotExist\nPR url: https://github.com/pingcap/tidb/pull/24136\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: + c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go)\nChanged files (19): store/driver/txn/error.go, store/driver/txn/snapshot.go, store/driver/txn/txn_driver.go, store/driver/txn/unionstore_driver.go, store/tikv/error/errcode.go, store/tikv/error/error.go, store/tikv/scan.go, store/tikv/snapshot.go, store/tikv/tests/2pc_test.go, store/tikv/tests/async_commit_test.go, store/tikv/tests/lock_test.go, store/tikv/tests/snapshot_fail_test.go, store/tikv/tests/snapshot_test.go, store/tikv/txn.go, store/tikv/unionstore/memdb.go, store/tikv/unionstore/memdb_snapshot.go, store/tikv/unionstore/mock.go, store/tikv/unionstore/union_store.go, store/tikv/unionstore/union_store_test.go\nPatch series analyzed; see patch_url."
+}

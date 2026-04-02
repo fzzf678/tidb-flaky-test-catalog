@@ -1,0 +1,46 @@
+{
+  "id": "pr-3199",
+  "source_pr": {
+    "number": 3199,
+    "url": "https://github.com/pingcap/tidb/pull/3199",
+    "title": "plan: copy the physical info to avoid panic.",
+    "body": "When we get a physical info from memory table, we shouldn't change it directly. We should always copy it firstly.\r\n@shenli @coocood @winoros @lamxTyler PTAL"
+  },
+  "pr_merged_at": "2017-05-03T11:27:07+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/join_test.go",
+    "name": "join_test"
+  },
+  "symptoms": [
+    "result = tk.MustQuery(\"select * from t1 , t2 where t2.c1 = t1.c1 and t2.c2 = 0 and t1.c1 = 1 order by t1.c2 limit 1\") (executor/join_test.go)"
+  ],
+  "failure_signature": "result = tk.MustQuery(\"select * from t1 , t2 where t2.c1 = t1.c1 and t2.c2 = 0 and t1.c1 = 1 order by t1.c2 limit 1\") (executor/join_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3199",
+    "https://github.com/pingcap/tidb/pull/3199.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3199.patch",
+  "changed_files": [
+    "executor/join_test.go",
+    "plan/physical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: result = tk.MustQuery(\"select * from t1 , t2 where t2.c1 = t1.c1 and t2.c2 = 0 and t1.c1 = 1 order by t1.c2 limit 1\") (executor/join_test.go)",
+      "files: executor/join_test.go, plan/physical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: plan: copy the physical info to avoid panic.\nPR url: https://github.com/pingcap/tidb/pull/3199\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select * from t1 , t2 where t2.c1 = t1.c1 and t2.c2 = 0 and t1.c1 = 1 order by t1.c2 limit 1\") (executor/join_test.go)\nChanged files (2): executor/join_test.go, plan/physical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/3199.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+}

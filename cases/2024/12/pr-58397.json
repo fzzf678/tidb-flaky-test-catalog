@@ -1,0 +1,52 @@
+{
+  "id": "pr-58397",
+  "source_pr": {
+    "number": 58397,
+    "url": "https://github.com/pingcap/tidb/pull/58397",
+    "title": "planner: prepare `AccessPath.PartialAlternativeIndexPaths` to handle MV indexes",
+    "body": "\r\n### What problem does this PR solve?\r\n\r\nIssue Number: ref #58361 \r\n\r\n### What changed and how does it work?\r\n\r\n- As said in [#58361](https://github.com/pingcap/tidb/pull/58361), `AccessPath.PartialAlternativeIndexPaths` is changed from `[][]*AccessPath` to `[][][]*AccessPath`.\r\n  - It's just a data type change in this PR. It's actually not utilized now, that will be in the next PR.\r\n- A new function `cmpAlternativesByRowCount()` is extracted from `buildIntoAccessPath()` to be reused in `matchPropForIndexMergeAlternatives()`.\r\n- Related comments and util functions updates.\r\n- Several minor changes missing in [#58332](https://github.com/pingcap/tidb/pull/58332) is also added here.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [x] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-12-21T13:22:27+08:00",
+  "test": {
+    "type": "integration",
+    "path": "tests/integrationtest/r/planner/core/indexmerge_path.result",
+    "name": "indexmerge_path"
+  },
+  "symptoms": [
+    "explain format = brief select * from t where 1 member of (j1) or 2 member of (j2) order by a; (tests/integrationtest/r/planner/core/indexmerge_path.result)"
+  ],
+  "failure_signature": "explain format = brief select * from t where 1 member of (j1) or 2 member of (j2) order by a; (tests/integrationtest/r/planner/core/indexmerge_path.result)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/58397",
+    "https://github.com/pingcap/tidb/pull/58397.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/58397.patch",
+  "changed_files": [
+    "pkg/planner/core/find_best_task.go",
+    "pkg/planner/core/indexmerge_path.go",
+    "pkg/planner/core/indexmerge_test.go",
+    "pkg/planner/core/indexmerge_unfinished_path.go",
+    "pkg/planner/util/misc.go",
+    "pkg/planner/util/path.go",
+    "tests/integrationtest/r/planner/core/indexmerge_path.result",
+    "tests/integrationtest/t/planner/core/indexmerge_path.test"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: explain format = brief select * from t where 1 member of (j1) or 2 member of (j2) order by a; (tests/integrationtest/r/planner/core/indexmerge_path.result)",
+      "files: pkg/planner/core/find_best_task.go, pkg/planner/core/indexmerge_path.go, pkg/planner/core/indexmerge_test.go, pkg/planner/core/indexmerge_unfinished_path.go, pkg/planner/util/misc.go, pkg/planner/util/path.go, tests/integrationtest/r/planner/core/indexmerge_path.result, tests/integrationtest/t/planner/core/indexmerge_path.test"
+    ]
+  },
+  "analysis": "PR title: planner: prepare `AccessPath.PartialAlternativeIndexPaths` to handle MV indexes\nPR url: https://github.com/pingcap/tidb/pull/58397\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: explain format = brief select * from t where 1 member of (j1) or 2 member of (j2) order by a; (tests/integrationtest/r/planner/core/indexmerge_path.result)\nChanged files (8): pkg/planner/core/find_best_task.go, pkg/planner/core/indexmerge_path.go, pkg/planner/core/indexmerge_test.go, pkg/planner/core/indexmerge_unfinished_path.go, pkg/planner/util/misc.go, pkg/planner/util/path.go, tests/integrationtest/r/planner/core/indexmerge_path.result, tests/integrationtest/t/planner/core/indexmerge_path.test\nPatch url: https://github.com/pingcap/tidb/pull/58397.patch\nPicked test: type=integration path=tests/integrationtest/r/planner/core/indexmerge_path.result name=indexmerge_path"
+}

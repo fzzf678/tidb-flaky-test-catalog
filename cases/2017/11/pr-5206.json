@@ -1,0 +1,49 @@
+{
+  "id": "pr-5206",
+  "source_pr": {
+    "number": 5206,
+    "url": "https://github.com/pingcap/tidb/pull/5206",
+    "title": "executor: support chunk for IndexLookupReader.",
+    "body": "And decouple indexWorker and tableWorker from index lookup executor."
+  },
+  "pr_merged_at": "2017-11-25T16:33:44+08:00",
+  "test": {
+    "type": "unit",
+    "path": "new_session_test.go",
+    "name": "new_session_test"
+  },
+  "symptoms": [
+    "rs, err := tk.Exec(\"select * from chk order by k\") (new_session_test.go)"
+  ],
+  "failure_signature": "rs, err := tk.Exec(\"select * from chk order by k\") (new_session_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/5206",
+    "https://github.com/pingcap/tidb/pull/5206.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/5206.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/distsql.go",
+    "executor/distsql_test.go",
+    "new_session_test.go",
+    "util/chunk/chunk.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rs, err := tk.Exec(\"select * from chk order by k\") (new_session_test.go)",
+      "files: executor/builder.go, executor/distsql.go, executor/distsql_test.go, new_session_test.go, util/chunk/chunk.go"
+    ]
+  },
+  "analysis": "PR title: executor: support chunk for IndexLookupReader.\nPR url: https://github.com/pingcap/tidb/pull/5206\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rs, err := tk.Exec(\"select * from chk order by k\") (new_session_test.go)\nChanged files (5): executor/builder.go, executor/distsql.go, executor/distsql_test.go, new_session_test.go, util/chunk/chunk.go\nPatch url: https://github.com/pingcap/tidb/pull/5206.patch\nPicked test: type=unit path=new_session_test.go name=new_session_test"
+}

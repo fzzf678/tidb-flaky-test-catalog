@@ -1,0 +1,50 @@
+{
+  "id": "pr-9115",
+  "source_pr": {
+    "number": 9115,
+    "url": "https://github.com/pingcap/tidb/pull/9115",
+    "title": "* fix timestamp default value bug in multiple time zones.",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nFix timestamp default value bug in multiple time zones.\r\nTiDB\r\n```sql\r\nmysql> set @@time_zone=\"+08:00\"\r\nmysql> create table t1 (a int, b timestamp default \"2019-01-17 14:46:14\"); \r\nmysql> insert into t1 set a=1; /* b = \"2019-01-17 14:46:14 +08:00\" = \"2019-01-17 06:46:14 UTC\"   */\r\nmysql> show create table t1\r\n+-------+-------------------------------------------------------------+\r\n| Table | Create Table                                                |\r\n+-------+-------------------------------------------------------------+\r\n| t1    | CREATE TABLE `t1` (                                         |\r\n|       |   `a` int(11) DEFAULT NULL,                                 |\r\n|       |   `b` timestamp DEFAULT '2019-01-17 14:46:14'               |\r\n|       | ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin |\r\n+-------+-------------------------------------------------------------+\r\nmysql> set @@time_zone=\"+00:00\"\r\nmysql> insert into t1 set a=2;  /* b = \"2019-01-17 14:46:14 +00:00\" = \"2019-01-17 14:46:14 UTC\"   */\r\nmysql> show create table t1\r\n+-------+-------------------------------------------------------------+\r\n| Table | Create Table                                                |\r\n+-------+-------------------------------------------------------------+\r\n| t1    | CREATE TABLE `t1` (                                         |\r\n|       |   `a` int(11) DEFAULT NULL,                                 |\r\n|       |   `b` timestamp DEFAULT '2019-01-17 14:46:14'               |\r\n|       | ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin |\r\n+-------+-------------------------------------------------------------+\r\nmysql> select a,b from t1;\r\n+---+---------------------+\r\n| a | b                   |\r\n+---+---------------------+\r\n| 1 | 2019-01-17 06:46:14 |\r\n| 2 | 2019-01-17 14:46:14 |\r\n+---+---------------------+\r\n2 rows in set\r\nmysql> set @@time_zone=\"+08:00\"\r\nmysql> select a,b from t1;\r\n+---+---------------------+\r\n| a | b                   |\r\n+---+---------------------+\r\n| 1 | 2019-01-17 14:46:14 |\r\n| 2 | 2019-01-17 22:46:14 |\r\n+---+---------------------+\r\n```\r\n\r\nmysql\r\n```sql\r\nmysql> set @@time_zone=\"+08:00\"\r\nmysql> create table t1 (a int, b timestamp default \"2019-01-17 14:46:14\");\r\nmysql> insert into t1 set a=1\r\nmysql> show create table t1\r\n+-------+--------------------------------------------------------+\r\n| Table | Create Table                                           |\r\n+-------+--------------------------------------------------------+\r\n| t1    | CREATE TABLE `t1` (                                    |\r\n|       |   `a` int(11) DEFAULT NULL,                            |\r\n|       |   `b` timestamp NOT NULL DEFAULT '2019-01-17 14:46:14' | \r\n|       | ) ENGINE=InnoDB DEFAULT CHARSET=latin1                 |\r\n+-------+--------------------------------------------------------+\r\nmysql> set @@time_zone=\"+00:00\"\r\nmysql> insert into t1 set a=2;\r\nmysql> show create table t1\r\n+-------+--------------------------------------------------------+\r\n| Table | Create Table                                           |\r\n+-------+--------------------------------------------------------+\r\n| t1    | CREATE TABLE `t1` (                                    |\r\n|       |   `a` int(11) DEFAULT NULL,                            |\r\n|       |   `b` timestamp NOT NULL DEFAULT '2019-01-17 06:46:14' |\r\n|       | ) ENGINE=InnoDB DEFAULT CHARSET=latin1                 |\r\n+-------+--------------------------------------------------------+\r\nmysql> select a,b from t1;\r\n+---+---------------------+\r\n| a | b                   |\r\n+---+---------------------+\r\n| 1 | 2019-01-17 06:46:14 |\r\n| 2 | 2019-01-17 06:46:14 |\r\n+---+---------------------+\r\n2 rows in set\r\nmysql> set @@time_zone=\"+08:00\"\r\nmysql> select a,b from t1;\r\n+---+---------------------+\r\n| a | b                   |\r\n+---+---------------------+\r\n| 1 | 2019-01-17 14:46:14 |\r\n| 2 | 2019-01-17 14:46:14 |\r\n+---+---------------------+\r\n```\r\n\r\nRelated Parser PR:https://github.com/pingcap/parser/pull/183\r\nreleated Issue: https://github.com/pingcap/tidb/issues/9064\r\n\r\n### What is changed and how it works?\r\nOld tidb save timestamp default value without convert to UTC time. Then if TiDB in multiple timezone, and use the default value of timestamp will have different result problem.\r\nThis PR will save timestamp default value in UTC time.\r\nAnd add a `version` field to solve compatible problem.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\n\r\n\r\n\r\nSide effects\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n"
+  },
+  "pr_merged_at": "2019-02-18T15:35:28+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "r = tk.MustQuery(`select a,b from t order by a`) (executor/executor_test.go)"
+  ],
+  "failure_signature": "r = tk.MustQuery(`select a,b from t order by a`) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/9115",
+    "https://github.com/pingcap/tidb/pull/9115.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/9115.patch",
+  "changed_files": [
+    "ddl/column.go",
+    "ddl/ddl_api.go",
+    "executor/executor_test.go",
+    "executor/show.go",
+    "executor/write_test.go",
+    "table/column.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: r = tk.MustQuery(`select a,b from t order by a`) (executor/executor_test.go)",
+      "files: ddl/column.go, ddl/ddl_api.go, ddl/index.go, executor/executor_test.go, executor/show.go, executor/write_test.go, go.mod, go.sum, table/column.go"
+    ]
+  },
+  "analysis": "PR title: * fix timestamp default value bug in multiple time zones.\nPR url: https://github.com/pingcap/tidb/pull/9115\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: r = tk.MustQuery(`select a,b from t order by a`) (executor/executor_test.go)\nChanged files (6): ddl/column.go, ddl/ddl_api.go, executor/executor_test.go, executor/show.go, executor/write_test.go, table/column.go\nPatch url: https://github.com/pingcap/tidb/pull/9115.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

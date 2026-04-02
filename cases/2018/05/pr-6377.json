@@ -1,0 +1,54 @@
+{
+  "id": "pr-6377",
+  "source_pr": {
+    "number": 6377,
+    "url": "https://github.com/pingcap/tidb/pull/6377",
+    "title": "plan: refactor errors",
+    "body": "1. move all error definitions into `errors.go`\r\n2. remove `terror.ClassOptimizerPlan`"
+  },
+  "pr_merged_at": "2018-05-09T13:07:22+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "{\"select a from t where t.a < t.a order by t11.c1\", \"[optimizer:1054]Unknown column 't11.c1' in 'order clause'\"}, (plan/logical_plan_test.go)"
+  ],
+  "failure_signature": "{\"select a from t where t.a < t.a order by t11.c1\", \"[optimizer:1054]Unknown column 't11.c1' in 'order clause'\"}, (plan/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6377",
+    "https://github.com/pingcap/tidb/pull/6377.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6377.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "executor/prepared_test.go",
+    "plan/errors.go",
+    "plan/expression_rewriter.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plan_test.go",
+    "plan/optimizer.go",
+    "plan/planbuilder.go",
+    "terror/terror.go",
+    "util/ranger/points.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: {\"select a from t where t.a < t.a order by t11.c1\", \"[optimizer:1054]Unknown column 't11.c1' in 'order clause'\"}, (plan/logical_plan_test.go)",
+      "files: executor/executor_test.go, executor/prepared_test.go, plan/errors.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/planbuilder.go, terror/terror.go, util/ranger/points.go"
+    ]
+  },
+  "analysis": "PR title: plan: refactor errors\nPR url: https://github.com/pingcap/tidb/pull/6377\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: {\"select a from t where t.a < t.a order by t11.c1\", \"[optimizer:1054]Unknown column 't11.c1' in 'order clause'\"}, (plan/logical_plan_test.go)\nChanged files (10): executor/executor_test.go, executor/prepared_test.go, plan/errors.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/planbuilder.go, terror/terror.go, util/ranger/points.go\nPatch url: https://github.com/pingcap/tidb/pull/6377.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+}

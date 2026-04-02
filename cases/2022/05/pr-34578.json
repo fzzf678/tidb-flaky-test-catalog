@@ -1,0 +1,55 @@
+{
+  "id": "pr-34578",
+  "source_pr": {
+    "number": 34578,
+    "url": "https://github.com/pingcap/tidb/pull/34578",
+    "title": "realtikvtest: dedicated package for real tikv tests",
+    "body": "Issue Number: ref #28328\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-05-12T11:18:34+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "tests/realtikvtest/backup_restore_test.go",
+    "name": "backup_restore_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 1\", \"100 102\")) (session/session_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 1\", \"100 102\")) (session/session_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/34578",
+    "https://github.com/pingcap/tidb/pull/34578.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/34578.patch",
+  "changed_files": [
+    ".github/workflows/integration-test-with-real-tikv.yml",
+    "session/nontransactional_test.go",
+    "session/session_legacy_test.go",
+    "tests/realtikvtest/backup_restore_test.go",
+    "tests/realtikvtest/binlog_test.go",
+    "tests/realtikvtest/isolation_test.go",
+    "tests/realtikvtest/main_test.go",
+    "tests/realtikvtest/session_fail_test.go",
+    "tests/realtikvtest/session_test.go",
+    "tests/realtikvtest/statistics_test.go",
+    "tests/realtikvtest/txn_state_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 1\", \"100 102\")) (session/session_test.go)",
+      "files: .github/workflows/integration-test-with-real-tikv.yml, session/backup_restore_test.go, session/binlog_test.go, session/nontransactional_test.go, session/session_legacy_test.go, session/session_test.go, tests/realtikvtest/backup_restore_test.go, tests/realtikvtest/binlog_test.go, tests/realtikvtest/isolation_test.go, tests/realtikvtest/main_test.go, tests/realtikvtest/nontransactional_test.go, tests/realtikvtest/session_fail_test.go, tests/realtikvtest/session_test.go, tests/realtikvtest/statistics_test.go, tests/realtikvtest/txn_state_test.go"
+    ]
+  },
+  "analysis": "PR title: realtikvtest: dedicated package for real tikv tests\nPR url: https://github.com/pingcap/tidb/pull/34578\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 1\", \"100 102\")) (session/session_test.go)\nChanged files (11): .github/workflows/integration-test-with-real-tikv.yml, session/nontransactional_test.go, session/session_legacy_test.go, tests/realtikvtest/backup_restore_test.go, tests/realtikvtest/binlog_test.go, tests/realtikvtest/isolation_test.go, tests/realtikvtest/main_test.go, tests/realtikvtest/session_fail_test.go, tests/realtikvtest/session_test.go, tests/realtikvtest/statistics_test.go, tests/realtikvtest/txn_state_test.go\nPatch url: https://github.com/pingcap/tidb/pull/34578.patch\nPicked test: type=realtikv path=tests/realtikvtest/backup_restore_test.go name=backup_restore_test"
+}

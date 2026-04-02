@@ -1,0 +1,47 @@
+{
+  "id": "pr-19815",
+  "source_pr": {
+    "number": 19815,
+    "url": "https://github.com/pingcap/tidb/pull/19815",
+    "title": "ddl, test: fix deadloop in test about doDDLJob",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #19798 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed: revert some changes made in #18844, which may cause deadloop \r\n\r\nHow it works: #18844 faces a problem of data race at `d.ctx`, in fact add `// +build !race` is enough, other changes wrongly changed the behaviour of ddl workers and `doDDLJobs`, which may cause a deadloop and weaken the code.\r\n\r\nNOTE that `doDDLJob` will block if ddl worker accidentally exit (but stop block if restart later), at waiting `task.err` channel. If we want to resolve this block, such as exit when context canceled, it will cause restarted ddl worker of the sending end's block. Sending end's block can't be resolved by detecting context canceled in same way, because `d.ctx` may be replaced thus new context is not canceled at that time.\r\nSo I just hope ddl worker won't accidentally exit\r\n\r\n### Related changes\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\nSide effects\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n<!-- Please write a release note here to describe the change you made when it is released to the users of TiDB. If your PR doesn't involve any change to TiDB(like test enhancements, RFC proposals...), you can write `No release note`. -->\r\n- No release note\r\n"
+  },
+  "pr_merged_at": "2020-11-13T11:43:04+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/restart_test.go",
+    "name": "restart_test"
+  },
+  "symptoms": [
+    "PR title: ddl, test: fix deadloop in test about doDDLJob"
+  ],
+  "failure_signature": "PR title: ddl, test: fix deadloop in test about doDDLJob",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "ddl, test: fix deadloop in test about doDDLJob",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/19815",
+    "https://github.com/pingcap/tidb/pull/19815.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/19815.patch",
+  "changed_files": [
+    "ddl/ddl.go",
+    "ddl/restart_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR title: ddl, test: fix deadloop in test about doDDLJob",
+      "evidence: handle `context.Canceled` and add 1-minute guard to avoid endless loop while waiting history job (ddl/restart_test.go)",
+      "files: ddl/ddl.go, ddl/restart_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl, test: fix deadloop in test about doDDLJob\nPR url: https://github.com/pingcap/tidb/pull/19815\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: ddl, test: fix deadloop in test about doDDLJob\nChanged files (2): ddl/ddl.go, ddl/restart_test.go\nPatch url: https://github.com/pingcap/tidb/pull/19815.patch\nPicked test: type=unit path=ddl/restart_test.go name=restart_test"
+}

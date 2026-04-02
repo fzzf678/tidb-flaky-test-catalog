@@ -1,0 +1,46 @@
+{
+  "id": "pr-11040",
+  "source_pr": {
+    "number": 11040,
+    "url": "https://github.com/pingcap/tidb/pull/11040",
+    "title": "planner: fix window which depends on another",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nfix window function: A window which depends on another cannot define partitioning\r\n[#11007](https://github.com/pingcap/tidb/issues/11007)\r\n\r\n\r\n### What is changed and how it works?\r\n\r\nModify the order of error judgments\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n"
+  },
+  "pr_merged_at": "2019-07-04T14:25:00+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/logical_plan_test.go",
+    "name": "logical_plan_test"
+  },
+  "symptoms": [
+    "sql: \"SELECT FIRST_VALUE(a) RESPECT NULLS OVER (w1 PARTITION BY b ORDER BY b ASC, a DESC ROWS 2 PRECEDING) AS 'first_value', a, b FROM ( SELECT a, b FROM `t` ) as t WINDOW w1 AS (PARTITION BY b ORDER BY b ASC, a ASC );\", (planner/core/logical_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"SELECT FIRST_VALUE(a) RESPECT NULLS OVER (w1 PARTITION BY b ORDER BY b ASC, a DESC ROWS 2 PRECEDING) AS 'first_value', a, b FROM ( SELECT a, b FROM `t` ) as t WINDOW w1 AS (PARTITION BY b ORDER BY b ASC, a ASC );\", (planner/core/logical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/11040",
+    "https://github.com/pingcap/tidb/pull/11040.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/11040.patch",
+  "changed_files": [
+    "planner/core/logical_plan_builder.go",
+    "planner/core/logical_plan_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"SELECT FIRST_VALUE(a) RESPECT NULLS OVER (w1 PARTITION BY b ORDER BY b ASC, a DESC ROWS 2 PRECEDING) AS 'first_value', a, b FROM ( SELECT a, b FROM `t` ) as t WINDOW w1 AS (PARTITION BY b ORDER BY b ASC, a ASC );\", (planner/core/logical_plan_test.go)",
+      "files: planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go"
+    ]
+  },
+  "analysis": "PR title: planner: fix window which depends on another\nPR url: https://github.com/pingcap/tidb/pull/11040\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"SELECT FIRST_VALUE(a) RESPECT NULLS OVER (w1 PARTITION BY b ORDER BY b ASC, a DESC ROWS 2 PRECEDING) AS 'first_value', a, b FROM ( SELECT a, b FROM `t` ) as t WINDOW w1 AS (PARTITION BY b ORDER BY b ASC, a ASC );\", (planner/core/logical_plan_test.go)\nChanged files (2): planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11040.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
+}

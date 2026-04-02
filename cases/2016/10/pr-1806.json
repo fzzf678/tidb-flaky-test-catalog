@@ -1,0 +1,46 @@
+{
+  "id": "pr-1806",
+  "source_pr": {
+    "number": 1806,
+    "url": "https://github.com/pingcap/tidb/pull/1806",
+    "title": "plan: fix a topn bug",
+    "body": "If a function exists in order by lists, it shouldn't push down anything. But we pushed a single limit into table scan , which may cause a bug about correctness. This PR fixes it.\n@coocood @shenli @zimulala @tiancaiamao @XuHuaiyu \n"
+  },
+  "pr_merged_at": "2016-10-10T21:58:04+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "r = tk.MustQuery(\"select id from select_order_test order by id + 1 desc limit 1 \") (executor/executor_test.go)"
+  ],
+  "failure_signature": "r = tk.MustQuery(\"select id from select_order_test order by id + 1 desc limit 1 \") (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1806",
+    "https://github.com/pingcap/tidb/pull/1806.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1806.patch",
+  "changed_files": [
+    "executor/executor_test.go",
+    "plan/physical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: r = tk.MustQuery(\"select id from select_order_test order by id + 1 desc limit 1 \") (executor/executor_test.go)",
+      "files: executor/executor_test.go, plan/physical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: plan: fix a topn bug\nPR url: https://github.com/pingcap/tidb/pull/1806\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: r = tk.MustQuery(\"select id from select_order_test order by id + 1 desc limit 1 \") (executor/executor_test.go)\nChanged files (2): executor/executor_test.go, plan/physical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/1806.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

@@ -1,0 +1,50 @@
+{
+  "id": "pr-33113",
+  "source_pr": {
+    "number": 33113,
+    "url": "https://github.com/pingcap/tidb/pull/33113",
+    "title": "ddl: migrate test-infra to testify for ddl.testDBSuite4",
+    "body": "Issue Number: close #32964\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-03-16T11:49:52+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_test.go",
+    "name": "db_test"
+  },
+  "symptoms": [
+    "- c.Skip(\"skip race test\") | tk.MustGetErrCode(\"CREATE TABLE t (a INT , b INT as (ROW_NUMBER() OVER (ORDER BY a)))\", errno.ErrWindowInvalidWindowFuncUse) (ddl/db_test.go)"
+  ],
+  "failure_signature": "- c.Skip(\"skip race test\") | tk.MustGetErrCode(\"CREATE TABLE t (a INT , b INT as (ROW_NUMBER() OVER (ORDER BY a)))\", errno.ErrWindowInvalidWindowFuncUse) (ddl/db_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/33113",
+    "https://github.com/pingcap/tidb/pull/33113.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/33113.patch",
+  "changed_files": [
+    "ddl/column_modify_test.go",
+    "ddl/db_legacy_test.go",
+    "ddl/db_test.go",
+    "ddl/index_modify_test.go",
+    "ddl/table_modify_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: - c.Skip(\"skip race test\") | tk.MustGetErrCode(\"CREATE TABLE t (a INT , b INT as (ROW_NUMBER() OVER (ORDER BY a)))\", errno.ErrWindowInvalidWindowFuncUse) (ddl/db_test.go)",
+      "files: ddl/column_modify_test.go, ddl/db_legacy_test.go, ddl/db_test.go, ddl/index_modify_test.go, ddl/table_modify_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl: migrate test-infra to testify for ddl.testDBSuite4\nPR url: https://github.com/pingcap/tidb/pull/33113\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: - c.Skip(\"skip race test\") | tk.MustGetErrCode(\"CREATE TABLE t (a INT , b INT as (ROW_NUMBER() OVER (ORDER BY a)))\", errno.ErrWindowInvalidWindowFuncUse) (ddl/db_test.go)\nChanged files (5): ddl/column_modify_test.go, ddl/db_legacy_test.go, ddl/db_test.go, ddl/index_modify_test.go, ddl/table_modify_test.go\nPatch url: https://github.com/pingcap/tidb/pull/33113.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+}

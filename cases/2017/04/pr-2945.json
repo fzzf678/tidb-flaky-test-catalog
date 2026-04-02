@@ -1,0 +1,63 @@
+{
+  "id": "pr-2945",
+  "source_pr": {
+    "number": 2945,
+    "url": "https://github.com/pingcap/tidb/pull/2945",
+    "title": "*: implement index nested loop join",
+    "body": "When one of join's children is a scan and there are equal conditions that use the index of this scan. We can build this join to a nested loop join and build this scan using index to look up.\r\nCurrently index nested loop join is controlled by the hint `/*+ TIDB_INLJ(t1, t2) */` not cost-based.\r\nAnd only the table in `TIDB_INLJ()` will be considered as outer table of the join."
+  },
+  "pr_merged_at": "2017-04-01T15:12:21+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ast/misc_test.go",
+    "name": "misc_test"
+  },
+  "symptoms": [
+    "(select a /*+ TIDB_SMJ(t1) */from t1 where a=10 and b=1) union (select /*+ TIDB_SMJ(t2) */ a from t2 where a=11 and b=2) order by a limit 10; (ast/misc_test.go)"
+  ],
+  "failure_signature": "(select a /*+ TIDB_SMJ(t1) */from t1 where a=10 and b=1) union (select /*+ TIDB_SMJ(t2) */ a from t2 where a=11 and b=2) order by a limit 10; (ast/misc_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/2945",
+    "https://github.com/pingcap/tidb/pull/2945.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/2945.patch",
+  "changed_files": [
+    "ast/misc_test.go",
+    "executor/builder.go",
+    "executor/executor.go",
+    "executor/join.go",
+    "executor/join_test.go",
+    "expression/util.go",
+    "parser/misc.go",
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "plan/decorrelate.go",
+    "plan/join_reorder.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plans.go",
+    "plan/physical_plan_builder.go",
+    "plan/physical_plan_test.go",
+    "plan/physical_plans.go",
+    "plan/planbuilder.go",
+    "plan/refiner.go",
+    "plan/stringer.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: (select a /*+ TIDB_SMJ(t1) */from t1 where a=10 and b=1) union (select /*+ TIDB_SMJ(t2) */ a from t2 where a=11 and b=2) order by a limit 10; (ast/misc_test.go)",
+      "files: ast/misc_test.go, executor/builder.go, executor/executor.go, executor/executor_test.go, executor/explain_test.go, executor/join.go, executor/join_test.go, expression/column.go, expression/util.go, parser/misc.go, parser/parser.y, parser/parser_test.go, plan/decorrelate.go, plan/expr_to_pb.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plan_test.go, plan/physical_plans.go, plan/planbuilder.go, plan/refiner.go, plan/statistics_helper.go, plan/stringer.go"
+    ]
+  },
+  "analysis": "PR title: *: implement index nested loop join\nPR url: https://github.com/pingcap/tidb/pull/2945\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: (select a /*+ TIDB_SMJ(t1) */from t1 where a=10 and b=1) union (select /*+ TIDB_SMJ(t2) */ a from t2 where a=11 and b=2) order by a limit 10; (ast/misc_test.go)\nChanged files (19): ast/misc_test.go, executor/builder.go, executor/executor.go, executor/join.go, executor/join_test.go, expression/util.go, parser/misc.go, parser/parser.y, parser/parser_test.go, plan/decorrelate.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/physical_plan_builder.go, plan/physical_plan_test.go, plan/physical_plans.go, plan/planbuilder.go, plan/refiner.go, plan/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/2945.patch\nPicked test: type=unit path=ast/misc_test.go name=misc_test"
+}

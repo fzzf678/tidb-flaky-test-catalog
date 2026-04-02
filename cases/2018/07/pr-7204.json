@@ -1,0 +1,46 @@
+{
+  "id": "pr-7204",
+  "source_pr": {
+    "number": 7204,
+    "url": "https://github.com/pingcap/tidb/pull/7204",
+    "title": "execuor, plan: check b.err in buildUpdate after doOptimize",
+    "body": "## What have you changed? (mandatory)\r\ncheck b.err in buildUpdate after doOptimize\r\n\r\n## What is the type of the changes? (mandatory)\r\n- Bug fix (non-breaking change which fixes an issue)\r\n\r\n## How has this PR been tested? (mandatory)\r\nintegration test\r\n\r\n## Does this PR affect documentation (docs/docs-cn) update? (mandatory)\r\nno\r\n\r\n## Does this PR affect tidb-ansible update? (mandatory)\r\nno\r\n\r\n## Does this PR need to be added to the release notes? (mandatory)\r\nno\r\n\r\n## Refer to a related PR or issue link (optional)\r\n#7114 \r\n## Benchmark result if necessary (optional)\r\n\r\n## Add a few positive/negative examples (optional)\r\n\r\n"
+  },
+  "pr_merged_at": "2018-07-31T19:22:00+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/write_test.go",
+    "name": "write_test"
+  },
+  "symptoms": [
+    "_, err = tk.Exec(\"UPDATE t SET c2=16777215 WHERE c1>= -8388608 AND c1 < -9 ORDER BY c1 LIMIT 2\") (executor/write_test.go)"
+  ],
+  "failure_signature": "_, err = tk.Exec(\"UPDATE t SET c2=16777215 WHERE c1>= -8388608 AND c1 < -9 ORDER BY c1 LIMIT 2\") (executor/write_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7204",
+    "https://github.com/pingcap/tidb/pull/7204.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7204.patch",
+  "changed_files": [
+    "executor/write_test.go",
+    "plan/logical_plan_builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: _, err = tk.Exec(\"UPDATE t SET c2=16777215 WHERE c1>= -8388608 AND c1 < -9 ORDER BY c1 LIMIT 2\") (executor/write_test.go)",
+      "files: executor/write_test.go, plan/logical_plan_builder.go"
+    ]
+  },
+  "analysis": "PR title: execuor, plan: check b.err in buildUpdate after doOptimize\nPR url: https://github.com/pingcap/tidb/pull/7204\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: _, err = tk.Exec(\"UPDATE t SET c2=16777215 WHERE c1>= -8388608 AND c1 < -9 ORDER BY c1 LIMIT 2\") (executor/write_test.go)\nChanged files (2): executor/write_test.go, plan/logical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/7204.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
+}

@@ -1,0 +1,60 @@
+{
+  "id": "pr-51249",
+  "source_pr": {
+    "number": 51249,
+    "url": "https://github.com/pingcap/tidb/pull/51249",
+    "title": "log: Support a dedicated log file to save general log",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #51248\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\nTest normal log with dashboard\r\n![image](https://github.com/pingcap/tidb/assets/17435596/c1b95c22-c898-4771-a5b1-306edd35f96b)\r\n![image](https://github.com/pingcap/tidb/assets/17435596/62d0effe-c6fe-49ef-aa96-e8f15cc5267a)\r\n\r\nTest slow query with dashboard, could found the first slow query in compressed file.\r\n<img width=\"676\" alt=\"image\" src=\"https://github.com/pingcap/tidb/assets/17435596/f3f177a4-99ad-49eb-8f21-b8d50795340a\">\r\n<img width=\"1268\" alt=\"image\" src=\"https://github.com/pingcap/tidb/assets/17435596/d44936b4-d080-411a-89e8-d773d166c74d\">\r\n\r\n\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [x] Performance regression: Consumes more CPU\r\n```\r\nWhen compression is enabled, it slows down log searches in the dashboard and also affects queries performance to the `cluster_slow_query` table.\r\n```\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-03-14T12:29:10+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/executor/cluster_table_test.go",
+    "name": "TestSlowQueryLoggerAndGeneralLoggerCreation"
+  },
+  "symptoms": [
+    "sql: \"select time from cluster_slow_query where time > '2020-02-17 12:00:05.000000' and time < '2020-05-14 20:00:00.000000' order by time desc\", (pkg/executor/cluster_table_test.go)"
+  ],
+  "failure_signature": "sql: \"select time from cluster_slow_query where time > '2020-02-17 12:00:05.000000' and time < '2020-05-14 20:00:00.000000' order by time desc\", (pkg/executor/cluster_table_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/51249",
+    "https://github.com/pingcap/tidb/pull/51249.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/51249.patch",
+  "changed_files": [
+    "DEPS.bzl",
+    "cmd/benchdb/main.go",
+    "cmd/tidb-server/main.go",
+    "go.mod",
+    "go.sum",
+    "pkg/config/config.go",
+    "pkg/config/config.toml.example",
+    "pkg/config/config_test.go",
+    "pkg/executor/cluster_table_test.go",
+    "pkg/executor/slow_query.go",
+    "pkg/executor/slow_query_test.go",
+    "pkg/session/session.go",
+    "pkg/util/logutil/BUILD.bazel",
+    "pkg/util/logutil/general_logger.go",
+    "pkg/util/logutil/log.go",
+    "pkg/util/logutil/log_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select time from cluster_slow_query where time > '2020-02-17 12:00:05.000000' and time < '2020-05-14 20:00:00.000000' order by time desc\", (pkg/executor/cluster_table_test.go)",
+      "files: DEPS.bzl, cmd/benchdb/main.go, cmd/tidb-server/main.go, go.mod, go.sum, pkg/config/config.go, pkg/config/config.toml.example, pkg/config/config_test.go, pkg/executor/cluster_table_test.go, pkg/executor/slow_query.go, pkg/executor/slow_query_test.go, pkg/session/session.go, pkg/util/logutil/BUILD.bazel, pkg/util/logutil/general_logger.go, pkg/util/logutil/log.go, pkg/util/logutil/log_test.go"
+    ]
+  },
+  "analysis": "PR title: log: Support a dedicated log file to save general log\nPR url: https://github.com/pingcap/tidb/pull/51249\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select time from cluster_slow_query where time > '2020-02-17 12:00:05.000000' and time < '2020-05-14 20:00:00.000000' order by time desc\", (pkg/executor/cluster_table_test.go)\nChanged files (16): DEPS.bzl, cmd/benchdb/main.go, cmd/tidb-server/main.go, go.mod, go.sum, pkg/config/config.go, pkg/config/config.toml.example, pkg/config/config_test.go, pkg/executor/cluster_table_test.go, pkg/executor/slow_query.go, pkg/executor/slow_query_test.go, pkg/session/session.go, pkg/util/logutil/BUILD.bazel, pkg/util/logutil/general_logger.go, pkg/util/logutil/log.go, pkg/util/logutil/log_test.go\nPatch url: https://github.com/pingcap/tidb/pull/51249.patch\nPicked test: type=unit path=pkg/executor/cluster_table_test.go name=TestSlowQueryLoggerAndGeneralLoggerCreation"
+}

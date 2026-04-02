@@ -1,0 +1,50 @@
+{
+  "id": "pr-10272",
+  "source_pr": {
+    "number": 10272,
+    "url": "https://github.com/pingcap/tidb/pull/10272",
+    "title": "infoschema, domain, ddl: fix upper cased charset names",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nThis version aims to deal with upper-cased charset name in `TableInfo` stored by previous versions of TiDB.\r\n\r\nTiDB always supposes that all charsets / collations are lower-cased and try to convert them if they're not. However, the convert is missed in some scenarios, some upper-cased charsets / collations are kept and stored, leading to some potential issues:\r\n\r\n```\r\nmysql> create table t1(a varchar(20)) default charset=utf8;\r\nQuery OK, 0 rows affected (0.03 sec)\r\nmysql> insert into t1 values ('特克斯和凯科斯群岛');\r\nQuery OK, 1 row affected (0.01 sec)\r\n\r\nmysql> create table t2(a varchar(20)) default charset=UTF8;\r\nQuery OK, 0 rows affected (0.03 sec)\r\nmysql> insert into t2 values ('特克斯和凯科斯群岛');\r\nERROR 1406 (22001): Data too long for column 'a' at row 1\r\n\r\nmysql> select version();\r\n+------------------------------------------+\r\n| version()                                |\r\n+------------------------------------------+\r\n| 5.7.25-TiDB-v3.0.0-beta.1-104-g0a9569af4 |\r\n+------------------------------------------+\r\n1 row in set (0.00 sec)\r\n```\r\n\r\n### What is changed and how it works?\r\nWith the help of https://github.com/pingcap/parser/pull/301, a new `TableInfoVersion3` is added as `CurrLatestTableInfoVersion`. All tables with version prior to `TableInfoVersion3` will do the charset / collation name convert when loaded.\r\n\r\nAlso, https://github.com/pingcap/parser/pull/301 validates all charset / collation names and convert them to lower-case in parser.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Integration test\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n\r\nSide effects\r\n\r\n - (Potentially) Breaking backward compatibility\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n"
+  },
+  "pr_merged_at": "2019-04-29T19:13:40+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_integration_test.go",
+    "name": "db_integration_test"
+  },
+  "symptoms": [
+    "gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA="
+  ],
+  "failure_signature": "gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "infoschema, domain, ddl: fix upper cased charset names",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/10272",
+    "https://github.com/pingcap/tidb/pull/10272.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/10272.patch",
+  "changed_files": [
+    "ddl/db_integration_test.go",
+    "ddl/db_test.go",
+    "domain/domain.go",
+    "go.mod",
+    "go.sum",
+    "infoschema/builder.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=",
+      "files: ddl/db_integration_test.go, ddl/db_test.go, domain/domain.go, go.mod, go.sum, infoschema/builder.go"
+    ]
+  },
+  "analysis": "PR title: infoschema, domain, ddl: fix upper cased charset names\nPR url: https://github.com/pingcap/tidb/pull/10272\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=\nChanged files (6): ddl/db_integration_test.go, ddl/db_test.go, domain/domain.go, go.mod, go.sum, infoschema/builder.go\nPatch url: https://github.com/pingcap/tidb/pull/10272.patch\nPicked test: type=unit path=ddl/db_integration_test.go name=db_integration_test"
+}

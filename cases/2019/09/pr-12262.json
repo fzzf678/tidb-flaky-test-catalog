@@ -1,0 +1,56 @@
+{
+  "id": "pr-12262",
+  "source_pr": {
+    "number": 12262,
+    "url": "https://github.com/pingcap/tidb/pull/12262",
+    "title": "planner, executor: push limit down into IndexLookUpReader executor",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nFix https://github.com/pingcap/tidb/issues/10668\r\n\r\n### What is changed and how it works?\r\n\r\nSink `PhysicalLimit` on top of `IndexLookUpReader` into `IndexLookUpReader`, and in executor, skip the preceding and tailing handles returned by `IndexPlan`. This optimization can avoid unnecessary `TableScan` for handles not satisfying `Limit / Offset` constraint, and improve execution performance especially for queries with large `Offset`.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has exported variable/fields change\r\n\r\nSide effects\r\n\r\n - Increased code complexity\r\n\r\nRelated changes\r\n\r\n - Need to update cost of `IndexLookUpReader`'s `TablePlan / IndexPlan` since some unnecessary I/O and network cost is avoided. This can be done in the next PR.\r\n\r\n"
+  },
+  "pr_merged_at": "2019-09-24T14:16:16+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/distsql_test.go",
+    "name": "distsql_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from tbl use index(idx_b_c) where b > 1 order by b desc limit 2,1\").Check(testkit.Rows(\"3 3 3\")) (executor/distsql_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from tbl use index(idx_b_c) where b > 1 order by b desc limit 2,1\").Check(testkit.Rows(\"3 3 3\")) (executor/distsql_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/12262",
+    "https://github.com/pingcap/tidb/pull/12262.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/12262.patch",
+  "changed_files": [
+    "cmd/explaintest/r/explain_easy.result",
+    "cmd/explaintest/r/explain_easy_stats.result",
+    "executor/builder.go",
+    "executor/distsql.go",
+    "executor/distsql_test.go",
+    "planner/core/explain.go",
+    "planner/core/integration_test.go",
+    "planner/core/physical_plans.go",
+    "planner/core/task.go",
+    "planner/core/testdata/integration_suite_in.json",
+    "planner/core/testdata/integration_suite_out.json",
+    "planner/core/testdata/plan_suite_out.json"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from tbl use index(idx_b_c) where b > 1 order by b desc limit 2,1\").Check(testkit.Rows(\"3 3 3\")) (executor/distsql_test.go)",
+      "files: cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/explain_easy_stats.result, executor/builder.go, executor/distsql.go, executor/distsql_test.go, planner/core/explain.go, planner/core/integration_test.go, planner/core/physical_plans.go, planner/core/task.go, planner/core/testdata/integration_suite_in.json, planner/core/testdata/integration_suite_out.json, planner/core/testdata/plan_suite_out.json"
+    ]
+  },
+  "analysis": "PR title: planner, executor: push limit down into IndexLookUpReader executor\nPR url: https://github.com/pingcap/tidb/pull/12262\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from tbl use index(idx_b_c) where b > 1 order by b desc limit 2,1\").Check(testkit.Rows(\"3 3 3\")) (executor/distsql_test.go)\nChanged files (12): cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/explain_easy_stats.result, executor/builder.go, executor/distsql.go, executor/distsql_test.go, planner/core/explain.go, planner/core/integration_test.go, planner/core/physical_plans.go, planner/core/task.go, planner/core/testdata/integration_suite_in.json, planner/core/testdata/integration_suite_out.json, planner/core/testdata/plan_suite_out.json\nPatch url: https://github.com/pingcap/tidb/pull/12262.patch\nPicked test: type=unit path=executor/distsql_test.go name=distsql_test"
+}

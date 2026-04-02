@@ -1,0 +1,93 @@
+{
+  "id": "pr-56409",
+  "source_pr": {
+    "number": 56409,
+    "url": "https://github.com/pingcap/tidb/pull/56409",
+    "title": "*: support the vector index",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref https://github.com/pingcap/tidb/issues/55693\r\n\r\nProblem Summary:\r\nMerge https://github.com/pingcap/tidb/tree/feature/vector-index to the master branch.\r\n* support vector index at the parser, https://github.com/pingcap/tidb/pull/55698\r\n* executor: Provide TIFLASH_INDEXES table, https://github.com/pingcap/tidb/pull/55901\r\n* support for adding/dropping vector index, https://github.com/pingcap/tidb/pull/55839\r\n* support create table with vector indexes and others, https://github.com/pingcap/tidb/pull/56124 \r\n\r\n### What changed and how does it work?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nSupport the vector index\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-09-30T11:06:28+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/ddl/index_modify_test.go",
+    "name": "TestAddVectorIndex"
+  },
+  "symptoms": [
+    "jobs, err := getJobsBySQL(tk.Session(), \"tidb_ddl_history\", \"order by job_id desc limit 1\") (pkg/ddl/index_modify_test.go)"
+  ],
+  "failure_signature": "jobs, err := getJobsBySQL(tk.Session(), \"tidb_ddl_history\", \"order by job_id desc limit 1\") (pkg/ddl/index_modify_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/56409",
+    "https://github.com/pingcap/tidb/pull/56409.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/56409.patch",
+  "changed_files": [
+    "errors.toml",
+    "pkg/ddl/BUILD.bazel",
+    "pkg/ddl/cancel_test.go",
+    "pkg/ddl/column.go",
+    "pkg/ddl/create_table.go",
+    "pkg/ddl/db_change_test.go",
+    "pkg/ddl/db_integration_test.go",
+    "pkg/ddl/delete_range.go",
+    "pkg/ddl/executor.go",
+    "pkg/ddl/index.go",
+    "pkg/ddl/index_modify_test.go",
+    "pkg/ddl/job_worker.go",
+    "pkg/ddl/modify_column.go",
+    "pkg/ddl/rollingback.go",
+    "pkg/ddl/sanity_check.go",
+    "pkg/ddl/schematracker/dm_tracker.go",
+    "pkg/ddl/tests/adminpause/BUILD.bazel",
+    "pkg/ddl/tests/adminpause/ddl_data_generation.go",
+    "pkg/ddl/tests/adminpause/ddl_stmt_cases.go",
+    "pkg/ddl/tests/adminpause/pause_cancel_test.go",
+    "pkg/ddl/tests/adminpause/pause_resume_test.go",
+    "pkg/domain/infosync/info.go",
+    "pkg/domain/infosync/tiflash_manager.go",
+    "pkg/errctx/context.go",
+    "pkg/errno/errcode.go",
+    "pkg/errno/errname.go",
+    "pkg/executor/builder.go",
+    "pkg/executor/ddl.go",
+    "pkg/executor/executor.go",
+    "pkg/executor/infoschema_reader.go",
+    "pkg/executor/infoschema_reader_test.go",
+    "pkg/executor/show.go",
+    "pkg/infoschema/tables.go",
+    "pkg/meta/model/bdr.go",
+    "pkg/meta/model/index.go",
+    "pkg/meta/model/job.go",
+    "pkg/parser/ast/ddl.go",
+    "pkg/parser/misc.go",
+    "pkg/parser/model/model.go",
+    "pkg/parser/parser.go",
+    "pkg/parser/parser.y",
+    "pkg/parser/parser_test.go",
+    "pkg/planner/core/BUILD.bazel",
+    "pkg/planner/core/indexmerge_path_test.go",
+    "pkg/planner/core/logical_plan_builder.go",
+    "pkg/planner/core/planbuilder.go",
+    "pkg/sessionctx/variable/varsutil.go",
+    "pkg/store/helper/helper.go",
+    "pkg/util/dbterror/ddl_terror.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: jobs, err := getJobsBySQL(tk.Session(), \"tidb_ddl_history\", \"order by job_id desc limit 1\") (pkg/ddl/index_modify_test.go)",
+      "files: errors.toml, pkg/ddl/BUILD.bazel, pkg/ddl/cancel_test.go, pkg/ddl/column.go, pkg/ddl/create_table.go, pkg/ddl/db_change_test.go, pkg/ddl/db_integration_test.go, pkg/ddl/delete_range.go, pkg/ddl/executor.go, pkg/ddl/index.go, pkg/ddl/index_modify_test.go, pkg/ddl/job_worker.go, pkg/ddl/modify_column.go, pkg/ddl/rollingback.go, pkg/ddl/sanity_check.go, pkg/ddl/schematracker/dm_tracker.go, pkg/ddl/tests/adminpause/BUILD.bazel, pkg/ddl/tests/adminpause/ddl_data_generation.go, pkg/ddl/tests/adminpause/ddl_stmt_cases.go, pkg/ddl/tests/adminpause/pause_cancel_test.go, pkg/ddl/tests/adminpause/pause_resume_test.go, pkg/domain/infosync/info.go, pkg/domain/infosync/tiflash_manager.go, pkg/errctx/context.go, pkg/errno/errcode.go, pkg/errno/errname.go, pkg/executor/builder.go, pkg/executor/ddl.go, pkg/executor/executor.go, pkg/executor/infoschema_reader.go, pkg/executor/infoschema_reader_test.go, pkg/executor/show.go, pkg/infoschema/tables.go, pkg/meta/model/bdr.go, pkg/meta/model/index.go, pkg/meta/model/job.go, pkg/parser/ast/ddl.go, pkg/parser/misc.go, pkg/parser/model/model.go, pkg/parser/parser.go, pkg/parser/parser.y, pkg/parser/parser_test.go, pkg/planner/core/BUILD.bazel, pkg/planner/core/indexmerge_path_test.go, pkg/planner/core/logical_plan_builder.go, pkg/planner/core/planbuilder.go, pkg/sessionctx/variable/varsutil.go, pkg/store/helper/helper.go, pkg/util/dbterror/ddl_terror.go"
+    ]
+  },
+  "analysis": "PR title: *: support the vector index\nPR url: https://github.com/pingcap/tidb/pull/56409\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: jobs, err := getJobsBySQL(tk.Session(), \"tidb_ddl_history\", \"order by job_id desc limit 1\") (pkg/ddl/index_modify_test.go)\nChanged files (49): errors.toml, pkg/ddl/BUILD.bazel, pkg/ddl/cancel_test.go, pkg/ddl/column.go, pkg/ddl/create_table.go, pkg/ddl/db_change_test.go, pkg/ddl/db_integration_test.go, pkg/ddl/delete_range.go, pkg/ddl/executor.go, pkg/ddl/index.go, pkg/ddl/index_modify_test.go, pkg/ddl/job_worker.go, pkg/ddl/modify_column.go, pkg/ddl/rollingback.go, pkg/ddl/sanity_check.go, pkg/ddl/schematracker/dm_tracker.go, pkg/ddl/tests/adminpause/BUILD.bazel, pkg/ddl/tests/adminpause/ddl_data_generation.go, pkg/ddl/tests/adminpause/ddl_stmt_cases.go, pkg/ddl/tests/adminpause/pause_cancel_test.go, pkg/ddl/tests/adminpause/pause_resume_test.go, pkg/domain/infosync/info.go, pkg/domain/infosync/tiflash_manager.go, pkg/errctx/context.go, pkg/errno/errcode.go, pkg/errno/errname.go, pkg/executor/builder.go, pkg/executor/ddl.go, pkg/executor/executor.go, pkg/executor/infoschema_reader.go, pkg/executor/infoschema_reader_test.go, pkg/executor/show.go, pkg/infoschema/tables.go, pkg/meta/model/bdr.go, pkg/meta/model/index.go, pkg/meta/model/job.go, pkg/parser/ast/ddl.go, pkg/parser/misc.go, pkg/parser/model/model.go, pkg/parser/parser.go, pkg/parser/parser.y, pkg/parser/parser_test.go, pkg/planner/core/BUILD.bazel, pkg/planner/core/indexmerge_path_test.go, pkg/planner/core/logical_plan_builder.go, pkg/planner/core/planbuilder.go, pkg/sessionctx/variable/varsutil.go, pkg/store/helper/helper.go, pkg/util/dbterror/ddl_terror.go\nPatch url: https://github.com/pingcap/tidb/pull/56409.patch\nPicked test: type=unit path=pkg/ddl/index_modify_test.go name=TestAddVectorIndex"
+}

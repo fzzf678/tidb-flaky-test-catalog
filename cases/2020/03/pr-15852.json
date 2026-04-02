@@ -1,0 +1,46 @@
+{
+  "id": "pr-15852",
+  "source_pr": {
+    "number": 15852,
+    "url": "https://github.com/pingcap/tidb/pull/15852",
+    "title": "session: fix data race between stats loop update and bind info loop load",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #15843 \r\n\r\nProblem Summary: The stats loop update thread has the SQL which will access the `global.bindhandle`, but the start of bind info loop load thread inits the `global.bindhandle`. That causes the data race.\r\n\r\n### What is changed and how it works?\r\n\r\nWhat's Changed: move the `LoadBindInfoLoop` before the `UpdateTableStatsLoop`.\r\n\r\n### Related changes\r\n\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n- Integration test\r\n\r\nSide effects\r\n\r\n- Performance regression\r\n    - Consumes more CPU\r\n\r\n"
+  },
+  "pr_merged_at": "2020-03-30T21:29:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "session/session.go",
+    "name": "session"
+  },
+  "symptoms": [
+    "PR body: stats loop internal SQL can access global bindhandle while LoadBindInfoLoop initializes it, causing data race."
+  ],
+  "failure_signature": "PR body: stats loop internal SQL can access global bindhandle while LoadBindInfoLoop initializes it, causing data race.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "session: fix data race between stats loop update and bind info loop load",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/15852",
+    "https://github.com/pingcap/tidb/pull/15852.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/15852.patch",
+  "changed_files": [
+    "session/session.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body: stats loop internal SQL can access global bindhandle while LoadBindInfoLoop initializes it, causing data race.",
+      "evidence: diff moves `dom.LoadBindInfoLoop(...)` earlier in BootstrapSession with comment explaining the data race (session/session.go).",
+      "files: session/session.go"
+    ]
+  },
+  "analysis": "PR title: session: fix data race between stats loop update and bind info loop load\nPR url: https://github.com/pingcap/tidb/pull/15852\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body: stats loop internal SQL can access global bindhandle while LoadBindInfoLoop initializes it, causing data race.\nChanged files (1): session/session.go\nPatch url: https://github.com/pingcap/tidb/pull/15852.patch\nPicked test: type=unit path=session/session.go name=session"
+}

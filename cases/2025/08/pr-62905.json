@@ -1,0 +1,61 @@
+{
+  "id": "pr-62905",
+  "source_pr": {
+    "number": 62905,
+    "url": "https://github.com/pingcap/tidb/pull/62905",
+    "title": "globalsort: use partitioned prefix to store intermediate files",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #62904\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\n- this is a manually pick of https://github.com/pingcap/tidb/pull/60816\r\n- we also change the partition prefix schema from hex to binary string, so the partition can response faster as it's binary.\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\n\r\nintermediate files of importing using global sort, and they are successfully cleanup after it.\r\n```\r\n➜  minio bin/mc ls -r minio/mybucket/gsort\r\n[2025-08-11 12:34:35 CST]   467B STANDARD 2/4/meta.json\r\n[2025-08-11 12:34:34 CST]   194B STANDARD 2/plan/encode/1/meta.json\r\n[2025-08-11 12:34:36 CST]   521B STANDARD 2/plan/ingest/1/meta.json\r\n[2025-08-11 12:34:35 CST]    82B STANDARD p01001100/2/4/data/f3af2ec6-b252-4221-af32-42c5bf12c8cb_stat/0\r\n[2025-08-11 12:34:35 CST]   294B STANDARD p11010101/2/4/data/f3af2ec6-b252-4221-af32-42c5bf12c8cb/0\r\n```\r\n\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-08-12T15:08:43+08:00",
+  "test": {
+    "type": "realtikv",
+    "path": "pkg/disttask/importinto/planner_test.go",
+    "name": "planner_test"
+  },
+  "symptoms": [
+    "sort.Strings(out) (pkg/lightning/backend/external/split_test.go)"
+  ],
+  "failure_signature": "sort.Strings(out) (pkg/lightning/backend/external/split_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "this is a manually pick of https://github.com/pingcap/tidb/pull/60816 we also change the partition prefix schema from hex to binary string, so the partition can response faster as it's binary.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/62905",
+    "https://github.com/pingcap/tidb/pull/62905.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/62905.patch",
+  "changed_files": [
+    "br/pkg/storage/memstore.go",
+    "pkg/disttask/importinto/planner_test.go",
+    "pkg/executor/test/indexmergereadtest/BUILD.bazel",
+    "pkg/lightning/backend/external/bench_test.go",
+    "pkg/lightning/backend/external/byte_reader_test.go",
+    "pkg/lightning/backend/external/iter_test.go",
+    "pkg/lightning/backend/external/onefile_writer.go",
+    "pkg/lightning/backend/external/onefile_writer_test.go",
+    "pkg/lightning/backend/external/reader_test.go",
+    "pkg/lightning/backend/external/sort_test.go",
+    "pkg/lightning/backend/external/split_test.go",
+    "pkg/lightning/backend/external/util.go",
+    "pkg/lightning/backend/external/util_test.go",
+    "pkg/lightning/backend/external/writer.go",
+    "pkg/lightning/backend/external/writer_test.go",
+    "pkg/statistics/handle/handletest/BUILD.bazel",
+    "tests/realtikvtest/addindextest2/global_sort_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Strings(out) (pkg/lightning/backend/external/split_test.go)",
+      "files: br/pkg/storage/memstore.go, pkg/disttask/importinto/planner_test.go, pkg/executor/test/indexmergereadtest/BUILD.bazel, pkg/lightning/backend/external/bench_test.go, pkg/lightning/backend/external/byte_reader_test.go, pkg/lightning/backend/external/iter_test.go, pkg/lightning/backend/external/onefile_writer.go, pkg/lightning/backend/external/onefile_writer_test.go, pkg/lightning/backend/external/reader_test.go, pkg/lightning/backend/external/sort_test.go, pkg/lightning/backend/external/split_test.go, pkg/lightning/backend/external/util.go, pkg/lightning/backend/external/util_test.go, pkg/lightning/backend/external/writer.go, pkg/lightning/backend/external/writer_test.go, pkg/statistics/handle/handletest/BUILD.bazel, tests/realtikvtest/addindextest2/global_sort_test.go"
+    ]
+  },
+  "analysis": "PR title: globalsort: use partitioned prefix to store intermediate files\nPR url: https://github.com/pingcap/tidb/pull/62905\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Strings(out) (pkg/lightning/backend/external/split_test.go)\nChanged files (17): br/pkg/storage/memstore.go, pkg/disttask/importinto/planner_test.go, pkg/executor/test/indexmergereadtest/BUILD.bazel, pkg/lightning/backend/external/bench_test.go, pkg/lightning/backend/external/byte_reader_test.go, pkg/lightning/backend/external/iter_test.go, pkg/lightning/backend/external/onefile_writer.go, pkg/lightning/backend/external/onefile_writer_test.go, pkg/lightning/backend/external/reader_test.go, pkg/lightning/backend/external/sort_test.go, pkg/lightning/backend/external/split_test.go, pkg/lightning/backend/external/util.go, pkg/lightning/backend/external/util_test.go, pkg/lightning/backend/external/writer.go, pkg/lightning/backend/external/writer_test.go, pkg/statistics/handle/handletest/BUILD.bazel, tests/realtikvtest/addindextest2/global_sort_test.go\nPatch series analyzed; see patch_url."
+}

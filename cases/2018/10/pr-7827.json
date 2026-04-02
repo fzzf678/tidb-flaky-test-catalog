@@ -1,0 +1,63 @@
+{
+  "id": "pr-7827",
+  "source_pr": {
+    "number": 7827,
+    "url": "https://github.com/pingcap/tidb/pull/7827",
+    "title": "*: make `explain` support `explain anaylze`",
+    "body": "### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nCurrently, our `explain` command only display the physical plan result without execution.\r\n\r\nbut sometime we also need execution info to help us find reality plan question or executor performance bottleneck.\r\n\r\nthis PR add `anaylze` option to `explain` command(it just like postgresql's `explain anaylze` does https://www.postgresql.org/docs/9.1/static/sql-explain.html), and it  will cause the statement to be actually executed, not only planned.\r\n\r\nit works like this:\r\n\r\n```\r\nmysql> explain analyze select a_id, count(*) from v left join `u` on `u`.id = v.u_id where p_id = 1 and `u`.t > '2018-08-01' and v.t>'2018-08-01' group by a_id;\r\n+------------------------------+---------+------+---------------------------------------------------------------------------------------+---------------------------------------+\r\n| id                           | count   | task | operator info                                                                         | execution_info                        |\r\n+------------------------------+---------+------+---------------------------------------------------------------------------------------+---------------------------------------+\r\n| Projection_7                 | 2.67    | root | test.v.a_id, 5_col_0                                                          | actual_time:0.504215, loops:1, rows:0 |\r\n| └─HashAgg_10                 | 2.67    | root | group by:test.v.a_id, funcs:count(1), firstrow(test.v.a_id)           | time:0.497296, loops:1, rows:0 |\r\n|   └─IndexJoin_18             | 4.17    | root | inner join, inner:TableReader_17, outer key:test.v.u_id, inner key:test.u.id | time:0.394209, loops:1, rows:0 |\r\n|     ├─IndexLookUp_40         | 3.33    | root |                                                                                       | time:0.365342, loops:1, rows:0 |\r\n|     │ ├─IndexScan_37         | 10.00   | cop  | table:v, index:p_id, u_id, range:[1,1], keep order:false, stats:pseudo       |   |\r\n|     │ └─Selection_39         | 3.33    | cop  | gt(test.v.t, 2018-08-01 00:00:00.000000)                                |   |\r\n|     │   └─TableScan_38       | 10.00   | cop  | table:v, keep order:false, stats:pseudo                                            |   |\r\n|     └─TableReader_17         | 3333.33 | root | data:Selection_16                                                                     |   |\r\n|       └─Selection_16         | 3333.33 | cop  | gt(test.u.t, 2018-08-01 00:00:00.000000)                                |   |\r\n|         └─TableScan_15       | 10.00   | cop  | table:u, range: decided by [test.v.u_id], keep order:false, stats:pseudo     |   |\r\n+------------------------------+---------+------+---------------------------------------------------------------------------------------+---------------------------------------+\r\n10 rows in set (0.00 sec)\r\n```\r\n\r\nthe difference is with addition `execution_info` columns, and has be actual executed.\r\n\r\n### What is changed and how it works?\r\n\r\n- change `Executor`'s `Next` from method to a func field to make it bindable\r\n- bind  \"Normal version Next\" or \"Explain version Next\"  once in plan build phase\r\n- maintain ExecStats(a map), and init ExecStates entry in plan building phase(single thread, so map itself no race condition, but for entry...)\r\n- add switch on `SessionCtx.StmtCtx` level to control Normal or Explain execution\r\n- modify `Explain` to open switch then actual execute plan and output addition column.\r\n\r\n### Remain question\r\n\r\n- Cop task need get info from tikv\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n-  Old test\r\n - Manual test (add detailed scripts or steps below)\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n - Has exported variable/fields change\r\n - Has interface methods change\r\n\r\nSide effects\r\n\r\n - No\r\n\r\nRelated changes\r\n\r\n - Need to update the documentation\r\n - Need to be included in the release note\r\n\r\n<!-- Reviewable:start -->\r\n---\r\nThis change is [<img src=\"https://reviewable.io/review_button.svg\" height=\"34\" align=\"absmiddle\" alt=\"Reviewable\"/>](https://reviewable.io/reviews/pingcap/tidb/7827)\r\n<!-- Reviewable:end -->\r\n"
+  },
+  "pr_merged_at": "2018-10-12T20:01:19+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/prepared_test.go",
+    "name": "prepared_test"
+  },
+  "symptoms": [
+    "- maintain ExecStats(a map), and init ExecStates entry in plan building phase(single thread, so map itself no race condition, but for entry...)"
+  ],
+  "failure_signature": "- maintain ExecStats(a map), and init ExecStates entry in plan building phase(single thread, so map itself no race condition, but for entry...)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: make `explain` support `explain anaylze`",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7827",
+    "https://github.com/pingcap/tidb/pull/7827.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7827.patch",
+  "changed_files": [
+    "ast/misc.go",
+    "executor/adapter.go",
+    "executor/aggregate.go",
+    "executor/builder.go",
+    "executor/distsql.go",
+    "executor/executor.go",
+    "executor/index_lookup_join.go",
+    "executor/join.go",
+    "executor/merge_join.go",
+    "executor/projection.go",
+    "executor/sort.go",
+    "executor/table_reader.go",
+    "executor/union_scan.go",
+    "parser/parser.y",
+    "planner/core/cbo_test.go",
+    "planner/core/common_plans.go",
+    "planner/core/planbuilder.go",
+    "sessionctx/stmtctx/stmtctx.go",
+    "util/execdetails/execdetails.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: - maintain ExecStats(a map), and init ExecStates entry in plan building phase(single thread, so map itself no race condition, but for entry...)",
+      "files: ast/misc.go, executor/adapter.go, executor/admin.go, executor/aggregate.go, executor/analyze.go, executor/builder.go, executor/checksum.go, executor/ddl.go, executor/delete.go, executor/distsql.go, executor/executor.go, executor/explain.go, executor/grant.go, executor/index_lookup_join.go, executor/insert.go, executor/join.go, executor/load_data.go, executor/load_stats.go, executor/merge_join.go, executor/prepared.go, executor/prepared_test.go, executor/projection.go, executor/replace.go, executor/revoke.go, executor/set.go, executor/show.go, executor/simple.go, executor/sort.go, executor/table_reader.go, executor/trace.go, executor/union_scan.go, executor/update.go, parser/parser.y, planner/core/cbo_test.go, planner/core/common_plans.go, planner/core/planbuilder.go, sessionctx/stmtctx/stmtctx.go, util/execdetails/execdetails.go"
+    ]
+  },
+  "analysis": "PR title: *: make `explain` support `explain anaylze`\nPR url: https://github.com/pingcap/tidb/pull/7827\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - maintain ExecStats(a map), and init ExecStates entry in plan building phase(single thread, so map itself no race condition, but for entry...)\nChanged files (19): ast/misc.go, executor/adapter.go, executor/aggregate.go, executor/builder.go, executor/distsql.go, executor/executor.go, executor/index_lookup_join.go, executor/join.go, executor/merge_join.go, executor/projection.go, executor/sort.go, executor/table_reader.go, executor/union_scan.go, parser/parser.y, planner/core/cbo_test.go, planner/core/common_plans.go, planner/core/planbuilder.go, sessionctx/stmtctx/stmtctx.go, util/execdetails/execdetails.go\nPatch url: https://github.com/pingcap/tidb/pull/7827.patch\nPicked test: type=unit path=executor/prepared_test.go name=prepared_test"
+}

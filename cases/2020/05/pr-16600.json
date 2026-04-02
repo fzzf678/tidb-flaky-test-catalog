@@ -1,0 +1,50 @@
+{
+  "id": "pr-16600",
+  "source_pr": {
+    "number": 16600,
+    "url": "https://github.com/pingcap/tidb/pull/16600",
+    "title": "expression: after introducing collation, the experssion should be thread-safe",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #15810 , close #16156\r\nProblem Summary: the like function is not thread-safe, this results in unstable errors.\r\n\r\n@bb7133 @qw4990 can this problem occur in other expression fuctions?\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: [xxx](url) <!-- REMOVE this line if not applicable -->\r\n\r\nWhat's Changed:\r\n\r\nHow it Works:\r\nlike in projection, filter and others using expressions, the expression instance in the operator may be used by multi-tread. It should let the expression evaluation be thread-safe. \r\n\r\n### Related changes\r\n\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n- let like functions be thread-safe"
+  },
+  "pr_merged_at": "2020-05-06T21:22:40+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/builtin_like_test.go",
+    "name": "builtin_like_test"
+  },
+  "symptoms": [
+    "PR body: like function is not thread-safe and results in unstable errors."
+  ],
+  "failure_signature": "PR body: like function is not thread-safe and results in unstable errors.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "expression: after introducing collation, the experssion should be thread-safe",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/16600",
+    "https://github.com/pingcap/tidb/pull/16600.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/16600.patch",
+  "changed_files": [
+    "expression/builtin_like.go",
+    "expression/builtin_like_test.go",
+    "expression/builtin_like_vec.go",
+    "expression/builtin_test.go",
+    "expression/distsql_builtin.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: PR body: like function is not thread-safe and results in unstable errors.",
+      "evidence: diff introduces sync.Once and avoids using shared pattern fields to prevent data races (expression/builtin_like.go, expression/builtin_like_vec.go).",
+      "files: expression/builtin_like.go, expression/builtin_like_vec.go, expression/distsql_builtin.go, expression/builtin_like_test.go"
+    ]
+  },
+  "analysis": "PR title: expression: after introducing collation, the experssion should be thread-safe\nPR url: https://github.com/pingcap/tidb/pull/16600\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR body: like function is not thread-safe and results in unstable errors.\nChanged files (5): expression/builtin_like.go, expression/builtin_like_test.go, expression/builtin_like_vec.go, expression/builtin_test.go, expression/distsql_builtin.go\nPatch url: https://github.com/pingcap/tidb/pull/16600.patch\nPicked test: type=unit path=expression/builtin_like_test.go name=builtin_like_test"
+}

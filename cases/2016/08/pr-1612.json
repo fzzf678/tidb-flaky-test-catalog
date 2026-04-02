@@ -1,0 +1,49 @@
+{
+  "id": "pr-1612",
+  "source_pr": {
+    "number": 1612,
+    "url": "https://github.com/pingcap/tidb/pull/1612",
+    "title": "*: When sort data by scanning pkcol, xapi TableScan response should keep order",
+    "body": "1. Set keepOrder attr in PhyicalTableScan.\n2. Set keepOrder attr in XSelectTableExec.\n\n@coocood @hanfei1991 @zimulala PTAL\nI will add a test case later.\n/cc @siddontang \n"
+  },
+  "pr_merged_at": "2016-08-21T09:46:34+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/plan_test.go",
+    "name": "plan_test"
+  },
+  "symptoms": [
+    "sql := \"select * from t order by a limit 1;\" (plan/plan_test.go)"
+  ],
+  "failure_signature": "sql := \"select * from t order by a limit 1;\" (plan/plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/1612",
+    "https://github.com/pingcap/tidb/pull/1612.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/1612.patch",
+  "changed_files": [
+    "executor/new_builder.go",
+    "executor/new_executor_xapi.go",
+    "plan/match_property.go",
+    "plan/physical_plans.go",
+    "plan/plan_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql := \"select * from t order by a limit 1;\" (plan/plan_test.go)",
+      "files: executor/new_builder.go, executor/new_executor_xapi.go, plan/match_property.go, plan/physical_plans.go, plan/plan_test.go"
+    ]
+  },
+  "analysis": "PR title: *: When sort data by scanning pkcol, xapi TableScan response should keep order\nPR url: https://github.com/pingcap/tidb/pull/1612\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql := \"select * from t order by a limit 1;\" (plan/plan_test.go)\nChanged files (5): executor/new_builder.go, executor/new_executor_xapi.go, plan/match_property.go, plan/physical_plans.go, plan/plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/1612.patch\nPicked test: type=unit path=plan/plan_test.go name=plan_test"
+}

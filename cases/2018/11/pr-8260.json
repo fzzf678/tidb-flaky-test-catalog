@@ -1,0 +1,59 @@
+{
+  "id": "pr-8260",
+  "source_pr": {
+    "number": 8260,
+    "url": "https://github.com/pingcap/tidb/pull/8260",
+    "title": "session,executor: run statement without transaction",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nSome users  prefer `set @@autocommit = 0` ... `set @@autocommit = 1` to `begin ... commit`\r\nCurrently TiDB has problems with such kind of usage:\r\n\r\n```\r\nset @@autocommit = 0;  // get tso here, transaction start. oh, my god! \r\n// 30 minutes later ...\r\n// ...\r\nselect xxx    // transaction should have start here\r\ninsert into t values (3)\r\n```\r\n\r\nselect 1 // This statement should not make the session enter a transaction, because it never need Txn(). \r\n'set xxx' is similar\r\n\r\n\r\n### What is changed and how it works?\r\n\r\nDon't initialize `Txn()` for those statements that don't need it.\r\nDelay active pending transaction as much as possible.\r\n\r\n- ActivePendingTxn is removed from `ExecStmt.Exec` in adaptor.go\r\n- Call Txn() will active pending txn, so the process is delayed until Txn() is called\r\n- If Txn() is not called, the statement will not set `mysql.ServerStatusInTrans`\r\n- Txn() function signature is changed, I'll update it in a separate PR as that involves too many changes\r\n\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nCode changes\r\n\r\n - Has interface methods change\r\n\r\n"
+  },
+  "pr_merged_at": "2018-11-14T20:10:58+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "mux sync.Mutex // fix data race in ddl test."
+  ],
+  "failure_signature": "mux sync.Mutex // fix data race in ddl test.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "session,executor: run statement without transaction",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/8260",
+    "https://github.com/pingcap/tidb/pull/8260.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/8260.patch",
+  "changed_files": [
+    "executor/adapter.go",
+    "executor/builder.go",
+    "executor/errors.go",
+    "executor/executor.go",
+    "executor/executor_test.go",
+    "executor/index_lookup_join.go",
+    "executor/simple.go",
+    "planner/core/logical_plan_builder.go",
+    "session/session.go",
+    "session/session_test.go",
+    "session/tidb.go",
+    "session/txn.go",
+    "sessionctx/context.go",
+    "table/tables/tables.go",
+    "util/mock/context.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: mux sync.Mutex // fix data race in ddl test.",
+      "files: executor/adapter.go, executor/admin.go, executor/builder.go, executor/errors.go, executor/executor.go, executor/executor_test.go, executor/index_lookup_join.go, executor/point_get.go, executor/simple.go, planner/core/logical_plan_builder.go, session/session.go, session/session_fail_test.go, session/session_test.go, session/tidb.go, session/txn.go, sessionctx/context.go, table/tables/tables.go, util/mock/context.go"
+    ]
+  },
+  "analysis": "PR title: session,executor: run statement without transaction\nPR url: https://github.com/pingcap/tidb/pull/8260\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: mux sync.Mutex // fix data race in ddl test.\nChanged files (15): executor/adapter.go, executor/builder.go, executor/errors.go, executor/executor.go, executor/executor_test.go, executor/index_lookup_join.go, executor/simple.go, planner/core/logical_plan_builder.go, session/session.go, session/session_test.go, session/tidb.go, session/txn.go, sessionctx/context.go, table/tables/tables.go, util/mock/context.go\nPatch url: https://github.com/pingcap/tidb/pull/8260.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

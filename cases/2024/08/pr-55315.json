@@ -1,0 +1,60 @@
+{
+  "id": "pr-55315",
+  "source_pr": {
+    "number": 55315,
+    "url": "https://github.com/pingcap/tidb/pull/55315",
+    "title": "*: support batch create/drop bindings from plan/sql digest",
+    "body": "\r\n### What problem does this PR solve?\r\n\r\n\r\nIssue Number: close #55343 \r\n\r\n### What changed and how does it work?\r\n\r\n- Parser\r\n  - Introduce `StringLitOrUserVariableList` syntax and corresponding `struct StringOrUserVar` data type.\r\n  - Change the input of \"create from plan digest\" and \"drop for SQL digest\" from `stringLit` to `StringLitOrUserVariableList`.\r\n- Planner\r\n  - Split `struct SQLBindPlan` into `struct SQLBindPlan` and `struct SQLBindOpDetail`, and make one `SQLBindPlan` able to contain multiple `SQLBindOpDetail`. (`common_plans.go`)\r\n  - Add `collectStrOrUserVarList()` to translate `[]*ast.StringOrUserVar` into `[]string`. (`planbuilder.go`)\r\n  - Extract `constructSQLBindOPFromPlanDigest()` from `buildCreateBindPlanFromPlanDigest()`. (`planbuilder.go`)\r\n  - Make `buildCreateBindPlanFromPlanDigest()` and `buildDropBindPlan()` able to handle input from `[]*ast.StringOrUserVar`, which means multiple digests. (`planbuilder.go`)\r\n- Executor\r\n  - Switch to use `struct SQLBindOpDetail` accordingly as stated above.\r\n  - Switch to the new `/bindinfo` interface as stated below.\r\n- `/bindinfo`\r\n  - Input for `CreateGlobalBinding()`: `binding Binding` -> `bindings []*Binding`\r\n  - Input for `DropGlobalBinding()`: `sqlDigest string` -> `sqlDigests []string`\r\n  - Input for `CreateSessionBinding()`: `binding Binding` -> `bindings []*Binding`\r\n  - Input for `DropSessionBinding()`: `sqlDigest string` -> `sqlDigests []string`\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [x] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2024-08-13T03:52:31+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/infoschema/test/clustertablestest/cluster_tables_test.go",
+    "name": "TestBatchDropBindings"
+  },
+  "symptoms": [
+    "digests := tk.MustQuery(\"SELECT group_concat(plan_digest order by plan_digest) \" + (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)"
+  ],
+  "failure_signature": "digests := tk.MustQuery(\"SELECT group_concat(plan_digest order by plan_digest) \" + (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/55315",
+    "https://github.com/pingcap/tidb/pull/55315.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/55315.patch",
+  "changed_files": [
+    "pkg/bindinfo/capture.go",
+    "pkg/bindinfo/global_handle.go",
+    "pkg/bindinfo/session_handle.go",
+    "pkg/bindinfo/tests/BUILD.bazel",
+    "pkg/bindinfo/tests/bind_test.go",
+    "pkg/executor/bind.go",
+    "pkg/executor/builder.go",
+    "pkg/infoschema/test/clustertablestest/cluster_tables_test.go",
+    "pkg/parser/ast/misc.go",
+    "pkg/parser/parser.go",
+    "pkg/parser/parser.y",
+    "pkg/parser/parser_test.go",
+    "pkg/planner/core/common_plans.go",
+    "pkg/planner/core/planbuilder.go",
+    "pkg/planner/core/preprocess.go",
+    "pkg/planner/optimize.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: digests := tk.MustQuery(\"SELECT group_concat(plan_digest order by plan_digest) \" + (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)",
+      "files: pkg/bindinfo/capture.go, pkg/bindinfo/global_handle.go, pkg/bindinfo/session_handle.go, pkg/bindinfo/tests/BUILD.bazel, pkg/bindinfo/tests/bind_test.go, pkg/executor/bind.go, pkg/executor/builder.go, pkg/infoschema/test/clustertablestest/cluster_tables_test.go, pkg/parser/ast/misc.go, pkg/parser/parser.go, pkg/parser/parser.y, pkg/parser/parser_test.go, pkg/planner/core/common_plans.go, pkg/planner/core/planbuilder.go, pkg/planner/core/preprocess.go, pkg/planner/optimize.go"
+    ]
+  },
+  "analysis": "PR title: *: support batch create/drop bindings from plan/sql digest\nPR url: https://github.com/pingcap/tidb/pull/55315\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: digests := tk.MustQuery(\"SELECT group_concat(plan_digest order by plan_digest) \" + (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)\nChanged files (16): pkg/bindinfo/capture.go, pkg/bindinfo/global_handle.go, pkg/bindinfo/session_handle.go, pkg/bindinfo/tests/BUILD.bazel, pkg/bindinfo/tests/bind_test.go, pkg/executor/bind.go, pkg/executor/builder.go, pkg/infoschema/test/clustertablestest/cluster_tables_test.go, pkg/parser/ast/misc.go, pkg/parser/parser.go, pkg/parser/parser.y, pkg/parser/parser_test.go, pkg/planner/core/common_plans.go, pkg/planner/core/planbuilder.go, pkg/planner/core/preprocess.go, pkg/planner/optimize.go\nPatch url: https://github.com/pingcap/tidb/pull/55315.patch\nPicked test: type=unit path=pkg/infoschema/test/clustertablestest/cluster_tables_test.go name=TestBatchDropBindings"
+}

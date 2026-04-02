@@ -1,0 +1,62 @@
+{
+  "id": "pr-12779",
+  "source_pr": {
+    "number": 12779,
+    "url": "https://github.com/pingcap/tidb/pull/12779",
+    "title": "store : add store limit to restrain bad store from occupying too much token limit.",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/community/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nIn some cases, when a store is broken in tikv cluster, the store will hang all write requests sent to it, which will cause token limit exhausted in tidb server, consequently leading QPS to decrease sharply.\r\n\r\n<!-- store limit design [doc](https://docs.google.com/document/d/14mZzqsbLVIJfLnOXTBmI_PwfUqS7wwSv9ZVaEZhRusM/edit?ts=5da4946d) : -->\r\n\r\n### What is changed and how it works?\r\nAdd storeLimit in `Store` structure, we should do the count on it before sending the request to each store, eventually, control the traffic of each store. \r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n - Integration test\r\n - Manual test (add detailed scripts or steps below)\r\n\r\nCode changes\r\n\r\n - Store : add store limit check before sending request\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n - Need to update the documentation\r\n\r\nRelease note\r\n\r\n - add store limit to restrain bad store from occupying too much token limit.\r\n"
+  },
+  "pr_merged_at": "2019-11-13T18:49:25+08:00",
+  "test": {
+    "type": "unit",
+    "path": "config/config_test.go",
+    "name": "config_test"
+  },
+  "symptoms": [
+    "fix storeLimitSuite data race"
+  ],
+  "failure_signature": "fix storeLimitSuite data race",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "store : add store limit to restrain bad store from occupying too much token limit.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/12779",
+    "https://github.com/pingcap/tidb/pull/12779.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/12779.patch",
+  "changed_files": [
+    "config/config.go",
+    "config/config.toml.example",
+    "config/config_test.go",
+    "executor/set_test.go",
+    "metrics/metrics.go",
+    "metrics/stats.go",
+    "session/session.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "sessionctx/variable/varsutil.go",
+    "store/mockstore/mocktikv/cluster.go",
+    "store/tikv/error.go",
+    "store/tikv/region_cache.go",
+    "store/tikv/region_request.go",
+    "store/tikv/region_request_test.go",
+    "tidb-server/main.go",
+    "util/storeutil/store_vars.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix storeLimitSuite data race",
+      "files: config/config.go, config/config.toml.example, config/config_test.go, executor/set_test.go, go.mod, go.sum, metrics/metrics.go, metrics/stats.go, session/session.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, store/mockstore/mocktikv/cluster.go, store/tikv/2pc.go, store/tikv/client.go, store/tikv/coprocessor.go, store/tikv/error.go, store/tikv/kv.go, store/tikv/rawkv.go, store/tikv/rawkv_test.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, store/tikv/region_request.go, store/tikv/region_request_test.go, store/tikv/scan.go, store/tikv/snapshot.go, store/tikv/split_region.go, tidb-server/main.go, util/storeutil/storeVars.go, util/storeutil/store_vars.go"
+    ]
+  },
+  "analysis": "PR title: store : add store limit to restrain bad store from occupying too much token limit.\nPR url: https://github.com/pingcap/tidb/pull/12779\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix storeLimitSuite data race\nChanged files (18): config/config.go, config/config.toml.example, config/config_test.go, executor/set_test.go, metrics/metrics.go, metrics/stats.go, session/session.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, store/mockstore/mocktikv/cluster.go, store/tikv/error.go, store/tikv/region_cache.go, store/tikv/region_request.go, store/tikv/region_request_test.go, tidb-server/main.go, util/storeutil/store_vars.go\nPatch url: https://github.com/pingcap/tidb/pull/12779.patch\nPicked test: type=unit path=config/config_test.go name=config_test"
+}

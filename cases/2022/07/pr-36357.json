@@ -1,0 +1,48 @@
+{
+  "id": "pr-36357",
+  "source_pr": {
+    "number": 36357,
+    "url": "https://github.com/pingcap/tidb/pull/36357",
+    "title": "planner: fix bug that skew distinct agg rule failed to generate plan",
+    "body": "### What problem does this PR solve?\r\nPreviously when the group aggregation doesn't output the grouping columns, the skew distinct agg rewrite rule will fail to generate a plan. This patch fixes the bug.\r\n\r\nIssue Number: close #36350\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests \r\n\r\n- [ ] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-07-20T19:47:09+08:00",
+  "test": {
+    "type": "unit",
+    "path": "planner/core/physical_plan_test.go",
+    "name": "physical_plan_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select count(distinct b), sum(c) from t group by a order by 1,2;\").Check( (planner/core/physical_plan_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select count(distinct b), sum(c) from t group by a order by 1,2;\").Check( (planner/core/physical_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/36357",
+    "https://github.com/pingcap/tidb/pull/36357.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/36357.patch",
+  "changed_files": [
+    "planner/core/physical_plan_test.go",
+    "planner/core/rule_aggregation_skew_rewrite.go",
+    "planner/core/testdata/enforce_mpp_suite_in.json",
+    "planner/core/testdata/enforce_mpp_suite_out.json"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select count(distinct b), sum(c) from t group by a order by 1,2;\").Check( (planner/core/physical_plan_test.go)",
+      "files: planner/core/physical_plan_test.go, planner/core/rule_aggregation_skew_rewrite.go, planner/core/testdata/enforce_mpp_suite_in.json, planner/core/testdata/enforce_mpp_suite_out.json"
+    ]
+  },
+  "analysis": "PR title: planner: fix bug that skew distinct agg rule failed to generate plan\nPR url: https://github.com/pingcap/tidb/pull/36357\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select count(distinct b), sum(c) from t group by a order by 1,2;\").Check( (planner/core/physical_plan_test.go)\nChanged files (4): planner/core/physical_plan_test.go, planner/core/rule_aggregation_skew_rewrite.go, planner/core/testdata/enforce_mpp_suite_in.json, planner/core/testdata/enforce_mpp_suite_out.json\nPatch url: https://github.com/pingcap/tidb/pull/36357.patch\nPicked test: type=unit path=planner/core/physical_plan_test.go name=physical_plan_test"
+}

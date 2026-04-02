@@ -1,0 +1,50 @@
+{
+  "id": "pr-3841",
+  "source_pr": {
+    "number": 3841,
+    "url": "https://github.com/pingcap/tidb/pull/3841",
+    "title": "plan: remove useless plan.",
+    "body": "For query t1 left join t2 left join t3 order by t1.a limit 1, there will be a topn operator between two joins. That is a redundant operator.\r\n\r\n@winoros @lamxTyler PTAL"
+  },
+  "pr_merged_at": "2017-07-21T18:00:17+08:00",
+  "test": {
+    "type": "unit",
+    "path": "plan/dag_plan_test.go",
+    "name": "dag_plan_test"
+  },
+  "symptoms": [
+    "sql: \"select * from t t1 left join t t2 on t1.b = t2.b left join t t3 on t2.b = t3.b order by t1.a limit 1\", (plan/dag_plan_test.go)"
+  ],
+  "failure_signature": "sql: \"select * from t t1 left join t t2 on t1.b = t2.b left join t t3 on t2.b = t3.b order by t1.a limit 1\", (plan/dag_plan_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/3841",
+    "https://github.com/pingcap/tidb/pull/3841.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/3841.patch",
+  "changed_files": [
+    "plan/dag_plan_test.go",
+    "plan/logical_plans.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/plans.go",
+    "plan/task.go",
+    "plan/topn_push_down.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sql: \"select * from t t1 left join t t2 on t1.b = t2.b left join t t3 on t2.b = t3.b order by t1.a limit 1\", (plan/dag_plan_test.go)",
+      "files: plan/dag_plan_test.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/plans.go, plan/task.go, plan/topn_push_down.go"
+    ]
+  },
+  "analysis": "PR title: plan: remove useless plan.\nPR url: https://github.com/pingcap/tidb/pull/3841\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t t1 left join t t2 on t1.b = t2.b left join t t3 on t2.b = t3.b order by t1.a limit 1\", (plan/dag_plan_test.go)\nChanged files (6): plan/dag_plan_test.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/plans.go, plan/task.go, plan/topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/3841.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+}

@@ -1,0 +1,48 @@
+{
+  "id": "pr-726",
+  "source_pr": {
+    "number": 726,
+    "url": "https://github.com/pingcap/tidb/pull/726",
+    "title": "parser: parse position expression in parser, fix order by position.",
+    "body": "The position expression, like \"1\" in \"order by 1\" was parsed ito `*ast.ValueExpr` in parser, replaced to position expression by resolver,\nBut flag setter sets flag before resolving process, so position flag is not set.\n"
+  },
+  "pr_merged_at": "2015-12-15T15:04:02+08:00",
+  "test": {
+    "type": "unit",
+    "path": "session_test.go",
+    "name": "session_test"
+  },
+  "symptoms": [
+    "// Order by position (session_test.go)"
+  ],
+  "failure_signature": "// Order by position (session_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/726",
+    "https://github.com/pingcap/tidb/pull/726.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/726.patch",
+  "changed_files": [
+    "executor/converter/convert_expr.go",
+    "optimizer/resolver.go",
+    "parser/parser.y",
+    "session_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: // Order by position (session_test.go)",
+      "files: executor/converter/convert_expr.go, optimizer/resolver.go, parser/parser.y, session_test.go"
+    ]
+  },
+  "analysis": "PR title: parser: parse position expression in parser, fix order by position.\nPR url: https://github.com/pingcap/tidb/pull/726\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Order by position (session_test.go)\nChanged files (4): executor/converter/convert_expr.go, optimizer/resolver.go, parser/parser.y, session_test.go\nPatch url: https://github.com/pingcap/tidb/pull/726.patch\nPicked test: type=unit path=session_test.go name=session_test"
+}

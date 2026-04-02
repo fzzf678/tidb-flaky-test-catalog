@@ -1,0 +1,54 @@
+{
+  "id": "pr-63796",
+  "source_pr": {
+    "number": 63796,
+    "url": "https://github.com/pingcap/tidb/pull/63796",
+    "title": "*: Collect client network info for topsql to pick topN sql with highest network traffic",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #62920 \r\n\r\nProblem Summary:\r\nAdd client network in/out stats in topsql. And record topN network usage sqls adding to current topN cpu usage sqls. Note one sql will be added at most once.\r\n\r\n### What changed and how does it work?\r\n1. Add two new session variable \"InPacketBytes\", \"OutPacketBytes\" to record the network traffic from/to clients.\r\n2. When query finishes, record the network traffic info to topsql stmtstats\r\n3. Pick topN query with highest network traffic.\r\n\r\n### Check List\r\n#### Sysbench Performance Test ####\r\nThe performance impact of this PR is not noticable. \r\nTurn off topsql\r\n![img_v3_02ro_ba405d95-0fc4-4a72-a4d5-22025a97061g](https://github.com/user-attachments/assets/ce0fe114-1142-44f7-a64a-e089d5fa8b9b)\r\n\r\n\r\nTurn on topsql \r\n![img_v3_02ro_47c2617c-270e-415a-8df5-2ab18fa94a4g](https://github.com/user-attachments/assets/89fe22b6-4788-4edb-bd2e-82b174583a51)\r\n\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\nRun tpch benchmark, print topsql report data on tidb side, and check the network in/out data using sql digest manually to ensure network data make sense.\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nCollects client network data for topsql to pick topN sql with highest network traffic.\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-11-05T14:51:50+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/util/topsql/reporter/reporter_test.go",
+    "name": "reporter_test"
+  },
+  "symptoms": [
+    "sort.Slice(data.DataRecords, func(i, j int) bool { (pkg/util/topsql/reporter/reporter_test.go)"
+  ],
+  "failure_signature": "sort.Slice(data.DataRecords, func(i, j int) bool { (pkg/util/topsql/reporter/reporter_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "1. Add two new session variable \"InPacketBytes\", \"OutPacketBytes\" to record the network traffic from/to clients. 2. When query finishes, record the network traffic info to topsql stmtstats 3. Pick topN query with highest network traffic.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/63796",
+    "https://github.com/pingcap/tidb/pull/63796.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/63796.patch",
+  "changed_files": [
+    "pkg/executor/adapter.go",
+    "pkg/server/conn.go",
+    "pkg/sessionctx/variable/session.go",
+    "pkg/util/topsql/reporter/BUILD.bazel",
+    "pkg/util/topsql/reporter/datamodel.go",
+    "pkg/util/topsql/reporter/reporter.go",
+    "pkg/util/topsql/reporter/reporter_test.go",
+    "pkg/util/topsql/stmtstats/aggregator_test.go",
+    "pkg/util/topsql/stmtstats/stmtstats.go",
+    "pkg/util/topsql/stmtstats/stmtstats_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: sort.Slice(data.DataRecords, func(i, j int) bool { (pkg/util/topsql/reporter/reporter_test.go)",
+      "files: pkg/executor/adapter.go, pkg/server/conn.go, pkg/sessionctx/variable/session.go, pkg/util/topsql/reporter/BUILD.bazel, pkg/util/topsql/reporter/datamodel.go, pkg/util/topsql/reporter/reporter.go, pkg/util/topsql/reporter/reporter_test.go, pkg/util/topsql/stmtstats/aggregator_test.go, pkg/util/topsql/stmtstats/stmtstats.go, pkg/util/topsql/stmtstats/stmtstats_test.go"
+    ]
+  },
+  "analysis": "PR title: *: Collect client network info for topsql to pick topN sql with highest network traffic\nPR url: https://github.com/pingcap/tidb/pull/63796\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Slice(data.DataRecords, func(i, j int) bool { (pkg/util/topsql/reporter/reporter_test.go)\nChanged files (10): pkg/executor/adapter.go, pkg/server/conn.go, pkg/sessionctx/variable/session.go, pkg/util/topsql/reporter/BUILD.bazel, pkg/util/topsql/reporter/datamodel.go, pkg/util/topsql/reporter/reporter.go, pkg/util/topsql/reporter/reporter_test.go, pkg/util/topsql/stmtstats/aggregator_test.go, pkg/util/topsql/stmtstats/stmtstats.go, pkg/util/topsql/stmtstats/stmtstats_test.go\nPatch series analyzed; see patch_url."
+}

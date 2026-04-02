@@ -1,0 +1,59 @@
+{
+  "id": "pr-28931",
+  "source_pr": {
+    "number": 28931,
+    "url": "https://github.com/pingcap/tidb/pull/28931",
+    "title": "*: add support for removed sysvars",
+    "body": "### What problem does this PR solve?\r\n\r\nProblem Summary:\r\n\r\nPreviously there has been no way to remove a sysvar which has been deprecated. This introduces a new \"removed\" feature, and adds the variables `TiDBEnableGlobalTemporaryTable` and `TiDBSlowLogMasking` to it.\r\n\r\n### What is changed and how it works?\r\n\r\nProposal: From https://github.com/pingcap/tidb/pull/28773\r\n\r\nWhat's Changed:\r\n\r\nThe system variables `tidb_enable_global_temporary_table` and `tidb_slow_log_masking` have been removed from this version of TiDB. Temporary tables is now a GA feature, and no longer requires a server option to enable, and `tidb_slow_log_masking` has been deprecated for several versions of TiDB in favor of `tidb_redact_log` instead.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [x] Breaking backward compatibility\r\n\r\nThe motivation to clean up `TiDBSlowLogMasking` is that it shows a warning everytime `SHOW [GLOBAL] VARIABLES` is executed, which looks messy. It has been deprecated for several versions of TiDB.\r\n\r\nThe motivation to clean up `tidb_enable_global_temporary_table` is that it was experimental, and does thus does not have a stability guarantee. But the introduction of the \"removed sysvars\" feature means that the compatibility breaking is only minimal.\r\n\r\nStill, we should not cherry pick these PRs.\r\n\r\nDocumentation\r\n\r\n- [x] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [x] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n```release-note\r\nThe system variables `tidb_enable_global_temporary_table` and `tidb_slow_log_masking` have been removed from this version of TiDB. Temporary tables is now a GA feature, and no longer requires a server option to enable, and `tidb_slow_log_masking` has been deprecated for several versions of TiDB in favor of `tidb_redact_log` instead.\r\n```\r\n"
+  },
+  "pr_merged_at": "2021-10-22T11:32:46+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "// EnableStableResultMode if stabilize query results."
+  ],
+  "failure_signature": "// EnableStableResultMode if stabilize query results.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "// EnableStableResultMode if stabilize query results.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/28931",
+    "https://github.com/pingcap/tidb/pull/28931.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/28931.patch",
+  "changed_files": [
+    "ddl/ddl_api.go",
+    "errno/errcode.go",
+    "errno/errname.go",
+    "errors.toml",
+    "executor/executor_test.go",
+    "executor/set.go",
+    "executor/set_test.go",
+    "planner/core/expression_rewriter.go",
+    "session/bench_test.go",
+    "session/session_test.go",
+    "sessionctx/variable/error.go",
+    "sessionctx/variable/removed.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: // EnableStableResultMode if stabilize query results.",
+      "files: ddl/ddl_api.go, errno/errcode.go, errno/errname.go, errors.toml, executor/executor_test.go, executor/set.go, executor/set_test.go, planner/core/expression_rewriter.go, session/bench_test.go, session/session_test.go, sessionctx/variable/error.go, sessionctx/variable/removed.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go"
+    ]
+  },
+  "analysis": "PR title: *: add support for removed sysvars\nPR url: https://github.com/pingcap/tidb/pull/28931\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // EnableStableResultMode if stabilize query results.\nChanged files (15): ddl/ddl_api.go, errno/errcode.go, errno/errname.go, errors.toml, executor/executor_test.go, executor/set.go, executor/set_test.go, planner/core/expression_rewriter.go, session/bench_test.go, session/session_test.go, sessionctx/variable/error.go, sessionctx/variable/removed.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go\nPatch series analyzed; see patch_url."
+}

@@ -1,0 +1,47 @@
+{
+  "id": "pr-35373",
+  "source_pr": {
+    "number": 35373,
+    "url": "https://github.com/pingcap/tidb/pull/35373",
+    "title": "executor: close RecordSet in the ddl_test and write_test",
+    "body": "Signed-off-by: Weizhen Wang <wangweizhen@pingcap.com>\r\n\r\n<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref https://github.com/pingcap/tidb/issues/31716\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2022-06-14T20:48:33+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/write_test.go",
+    "name": "write_test"
+  },
+  "symptoms": [
+    "err = tk.ExecToErr(\"UPDATE t SET c2=16777215 WHERE c1>= -8388608 AND c1 < -9 ORDER BY c1 LIMIT 2\") (executor/write_test.go)"
+  ],
+  "failure_signature": "err = tk.ExecToErr(\"UPDATE t SET c2=16777215 WHERE c1>= -8388608 AND c1 < -9 ORDER BY c1 LIMIT 2\") (executor/write_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/35373",
+    "https://github.com/pingcap/tidb/pull/35373.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/35373.patch",
+  "changed_files": [
+    "executor/ddl_test.go",
+    "executor/write_test.go",
+    "testkit/testkit.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: err = tk.ExecToErr(\"UPDATE t SET c2=16777215 WHERE c1>= -8388608 AND c1 < -9 ORDER BY c1 LIMIT 2\") (executor/write_test.go)",
+      "files: executor/ddl_test.go, executor/write_test.go, testkit/testkit.go"
+    ]
+  },
+  "analysis": "PR title: executor: close RecordSet in the ddl_test and write_test\nPR url: https://github.com/pingcap/tidb/pull/35373\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: err = tk.ExecToErr(\"UPDATE t SET c2=16777215 WHERE c1>= -8388608 AND c1 < -9 ORDER BY c1 LIMIT 2\") (executor/write_test.go)\nChanged files (3): executor/ddl_test.go, executor/write_test.go, testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/35373.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
+}

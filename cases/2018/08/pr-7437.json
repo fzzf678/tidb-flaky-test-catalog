@@ -1,0 +1,47 @@
+{
+  "id": "pr-7437",
+  "source_pr": {
+    "number": 7437,
+    "url": "https://github.com/pingcap/tidb/pull/7437",
+    "title": "ddl:support add index rollback of partitioned table",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\n* This PR solves the problem of  partitioned table add index does not support `rollback`.\r\n### What is changed and how it works?\r\n* Handle the rolling back job and finish the PR (support drop index for the partitioned table) #7306 first.\r\n* `Drop index` mainly deletes `indexInfo`.\r\n* If add index job rollbacks in write reorganization state, its need to delete all keys which has been added.\r\n* Delete all keys is done in the `delete range`.\r\n*  Fix issue #7223\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n\r\nPTAL @tiancaiamao @winkyao @zimulala .\r\n"
+  },
+  "pr_merged_at": "2018-08-31T11:46:01+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/db_test.go",
+    "name": "db_test"
+  },
+  "symptoms": [
+    "rand.Seed(time.Now().Unix()) (ddl/db_test.go)"
+  ],
+  "failure_signature": "rand.Seed(time.Now().Unix()) (ddl/db_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/7437",
+    "https://github.com/pingcap/tidb/pull/7437.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/7437.patch",
+  "changed_files": [
+    "ddl/db_test.go",
+    "ddl/delete_range.go",
+    "ddl/index.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: rand.Seed(time.Now().Unix()) (ddl/db_test.go)",
+      "files: ddl/db_test.go, ddl/delete_range.go, ddl/index.go"
+    ]
+  },
+  "analysis": "PR title: ddl:support add index rollback of partitioned table\nPR url: https://github.com/pingcap/tidb/pull/7437\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(time.Now().Unix()) (ddl/db_test.go)\nChanged files (3): ddl/db_test.go, ddl/delete_range.go, ddl/index.go\nPatch url: https://github.com/pingcap/tidb/pull/7437.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+}

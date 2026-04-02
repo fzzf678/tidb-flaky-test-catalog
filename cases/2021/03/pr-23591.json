@@ -1,0 +1,46 @@
+{
+  "id": "pr-23591",
+  "source_pr": {
+    "number": 23591,
+    "url": "https://github.com/pingcap/tidb/pull/23591",
+    "title": "types: fix collation for binary literal",
+    "body": "Signed-off-by: wjhuang2016 <huangwenjun1997@gmail.com>\r\n\r\n<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #23581 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\nCollation is not set for the binary literal.\r\nWhen call compareBinaryLiteral(), it may get the wrong result.\r\n\r\n### What is changed and how it works?\r\n\r\nSet collation for the binary literal.\r\n\r\n### Related changes\r\n\r\n- Need to cherry-pick to the release branch\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\nSide effects\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- fix collation for binary literal"
+  },
+  "pr_merged_at": "2021-03-26T20:39:24+08:00",
+  "test": {
+    "type": "unit",
+    "path": "expression/integration_test.go",
+    "name": "integration_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t where col1 not in (0x1B,0x20) order by col1\").Check(testkit.Rows(\"\\x1e \\xec 6966939640596047133\")) (expression/integration_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t where col1 not in (0x1B,0x20) order by col1\").Check(testkit.Rows(\"\\x1e \\xec 6966939640596047133\")) (expression/integration_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select * from t where col1 not in (0x1B,0x20) order by col1\").Check(testkit.Rows(\"\\x1e \\xec 6966939640596047133\")) (expression/integration_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/23591",
+    "https://github.com/pingcap/tidb/pull/23591.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/23591.patch",
+  "changed_files": [
+    "expression/integration_test.go",
+    "types/datum.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t where col1 not in (0x1B,0x20) order by col1\").Check(testkit.Rows(\"\\x1e \\xec 6966939640596047133\")) (expression/integration_test.go)",
+      "files: expression/integration_test.go, types/datum.go"
+    ]
+  },
+  "analysis": "PR title: types: fix collation for binary literal\nPR url: https://github.com/pingcap/tidb/pull/23591\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t where col1 not in (0x1B,0x20) order by col1\").Check(testkit.Rows(\"\\x1e \\xec 6966939640596047133\")) (expression/integration_test.go)\nChanged files (2): expression/integration_test.go, types/datum.go\nPatch series analyzed; see patch_url."
+}

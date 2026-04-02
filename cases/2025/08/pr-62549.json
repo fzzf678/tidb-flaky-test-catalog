@@ -1,0 +1,58 @@
+{
+  "id": "pr-62549",
+  "source_pr": {
+    "number": 62549,
+    "url": "https://github.com/pingcap/tidb/pull/62549",
+    "title": "ddl: add states to remove old objects during modifying column",
+    "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: close #60264, close #62531\r\n\r\nProblem Summary:\r\n\r\n```sql\r\n-- origin schema\r\ncreate table t (a int primary key, b varchar(255), key k_b (b))\r\n-- ddl\r\nalter table t modify column b int unsigned not null;\r\n\r\n-- write-reorg -> public\r\n-- non-owner schema (_Col$ and _Idx$ are not visible to users)\r\ncreate table t (a int primary key, b int, _Col$_b varchar(255), key k_b (b), key _Idx$_k_b (_Col$_b));\r\n-- owner schema\r\ncreate table t (a int primary key, b int, key k_b (b));\r\n\r\n-- owner insert (OLD INDEX IS NOT MAINTAINED!)\r\ninsert into t values (10, \" 09.60 \");\r\n\r\n-- non-owner select\r\nselect * from t where a = 10;\r\n10 <nil>\r\n\r\n-- non-owner admin check\r\nadmin check table t;\r\n[admin:8223]data inconsistency in table: t, index: k_b, handle: 10, index-values:\"\" != record-values:\"handle: 10, values: [KindNull <nil>]\"\r\n```\r\n\r\nThe root cause is that the assumption of \"two adjacent schema versions are compatible\" is broken for modifying columns covered with indexes:\r\n- Non-owner TiDB has schema version `n-1`. Only old indexes and old columns are visible.\r\n- Owner TiDB has schema version `n`. Only new indexes are visible.\r\n\r\nWhen owner TiDB inserts or deletes a record, only new indexes will be maintained. If you run `SELECT` or `ADMIN CHECK` on non-owner TiDB with schema version `n-1`, either the data has one more record than the index, or the index has one more record than the data, depending on whether the non-owner node executes an insert or delete statement.\r\n\r\nThis issue doesn't happen on `ADD INDEX` because non-owner TiDBs don't have an \"old\" index. Any `SELECT` statements will use `TableScan` instead of `IndexLookup`. There is no such chance to see inconsistent data on non-owner TiDBs.\r\n\r\n### What changed and how does it work?\r\n\r\nBefore removing public columns/indexes, we should follow the path `public` -> `write-only` -> `delete-only` -> `none`. In the above case, **owner TiDB is still aware of the old index** (which is in `write-only` state). As long as it maintains the old index mutations, there is no data inconsistent issue.\r\n\r\n- Break changing column step `write-reorg` -> `public` into multiple steps:\r\n  - changing column `write-reorg`, old column & indexes `public`\r\n  - changing column `public`, old column & indexes `write-only`\r\n  - changing column `public`, old column & indexes `delete-only`\r\n  - changing column `public`, old column & indexes `none`(removed)\r\n- Don't use column name to locate \"old column\" anymore. This PR changes to use column ID, and it is persisted to job arguments after the first execution.\r\n- Add an internal column / index name prefix `_Tomestone$_` to represent the objects that need to be removed eventually.\r\n\r\nExample 1\r\n```sql\r\ncreate table t (a int not null default 1, b int default 2, c int not null default 0, primary key(c), index idx(b), index idx1(a), index idx2(b, c));\r\n\r\nalter table t change column b bb mediumint first;\r\n```\r\n<img width=\"1373\" height=\"1184\" alt=\"image\" src=\"https://github.com/user-attachments/assets/a7be48a1-1b07-47fd-bdc9-e669f8d9ad81\" />\r\n\r\nExample 2\r\n```sql\r\ncreate table t (a int, b int, c int, index i1(a), index i2(b), index i3(c), index i4(a, b), index i5(a, b, c));\r\n\r\nalter table t modify column a tinyint, modify column b tinyint, modify column c tinyint;\r\n```\r\n<img width=\"1679\" height=\"1412\" alt=\"image\" src=\"https://github.com/user-attachments/assets/5c011778-9d71-47a4-be44-bbd360ab438f\" />\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [ ] Integration test\r\n- [x] Manual test (add detailed scripts or steps below)\r\nRun the [script](https://github.com/pingyu/ddl-and-delete/blob/main/main.go) mentioned in #62531 for 20 min, no data inconsistent issue found.\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
+  },
+  "pr_merged_at": "2025-08-01T18:52:22+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/ddl/modify_column_test.go",
+    "name": "modify_column_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t order by id;\").Check(testkit.Rows( (pkg/ddl/modify_column_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t order by id;\").Check(testkit.Rows( (pkg/ddl/modify_column_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Before removing public columns/indexes, we should follow the path `public` -> `write-only` -> `delete-only` -> `none`. In the above case, **owner TiDB is still aware of the old index** (which is in `write-only` state). As long as it maintains the old index mutations, there is no data inconsistent issue.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/62549",
+    "https://github.com/pingcap/tidb/pull/62549.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/62549.patch",
+  "changed_files": [
+    "pkg/ddl/column.go",
+    "pkg/ddl/executor.go",
+    "pkg/ddl/index_merge_tmp.go",
+    "pkg/ddl/modify_column.go",
+    "pkg/ddl/modify_column_test.go",
+    "pkg/ddl/rollingback.go",
+    "pkg/ddl/tests/partition/multi_domain_test.go",
+    "pkg/executor/show.go",
+    "pkg/infoschema/issyncer/loader.go",
+    "pkg/infoschema/tables.go",
+    "pkg/meta/model/job.go",
+    "pkg/meta/model/job_args.go",
+    "pkg/meta/model/job_args_test.go",
+    "pkg/table/tables/tables.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t order by id;\").Check(testkit.Rows( (pkg/ddl/modify_column_test.go)",
+      "files: pkg/ddl/column.go, pkg/ddl/executor.go, pkg/ddl/index_merge_tmp.go, pkg/ddl/modify_column.go, pkg/ddl/modify_column_test.go, pkg/ddl/rollingback.go, pkg/ddl/tests/partition/multi_domain_test.go, pkg/executor/show.go, pkg/infoschema/issyncer/loader.go, pkg/infoschema/tables.go, pkg/meta/model/job.go, pkg/meta/model/job_args.go, pkg/meta/model/job_args_test.go, pkg/table/tables/tables.go"
+    ]
+  },
+  "analysis": "PR title: ddl: add states to remove old objects during modifying column\nPR url: https://github.com/pingcap/tidb/pull/62549\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t order by id;\").Check(testkit.Rows( (pkg/ddl/modify_column_test.go)\nChanged files (14): pkg/ddl/column.go, pkg/ddl/executor.go, pkg/ddl/index_merge_tmp.go, pkg/ddl/modify_column.go, pkg/ddl/modify_column_test.go, pkg/ddl/rollingback.go, pkg/ddl/tests/partition/multi_domain_test.go, pkg/executor/show.go, pkg/infoschema/issyncer/loader.go, pkg/infoschema/tables.go, pkg/meta/model/job.go, pkg/meta/model/job_args.go, pkg/meta/model/job_args_test.go, pkg/table/tables/tables.go\nPatch series analyzed; see patch_url."
+}

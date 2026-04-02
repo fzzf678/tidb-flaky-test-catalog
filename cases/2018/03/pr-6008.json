@@ -1,0 +1,46 @@
+{
+  "id": "pr-6008",
+  "source_pr": {
+    "number": 6008,
+    "url": "https://github.com/pingcap/tidb/pull/6008",
+    "title": "server: fix column length when convert column info for tinyint",
+    "body": "When column type is `tinyint`, [ao](https://sourcegraph.com/github.com/Kast0rTr0y/ao@189a44ab341e5d613ae9db0e98365688b80162ed/-/blob/activeobjects-core/src/net/java/ao/types/TypeManager.java#L258) checks both jdbc type and its precision in qualifiers. It needs precision in qualifiers to be 1 but tidb returned column's precision is 4(here precision is just column length). This PR fixes this. \r\n\r\n@zz-jason @XuHuaiyu PTAL and please check whether navicat has same behavior.  "
+  },
+  "pr_merged_at": "2018-03-12T11:12:42+08:00",
+  "test": {
+    "type": "unit",
+    "path": "server/driver_tidb_test.go",
+    "name": "driver_tidb_test"
+  },
+  "symptoms": [
+    "- // But we found in race MySQL client, like Navicat for MySQL(version before 12) will truncate"
+  ],
+  "failure_signature": "- // But we found in race MySQL client, like Navicat for MySQL(version before 12) will truncate",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "server: fix column length when convert column info for tinyint",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6008",
+    "https://github.com/pingcap/tidb/pull/6008.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6008.patch",
+  "changed_files": [
+    "server/driver_tidb.go",
+    "server/driver_tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: - // But we found in race MySQL client, like Navicat for MySQL(version before 12) will truncate",
+      "files: server/driver_tidb.go, server/driver_tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: server: fix column length when convert column info for tinyint\nPR url: https://github.com/pingcap/tidb/pull/6008\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - // But we found in race MySQL client, like Navicat for MySQL(version before 12) will truncate\nChanged files (2): server/driver_tidb.go, server/driver_tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6008.patch\nPicked test: type=unit path=server/driver_tidb_test.go name=driver_tidb_test"
+}

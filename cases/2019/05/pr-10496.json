@@ -1,0 +1,46 @@
+{
+  "id": "pr-10496",
+  "source_pr": {
+    "number": 10496,
+    "url": "https://github.com/pingcap/tidb/pull/10496",
+    "title": "executor: `RANGE` frame can have no `ORDER BY` clause",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\n\r\nfix #10494\r\n\r\n### What is changed and how it works?\r\n\r\nCheck whether there's a ORDER BY clause.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Unit test\r\n"
+  },
+  "pr_merged_at": "2019-05-17T22:54:18+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/window_test.go",
+    "name": "window_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"SELECT a, b, c, SUM(a) OVER (RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM issue10494 order by a;\").Check( (executor/window_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"SELECT a, b, c, SUM(a) OVER (RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM issue10494 order by a;\").Check( (executor/window_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/10496",
+    "https://github.com/pingcap/tidb/pull/10496.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/10496.patch",
+  "changed_files": [
+    "executor/builder.go",
+    "executor/window_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"SELECT a, b, c, SUM(a) OVER (RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM issue10494 order by a;\").Check( (executor/window_test.go)",
+      "files: executor/builder.go, executor/window_test.go"
+    ]
+  },
+  "analysis": "PR title: executor: `RANGE` frame can have no `ORDER BY` clause\nPR url: https://github.com/pingcap/tidb/pull/10496\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"SELECT a, b, c, SUM(a) OVER (RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM issue10494 order by a;\").Check( (executor/window_test.go)\nChanged files (2): executor/builder.go, executor/window_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10496.patch\nPicked test: type=unit path=executor/window_test.go name=window_test"
+}

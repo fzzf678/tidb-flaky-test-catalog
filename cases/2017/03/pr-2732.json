@@ -1,0 +1,48 @@
+{
+  "id": "pr-2732",
+  "source_pr": {
+    "number": 2732,
+    "url": "https://github.com/pingcap/tidb/pull/2732",
+    "title": "util/filesort: Make sorting async",
+    "body": "Optimize the input phase in filesort.\r\n\r\nUse auxiliary workers to make sorting in input phase async.\r\n\r\n## Evaluation\r\n\r\n### Environment Setup\r\n\r\n* One machine with two 10-core Intel Xeon E5-2650 v3 processors, 64GB of DRAM.\r\n* Each core has a private 32KB L1 cache and a private 256KB L2 cache, and all 10 cores on a single processor share a 24MB L3 cache.\r\n* Hyper-threading disabled.\r\n\r\n### Workload Setup\r\n\r\n* 10 million rows, the key size and value size are both 8 bytes\r\n* Buffer size is set to 500K\r\n* Adjust the number of workers from 1 to 16\r\n\r\n### Evaluation results\r\n\r\n![image](https://cloud.githubusercontent.com/assets/4158637/23327955/54a2a970-fb51-11e6-9833-64b8d8e487f0.png)\r\n\r\nCompared to a single worker, using 16 workers can gain up to **8.14X** speedup.\r\n\r\n\r\n\r\n\r\n"
+  },
+  "pr_merged_at": "2017-03-08T20:48:27+08:00",
+  "test": {
+    "type": "unit",
+    "path": "util/filesort/filesort_test.go",
+    "name": "filesort_test"
+  },
+  "symptoms": [
+    "seed := rand.NewSource(time.Now().UnixNano()) (util/filesort/filesort_test.go)"
+  ],
+  "failure_signature": "seed := rand.NewSource(time.Now().UnixNano()) (util/filesort/filesort_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/2732",
+    "https://github.com/pingcap/tidb/pull/2732.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/2732.patch",
+  "changed_files": [
+    "cmd/benchfilesort/README.md",
+    "cmd/benchfilesort/main.go",
+    "util/filesort/filesort.go",
+    "util/filesort/filesort_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: seed := rand.NewSource(time.Now().UnixNano()) (util/filesort/filesort_test.go)",
+      "files: cmd/benchfilesort/README.md, cmd/benchfilesort/main.go, util/filesort/filesort.go, util/filesort/filesort_test.go"
+    ]
+  },
+  "analysis": "PR title: util/filesort: Make sorting async\nPR url: https://github.com/pingcap/tidb/pull/2732\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: seed := rand.NewSource(time.Now().UnixNano()) (util/filesort/filesort_test.go)\nChanged files (4): cmd/benchfilesort/README.md, cmd/benchfilesort/main.go, util/filesort/filesort.go, util/filesort/filesort_test.go\nPatch url: https://github.com/pingcap/tidb/pull/2732.patch\nPicked test: type=unit path=util/filesort/filesort_test.go name=filesort_test"
+}

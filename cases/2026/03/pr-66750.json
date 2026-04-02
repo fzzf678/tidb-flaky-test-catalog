@@ -1,0 +1,45 @@
+{
+  "id": "pr-66750",
+  "source_pr": {
+    "number": 66750,
+    "url": "https://github.com/pingcap/tidb/pull/66750",
+    "title": "pkg/server/tests/commontest: increase TestAuditPluginRetrying eventually timeout to 30s",
+    "body": "<!--\n\nThank you for contributing to TiDB!\n\nPR Title Format:\n1. pkg [, pkg2, pkg3]: what's changed\n2. *: what's changed\n\n-->\n\n### What problem does this PR solve?\n<!--\n\nPlease create an issue first to describe the problem.\n\nThere MUST be one line starting with \"Issue Number:  \" and\nlinking the relevant issues via the \"close\" or \"ref\".\n\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\n\n-->\n\nIssue Number: ref #66342\n\nProblem Summary:\n\nThis PR is only a test-stability attempt for `TestAuditPluginRetrying`.\n\nFrom the flaky CI run (`ghpr_unit_test` run `52938`, node `64`), the test failed 3 times with `Condition never satisfied` at `pkg/server/tests/commontest/tidb_test.go:3741`.\nAt the same time, each failed attempt still showed heavy retry activity (`session.go:1208` retry logs on `auto_retry_test`) with hundreds of retry/write-conflict lines, so retries did happen but the current 10s window was sometimes too short for the count-based eventually condition.\n\n### What changed and how does it work?\n\nOnly one line changed in `TestAuditPluginRetrying`:\n\n- Increase `require.Eventually` timeout from `time.Second*10` to `time.Second*30`.\n\nThis does not change logic or assertions; it only gives the existing retry-observation loop a larger window under CI load/contention.\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n  > <!-- Or your custom  \"No need to test\" reasons -->\n\nCommands run:\n\n- `make failpoint-enable && (pushd pkg/server/tests/commontest >/dev/null && go test -run '^TestAuditPluginRetrying$' -tags=intest,deadlock -count=1 && popd >/dev/null); rc=$?; make failpoint-disable; exit $rc`\n- `make lint`\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\n\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\n\n```release-note\nNone\n```\n\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n\n## Summary by CodeRabbit\n\n* **Tests**\n  * Updated audit plugin retry test with increased timeout allowance for improved test stability.\n\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-09T00:13:33+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/server/tests/commontest/tidb_test.go",
+    "name": "TestAuditPluginRetrying"
+  },
+  "symptoms": [
+    "From the flaky CI run (`ghpr_unit_test` run `52938`, node `64`), the test failed 3 times with `Condition never satisfied` at `pkg/server/tests/commontest/tidb_test.go:3741`."
+  ],
+  "failure_signature": "From the flaky CI run (`ghpr_unit_test` run `52938`, node `64`), the test failed 3 times with `Condition never satisfied` at `pkg/server/tests/commontest/tidb_test.go:3741`.",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "From the flaky CI run (`ghpr_unit_test` run `52938`, node `64`), the test failed 3 times with `Condition never satisfied` at `pkg/server/tests/commontest/tidb_test.go:3741`.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66750",
+    "https://github.com/pingcap/tidb/pull/66750.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66750.patch",
+  "changed_files": [
+    "pkg/server/tests/commontest/tidb_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: From the flaky CI run (`ghpr_unit_test` run `52938`, node `64`), the test failed 3 times with `Condition never satisfied` at `pkg/server/tests/commontest/tidb_test.go:3741`.",
+      "files: pkg/server/tests/commontest/tidb_test.go"
+    ]
+  },
+  "analysis": "PR title: pkg/server/tests/commontest: increase TestAuditPluginRetrying eventually timeout to 30s\nPR url: https://github.com/pingcap/tidb/pull/66750\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: From the flaky CI run (`ghpr_unit_test` run `52938`, node `64`), the test failed 3 times with `Condition never satisfied` at `pkg/server/tests/commontest/tidb_test.go:3741`.\nChanged files (1): pkg/server/tests/commontest/tidb_test.go\nFull patch analyzed; see patch_url."
+}

@@ -1,0 +1,47 @@
+{
+  "id": "pr-23044",
+  "source_pr": {
+    "number": 23044,
+    "url": "https://github.com/pingcap/tidb/pull/23044",
+    "title": "store/tikv: use original snapshot timestamp to resolve locks",
+    "body": "\r\n### What problem does this PR solve?\r\n\r\nIf an auto-commit point get meets a lock, it will get a timestamp from PD as the snapshot TS in retries. But we would better not use this new TS to resolve locks the first time, because it can push forward the minCommitTS. This is an unnecessary write.\r\n\r\n### What is changed and how it works?\r\n\r\nAs @youjiali1995 suggested, we can use the original snapshot timestamp to resolve locks. Then, if the lock is not from an async-commit transaction, using `MaxUint64` as `callerStartTS` can save one write at TIKV.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n- Integration test\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- No release note."
+  },
+  "pr_merged_at": "2021-03-08T13:40:54+08:00",
+  "test": {
+    "type": "unit",
+    "path": "store/tikv/snapshot_fail_test.go",
+    "name": "snapshot_fail_test"
+  },
+  "symptoms": [
+    "fix race in test"
+  ],
+  "failure_signature": "fix race in test",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "fix race in test",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/23044",
+    "https://github.com/pingcap/tidb/pull/23044.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/23044.patch",
+  "changed_files": [
+    "store/tikv/2pc.go",
+    "store/tikv/snapshot.go",
+    "store/tikv/snapshot_fail_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: fix race in test",
+      "files: store/tikv/2pc.go, store/tikv/snapshot.go, store/tikv/snapshot_fail_test.go"
+    ]
+  },
+  "analysis": "PR title: store/tikv: use original snapshot timestamp to resolve locks\nPR url: https://github.com/pingcap/tidb/pull/23044\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix race in test\nChanged files (3): store/tikv/2pc.go, store/tikv/snapshot.go, store/tikv/snapshot_fail_test.go\nPatch series analyzed; see patch_url."
+}

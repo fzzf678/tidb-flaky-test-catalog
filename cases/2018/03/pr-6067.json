@@ -1,0 +1,60 @@
+{
+  "id": "pr-6067",
+  "source_pr": {
+    "number": 6067,
+    "url": "https://github.com/pingcap/tidb/pull/6067",
+    "title": "Add admin checksum table command",
+    "body": "Support a new command `ADMIN CHECKSUM TABLE tablename` in TiDB.\r\nThe result of this command is a 64bit checksum, calculated from all key-values in a table, including records and indices.\r\nThis command will be implemented like the `ANALYZE table` command and will be pushed down to TiKV.\r\nThe corresponding TiKV PR is here: https://github.com/pingcap/tikv/pull/2822.\r\n\r\nThe current implementation use this checksum algorithm:\r\n1. For every key-value in a table, including records and indices, calculate a CRC64 from (key + value).\r\n2. For every CRC64 from every key-value, accumulate the checksum by XOR them together."
+  },
+  "pr_merged_at": "2018-03-20T20:46:43+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/executor_test.go",
+    "name": "executor_test"
+  },
+  "symptoms": [
+    "res.Sort().Check(testkit.Rows(\"test checksum_with_index 0 2 2\", \"test checksum_without_index 1 1 1\")) (executor/executor_test.go)"
+  ],
+  "failure_signature": "res.Sort().Check(testkit.Rows(\"test checksum_with_index 0 2 2\", \"test checksum_without_index 1 1 1\")) (executor/executor_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/6067",
+    "https://github.com/pingcap/tidb/pull/6067.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/6067.patch",
+  "changed_files": [
+    "ast/misc.go",
+    "distsql/distsql.go",
+    "distsql/request_builder.go",
+    "distsql/request_builder_test.go",
+    "executor/builder.go",
+    "executor/checksum.go",
+    "executor/executor_test.go",
+    "kv/kv.go",
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "plan/common_plans.go",
+    "plan/planbuilder.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "store/mockstore/mocktikv/checksum.go",
+    "store/mockstore/mocktikv/rpc.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: res.Sort().Check(testkit.Rows(\"test checksum_with_index 0 2 2\", \"test checksum_without_index 1 1 1\")) (executor/executor_test.go)",
+      "files: ast/misc.go, distsql/distsql.go, distsql/request_builder.go, distsql/request_builder_test.go, executor/builder.go, executor/checksum.go, executor/executor_test.go, kv/kv.go, parser/parser.y, parser/parser_test.go, plan/common_plans.go, plan/planbuilder.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, store/mockstore/mocktikv/checksum.go, store/mockstore/mocktikv/rpc.go"
+    ]
+  },
+  "analysis": "PR title: Add admin checksum table command\nPR url: https://github.com/pingcap/tidb/pull/6067\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: res.Sort().Check(testkit.Rows(\"test checksum_with_index 0 2 2\", \"test checksum_without_index 1 1 1\")) (executor/executor_test.go)\nChanged files (16): ast/misc.go, distsql/distsql.go, distsql/request_builder.go, distsql/request_builder_test.go, executor/builder.go, executor/checksum.go, executor/executor_test.go, kv/kv.go, parser/parser.y, parser/parser_test.go, plan/common_plans.go, plan/planbuilder.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, store/mockstore/mocktikv/checksum.go, store/mockstore/mocktikv/rpc.go\nPatch url: https://github.com/pingcap/tidb/pull/6067.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+}

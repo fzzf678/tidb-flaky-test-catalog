@@ -1,0 +1,46 @@
+{
+  "id": "pr-67377",
+  "source_pr": {
+    "number": 67377,
+    "url": "https://github.com/pingcap/tidb/pull/67377",
+    "title": "pkg/util/gctuner: stabilize memory tuner GC waits",
+    "body": "### What problem does this PR solve?\n\nIssue Number: close #67174\n\nProblem Summary:\n\n`TestGlobalMemoryTuner` is flaky because it waits on GC-driven tuner state transitions without deterministically driving the GC boundary that advances and resets those states.\n\n### What changed and how does it work?\n\n- wait for in-flight memory limit tuner work before teardown checks\n- trigger `runtime.GC()` while polling the GC-driven state in `TestGlobalMemoryTuner`\n- keep the existing assertions intact and limit the change to test stabilization\n\n### Check List\n\nTests <!-- At least one of them must be included. -->\n\n- [x] Unit test\n- [ ] Integration test\n- [ ] Manual test (add detailed scripts or steps below)\n- [ ] No need to test\n  > - [ ] I checked and no code files have been changed.\n  > <!-- Or your custom  \"No need to test\" reasons -->\n\nSide effects\n\n- [ ] Performance regression: Consumes more CPU\n- [ ] Performance regression: Consumes more Memory\n- [ ] Breaking backward compatibility\n\nDocumentation\n\n- [ ] Affects user behaviors\n- [ ] Contains syntax changes\n- [ ] Contains variable changes\n- [ ] Contains experimental features\n- [ ] Changes MySQL compatibility\n\n### Release note\n\n```release-note\nNone\n```\n\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n\n## Summary by CodeRabbit\n\n* **Tests**\n  * Enhanced memory limit tuner test reliability and stability through improved garbage collection handling and synchronization in test scenarios.\n\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->"
+  },
+  "pr_merged_at": "2026-03-28T12:17:55+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/util/gctuner/memory_limit_tuner_test.go",
+    "name": "TestGlobalMemoryTuner"
+  },
+  "symptoms": [
+    "`TestGlobalMemoryTuner` is flaky because it waits on GC-driven tuner state transitions without deterministically driving the GC boundary that advances and resets those states. | runtime.GC()"
+  ],
+  "failure_signature": "`TestGlobalMemoryTuner` is flaky because it waits on GC-driven tuner state transitions without deterministically driving the GC boundary that advances and resets those states. | runtime.GC()",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "`TestGlobalMemoryTuner` is flaky because it waits on GC-driven tuner state transitions without deterministically driving the GC boundary that advances and resets those states. | runtime.GC()",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/67377",
+    "https://github.com/pingcap/tidb/pull/67377.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/67377.patch",
+  "changed_files": [
+    "pkg/util/gctuner/memory_limit_tuner_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: `TestGlobalMemoryTuner` is flaky because it waits on GC-driven tuner state transitions without deterministically driving the GC boundary that advances and resets those states. | runtime.GC()",
+      "files: pkg/util/gctuner/memory_limit_tuner_test.go"
+    ]
+  },
+  "analysis": "PR title: pkg/util/gctuner: stabilize memory tuner GC waits\nPR url: https://github.com/pingcap/tidb/pull/67377\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: `TestGlobalMemoryTuner` is flaky because it waits on GC-driven tuner state transitions without deterministically driving the GC boundary that advances and resets those states. | runtime.GC()\nChanged files (1): pkg/util/gctuner/memory_limit_tuner_test.go\nDiff highlights (excerpt):\nFull patch analyzed; see patch_url."
+}

@@ -1,0 +1,56 @@
+{
+  "id": "pr-10688",
+  "source_pr": {
+    "number": 10688,
+    "url": "https://github.com/pingcap/tidb/pull/10688",
+    "title": "*: add a blacklist to disallow pushing down specific expressions",
+    "body": "<!--\r\nThank you for contributing to TiDB! Please read TiDB's [CONTRIBUTING](https://github.com/pingcap/tidb/blob/master/CONTRIBUTING.md) document **BEFORE** filing this PR.\r\n-->\r\n\r\n### What problem does this PR solve? <!--add issue link with summary if exists-->\r\nThis commit adds a switch to support manually control wether to push down expressions.\r\n\r\n### What is changed and how it works?\r\n1. Add a system table `mysql.expr_pushdown_blacklist`\r\n``` sql\r\ntidb> show create table mysql.expr_pushdown_blacklist;\r\n+-------------------------+----------------------------------------------------------------------------------------------------------------------------------+\r\n| Table                   | Create Table                                                                                                                     |\r\n+-------------------------+----------------------------------------------------------------------------------------------------------------------------------+\r\n| expr_pushdown_blacklist | CREATE TABLE `expr_pushdown_blacklist` (\r\n  `name` char(100) NOT NULL\r\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin |\r\n+-------------------------+----------------------------------------------------------------------------------------------------------------------------------+\r\n1 row in set (0.00 sec)\r\n```\r\n\r\n2.\r\n``` sql\r\ntidb> create table t(a int);\r\nQuery OK, 0 rows affected (0.00 sec)\r\n\r\ntidb> desc select * from t where a < 1;\r\n+---------------------+----------+------+------------------------------------------------------------+\r\n| id                  | count    | task | operator info                                              |\r\n+---------------------+----------+------+------------------------------------------------------------+\r\n| TableReader_7       | 3323.33  | root | data:Selection_6                                           |\r\n| └─Selection_6       | 3323.33  | cop  | lt(test.t.a, 1)                                            |\r\n|   └─TableScan_5     | 10000.00 | cop  | table:t, range:[-inf,+inf], keep order:false, stats:pseudo |\r\n+---------------------+----------+------+------------------------------------------------------------+\r\n3 rows in set (0.00 sec)\r\n\r\ntidb> insert into mysql.expr_pushdown_blacklist values(\"lt\");\r\nQuery OK, 1 row affected (0.00 sec)\r\n\r\ntidb> desc select * from t where a < 1;\r\n+---------------------+----------+------+------------------------------------------------------------+\r\n| id                  | count    | task | operator info                                              |\r\n+---------------------+----------+------+------------------------------------------------------------+\r\n| TableReader_7       | 3323.33  | root | data:Selection_6                                           |\r\n| └─Selection_6       | 3323.33  | cop  | lt(test.t.a, 1)                                            |\r\n|   └─TableScan_5     | 10000.00 | cop  | table:t, range:[-inf,+inf], keep order:false, stats:pseudo |\r\n+---------------------+----------+------+------------------------------------------------------------+\r\n3 rows in set (0.00 sec)\r\n\r\ntidb> admin reload expr_pushdown_blacklist;                                         Query OK, 0 rows affected (0.00 sec)\r\n\r\ntidb> desc select * from t where a < 1;\r\n+---------------------+----------+------+------------------------------------------------------------+\r\n| id                  | count    | task | operator info                                              |\r\n+---------------------+----------+------+------------------------------------------------------------+\r\n| Selection_5         | 8000.00  | root | lt(test.t.a, 1)                                            |\r\n| └─TableReader_7     | 10000.00 | root | data:TableScan_6                                           |\r\n|   └─TableScan_6     | 10000.00 | cop  | table:t, range:[-inf,+inf], keep order:false, stats:pseudo |\r\n+---------------------+----------+------+------------------------------------------------------------+\r\n3 rows in set (0.00 sec)\r\n```\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n - Integration test\r\n - Manual test \r\n\tAs the above mentioned.\r\n\r\n\r\nCode changes\r\n\r\n - Has exported function/method change\r\n - Has exported variable/fields change\r\n\r\nSide effects\r\n\r\nN/A\r\n\r\nRelated changes\r\n\r\n - Need to cherry-pick to the release branch\r\n - Need to update the documentation\r\n\r\n"
+  },
+  "pr_merged_at": "2019-06-12T13:54:34+08:00",
+  "test": {
+    "type": "unit",
+    "path": "executor/analyze_test.go",
+    "name": "analyze_test"
+  },
+  "symptoms": [
+    "+gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA="
+  ],
+  "failure_signature": "+gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "*: add a blacklist to disallow pushing down specific expressions",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/10688",
+    "https://github.com/pingcap/tidb/pull/10688.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/10688.patch",
+  "changed_files": [
+    "executor/analyze_test.go",
+    "executor/builder.go",
+    "executor/reload_expr_pushdown_blacklist.go",
+    "executor/reload_expr_pushdown_blacklist_test.go",
+    "expression/expr_to_pb.go",
+    "expression/integration_test.go",
+    "go.mod",
+    "go.sum",
+    "planner/core/common_plans.go",
+    "planner/core/planbuilder.go",
+    "session/bootstrap.go",
+    "session/session.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "explicit_flaky_signal"
+    ],
+    "evidence": [
+      "evidence: +gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=",
+      "files: executor/analyze_test.go, executor/builder.go, executor/reload_expr_pushdown_blacklist.go, executor/reload_expr_pushdown_blacklist_test.go, expression/expr_to_pb.go, expression/integration_test.go, go.mod, go.sum, planner/core/common_plans.go, planner/core/planbuilder.go, session/bootstrap.go, session/session.go"
+    ]
+  },
+  "analysis": "PR title: *: add a blacklist to disallow pushing down specific expressions\nPR url: https://github.com/pingcap/tidb/pull/10688\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: +gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=\nChanged files (12): executor/analyze_test.go, executor/builder.go, executor/reload_expr_pushdown_blacklist.go, executor/reload_expr_pushdown_blacklist_test.go, expression/expr_to_pb.go, expression/integration_test.go, go.mod, go.sum, planner/core/common_plans.go, planner/core/planbuilder.go, session/bootstrap.go, session/session.go\nPatch url: https://github.com/pingcap/tidb/pull/10688.patch\nPicked test: type=unit path=executor/analyze_test.go name=analyze_test"
+}

@@ -1,0 +1,46 @@
+{
+  "id": "pr-25384",
+  "source_pr": {
+    "number": 25384,
+    "url": "https://github.com/pingcap/tidb/pull/25384",
+    "title": "ddl: fixed update data report an error when converting from CHAR to DATETIME after adding columns",
+    "body": "<!-- Thank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n\r\nIssue Number: close #25383 <!-- REMOVE this line if no issue to close -->\r\n\r\nProblem Summary:\r\nFixed update data report an error when converting from CHAR to DATETIME after adding columns due to default values.\r\n\r\n\r\n```\r\ncreate table t(a VARCHAR(31) NULL DEFAULT 'wwrzfwzb01j6ddj', b DECIMAL(12,0) NULL DEFAULT '-729850476163')\r\nALTER TABLE t ADD COLUMN x CHAR(218) NULL DEFAULT 'lkittuae' AFTER a\r\n```\r\n\r\n|  conn1                                                     | conn2   |\r\n-----------------------------------------------------------|-----------\r\n| `alter table t modify column x DATETIME NULL DEFAULT '3771-02-28 13:00:11';` ||\r\n| |(Write Only/Write reorg) UPDATE t SET a = '18apf' WHERE x = '' AND a = 'mul';|\r\n\r\n\r\n\r\nUpdate statement return the error of `[table:8038]Field '_Col$_x_0' get default value fail`.\r\n### What is changed and how it works?\r\n\r\nWhat's Changed\r\nCast the original default value of `oldCol` before setting it to changing column.\r\n\r\n### Check List <!--REMOVE the items that are not applicable-->\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- Unit test\r\n\r\n\r\nSide effects\r\n\r\n\r\n### Release note <!-- bugfixes or new feature need a release note -->\r\n\r\n- Fixed update data report an error when converting from CHAR to DATETIME after adding columns due to default values.\r\n\r\n"
+  },
+  "pr_merged_at": "2021-06-15T13:36:37+08:00",
+  "test": {
+    "type": "unit",
+    "path": "ddl/column_type_change_test.go",
+    "name": "column_type_change_test"
+  },
+  "symptoms": [
+    "tk.MustQuery(\"select * from t order by a\").Check(testkit.Rows()) (ddl/column_type_change_test.go)"
+  ],
+  "failure_signature": "tk.MustQuery(\"select * from t order by a\").Check(testkit.Rows()) (ddl/column_type_change_test.go)",
+  "root_cause_categories": [
+    "unclassified"
+  ],
+  "review_smells": [
+    "unclassified"
+  ],
+  "fix_pattern": "tk.MustQuery(\"select * from t order by a\").Check(testkit.Rows()) (ddl/column_type_change_test.go)",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/25384",
+    "https://github.com/pingcap/tidb/pull/25384.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/25384.patch",
+  "changed_files": [
+    "ddl/column.go",
+    "ddl/column_type_change_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: tk.MustQuery(\"select * from t order by a\").Check(testkit.Rows()) (ddl/column_type_change_test.go)",
+      "files: ddl/column.go, ddl/column_type_change_test.go"
+    ]
+  },
+  "analysis": "PR title: ddl: fixed update data report an error when converting from CHAR to DATETIME after adding columns\nPR url: https://github.com/pingcap/tidb/pull/25384\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t order by a\").Check(testkit.Rows()) (ddl/column_type_change_test.go)\nChanged files (2): ddl/column.go, ddl/column_type_change_test.go\nPatch series analyzed; see patch_url."
+}
