@@ -17,11 +17,10 @@
   ],
   "failure_signature": "`TestRegionJobBaseWorker/if_the_region_has_no_leader,_rescan_the_region` is flaky in nextgen CI. In test helper `prepareAndExecute`, `jobInCh <- job` happened before `jobWg.Add(1)`, so worker-side `Done` could race ahead and trigger `sync: negative WaitGroup counter`. | * Improved job worker test to tighten synchronization around enqueue timing, reducing flakiness for timing-sensitive scenarios and ensuring more reliable verification of job enqueueing and processing behavior. | time.Sleep(50 * time.Millisecond)",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "async_timing_issue"
+    "unclassified"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "unclassified"
   ],
   "fix_pattern": "Move `jobWg.Add(1)` before `jobInCh <- job` in the test helper to prevent `sync: negative WaitGroup counter` (waitgroup race) and stabilize `TestRegionJobBaseWorker`.",
   "evidence_links": [
