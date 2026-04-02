@@ -13,18 +13,18 @@
     "name": "selectivity_test"
   },
   "symptoms": [
-    "- // Result should be approx 3.4, but due to floating point - result can be flaky"
+    "TestRiskEqSkewRatio: floating-point row-count estimate assertions were brittle and could be flaky (pkg/planner/cardinality/selectivity_test.go)"
   ],
-  "failure_signature": "- // Result should be approx 3.4, but due to floating point - result can be flaky",
+  "failure_signature": "TestRiskEqSkewRatio: floating-point row-count estimate assertions were brittle and could be flaky (pkg/planner/cardinality/selectivity_test.go)",
   "root_cause_categories": [
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "plan_cache_dependency"
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: - // Result should be approx 3.4, but due to floating point - result can be flaky.",
+  "root_cause_explanation": "The test was flaky because it asserted specific floating-point row-count estimates, and small floating-point variations could make strict thresholds fail. This PR stabilizes it by removing exact float expectations and instead checking the monotonic relationship between counts under different risk ratios.",
   "module": "planner",
-  "fix_pattern": "- // Result should be approx 3.4, but due to floating point - result can be flaky",
+  "fix_pattern": "Avoid exact floating-point expectations in TestRiskEqSkewRatio; compare counts monotonically under different risk ratios (session/global) and reset variables to default.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62123",
     "https://github.com/pingcap/tidb/pull/62123.patch"

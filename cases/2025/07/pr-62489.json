@@ -10,7 +10,7 @@
   "test": {
     "type": "unit",
     "path": "pkg/disttask/framework/integrationtests/resource_control_test.go",
-    "name": "TestResourceControl/scale"
+    "name": "TestResourceControl/scale-in"
   },
   "symptoms": [
     "dxf: fix flaky test TestResourceControl/scale-in"
@@ -22,9 +22,9 @@
   "review_smells": [
     "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). Fixed waits without polling/backoff are brittle under CI timing jitter. This PR stabilizes it by: after we continue all running subtasks, they finish, and scheduler will try to schedule left subtasks immediately, so the active running subtask count might be in range `[0, 4]`, `c.waitTotalSubtaskCount(0)` night not ho….",
+  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous subtask scheduling: after continuing all running subtasks, the scheduler may immediately schedule remaining subtasks, so the active subtask count can fluctuate and `c.waitTotalSubtaskCount(0)` is not a reliable sync point. The PR stabilizes the test by waiting per task for no unexpected new subtasks (`waitNewSubtasksNotIn(...)`) instead of waiting for the total subtask count to reach 0.",
   "module": "domain",
-  "fix_pattern": "after we continue all running subtasks, they finish, and scheduler will try to schedule left subtasks immediately, so the active running subtask count might be in range `[0, 4]`, `c.waitTotalSubtaskCount(0)` night not hold, so change to another way to check",
+  "fix_pattern": "Replace brittle `c.waitTotalSubtaskCount(0)` with a per-task loop `c.waitNewSubtasksNotIn(taskID, allSubtasks[taskID], 1)` so the test waits for subtasks to settle even if the scheduler schedules more work immediately.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62489",
     "https://github.com/pingcap/tidb/pull/62489.patch"

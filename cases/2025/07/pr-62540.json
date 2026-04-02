@@ -9,8 +9,8 @@
   "pr_merged_at": "2025-07-23T13:07:18+08:00",
   "test": {
     "type": "unit",
-    "path": "br/pkg/restore/log_client/client_test.go",
-    "name": "client_test"
+    "path": "pkg/session/bootstrap_test.go",
+    "name": "bootstrap_test"
   },
   "symptoms": [
     "slices.Sort(reservedIDs) (pkg/session/bootstrap_test.go)"
@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: refactor DDL part of bootstrap, to use a structured way to store all the system tables add reserved ID for all the physical system tables and system schema, we will use them later for nextgen, as we want to fix the ID of….",
-  "module": "ddl",
-  "fix_pattern": "refactor DDL part of bootstrap, to use a structured way to store all the system tables add reserved ID for all the physical system tables and system schema, we will use them later for nextgen, as we want to fix the ID of system tables also add lint for above part",
+  "root_cause_explanation": "The test was flaky because it assumed a stable ordering when validating reserved/system IDs. The collected IDs could be in nondeterministic order, making ordering-based assertions unstable. This PR stabilizes it by sorting the reserved ID list before checking it is increasing and within the reserved range.",
+  "module": "session",
+  "fix_pattern": "Collect reserved/system IDs, sort them (slices.Sort), then assert the list is increasing and within the reserved ID bounds.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62540",
     "https://github.com/pingcap/tidb/pull/62540.patch"

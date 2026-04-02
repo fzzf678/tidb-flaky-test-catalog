@@ -9,23 +9,22 @@
   "pr_merged_at": "2025-07-07T10:39:57+08:00",
   "test": {
     "type": "integration",
-    "path": "pkg/executor/prepared_test.go",
-    "name": "prepared_test"
+    "path": "tests/integrationtest/r/planner/core/indexjoin.result",
+    "name": "indexjoin"
   },
   "symptoms": [
     "├─StreamAgg_72(Build) 6400.00 root group by:Column#26, funcs:group_concat(Column#24 order by Column#25 separator \",\")->Column#18, funcs:firstrow(Column#26)->planner__core__indexjoin.t5602f14e.col_55 (tests/integrationtest/r/planner/core/indexjoin.result)"
   ],
   "failure_signature": "├─StreamAgg_72(Build) 6400.00 root group by:Column#26, funcs:group_concat(Column#24 order by Column#25 separator \",\")->Column#18, funcs:firstrow(Column#26)->planner__core__indexjoin.t5602f14e.col_55 (tests/integrationtest/r/planner/core/indexjoin.result)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: ├─StreamAgg_72(Build) 6400.00 root group by:Column#26, funcs:group_concat(Column#24 order by Column#25 separator \",\")->Column#18, funcs:firstrow(Column#26)->planner__core__indexjoin.t5602f14e.col_55 (tests/integrationtes….",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
   "module": "planner",
-  "fix_pattern": "├─StreamAgg_72(Build) 6400.00 root group by:Column#26, funcs:group_concat(Column#24 order by Column#25 separator \",\")->Column#18, funcs:firstrow(Column#26)->planner__core__indexjoin.t5602f14e.col_55 (tests/integrationtest/r/planner/core/indexjoin.result)",
+  "fix_pattern": "Lift can-push-to-cop checks for logical join/window/selection and update affected planner/executor golden outputs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62206",
     "https://github.com/pingcap/tidb/pull/62206.patch"

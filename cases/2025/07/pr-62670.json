@@ -13,18 +13,19 @@
     "name": "TestTiFlashLateMaterialization"
   },
   "symptoms": [
-    "planner: try fix flaky test TestTiFlashLateMaterialization"
+    "Casetest `TestTiFlashLateMaterialization` (plan_normalized_suite) had unstable EXPLAIN output for TiFlash late materialization around predicates like `a > 2`."
   ],
-  "failure_signature": "planner: try fix flaky test TestTiFlashLateMaterialization",
+  "failure_signature": "TestTiFlashLateMaterialization: golden EXPLAIN mismatch / unstable plan output (TiFlash late materialization).",
   "root_cause_categories": [
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "assert_exact_plan_or_cost",
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: try fix flaky test TestTiFlashLateMaterialization.",
+  "root_cause_explanation": "The casetest asserts an exact EXPLAIN output. With the original predicates (e.g. `a > 2`), the optimizer could choose a different TiFlash late materialization plan in some runs, causing golden output mismatches. The PR makes the cases less boundary-sensitive by changing those predicates to `a > 3`, stabilizing the chosen plan/output.",
   "module": "planner",
-  "fix_pattern": "planner: try fix flaky test TestTiFlashLateMaterialization",
+  "fix_pattern": "Adjust casetest SQL predicates (e.g. `a > 2` → `a > 3`) in plan_normalized_suite to stabilize TiFlash late materialization EXPLAIN output.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/62670",
     "https://github.com/pingcap/tidb/pull/62670.patch"
