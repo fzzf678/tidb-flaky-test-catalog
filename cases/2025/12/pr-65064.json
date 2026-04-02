@@ -20,7 +20,7 @@
     "shared_state_pollution"
   ],
   "review_smells": [
-    "hardcoded_port_or_resource",
+    "global_variable_mutation",
     "insufficient_cleanup_between_tests"
   ],
   "root_cause_explanation": "The flakiness came from shared filesystem state: several spill tests used the same global temp-storage path and walked that directory to assert “no leaked files”. When tests run in parallel, they can observe each other’s temporary files (or race with cleanup), causing intermittent failures. This PR fixes it by isolating `TempStoragePath` per test using `t.TempDir()` (with proper restore) and by making the leak-check walk the per-test directory instead of a shared global path.",
