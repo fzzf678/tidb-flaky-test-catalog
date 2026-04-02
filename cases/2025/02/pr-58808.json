@@ -17,16 +17,14 @@
   ],
   "failure_signature": "slices.SortFunc(tblInfos1, func(i, j *model.TableInfo) int { (pkg/ddl/db_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: slices.SortFunc(tblInfos1, func(i, j *model.TableInfo) int { (pkg/ddl/db_test.go).",
+  "root_cause_explanation": "The test was flaky because it compared lists of table infos returned from different meta APIs without a guaranteed iteration order. The underlying iteration can return table infos in different orders, causing nondeterministic slice comparisons. The fix sorts the collected TableInfo slices before comparing them so the test is deterministic.",
   "module": "ddl",
-  "fix_pattern": "slices.SortFunc(tblInfos1, func(i, j *model.TableInfo) int { (pkg/ddl/db_test.go)",
+  "fix_pattern": "Sort the collected TableInfo slices (e.g., by ID) before comparison to avoid relying on nondeterministic iteration order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58808",
     "https://github.com/pingcap/tidb/pull/58808.patch"

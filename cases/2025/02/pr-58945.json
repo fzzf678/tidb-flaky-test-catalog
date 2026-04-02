@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: The old data struct is not fit for a lot of users, it use copy-on-write and, when there are 2M users, the cost of copy 2M item for every change is not acceptable.",
+  "root_cause_explanation": "The test was flaky because it depended on an implicit ordering of user privilege records. After refactoring the in-memory privilege cache structure, the iteration/return order of records is not guaranteed to match the previous behavior. The fix sorts the returned UserRecord slice using a stable comparator before assertions/comparisons.",
   "module": "security",
-  "fix_pattern": "The old data struct is not fit for a lot of users, it use copy-on-write and, when there are 2M users, the cost of copy 2M item for every change is not acceptable.",
+  "fix_pattern": "Sort the returned privilege/user record slices (stable comparator) before comparing in tests to avoid nondeterministic iteration order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58945",
     "https://github.com/pingcap/tidb/pull/58945.patch"

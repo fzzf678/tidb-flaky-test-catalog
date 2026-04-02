@@ -17,16 +17,14 @@
   ],
   "failure_signature": "{\" └─Window_22\", \"mpp[tiflash]\", \"sum(cast(test.t.v, decimal(10,0) BINARY))->Column#10, count(test.t.v)->Column#11, avg(cast(test.t.v, decimal(10,0) BINARY))->Column#12, min(test.t.v)->Column#13, max(test.t.v)->Column#14 over(partition by test.t.p order by test.t.o range between unbounded preceding and current row), stream_count: 8\"}, (pkg/planner/core/in...",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "relying_on_map_iteration_order",
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Map/dict iteration order is not stable across runs. This PR stabilizes it by: {\" └─Window_22\", \"mpp[tiflash]\", \"sum(cast(test.t.v, decimal(10,0) BINARY))->Column#10, count(test.t.v)->Column#11, avg(cast(test.t.v, decimal(10,0) BINARY))->Column#12, min(test.t.v)->Column#13, max(test.t.v)->Column#14….",
+  "root_cause_explanation": "This PR adds support for pushing down window aggregation functions to TiFlash and updates/adds related tests. The case does not include concrete evidence of intermittent/flaky failures or a stabilization-only change, so it is marked as insufficient_evidence for flakiness root-cause purposes.",
   "module": "expression",
-  "fix_pattern": "{\" └─Window_22\", \"mpp[tiflash]\", \"sum(cast(test.t.v, decimal(10,0) BINARY))->Column#10, count(test.t.v)->Column#11, avg(cast(test.t.v, decimal(10,0) BINARY))->Column#12, min(test.t.v)->Column#13, max(test.t.v)->Column#14 over(partition by test.t.p order by test.t.o range between unbounded preceding and current row), stream_count: 8\"}, (pkg/planner/core/in...",
+  "fix_pattern": "Enable aggregation window functions pushdown to TiFlash and update related test expectations.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/59510",
     "https://github.com/pingcap/tidb/pull/59510.patch"
