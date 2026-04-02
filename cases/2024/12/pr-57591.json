@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: br: fix flaky test `TestConcurrentLock`.",
+  "root_cause_explanation": "The test was flaky because two concurrent lock attempts could race without deterministic synchronization: depending on goroutine scheduling and filesystem visibility, the test could observe intermediate states and fail intermittently. The fix strengthens synchronization (coordinated failpoint pausing/unpausing so both goroutines reach the same phase) and improves local storage visibility (syncing the base directory after writes), making the concurrent lock test stable.",
   "module": "br",
-  "fix_pattern": "br: fix flaky test `TestConcurrentLock`",
+  "fix_pattern": "Strengthen synchronization in TestConcurrentLock (coordinate concurrent goroutines via failpoint callbacks) and ensure local storage writes are immediately observable (fsync the base directory) to eliminate racey test behavior.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/57591",
     "https://github.com/pingcap/tidb/pull/57591.patch"

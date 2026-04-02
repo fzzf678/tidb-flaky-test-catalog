@@ -16,19 +16,19 @@
     "explain analyze select * from t order by id; (tests/integrationtest/r/executor/issues.result)"
   ],
   "failure_signature": "explain analyze select * from t order by id; (tests/integrationtest/r/executor/issues.result)",
-  "root_cause_categories": [
-    "nondeterministic_result_order"
-  ],
-  "review_smells": [
-    "missing_order_by"
-  ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/58464",
-    "https://github.com/pingcap/tidb/pull/58464.patch"
-  ],
+    "root_cause_categories": [
+        "test_infra_migration"
+    ],
+    "review_smells": [
+        "test_suite_setup_issue"
+    ],
+    "root_cause_explanation": "The integration tests were unstable because the mysql-tester parser/test runner changed and existing test scripts used syntax it no longer accepts (e.g., missing semicolons and inline `#` comments). This PR updates mysql-tester and normalizes the integration test SQL/scripts (add `;`, remove inline comments) so tests parse and run deterministically.",
+    "module": "test_infra",
+    "fix_pattern": "Update mysql-tester and normalize integration test SQL/script syntax (add semicolons; remove inline `#` comments) for compatibility and stable execution.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/58464",
+        "https://github.com/pingcap/tidb/pull/58464.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/58464.patch",
   "changed_files": [
     "tests/integrationtest/r/ddl/db_change.result",

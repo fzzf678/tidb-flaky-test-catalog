@@ -17,14 +17,14 @@
   ],
   "failure_signature": "statistics: fix flaky test TestSyncLoadOnObjectWhichCanNotFoundInStorage",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: statistics: fix flaky test TestSyncLoadOnObjectWhichCanNotFoundInStorage.",
+  "root_cause_explanation": "The test was flaky because sync-load runs in the background: immediately checking stats state after triggering a query could race with the async load completion, leading to intermittent failures. The fix adds an Eventually-style checkpoint to wait until the expected stats are loaded before asserting.",
   "module": "statistics",
-  "fix_pattern": "statistics: fix flaky test TestSyncLoadOnObjectWhichCanNotFoundInStorage",
+  "fix_pattern": "Use `require.Eventually(...)` to wait for async stats sync-load completion before asserting loaded column count/status.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58164",
     "https://github.com/pingcap/tidb/pull/58164.patch"

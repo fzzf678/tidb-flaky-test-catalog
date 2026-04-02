@@ -23,9 +23,9 @@
     "statistics_sensitive_test",
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: planner: add test about memo derive stats.",
+  "root_cause_explanation": "The test was flaky because the statistics-related EXPLAIN output could differ depending on the RPC encoding mode (chunk RPC on/off), making the recorded golden output unstable across environments. The fix explicitly enables chunk RPC (`tidb_enable_chunk_rpc=on`) before running the memo/stats derivation checks so the EXPLAIN/stats output is consistent.",
   "module": "planner",
-  "fix_pattern": "planner: add test about memo derive stats.",
+  "fix_pattern": "Stabilize memo/stats golden output by explicitly setting `tidb_enable_chunk_rpc=on` so EXPLAIN/statistics formatting does not vary by default RPC encoding.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58207",
     "https://github.com/pingcap/tidb/pull/58207.patch"

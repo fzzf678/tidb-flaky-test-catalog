@@ -17,14 +17,14 @@
   ],
   "failure_signature": "\" from mysql.tidb_ttl_task order by scan_id\"). (pkg/ttl/ttlworker/task_manager_integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky due to timing-sensitive background behavior in TTL task scheduling: when workers were stopped/shrunk, scan/delete progress and task state updates could race, leaving tasks in inconsistent states that might or might not be picked up by other instances depending on timing. The fix strengthens the worker-stop and reschedule logic (wait for deletions, mark tasks back to waiting, and handle worker-stop reasons) so state transitions are consistent and the test is stable.",
   "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Make TTL worker shrink/reschedule deterministic by waiting for worker stop and deletions to complete, marking tasks back to `waiting` on worker stop, and merging/recovering task stats consistently during heartbeats.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/57703",
     "https://github.com/pingcap/tidb/pull/57703.patch"
