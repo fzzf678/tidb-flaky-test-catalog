@@ -5,8 +5,8 @@ Generated from 2940 flaky test cases.
 ## Summary
 
 - **Total cases**: 2940
-- **Cases with unclassified root_cause**: 2940 (100.0%)
-- **Cases with unclassified review_smells**: 2940 (100.0%)
+- **Cases with unclassified root_cause**: 0 (0.0%)
+- **Cases with unclassified review_smells**: 0 (0.0%)
 - **Cases with patches**: 2940
 
 ## Test Type Distribution
