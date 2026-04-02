@@ -17,16 +17,14 @@
   ],
   "failure_signature": "jobs, err := getJobsBySQL(tk.Session(), \"tidb_ddl_history\", \"order by job_id desc limit 1\") (pkg/ddl/index_modify_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: jobs, err := getJobsBySQL(tk.Session(), \"tidb_ddl_history\", \"order by job_id desc limit 1\") (pkg/ddl/index_modify_test.go).",
-  "module": "module_unknown",
-  "fix_pattern": "jobs, err := getJobsBySQL(tk.Session(), \"tidb_ddl_history\", \"order by job_id desc limit 1\") (pkg/ddl/index_modify_test.go)",
+  "root_cause_explanation": "This PR primarily adds support/tests for columnar inverted index. The case does not contain a clear flaky failure signature or a deterministic stabilization change tied to flakiness, so we mark it as insufficient_evidence for now.",
+  "module": "ddl",
+  "fix_pattern": "No clear flaky-specific fix in the diff; needs re-triage with CI failure logs or an issue link that explains the flaky behavior.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/59571",
     "https://github.com/pingcap/tidb/pull/59571.patch"

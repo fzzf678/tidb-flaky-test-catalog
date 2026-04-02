@@ -17,15 +17,14 @@
   ],
   "failure_signature": "+ // Should not test reorg DDL because the result can be unstable.",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: This PR returns `dbterror.ErrWaitReorgTimeout` periodically to let the routine of `runJobOneStep` update job's row count.",
+  "root_cause_explanation": "The test was flaky because it asserted exact counters/behavior while running a reorg DDL (e.g., ADD INDEX). Reorg jobs are timing-dependent and can take different numbers of steps/polls across runs, making the assertions unstable. The fix avoids using reorg DDL in this counter-based test so the result is deterministic.",
   "module": "ddl",
-  "fix_pattern": "This PR returns `dbterror.ErrWaitReorgTimeout` periodically to let the routine of `runJobOneStep` update job's row count. It also manages `stepCtx` carefully to avoid premature cancelling.",
+  "fix_pattern": "Avoid reorg DDL in tests that assert step/poll counters; use non-reorg DDL operations so the outcome is stable across runs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60828",
     "https://github.com/pingcap/tidb/pull/60828.patch"

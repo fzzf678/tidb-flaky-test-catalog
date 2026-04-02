@@ -17,15 +17,14 @@
   ],
   "failure_signature": "EXPLAIN format='brief' SELECT GROUP_CONCAT(tcd8c2aac.col_21 ORDER BY tcd8c2aac.col_21 SEPARATOR ',') AS r0 (pkg/planner/core/tests/null/null_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: EXPLAIN format='brief' SELECT GROUP_CONCAT(tcd8c2aac.col_21 ORDER BY tcd8c2aac.col_21 SEPARATOR ',') AS r0 (pkg/planner/core/tests/null/null_test.go).",
+  "root_cause_explanation": "The test was flaky because it asserted EXPLAIN output that included plan IDs/plan node suffixes, which are not stable across runs. The fix switches assertions to use EXPLAIN format='brief' so plan IDs are omitted and the expected output is deterministic.",
   "module": "planner",
-  "fix_pattern": "EXPLAIN format='brief' SELECT GROUP_CONCAT(tcd8c2aac.col_21 ORDER BY tcd8c2aac.col_21 SEPARATOR ',') AS r0 (pkg/planner/core/tests/null/null_test.go)",
+  "fix_pattern": "Use EXPLAIN format='brief' in tests that compare plan strings so plan IDs are ignored and golden output is stable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60943",
     "https://github.com/pingcap/tidb/pull/60943.patch"

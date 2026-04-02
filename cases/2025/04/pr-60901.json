@@ -17,14 +17,14 @@
   ],
   "failure_signature": "fix unstable tests",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: fix unstable tests.",
+  "root_cause_explanation": "The test was flaky due to background TTL scheduling interfering with the test environment. TTLJobManager runs async jobs and can introduce nondeterministic state/side effects during tests. The fix stabilizes the tests by stopping TTLJobManager and waiting until it is fully stopped before running assertions.",
   "module": "domain",
-  "fix_pattern": "fix unstable tests",
+  "fix_pattern": "Stop TTLJobManager in tests and wait for it to fully stop to avoid background job scheduling interfering with test behavior.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60901",
     "https://github.com/pingcap/tidb/pull/60901.patch"

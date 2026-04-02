@@ -17,14 +17,14 @@
   ],
   "failure_signature": "before the bugfix, it is a flaky test in the check2, but now i cannot see it again.",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: Adding an early return when no histograms are provided in MergePartitionHist2GlobalHist.",
+  "root_cause_explanation": "This was reported as a flaky/panic failure in CI, but the case lacks a concrete failure signature and CI links. The patch adds guards for empty/nil histogram inputs in MergePartitionHist2GlobalHist/global stats merge, but we keep this as insufficient_evidence until the intermittent trigger is better documented.",
   "module": "statistics",
-  "fix_pattern": "Adding an early return when no histograms are provided in MergePartitionHist2GlobalHist.",
+  "fix_pattern": "Add empty/nil guards (and a regression test) to avoid panics when merging partition histograms to global stats with empty inputs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56676",
     "https://github.com/pingcap/tidb/pull/56676.patch"

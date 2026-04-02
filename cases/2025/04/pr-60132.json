@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sort.Slice(globalIndexes, func(i, j int) bool { return globalIndexes[i] < globalIndexes[j] }) (pkg/ddl/tests/partition/multi_domain_test.go)",
   "root_cause_categories": [
-    "schema_change_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Original issue was #53385.",
+  "root_cause_explanation": "The test was flaky because it implicitly assumed the collected index IDs were in sorted order when checking index entry ranges. The order of collected IDs is not guaranteed, so the range-check loop could behave inconsistently. The fix sorts the index ID slices (global and non-global) before validating entry ranges.",
   "module": "ddl",
-  "fix_pattern": "Original issue was #53385. After trying both \"Always generate a new _tidb_rowid\", (#53770, leading to #57510) and \"using AddRecord\", to generate new _tidb_rowid's (#57114, leading to #59680) and having the indexes up-to-date (for the currently used set of partition), there will always be issues between the original set of partitions and the reorganized set of partitions, due to not being in sync / having the same _tidb_rowid.",
+  "fix_pattern": "Sort the collected index ID lists before iterating/checking ranges, avoiding reliance on nondeterministic iteration order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60132",
     "https://github.com/pingcap/tidb/pull/60132.patch"

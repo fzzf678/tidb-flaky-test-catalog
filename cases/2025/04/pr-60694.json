@@ -17,15 +17,14 @@
   ],
   "failure_signature": "(select a, b, c, (row_number() over (partition by b order by e asc)) from t4) tmp4 on tmp4.b = t2.c and tmp4.c = t3.c (tests/integrationtest/r/planner/core/issuetest/planner_issue.result)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Add back what's been removed in #51057 in `(*LogicalJoin).ExtractUsedCols()`.",
+  "root_cause_explanation": "This change fixes a planner column-pruning/schema maintenance issue and adds a regression test, but the case data does not include a concrete flaky failure signature or CI evidence showing intermittent behavior. Marked as insufficient_evidence for now.",
   "module": "planner",
-  "fix_pattern": "Add back what's been removed in #51057 in `(*LogicalJoin).ExtractUsedCols()`.",
+  "fix_pattern": "Fix planner used-column extraction logic for LogicalJoin and add a regression test; needs CI evidence to confirm flaky behavior.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60694",
     "https://github.com/pingcap/tidb/pull/60694.patch"

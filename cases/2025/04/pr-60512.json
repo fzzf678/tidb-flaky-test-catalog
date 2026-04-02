@@ -22,9 +22,9 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Add testcases for recent optimizer cost factors.",
+  "root_cause_explanation": "The test was flaky because it compared EXPLAIN ANALYZE plan cost values as strings (lexicographically) instead of numeric values. Since cost numbers can vary in formatting/magnitude, lexicographic comparison can intermittently pass/fail. The fix parses the cost field into float values before doing comparisons.",
   "module": "planner",
-  "fix_pattern": "Add testcases for recent optimizer cost factors.",
+  "fix_pattern": "Parse plan cost strings into numeric floats before comparing, avoiding lexicographic ordering on numeric strings.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/60512",
     "https://github.com/pingcap/tidb/pull/60512.patch"
