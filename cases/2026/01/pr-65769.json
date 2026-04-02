@@ -9,22 +9,22 @@
   "pr_merged_at": "2026-01-30T19:49:32+08:00",
   "test": {
     "type": "unit",
-    "path": "pkg/bindinfo/binding_operator.go",
+    "path": "pkg/bindinfo/tests/bind_test.go",
     "name": "TestBatchDropBindings"
   },
   "symptoms": [
-    "pkg/bindinfo: fix flaky TestBatchDropBindings"
+    "`TestBatchDropBindings` could miss binding updates when multiple updates share the same microsecond timestamp and `update_time < updateTs` becomes false due to equality."
   ],
-  "failure_signature": "pkg/bindinfo: fix flaky TestBatchDropBindings",
+  "failure_signature": "TestBatchDropBindings: intermittent missing binding updates when update_time equals updateTs (microsecond resolution edge case)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "pkg/bindinfo: fix flaky TestBatchDropBindings",
+  "root_cause_explanation": "The drop-binding operation computed `update_time` via time.Now() per digest. When multiple digests were processed within the same microsecond, `update_time` could equal `updateTs`, making the `update_time < updateTs` condition false and causing updates to be skipped. The fix ensures update_time is strictly increasing within a batch by using a base time and adding per-item microsecond offsets.",
+  "module": "planner",
+  "fix_pattern": "Ensure update_time is strictly increasing within a batch (avoid equal timestamps) so `update_time < updateTs` comparisons cannot miss updates.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65769",
     "https://github.com/pingcap/tidb/pull/65769.patch"
@@ -39,9 +39,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: pkg/bindinfo: fix flaky TestBatchDropBindings",
+      "evidence: PR body/patch describe microsecond timestamp equality causing missed updates; patch ensures strictly increasing update_time within the batch",
       "files: pkg/bindinfo/binding_operator.go"
     ]
   },
-  "analysis": "PR title: pkg/bindinfo: fix flaky TestBatchDropBindings\nPR url: https://github.com/pingcap/tidb/pull/65769\nTriage summary: pkg/bindinfo: fix flaky TestBatchDropBindings\nChanged files (1): pkg/bindinfo/binding_operator.go\nFull patch analyzed; see patch_url."
+  "analysis": "PR title: pkg/bindinfo: fix flaky TestBatchDropBindings\nPR url: https://github.com/pingcap/tidb/pull/65769\nTriage summary: Avoid microsecond timestamp equality so binding update_time comparisons cannot skip updates\nChanged files (1): pkg/bindinfo/binding_operator.go\nFull patch analyzed; see patch_url."
 }

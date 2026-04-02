@@ -13,19 +13,19 @@
     "name": "TestInstancePlanCache"
   },
   "symptoms": [
-    "planner: fix flaky tests in instanceplancache package"
+    "Instance plan cache tests were flaky for two reasons: (1) randomized schemas could produce indexes exceeding the key-length limit (\"key too long\"), and (2) concurrently distributed DML statements could naturally deadlock."
   ],
-  "failure_signature": "planner: fix flaky tests in instanceplancache package",
+  "failure_signature": "TestInstancePlanCache: intermittent \"key too long\" errors and/or deadlocks in concurrent DML workers",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost",
-    "plan_cache_dependency"
+    "plan_cache_dependency",
+    "race_condition_in_async_code"
   ],
   "root_cause_explanation": "Instance plan cache tests were flaky because randomized schemas could exceed index key-length limits (key too long), and concurrent DML workers could naturally deadlock. This PR bounds varchar length and treats deadlock errors as expected concurrency outcomes (skips those statements), keeping the test focused on plan-cache correctness.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Constrain randomness (e.g., bound VARCHAR length) and handle expected deadlocks in concurrent workloads (skip/retry) so tests focus on plan-cache behavior rather than incidental conflicts.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65619",
     "https://github.com/pingcap/tidb/pull/65619.patch"

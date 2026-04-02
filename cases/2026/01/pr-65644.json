@@ -13,18 +13,18 @@
     "name": "TestInitStorage"
   },
   "symptoms": [
-    "store: fix flaky test TestInitStorage"
+    "`TestInitStorage` was flaky because it mutates global config (`config.GetGlobalConfig().Path`) but the backup/restore scope was inconsistent, so other tests or branches could observe an unexpected Path value."
   ],
-  "failure_signature": "store: fix flaky test TestInitStorage",
+  "failure_signature": "TestInitStorage: intermittent failures due to leaked global config.Path across test branches",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "`TestInitStorage` changes `config.GetGlobalConfig().Path` to a temp dir, but the backup/restore logic previously lived under a branch and could leak global config between subtests or modes. This PR always snapshots the global config, sets Path deterministically, and restores it in `t.Cleanup`, avoiding cross-test contamination.",
   "module": "kv",
-  "fix_pattern": "store: fix flaky test TestInitStorage",
+  "fix_pattern": "When a test mutates global config, snapshot it first and restore it via `t.Cleanup` so other tests don't observe leaked global state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65644",
     "https://github.com/pingcap/tidb/pull/65644.patch"

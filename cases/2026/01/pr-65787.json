@@ -13,18 +13,18 @@
     "name": "privileges"
   },
   "symptoms": [
-    "Problem Summary: - Integration test case `privilege/privileges` was unstable due to privilege output mismatches.  ### What changed and how does it work? - Update the"
+    "Integration test `privilege/privileges` was unstable because privilege changes were not fully propagated/visible between sessions immediately after GRANT, causing output mismatches."
   ],
-  "failure_signature": "Problem Summary: - Integration test case `privilege/privileges` was unstable due to privilege output mismatches.  ### What changed and how does it work? - Update the",
+  "failure_signature": "privilege/privileges integration test: intermittent output mismatches due to privilege propagation timing between sessions",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "async_wait_without_backoff"
   ],
   "root_cause_explanation": "Privilege integration tests granted privileges and immediately exercised them in another session, but privilege propagation is asynchronous and can race. This PR adds `flush privileges` after GRANTs so privilege state is consistent before continuing.",
-  "module": "module_unknown",
-  "fix_pattern": "Problem Summary: - Integration test case `privilege/privileges` was unstable due to privilege output mismatches.  ### What changed and how does it work? - Update the",
+  "module": "security",
+  "fix_pattern": "After GRANT/CREATE USER in integration tests, run `flush privileges` before switching sessions/validating results to avoid async privilege propagation races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65787",
     "https://github.com/pingcap/tidb/pull/65787.patch"

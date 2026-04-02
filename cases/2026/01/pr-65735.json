@@ -13,20 +13,21 @@
     "name": "TestPlanReplayerWithMultiForeignKey"
   },
   "symptoms": [
-    "Number: close #65729  Problem Summary:  Plan replayer unit tests were flaky due to shared global server startup state, implicit default DB after `PLAN REPLAYER LOAD`"
+    "Plan replayer handler tests were flaky due to shared global server startup state (RunInGoTestChan), global binding/cache settings, and async binding reload effects that can race under CI."
   ],
-  "failure_signature": "Number: close #65729  Problem Summary:  Plan replayer unit tests were flaky due to shared global server startup state, implicit default DB after `PLAN REPLAYER LOAD`",
+  "failure_signature": "plan replayer tests: intermittent binding/baseline assertions (e.g., @@last_plan_from_binding) due to async reload + shared global state",
   "root_cause_categories": [
     "shared_state_pollution",
-    "nondeterministic_plan_selection"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "shared_table_without_isolation",
-    "t_parallel_with_shared_state"
+    "t_parallel_with_shared_state",
+    "global_variable_mutation",
+    "async_wait_without_backoff"
   ],
   "root_cause_explanation": "Plan replayer handler tests were flaky due to shared global server state (`RunInGoTestChan`), async binding/baseline reload, and interference from leftover global bindings. This PR recreates the global channel, serializes DB connections, cleans up bindings, and waits with `Eventually` for binding effects, making results stable.",
   "module": "server",
-  "fix_pattern": "Add polling/wait (`Eventually`) for async conditions/cleanup to reduce timing-related flakiness.",
+  "fix_pattern": "Reset shared globals (e.g., RunInGoTestChan / global binding settings), clean up created bindings, and use Eventually-style polling for async binding reload effects to avoid cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65735",
     "https://github.com/pingcap/tidb/pull/65735.patch"

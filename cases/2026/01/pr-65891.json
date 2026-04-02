@@ -13,18 +13,18 @@
     "name": "run"
   },
   "symptoms": [
-    "lightning: fix flaky integration test"
+    "The `lightning_error_summary` test script was flaky because it only inspected the last 50 log lines; the expected message could appear slightly earlier depending on log volume, so the check could miss it intermittently."
   ],
-  "failure_signature": "lightning: fix flaky integration test",
+  "failure_signature": "lightning_error_summary: expected log line not found in tail output because tail window was too small",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "test_suite_setup_issue"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test asserted expected messages appear near the end of a log file but only tailed 50 lines; on failure the target line could be further above, so the grep/check would miss it. This PR increases the tail window to 100 lines, making the log check robust to log-volume variance.",
   "module": "lightning",
-  "fix_pattern": "lightning: fix flaky integration test",
+  "fix_pattern": "Make log-based assertions robust: widen the tail window (or search the full log) so checks don't depend on messages being within an arbitrary last-N-lines cutoff.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65891",
     "https://github.com/pingcap/tidb/pull/65891.patch"

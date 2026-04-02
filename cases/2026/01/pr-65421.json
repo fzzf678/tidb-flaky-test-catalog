@@ -13,9 +13,9 @@
     "name": "TestModifyColumnWithMultipleIndex"
   },
   "symptoms": [
-    "add scoped failpoints + restore global test flags (t.Cleanup / defer) and relax tight timing assertion to reduce test flakes (pkg/ddl/ingest/env_test.go, pkg/ddl/ingest/integration_test.go, tests/realtikvtest/addindextest3/ingest_test.go)"
+    "Add-index ingest (checkpoint/cancel) tests were flaky due to global failpoint/config leaks and brittle timing assumptions in async cancel/cleanup flows. The PR scopes failpoints with `t.Cleanup`/`testfailpoint.EnableCall`, restores globals, and adds synchronization barriers."
   ],
-  "failure_signature": "add scoped failpoints + restore global test flags (t.Cleanup / defer) and relax tight timing assertion to reduce test flakes (pkg/ddl/ingest/env_test.go, pkg/ddl/ingest/integration_test.go, tests/realtikvtest/addindextest3/ingest_test.go)",
+  "failure_signature": "add-index ingest tests: intermittent cancel/cleanup assertions due to async ingest overlap + global state/failpoint leakage",
   "root_cause_categories": [
     "async_timing_issue",
     "schema_change_race"
@@ -25,7 +25,7 @@
   ],
   "root_cause_explanation": "The add-index ingest checkpoint tests were flaky due to tight timing assumptions in cancel/owner-transfer flows and due to global flags/failpoints not being consistently scoped/cleaned up. The PR scopes failpoints with `t.Cleanup`, restores global settings, and improves synchronization/barriers so the async ingest/checkpoint flow is validated deterministically.",
   "module": "ddl",
-  "fix_pattern": "Fix test synchronization ordering (WaitGroup/channel/goroutine timing) to eliminate race-driven flakes.",
+  "fix_pattern": "Scope/auto-disable failpoints, restore global config/flags, and add barriers so cancel happens after ingest starts; use Eventually-style waits for async state to converge.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65421",
     "https://github.com/pingcap/tidb/pull/65421.patch"

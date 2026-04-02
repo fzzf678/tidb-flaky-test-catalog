@@ -13,18 +13,18 @@
     "name": "TestKit"
   },
   "symptoms": [
-    "pkg/statistics: fix flaky globalstats binding concurrency test"
+    "`TestGlobalStatsAndSQLBindingWithConcurrency` was flaky because the non-prepared plan cache could reuse plans and mask session binding changes, leading to unexpected plans in concurrent scenarios."
   ],
-  "failure_signature": "pkg/statistics: fix flaky globalstats binding concurrency test",
+  "failure_signature": "globalstats+binding concurrency test: binding changes not reflected due to non-prepared plan cache reuse (unexpected plan)",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "plan_cache_dependency"
   ],
   "root_cause_explanation": "The global-stats + SQL binding concurrency test was flaky because the non-prepared plan cache could mask session binding changes, leading to unexpected plans. This PR disables non-prepared plan cache in the test, making binding effects observable deterministically.",
   "module": "statistics",
-  "fix_pattern": "pkg/statistics: fix flaky globalstats binding concurrency test",
+  "fix_pattern": "Disable non-prepared plan cache in the test setup so session binding changes are not masked by cached plans.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65771",
     "https://github.com/pingcap/tidb/pull/65771.patch"

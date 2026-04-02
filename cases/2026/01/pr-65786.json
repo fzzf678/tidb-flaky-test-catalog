@@ -13,9 +13,9 @@
     "name": "TestStaleReadProcessorWithSelectTable"
   },
   "symptoms": [
-    "704, close #62891  Problem Summary: - Stale read processor tests were flaky due to a brittle expectation that snapshot infoschema meta version is always 0.  ### What"
+    "Stale read processor tests were flaky due to a brittle expectation that the snapshot InfoSchema meta version is always 0."
   ],
-  "failure_signature": "704, close #62891  Problem Summary: - Stale read processor tests were flaky due to a brittle expectation that snapshot infoschema meta version is always 0.  ### What",
+  "failure_signature": "stale-read processor tests: intermittent assertion failures when hardcoding snapshot InfoSchema meta version (expected 0, got non-zero)",
   "root_cause_categories": [
     "schema_change_race"
   ],
@@ -24,7 +24,7 @@
   ],
   "root_cause_explanation": "Stale-read processor tests assumed the snapshot InfoSchema meta version was 0, but the actual version depends on the computed staleness TS and schema propagation. This PR compares against `GetSnapshotInfoSchema(expectedTS)` instead, making the assertion stable across runs.",
   "module": "session",
-  "fix_pattern": "704, close #62891  Problem Summary: - Stale read processor tests were flaky due to a brittle expectation that snapshot infoschema meta version is always 0.  ### What",
+  "fix_pattern": "Avoid hardcoded snapshot InfoSchema meta version assertions; compare against `GetSnapshotInfoSchema(expectedTS)` at the evaluated staleness TS.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/65786",
     "https://github.com/pingcap/tidb/pull/65786.patch"

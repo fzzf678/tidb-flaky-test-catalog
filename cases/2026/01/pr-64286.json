@@ -13,18 +13,19 @@
     "name": "TestResourceGroupRunawayExceedTiDBSide"
   },
   "symptoms": [
-    "Problem Summary:\r \r Test `TestResourceGroupRunawayExceedTiDBSide` is flaky due to the short GC interval.\r \r ### What changed and how does it work?\r \r Updated `FastR"
+    "`TestResourceGroupRunawayExceedTiDBSide` was flaky because runaway-query GC/expiry is timer-driven, but the test relied on a fixed `time.Sleep`/tight timing assumptions, so it could intermittently miss expected rows under CI load."
   ],
-  "failure_signature": "Problem Summary:\r \r Test `TestResourceGroupRunawayExceedTiDBSide` is flaky due to the short GC interval.\r \r ### What changed and how does it work?\r \r Updated `FastR",
+  "failure_signature": "TestResourceGroupRunawayExceedTiDBSide: intermittent missing rows in mysql.tidb_runaway_queries due to timer-driven GC/expiry and fixed-sleep-based waiting",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "hardcoded_port_or_resource"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Runaway record flush/GC runs on background timers, but the tests relied on fixed sleeps and a boolean failpoint, so timing jitter could cause intermittent failures. This PR makes the failpoint control the timer/expiry durations explicitly and uses Eventually-style polling in tests, removing timer-based flakiness.",
+  "root_cause_explanation": "Runaway-record flush/GC is driven by background timers, but the test assumed a specific timing window (including a fixed sleep) and used a boolean failpoint, so records could be deleted/flush timing could vary and make assertions flaky. This PR makes the failpoint accept an explicit interval/expiry (e.g. 2.5s) and removes the fixed sleep in favor of Eventually-style polling, making the test deterministic.",
   "module": "gc",
-  "fix_pattern": "Avoid brittle fixed sleeps by tightening synchronization/wait conditions in the test.",
+  "fix_pattern": "Control timer-driven behavior via an interval failpoint and replace fixed sleeps with Eventually-style polling when asserting on async flush/expiry.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/64286",
     "https://github.com/pingcap/tidb/pull/64286.patch"
