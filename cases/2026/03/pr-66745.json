@@ -17,12 +17,10 @@
   ],
   "failure_signature": "`//pkg/session/test/txn:txn_test` is configured with `timeout = \"short\"` (150s in CI), while shard `2/11` repeatedly runs close to that limit due to `TestTxnLazyInitialize` taking ~112-126s in race+coverage mode. This causes flaky timeout failures after test logic passes.",
   "root_cause_categories": [
-    "async_timing_issue",
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "insufficient_timeout",
-    "clock_skew_dependency"
+    "insufficient_timeout"
   ],
   "root_cause_explanation": "The Bazel test shard was flaky due to a too-tight `timeout = \"short\"` budget: the shard consistently ran close to the CI limit in race/coverage mode, causing timeouts even when test logic passed. The PR raises the timeout to `moderate`, reducing spurious timeout failures caused by CI load.",
   "module": "txn",

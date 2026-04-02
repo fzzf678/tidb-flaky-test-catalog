@@ -17,10 +17,10 @@
   ],
   "failure_signature": "plugin: fix flaky test TestAuditLogNormal | When a transaction retry happens (for example, write conflict on `DELETE FROM t1 WHERE a = 2`), TiDB may emit extra `Completed` events for retry attempts, which makes the event count nondeterministic and causes flaky failures. | // Transaction retries can emit extra Completed events, so this test tracks retry events separately. | // Total includes extra retry completion events.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by"
+    "race_condition_in_async_code"
   ],
   "root_cause_explanation": "The audit-log test was flaky because it assumed a fixed number of audit events per statement, but transaction retries can emit additional `Completed` events for retry attempts, making the event count nondeterministic. The PR records retry metadata and counts retry-generated completion events separately, so assertions remain stable while still validating semantics.",
   "module": "txn",
