@@ -139,6 +139,26 @@
       "status": "active"
     },
     {
+      "key": "unsafe_zero_copy_alias",
+      "title": "Unsafe zero-copy aliasing (mutable backing buffer)",
+      "description": "Errors/warnings capture string/byte arguments that alias mutable buffers (e.g., chunk-backed strings), so later buffer reuse/mutation can change the message.",
+      "why_risky": "Delayed formatting may read mutated data, producing nondeterministic error texts and flaky assertions.",
+      "review_questions": [
+        "Are strings built from mutable byte slices (e.g., hack.String) stored and formatted later?",
+        "Could a buffer (chunk/byte slice) be reused before the message is formatted or asserted?",
+        "Is there an explicit copy/freeze of string arguments before storing them in warnings/errors?"
+      ],
+      "suggested_fixes": [
+        "Copy or freeze string/byte arguments before storing them in errors/warnings",
+        "Avoid zero-copy conversions for values that outlive the backing buffer",
+        "Format messages eagerly while inputs are still valid"
+      ],
+      "related_root_causes": ["shared_state_pollution"],
+      "applies_to": ["unit", "integration", "realtikv"],
+      "severity": 2,
+      "status": "active"
+    },
+    {
       "key": "insufficient_cleanup_between_tests",
       "title": "Insufficient cleanup between tests",
       "description": "Tests that create resources (tables, files, goroutines) without proper cleanup, leaving state for subsequent tests.",

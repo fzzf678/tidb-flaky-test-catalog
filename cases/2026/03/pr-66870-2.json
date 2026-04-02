@@ -1,0 +1,46 @@
+{
+  "id": "pr-66870-2",
+  "source_pr": {
+    "number": 66870,
+    "url": "https://github.com/pingcap/tidb/pull/66870",
+    "title": "expression, types: freeze unsafe datetime warning args"
+  },
+  "pr_merged_at": "2026-03-14T10:37:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/ddl/index.go",
+    "name": "analyzeTableInner"
+  },
+  "symptoms": [
+    "DDL analyze could become flaky/hang-prone because the analyze goroutine reports completion via an unbuffered `doneCh`; if the caller times out and stops receiving, the sender can block indefinitely."
+  ],
+  "failure_signature": "Potential hang/leak: analyze goroutine blocks sending error on `doneCh` after caller timeout.",
+  "root_cause_categories": [
+    "async_timing_issue"
+  ],
+  "review_smells": [
+    "race_condition_in_async_code"
+  ],
+  "root_cause_explanation": "The analyze path used an unbuffered `doneCh`, so if the caller timed out and moved on, the analyze goroutine could still attempt to send an error and block forever (no receiver). That kind of blocked goroutine can cause hangs and timing-dependent failures in tests. The PR makes `doneCh` buffered (size 1) so the analyze goroutine can always report and exit.",
+  "module": "ddl",
+  "fix_pattern": "Make the analyze completion channel buffered (`make(chan error, 1)`) so the analyze goroutine can send an error even after the caller timed out, avoiding blocked goroutines/hangs.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66870",
+    "https://github.com/pingcap/tidb/pull/66870.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66870.patch",
+  "changed_files": [
+    "pkg/ddl/index.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: unbuffered `doneCh` can block analyze goroutine after caller timeout; buffer the channel to avoid hangs.",
+      "files: pkg/ddl/index.go"
+    ]
+  },
+  "analysis": "PR title: expression, types: freeze unsafe datetime warning args\nPR url: https://github.com/pingcap/tidb/pull/66870\nSub-fix subject: [PATCH 5/8] ddl: avoid blocking analyze done sender after timeout\nChanged files (1): pkg/ddl/index.go\nDiff highlights (excerpt):\n- doneCh = make(chan error)\n+ doneCh = make(chan error, 1)\nFull patch analyzed; see patch_url."
+}

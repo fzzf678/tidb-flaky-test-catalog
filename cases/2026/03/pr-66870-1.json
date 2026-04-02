@@ -1,0 +1,46 @@
+{
+  "id": "pr-66870-1",
+  "source_pr": {
+    "number": 66870,
+    "url": "https://github.com/pingcap/tidb/pull/66870",
+    "title": "expression, types: freeze unsafe datetime warning args"
+  },
+  "pr_merged_at": "2026-03-14T10:37:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "pkg/util/gctuner/memory_limit_tuner_test.go",
+    "name": "TestIssue48741"
+  },
+  "symptoms": [
+    "`TestIssue48741` was flaky because it polls for a GC triggered by memory-limit changes, but GC timing depends on runtime/CI scheduling and may not run promptly within the polling window."
+  ],
+  "failure_signature": "`require.Eventually` timed out waiting for GC-related state changes in `TestIssue48741`.",
+  "root_cause_categories": [
+    "async_timing_issue"
+  ],
+  "review_smells": [
+    "async_wait_without_backoff"
+  ],
+  "root_cause_explanation": "The gctuner test was timing-sensitive because it waited for runtime GC to be triggered by memory-limit adjustments; depending on scheduler/CI load, GC might not happen quickly enough and the Eventually loop could time out. The PR calls `runtime.GC()` inside the polling predicate to force the GC progress and make the condition deterministic.",
+  "module": "gc",
+  "fix_pattern": "Force GC progress during polling by calling `runtime.GC()` inside the `Eventually` predicate in `TestIssue48741`, reducing dependence on runtime scheduling.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66870",
+    "https://github.com/pingcap/tidb/pull/66870.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66870.patch",
+  "changed_files": [
+    "pkg/util/gctuner/memory_limit_tuner_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: add `runtime.GC()` inside `Eventually` predicate to stabilize polling for GC-triggered state changes.",
+      "files: pkg/util/gctuner/memory_limit_tuner_test.go"
+    ]
+  },
+  "analysis": "PR title: expression, types: freeze unsafe datetime warning args\nPR url: https://github.com/pingcap/tidb/pull/66870\nSub-fix subject: [PATCH 4/8] pkg/util/gctuner: stabilize TestIssue48741 polling\nChanged files (1): pkg/util/gctuner/memory_limit_tuner_test.go\nDiff highlights (excerpt):\n- runtime.GC() added inside Eventually predicates\nFull patch analyzed; see patch_url."
+}

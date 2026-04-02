@@ -1,0 +1,47 @@
+{
+  "id": "pr-66870-3",
+  "source_pr": {
+    "number": 66870,
+    "url": "https://github.com/pingcap/tidb/pull/66870",
+    "title": "expression, types: freeze unsafe datetime warning args"
+  },
+  "pr_merged_at": "2026-03-14T10:37:53+08:00",
+  "test": {
+    "type": "unit",
+    "path": "br/pkg/streamhelper/advancer_test.go",
+    "name": "advancer_test"
+  },
+  "symptoms": [
+    "Streamhelper advancer tests were flaky because they asserted immediately after unregister/pause without waiting for advancer state (`HasTask`) to reflect task removal, and because they used `assert.NoError` inside `require.Eventually`, which can permanently mark the test failed on transient errors."
+  ],
+  "failure_signature": "Eventually-based assertions fail intermittently due to missing waits for task removal and using `assert.*` inside `require.Eventually` (early transient failures poison the test).",
+  "root_cause_categories": [
+    "async_timing_issue"
+  ],
+  "review_smells": [
+    "async_wait_without_backoff",
+    "race_condition_in_async_code"
+  ],
+  "root_cause_explanation": "These advancer unit tests were timing-sensitive: after unregistering a task, the advancer may not immediately reflect `HasTask()==false`, so assertions can race the state transition. Separately, using `assert.NoError(t, ...)` inside `require.Eventually` can call `t.Errorf()` on transient failures and permanently fail the test even if later retries would succeed. The PR adds explicit `Eventually` waits for task removal and switches to `EventuallyWithT` / safe checks so retries don't poison the test.",
+  "module": "br",
+  "fix_pattern": "Wait for advancer task removal with `require.Eventually` (e.g., `!adv.HasTask()`) and use `require.EventuallyWithT` for assertions inside Eventually loops to avoid hard-failing on transient errors.",
+  "evidence_links": [
+    "https://github.com/pingcap/tidb/pull/66870",
+    "https://github.com/pingcap/tidb/pull/66870.patch"
+  ],
+  "patch_url": "https://github.com/pingcap/tidb/pull/66870.patch",
+  "changed_files": [
+    "br/pkg/streamhelper/advancer_test.go"
+  ],
+  "triage": {
+    "sources": [
+      "manual_triage",
+      "determinism_stabilization"
+    ],
+    "evidence": [
+      "evidence: add `Eventually` waits for `adv.HasTask()` after unregister and replace `Eventually`+`assert.*` with `EventuallyWithT` to avoid poisoned retries.",
+      "files: br/pkg/streamhelper/advancer_test.go"
+    ]
+  },
+  "analysis": "PR title: expression, types: freeze unsafe datetime warning args\nPR url: https://github.com/pingcap/tidb/pull/66870\nSub-fix subjects: [PATCH 6/8] br/streamhelper: stabilize TestUnregisterAfterPause; [PATCH 7/8] fix flaky tests\nChanged files (1): br/pkg/streamhelper/advancer_test.go\nDiff highlights (excerpt):\n- require.Eventually(... assert.NoError(t, adv.OnTick(ctx)) ...)\n+ require.EventuallyWithT(... assert.NoError(c, adv.OnTick(ctx)) ...)\n- add Eventually wait for `!adv.HasTask()` after unregister\nFull patch analyzed; see patch_url."
+}

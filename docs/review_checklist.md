@@ -42,6 +42,7 @@ Each item includes: what to look for → why it is risky → what questions to a
 ### shared_state_pollution
 - [ ] **t.Parallel() with shared state** (`t_parallel_with_shared_state`)
 - [ ] **Global variable mutation without cleanup** (`global_variable_mutation`)
+- [ ] **Unsafe zero-copy aliasing (mutable backing buffer)** (`unsafe_zero_copy_alias`)
 - [ ] **Insufficient cleanup between tests** (`insufficient_cleanup_between_tests`)
 - [ ] **Shared table without isolation** (`shared_table_without_isolation`)
 
@@ -175,6 +176,26 @@ Each item includes: what to look for → why it is risky → what questions to a
 - Use t.Cleanup() for guaranteed restoration
 - Encapsulate state in test-specific structures
 - Avoid global state when possible
+
+### Unsafe zero-copy aliasing (mutable backing buffer)
+
+**Key:** `unsafe_zero_copy_alias`
+
+**Related Root Causes:** shared_state_pollution
+
+**Description:** Errors/warnings capture string/byte arguments that alias mutable buffers (e.g., chunk-backed strings), so later buffer reuse/mutation can change the message.
+
+**Why Risky:** Delayed formatting may read mutated data, producing nondeterministic error texts and flaky assertions.
+
+**Review Questions:**
+- Are strings built from mutable byte slices (e.g., hack.String) stored and formatted later?
+- Could a buffer (chunk/byte slice) be reused before the message is formatted or asserted?
+- Is there an explicit copy/freeze of string arguments before storing them in warnings/errors?
+
+**Suggested Fixes:**
+- Copy or freeze string/byte arguments before storing them in errors/warnings
+- Avoid zero-copy conversions for values that outlive the backing buffer
+- Format messages eagerly while inputs are still valid
 
 ### Insufficient cleanup between tests
 
