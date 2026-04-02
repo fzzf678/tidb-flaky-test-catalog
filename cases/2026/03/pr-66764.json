@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "pkg/executor/parallel_apply_test.go",
-    "name": "TestParallelApplyCorrectness"
+    "name": "TestParallelApplyCancelInflight"
   },
   "symptoms": [
-    "// enough to avoid CI flakiness while catching regressions where"
+    "`TestParallelApplyCancelInflight` was flaky because it relied on a strict elapsed-time threshold that can be exceeded on busy CI even when the cancellation logic works."
   ],
-  "failure_signature": "// enough to avoid CI flakiness while catching regressions where",
+  "failure_signature": "Timing-sensitive test: elapsed-time assertion for cancel-in-flight exceeded threshold under CI load.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The cancel-in-flight unit test was flaky because it asserted the query completes within a tight time budget, which is sensitive to CI load and batching (multiple outer rows can be in-flight when cancel fires). The PR makes the test more robust by verifying the plan uses parallel apply before measuring and by relaxing the elapsed-time threshold to avoid false failures while still catching broken cancellation.",
   "module": "executor",
-  "fix_pattern": "// enough to avoid CI flakiness while catching regressions where",
+  "fix_pattern": "Make `TestParallelApplyCancelInflight` less timing-sensitive by checking for a parallel-apply plan and relaxing the elapsed-time threshold (2s → 3s) while keeping the regression signal.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66764",
     "https://github.com/pingcap/tidb/pull/66764.patch"

@@ -13,18 +13,19 @@
     "name": "analyze"
   },
   "symptoms": [
-    "// Increase MaxRegionSampleSize to ensure all samples are collected for building histogram, otherwise the test will be unstable."
+    "Stats/analyze v1 tests were unstable because histogram sampling variance and encoding-related EXPLAIN differences could change estimates and golden outputs across runs."
   ],
-  "failure_signature": "// Increase MaxRegionSampleSize to ensure all samples are collected for building histogram, otherwise the test will be unstable.",
+  "failure_signature": "Nondeterministic stats/EXPLAIN assertions caused by analyze sampling variance (v1 stats) and encoding-sensitive output differences.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "statistics_sensitive_test",
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "These analyze/statistics tests were flaky because they asserted on EXPLAIN/estimate outputs that can legitimately drift when statistics are built from sampled data (v1 stats path) and when output formatting/encoding choices differ, making golden results unstable. The PR removes v1-only test coverage and updates remaining expectations to v2-only behavior, eliminating the unstable legacy paths.",
   "module": "statistics",
-  "fix_pattern": "// Increase MaxRegionSampleSize to ensure all samples are collected for building histogram, otherwise the test will be unstable.",
+  "fix_pattern": "Remove legacy stats v1 test branches and update testdata/expectations to v2-only behavior, avoiding plan/EXPLAIN drift driven by sampling/format differences.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/66715",
     "https://github.com/pingcap/tidb/pull/66715.patch"
