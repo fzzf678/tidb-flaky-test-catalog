@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix the flaky integration test for foreign key.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "assert_exact_error_message"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix the flaky integration test for foreign key.",
+  "root_cause_explanation": "The integration test was flaky because it asserted an exact foreign-key error message/constraint. For a multi-table DELETE with JOIN, which FK constraint fails first can vary depending on execution/plan order, so the exact message may differ across runs even though the error code is the same. The fix stabilizes the test by accepting multiple equivalent error variants (same code 1451) instead of matching one exact message.",
+  "module": "executor",
+  "fix_pattern": "Make FK integration test robust to nondeterministic error variants by asserting on the stable error code and allowing multiple acceptable messages.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56979",
     "https://github.com/pingcap/tidb/pull/56979.patch"

@@ -17,16 +17,15 @@
   ],
   "failure_signature": "res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "schema_change_race"
   ],
   "review_smells": [
     "ddl_without_wait",
     "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Flakiness happened while running queries during partition reorganization with a global index: depending on the DDL schema state timing (e.g. DeleteOnly), Point_Get/partition pruning could pick partitions that should be ignored during the DDL transition, leading to intermittent wrong results or failures. The fix tracks partition DDL state/action in table metadata and makes Point_Get/partition pruning skip partitions in DDL, stabilizing behavior during the schema change window.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Track partition DDL state/action and make Point_Get/partition pruning ignore partitions under DDL so queries during partition reorg behave deterministically.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56382",
     "https://github.com/pingcap/tidb/pull/56382.patch"

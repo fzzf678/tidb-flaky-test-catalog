@@ -10,21 +10,22 @@
   "test": {
     "type": "unit",
     "path": "pkg/statistics/handle/cache/internal/lfu/lfu_cache_test.go",
-    "name": "lfu_cache_test"
+    "name": "TestMemoryControlWithUpdate"
   },
   "symptoms": [
     "*: avoid flaky test with high load scenario"
   ],
   "failure_signature": "*: avoid flaky test with high load scenario",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "*: avoid flaky test with high load scenario",
+  "root_cause_explanation": "The test was timing-sensitive: it slept for a fixed 1s and then asserted `lfu.Cost()==0`, but under high load the background cleanup/eviction could take longer and the assertion would intermittently fail. The fix removes the brittle `time.Sleep` and uses `require.Eventually` with a reasonable timeout/interval so the test waits deterministically for the expected state.",
+  "module": "statistics",
+  "fix_pattern": "Replace fixed sleep + immediate assertion with `require.Eventually` (longer timeout) to avoid timing-dependent flakiness under load.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/57016",
     "https://github.com/pingcap/tidb/pull/57016.patch"

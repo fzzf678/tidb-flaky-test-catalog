@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it collected file names from the plan-replayer zip and compared them to an expected list. The order of files during iteration is not guaranteed, so the slice could be in different orders across runs. The fix stabilizes the assertion by sorting `filesInReplayer` before comparing it with the expected list.",
   "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort the collected plan-replayer zip file list (`filesInReplayer`) before asserting equality so the test does not depend on nondeterministic iteration order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56512",
     "https://github.com/pingcap/tidb/pull/56512.patch"

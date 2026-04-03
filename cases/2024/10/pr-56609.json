@@ -17,15 +17,14 @@
   ],
   "failure_signature": "explain WITH RECURSIVE CTE (x) AS (SELECT a FROM test order by a) , CTE1(x) AS (SELECT a FROM test UNION ALL select CTE.x from CTE join CTE1 on CTE.x=CTE1.x) SELECT * FROM CTE1; -- CTE contain order by and ref by CET1 recursive part cannot be inlined; (tests/integrationtest/r/planner/core/casetest/physicalplantest/physical_plan.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "planner, CTE, view: Fix default inline CTE which contains orderby/limit/distinct and inside of view | tidb-test=pr/2415",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56609",
     "https://github.com/pingcap/tidb/pull/56609.patch"

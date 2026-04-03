@@ -17,14 +17,14 @@
   ],
   "failure_signature": "server: fix flaky test by using t.TempDir",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: server: fix flaky test by using t.TempDir.",
+  "root_cause_explanation": "The test was flaky because it wrote the plan-replayer zip to a fixed path (`/tmp/plan_replayer.zip`). When tests run concurrently or previous runs leave artifacts behind, this shared path can be overwritten or read unexpectedly, causing nondeterministic failures. The fix stabilizes the test by writing to a unique per-test temp directory via `t.TempDir()`.",
   "module": "server",
-  "fix_pattern": "server: fix flaky test by using t.TempDir",
+  "fix_pattern": "Write plan-replayer zip to a per-test temp path (t.TempDir + filepath.Join) instead of a fixed `/tmp/plan_replayer.zip` to avoid cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56737",
     "https://github.com/pingcap/tidb/pull/56737.patch"

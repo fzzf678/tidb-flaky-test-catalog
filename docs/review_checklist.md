@@ -26,6 +26,7 @@ Each item includes: what to look for → why it is risky → what questions to a
 
 ### nondeterministic_plan_selection
 - [ ] **Asserting on exact plan or cost** (`assert_exact_plan_or_cost`)
+- [ ] **Asserting on exact error message/constraint** (`assert_exact_error_message`)
 - [ ] **Plan cache dependency** (`plan_cache_dependency`)
 - [ ] **Statistics-sensitive test** (`statistics_sensitive_test`)
 
@@ -259,6 +260,26 @@ Each item includes: what to look for → why it is risky → what questions to a
 - Use hints to stabilize plan when needed
 - Update statistics before asserting on plans
 - Make cost assertions approximate/range-based
+
+### Asserting on exact error message/constraint
+
+**Key:** `assert_exact_error_message`
+
+**Related Root Causes:** nondeterministic_plan_selection
+
+**Description:** Tests that assert an exact error message or constraint name when multiple equivalent errors can occur depending on plan or execution order.
+
+**Why Risky:** For multi-table statements (e.g. JOIN with foreign keys), which constraint fails first and the exact message can vary across runs, causing intermittent failures even when the error code is correct.
+
+**Review Questions:**
+- Does the test match the full error string or a specific constraint name?
+- Could a different but equivalent error be returned depending on join/plan order?
+- Is it sufficient to assert on the error code (and optionally a stable substring) instead of the full message?
+
+**Suggested Fixes:**
+- Assert on stable error code (e.g. 1451) and allow multiple acceptable messages
+- Use regex/substring matching for the stable part of the message
+- Stabilize execution/plan with hints if the specific error source matters
 
 ### Plan cache dependency
 

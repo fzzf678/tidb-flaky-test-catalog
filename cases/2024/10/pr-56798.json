@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "pkg/resourcegroup/runaway/record_test.go",
-    "name": "TestAnalyzeColumnsWithVirtualColumnIndex"
+    "name": "TestRecordKey"
   },
   "symptoms": [
-    "test: stabilize TestAnalyzeColumnsWithVirtualColumnIndex"
+    "Flaky test due to shared mutable package-level state (`recordMap`) in runaway record flushing logic/tests."
   ],
-  "failure_signature": "test: stabilize TestAnalyzeColumnsWithVirtualColumnIndex",
+  "failure_signature": "pkg/resourcegroup/runaway: package-level `recordMap` shared across runs caused nondeterministic test behavior.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: stabilize TestAnalyzeColumnsWithVirtualColumnIndex",
+  "root_cause_explanation": "The test was flaky because it relied on a package-level mutable variable (`recordMap`) used by runaway record flushing logic. That shared state can leak across runs/tests and make behavior nondeterministic. The fix removes the global `recordMap` and uses a local map inside the flush loop (and in the test), eliminating cross-test interference.",
+  "module": "server",
+  "fix_pattern": "Remove package-level mutable `recordMap`; use local variables to avoid shared state leaking across tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56798",
     "https://github.com/pingcap/tidb/pull/56798.patch"
