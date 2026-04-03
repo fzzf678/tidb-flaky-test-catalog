@@ -22,9 +22,9 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: add some output when a flaky test fails.",
+  "root_cause_explanation": "The test is flaky because it makes a brittle plan/cost assumption (e.g., expecting TiKV scan) and optimizer decisions can vary across CI environments/runs. This PR does not change planner behavior; it only improves failure diagnostics by printing the EXPLAIN result when the assertion fails, so the root cause can be debugged and stabilized later.",
   "module": "planner",
-  "fix_pattern": "planner: add some output when a flaky test fails",
+  "fix_pattern": "Improve flaky-test diagnostics: include the EXPLAIN output in assertion failures (add `Result.String()` and use it in require messages) so future stabilization can be guided by concrete plan output.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54980",
     "https://github.com/pingcap/tidb/pull/54980.patch"

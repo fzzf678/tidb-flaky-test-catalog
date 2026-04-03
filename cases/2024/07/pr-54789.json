@@ -17,14 +17,14 @@
   ],
   "failure_signature": "g := variable.NewRowIDShardGenerator(rand.New(rand.NewSource(12345)), 128) // #nosec G404) (pkg/sessionctx/variable/session_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to classify this as a flaky-test stabilization from the available case data. This PR mainly refactors auto row-id allocation by introducing `RowIDShardGenerator` and `ReservedRowIDAlloc` in `MutateContext` and updating call sites/tests; it claims no logic change, so treat as a low-confidence/unclear flaky-fix signal.",
   "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Refactor auto row-id allocation: introduce `RowIDShardGenerator`/`ReservedRowIDAlloc` in `MutateContext` and update related code/tests without changing semantics.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54789",
     "https://github.com/pingcap/tidb/pull/54789.patch"

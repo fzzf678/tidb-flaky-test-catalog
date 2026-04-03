@@ -22,9 +22,9 @@
   "review_smells": [
     "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: stabilize TestSkipSchemaChecker.",
-  "module": "test_infra",
-  "fix_pattern": "test: stabilize TestSkipSchemaChecker",
+  "root_cause_explanation": "The test was flaky because InfoSchema could switch between v1 and v2 during the test, triggering a full reload and resetting schema-validator deltas; this can make an in-flight transaction commit fail with `domain.ErrInfoSchemaChanged`. This PR stabilizes it by committing via `ExecToErr` and explicitly accepting `ErrInfoSchemaChanged` as an expected outcome in this scenario.",
+  "module": "domain",
+  "fix_pattern": "Treat `domain.ErrInfoSchemaChanged` during commit as expected when InfoSchema v1/v2 switching triggers a full reload; log a stable RNG seed for reproducibility.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54367",
     "https://github.com/pingcap/tidb/pull/54367.patch"

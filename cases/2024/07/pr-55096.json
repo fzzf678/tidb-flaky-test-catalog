@@ -17,16 +17,14 @@
   ],
   "failure_signature": "testCachedPlanClone(t, tk1, tk2, `prepare st from 'select * from t where a<? order by a limit 5'`, (pkg/planner/core/plan_cache_rebuild_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost",
-    "plan_cache_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to classify this as a flaky-test stabilization from the available case data. This PR mainly refactors plan-cache cloning by using code generation for `CloneForPlanCache` on several operators (PointGet/BatchPointGet/Limit) and updates related planner utilities/tests; treat as a low-confidence/unclear flaky-fix signal.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Use code generation to implement `CloneForPlanCache` for selected operators and update related planner plan-clone utilities/tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55096",
     "https://github.com/pingcap/tidb/pull/55096.patch"

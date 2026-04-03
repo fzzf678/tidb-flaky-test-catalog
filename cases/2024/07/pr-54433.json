@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: fix unstable unit test `TestMergeJoinInDisk` (#54524)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "unsafe_zero_copy_alias"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test was flaky because internal row-encoding buffers exposed slice references that could be reused/overwritten later, leading to unpredictable behavior when callers cached or reused those buffers (unsafe aliasing). This PR stabilizes it by removing the API that leaked internal slices and providing an encoding method that returns an independent byte slice for binlog row data.",
   "module": "executor",
-  "fix_pattern": "table: provide some binlog related methods for binlog in `MutateContext`",
+  "fix_pattern": "Do not expose internal encoding buffers; return a standalone encoded byte slice for binlog row data and add unit tests to prevent unsafe aliasing regressions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54433",
     "https://github.com/pingcap/tidb/pull/54433.patch"

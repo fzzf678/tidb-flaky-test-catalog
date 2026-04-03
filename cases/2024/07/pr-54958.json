@@ -21,11 +21,12 @@
     "async_timing_issue"
   ],
   "review_smells": [
+    "insufficient_timeout",
     "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: fix flaky test TestFailSchemaSyncer.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix flaky test TestFailSchemaSyncer",
+  "root_cause_explanation": "The test was flaky because after the schema validator/syncer is restarted, there might be no schema reload within the previous 200ms schema lease window, causing `latestSchemaExpire` to expire and later DML/commit to fail with “Information schema is changed”. This PR stabilizes the test by running it with a longer schema lease (10s) so the validator doesn’t expire before the next reload in slow CI environments.",
+  "module": "domain",
+  "fix_pattern": "Increase schema lease for `TestFailSchemaSyncer` (run fail DB suite with a 10s lease instead of 200ms) to avoid timing-dependent InfoSchema expiry between validator restart and reload.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54958",
     "https://github.com/pingcap/tidb/pull/54958.patch"

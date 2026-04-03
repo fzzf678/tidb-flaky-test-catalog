@@ -10,7 +10,7 @@
   "test": {
     "type": "unit",
     "path": "pkg/server/tests/cursor/cursor_test.go",
-    "name": "cursor_test"
+    "name": "TestSerialLazyExecuteAndFetch"
   },
   "symptoms": [
     "rawStmt, err := conn.Prepare(\"select * from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)"
@@ -22,9 +22,9 @@
   "review_smells": [
     "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The cursor-fetch tests were flaky because some assertions implicitly depended on a stable row order while the query did not enforce ordering (e.g., `select * from t1` without `ORDER BY` can return rows in any order). This PR stabilizes the tests by adding `ORDER BY id` to the affected cursor-fetch query and also exercising both eager and lazy cursor-fetch paths to reduce mode-dependent behavior.",
+  "module": "server",
+  "fix_pattern": "In cursor-fetch tests, add explicit `ORDER BY` for queries whose results are asserted row-by-row; run the same test under both eager and lazy cursor-fetch modes to avoid mode-dependent flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54806",
     "https://github.com/pingcap/tidb/pull/54806.patch"
