@@ -17,15 +17,14 @@
   ],
   "failure_signature": "slices.SortFunc(sortedKeys, bytes.Compare) (br/pkg/restore/split/split_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "shared_state_pollution"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test built a key slice from a Go map (`checkKeys`), so the key order was nondeterministic; `GetSplitKeysOfRegions` expects sorted input, and comparisons could fail depending on map iteration order. The fix sorts the derived key slice with `bytes.Compare` before invoking the split-key logic.",
   "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort key slices derived from maps before using them / asserting results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52052",
     "https://github.com/pingcap/tidb/pull/52052.patch"

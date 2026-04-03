@@ -17,14 +17,14 @@
   ],
   "failure_signature": "err := tk.ExecToErr(\"insert into _t1 select * from t1 order by rand()\") (tests/realtikvtest/pipelineddmltest/pipelineddml_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence: this PR is primarily a performance/behavior change for pipelined DML and adds/rewrites RealTiKV tests; it doesn't isolate a specific intermittent/flaky failure mechanism in this catalog entry.",
   "module": "txn",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "txn: save RPCs for Pipelined-DML",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51652",
     "https://github.com/pingcap/tidb/pull/51652.patch"

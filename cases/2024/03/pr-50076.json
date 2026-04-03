@@ -20,12 +20,11 @@
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "ddl_without_wait"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix unstable test TestCreateDropCreateTable.",
+  "root_cause_explanation": "`runningJobs` tracking had a gap between removing a job and recording the next one; if a worker fetched jobs during this window, a later `CREATE TABLE` could be scheduled before the preceding `DROP TABLE` finished, making `TestCreateDropCreateTable` fail intermittently. The fix distinguishes \"processing\" vs \"unfinished\" jobs and makes dependency checks block on unfinished schema jobs, preventing reordering.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix unstable test TestCreateDropCreateTable",
+  "fix_pattern": "Track unfinished DDL jobs (not just currently-processing ones) when checking schema dependencies to prevent DDL job reordering.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50076",
     "https://github.com/pingcap/tidb/pull/50076.patch"

@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "`SHOW STATS_META` returns rows without a guaranteed order; the test assumed a fixed row order and indexed into the result, so it could fail intermittently when `t`/`t1` appeared in a different order. The fix sorts the result before asserting and then checks the new `last_analyze_version` column is non-nil.",
   "module": "statistics",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort `SHOW STATS_META` results before indexing/asserting specific rows.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51489",
     "https://github.com/pingcap/tidb/pull/51489.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk2.MustQuery(\"select * from t order by id\").Check(testkit.Rows(\"1 11\", \"2 21\")) (tests/realtikvtest/txntest/txn_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence: this PR adds a RealTiKV test to cover a transaction correctness issue (TiKV/check_txn_status), but it doesn't describe a flaky/unstable TiDB test behavior to classify from the diff alone.",
   "module": "txn",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "txn: Add test case to cover the case that check_txn_status on primary lock of primary txn may affect transaction correctness",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51667",
     "https://github.com/pingcap/tidb/pull/51667.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix unstable test TestClearCache",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: test: fix unstable test TestClearCache.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable test TestClearCache",
+  "root_cause_explanation": "The test recorded \"cache cleared\" using the `onGetClient` hook, which could be invoked during client acquisition rather than `ClearCache`, so the observed cleared state depended on call order and made the assertion flaky. The fix adds a dedicated `onClearCache` hook, fixes one-time failure injection, and asserts `OnTick` returns an error while ensuring the failed store's cache is cleared.",
+  "module": "br",
+  "fix_pattern": "Use a dedicated `ClearCache` hook (not `GetClient`) and make failure injection deterministic so the test checks cache-clearing behavior reliably.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51480",
     "https://github.com/pingcap/tidb/pull/51480.patch"
