@@ -9,22 +9,23 @@
   "pr_merged_at": "2024-07-12T12:21:05+08:00",
   "test": {
     "type": "realtikv",
-    "path": "tests/realtikvtest/addindextest3/ingest_test.go",
+    "path": "tests/realtikvtest/addindextest4/failure_test.go",
     "name": "TestAddIndexIngestRecoverPartition"
   },
   "symptoms": [
-    "- Remove incomplete and unstable test `TestAddIndexIngestRecoverPartition`."
+    "TestAddIndexIngestRecoverPartition was unstable around DDL owner changes / abnormal exits during ingest add-index, where backend/checkpoint lifecycle could be torn down while still being accessed."
   ],
-  "failure_signature": "- Remove incomplete and unstable test `TestAddIndexIngestRecoverPartition`.",
+  "failure_signature": "TestAddIndexIngestRecoverPartition unstable around DDL owner change / ingest backend ctx lifecycle (realtikv)",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "race_condition_in_async_code",
+    "real_tikv_dependency"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl/ingest: move backend ctx out of checkpoint manager.",
+  "root_cause_explanation": "The real-TiKV ingest add-index failure test was flaky because it exercised DDL owner change / process-exit scenarios where the ingest backend context and checkpoint manager lifecycle could race: on owner changes the backend context could be unregistered/closed while another owner (or subsequent steps) still tried to access checkpoint/watermark state. This PR stabilizes it by refactoring the ingest backend/checkpoint interaction (move backend ctx out of checkpoint manager, remove the flush controller, advance watermarks explicitly) and refining the failure test to simulate owner resign/exit more deterministically.",
   "module": "ddl",
-  "fix_pattern": "ddl/ingest: move backend ctx out of checkpoint manager",
+  "fix_pattern": "Refactor ingest backend/checkpoint manager lifecycle to avoid owner-change races (backend ctx moved out, explicit flush/watermark advancement); refine the realtikv failure test to deterministically simulate owner resign/abnormal exit and recovery.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54292",
     "https://github.com/pingcap/tidb/pull/54292.patch"

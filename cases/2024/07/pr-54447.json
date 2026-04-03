@@ -17,16 +17,15 @@
   ],
   "failure_signature": "ddl/tests/partition: fix an unstable test TestTruncatePartitionWithGlobalIndex",
   "root_cause_categories": [
-    "schema_change_race",
-    "shared_state_pollution"
+    "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "async_schema_propagation",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl/tests/partition: fix an unstable test TestTruncatePartitionWithGlobalIndex.",
+  "root_cause_explanation": "The test was flaky because schema propagation / InfoSchema loading is asynchronous: after `truncate partition`, the test loop waited for the DDL job state but could still observe the old InfoSchema (especially when an InfoSchema v1→v2 switch triggers a full reload), causing timing-dependent failures. This PR stabilizes it by creating a domain and additionally waiting for the InfoSchema schema meta version to advance before proceeding (instead of relying on a fixed short sleep).",
   "module": "ddl",
-  "fix_pattern": "ddl/tests/partition: fix an unstable test TestTruncatePartitionWithGlobalIndex",
+  "fix_pattern": "After `truncate partition`, wait for DDL job state *and* InfoSchema schema meta version to advance (i.e., new InfoSchema loaded) rather than relying on a fixed sleep window.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54447",
     "https://github.com/pingcap/tidb/pull/54447.patch"

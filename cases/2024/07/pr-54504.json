@@ -17,15 +17,14 @@
   ],
   "failure_signature": "test: stabilize TestUpgradeWithPauseDDL | sql = fmt.Sprintf(\"select job_meta from mysql.tidb_ddl_history order by job_id desc limit %d\", tc.Cnt.Load()*2) (pkg/session/bootstraptest/bootstrap_upgrade_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it executed both system DDL and user DDL asynchronously during the upgrade/pause-DDL flow, but the upgrade process can end while a system DDL is still running (DDL worker closed). After the upgrade completes and the DDL owner restarts, a user DDL may be resumed and finish before the last system DDL, making the observed ordering timing-dependent. This PR stabilizes the test by executing system DDL synchronously (only user DDL remains async) and strengthening the history-query assertions.",
+  "module": "session",
+  "fix_pattern": "Execute system-table DDL synchronously during the upgrade/pause-DDL test (keep user DDL async) so ordering is deterministic; strengthen DDL history checks to assert user DDL finishes after system DDL.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54504",
     "https://github.com/pingcap/tidb/pull/54504.patch"

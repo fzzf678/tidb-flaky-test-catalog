@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rawStmt, err := conn.Prepare(\"select * from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "missing_order_by"
+    "test_suite_setup_issue"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The cursor-fetch tests were hard to validate reliably with the standard MySQL driver because it does not support configuring cursor fetch (fetchSize), which makes the test setup/tooling mismatched to what the feature needs. This PR stabilizes the testing approach by switching to a forked MySQL driver that supports cursor fetch and wiring a dedicated test-suite client/DSN helper, so the test can exercise cursor-fetch behavior deterministically.",
+  "module": "server",
+  "fix_pattern": "Use a MySQL driver that supports cursor fetch (fetchSize) and a dedicated server test-suite client/DSN helper to exercise cursor-fetch behavior deterministically (instead of relying on an incompatible driver/tooling path).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54287",
     "https://github.com/pingcap/tidb/pull/54287.patch"

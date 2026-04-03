@@ -8,23 +8,24 @@
   },
   "pr_merged_at": "2024-07-12T17:23:28+08:00",
   "test": {
-    "type": "realtikv",
-    "path": "tests/realtikvtest/addindextest3/functional_test.go",
-    "name": "functional_test"
+    "type": "unit",
+    "path": "pkg/executor/test/analyzetest/analyze_test.go",
+    "name": "TestSavedAnalyzeOptions"
   },
   "symptoms": [
     "tk.MustExec(\"set @@session.tidb_stats_load_sync_wait = 20000\") // to stabilise test"
   ],
   "failure_signature": "tk.MustExec(\"set @@session.tidb_stats_load_sync_wait = 20000\") // to stabilise test",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "insufficient_timeout",
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Global state must be reset/restored between tests. This PR stabilizes it by: *: enable the predicate columns feature by default | tidb-test=pr/2361.",
+  "root_cause_explanation": "The test became flaky because predicate-column statistics collection and stats loading are asynchronous, so the test could observe incomplete/late stats state (timing dependent) when enabling predicate-columns by default. This PR stabilizes the test by explicitly waiting longer for stats load sync (`tidb_stats_load_sync_wait = 20000`) and triggering predicate-columns collection before running ANALYZE, reducing timing-dependent variance.",
   "module": "statistics",
-  "fix_pattern": "*: enable the predicate columns feature by default | tidb-test=pr/2361",
+  "fix_pattern": "In stats/analyze tests, trigger predicate-columns collection and increase stats-load sync wait to avoid timing-dependent flakiness after enabling predicate-columns by default.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54440",
     "https://github.com/pingcap/tidb/pull/54440.patch"

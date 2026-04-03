@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: fix unstable test TestPointGetForTemporaryTable",
   "root_cause_categories": [
-    "external_dependency"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "test_suite_setup_issue"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: fix unstable test TestPointGetForTemporaryTable.",
+  "root_cause_explanation": "The test was flaky because its assumption (“temporary table point-get should not visit network”) no longer holds under InfoSchema v2, where `TableByName` may access storage/network to resolve metadata. This makes the test environment/configuration-dependent. This PR stabilizes it by detecting the InfoSchema v2 case and skipping the test under that configuration.",
   "module": "executor",
-  "fix_pattern": "executor: fix unstable test TestPointGetForTemporaryTable",
+  "fix_pattern": "Guard/skip `TestPointGetForTemporaryTable` under InfoSchema v2 where metadata lookup may involve network/storage access, because the test’s “no network” assumption is not valid there.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54707",
     "https://github.com/pingcap/tidb/pull/54707.patch"

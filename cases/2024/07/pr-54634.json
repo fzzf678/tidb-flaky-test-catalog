@@ -17,15 +17,14 @@
   ],
   "failure_signature": "rows := tk.MustQuery(\"select table_id, column_id, last_used_at, last_analyzed_at from mysql.column_stats_usage order by column_id\").Rows() (pkg/statistics/handle/storage/dump_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to classify this as a flaky-test stabilization from the available case data. This PR primarily adds support for backing up/restoring `mysql.column_stats_usage` (predicate-columns usage) and adds new unit test coverage for dumping/loading that metadata; treat as a low-confidence/unclear flaky-fix signal.",
+  "module": "statistics",
+  "fix_pattern": "Support backup/restore of `mysql.column_stats_usage` (predicate-columns usage) and add dump/load JSON wiring plus unit tests (`TestLoadPredicateColumns`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54634",
     "https://github.com/pingcap/tidb/pull/54634.patch"

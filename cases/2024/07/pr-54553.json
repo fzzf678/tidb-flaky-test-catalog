@@ -17,14 +17,14 @@
   ],
   "failure_signature": "{\"select ? from b order by 2 limit 10 offset 10\", \"select ? from `b` order by ‹2› limit ‹10› offset ‹10›\"}, (pkg/parser/digester_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to classify this as a flaky-test stabilization from the available case data. This PR primarily adds support for `tidb_redact_log` in EXPLAIN output and refactors the related expression/planner/ranger stringification and tests; treat as a low-confidence/unclear flaky-fix signal.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Support `tidb_redact_log` for EXPLAIN output by threading redact mode through stringification; update related tests to cover redacted/unredacted outputs without polluting plan cache.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54553",
     "https://github.com/pingcap/tidb/pull/54553.patch"

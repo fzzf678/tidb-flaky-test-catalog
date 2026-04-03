@@ -17,14 +17,14 @@
   ],
   "failure_signature": "query := `select (select group_concat(column_name) from information_schema.columns where table_name='tidb_background_subtask' order by ordinal_position) (pkg/session/bootstrap_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to classify this as a flaky-test stabilization from the available case data. This PR primarily adds a `summary` column to `mysql.tidb_background_subtask_history` via bootstrap upgrade logic and adds new unit tests to verify the upgrade and history-table schema consistency; treat as a low-confidence/unclear flaky-fix signal.",
   "module": "session",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Add bootstrap upgrade step to add `summary` column to `tidb_background_subtask_history` and add unit tests to validate upgrade/schema consistency.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54787",
     "https://github.com/pingcap/tidb/pull/54787.patch"

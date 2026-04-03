@@ -8,24 +8,23 @@
   },
   "pr_merged_at": "2024-07-11T01:39:04+08:00",
   "test": {
-    "type": "unit",
-    "path": "br/pkg/task/restore_test.go",
-    "name": "TestCheckDDLJobByRules"
+    "type": "integration",
+    "path": "br/tests/br_pitr/run.sh",
+    "name": "br_pitr"
   },
   "symptoms": [
     "run_sql \"select count(*) DELETE_RANGE_CNT from (select * from mysql.gc_delete_range union all select * from mysql.gc_delete_range_done) del_range group by ts order by DELETE_RANGE_CNT desc limit 1;\" (br/tests/br_pitr/run.sh)"
   ],
   "failure_signature": "run_sql \"select count(*) DELETE_RANGE_CNT from (select * from mysql.gc_delete_range union all select * from mysql.gc_delete_range_done) del_range group by ts order by DELETE_RANGE_CNT desc limit 1;\" (br/tests/br_pitr/run.sh)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "relying_on_map_iteration_order"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to classify this as a flaky-test stabilization from the available case data. This PR primarily adds compatibility between incremental restore and log restore and refactors the BR PITR integration test flow; treat as a low-confidence/unclear flaky-fix signal.",
   "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Make incremental restore and log restore compatible; refactor BR PITR integration test flow accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54473",
     "https://github.com/pingcap/tidb/pull/54473.patch"

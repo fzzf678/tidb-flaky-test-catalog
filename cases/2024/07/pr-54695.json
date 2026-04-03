@@ -13,18 +13,19 @@
     "name": "TestRenameTableAutoIDs"
   },
   "symptoms": [
-    "And even after this fix, the test may still be unstable by that capability issue."
+    "[schema:1146]Table 'renametableautoids2.t2' doesn't exist (stale InfoSchema during `RENAME TABLE` in TestRenameTableAutoIDs)"
   ],
-  "failure_signature": "And even after this fix, the test may still be unstable by that capability issue.",
+  "failure_signature": "[schema:1146]Table 'renametableautoids2.t2' doesn't exist (stale InfoSchema during `RENAME TABLE` in TestRenameTableAutoIDs)",
   "root_cause_categories": [
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "async_schema_propagation",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: make test TestRenameTableAutoIDs more stable.",
+  "root_cause_explanation": "The test was flaky because DDL job completion does not guarantee the new InfoSchema has been fully loaded (especially during InfoSchema v1→v2 switching / full reload). After `RENAME TABLE` across databases, the test could observe a stale InfoSchema and fail with `Table ... doesn't exist`. This PR stabilizes it by creating a domain and explicitly waiting (via schema meta version / `require.Eventually`) for InfoSchema to advance before continuing the test flow.",
   "module": "ddl",
-  "fix_pattern": "ddl: make test TestRenameTableAutoIDs more stable",
+  "fix_pattern": "After `RENAME TABLE`, wait for InfoSchema schema meta version to advance (use `CreateMockStoreAndDomain` + `require.Eventually`) before running subsequent statements; avoid assuming job state implies schema is already loaded.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54695",
     "https://github.com/pingcap/tidb/pull/54695.patch"
