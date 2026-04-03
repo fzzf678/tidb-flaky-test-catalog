@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ddl: Stabilized TestRemovePartitioningAutoIDs test.",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: Stabilized TestRemovePartitioningAutoIDs test.",
+  "root_cause_explanation": "The test polls DDL job progress in a loop. It was flaky because the polling helper created a new `testkit.TestKit` (new session) on every iteration, adding unnecessary overhead and making the wait timing-sensitive in CI. The fix stabilizes the test by creating `tk4` once and reusing it for polling `admin show ddl jobs`.",
   "module": "ddl",
-  "fix_pattern": "ddl: Stabilized TestRemovePartitioningAutoIDs test.",
+  "fix_pattern": "Reuse a single TestKit session for polling DDL job state (instead of creating a new TestKit each loop iteration) to reduce timing sensitivity and stabilize the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56436",
     "https://github.com/pingcap/tidb/pull/56436.patch"

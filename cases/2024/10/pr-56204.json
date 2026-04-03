@@ -10,23 +10,21 @@
   "test": {
     "type": "unit",
     "path": "pkg/expression/integration_test/integration_test.go",
-    "name": "TestRemovePartitioningAutoIDs"
+    "name": "TestVectorConstantExplain"
   },
   "symptoms": [
-    "ddl: Stabilized TestRemovePartitioningAutoIDs test. (#56436) | tk.MustQuery(`EXPLAIN format = 'brief' SELECT VEC_COSINE_DISTANCE(c, '[1,2,3,4,5,6,7,8,9,10,11]') AS d FROM t ORDER BY d LIMIT 10;`).Check(testkit.Rows( (pkg/expression/integration_test/integration_test.go)"
+    "TestVectorConstantExplain intermittently fails because it asserts full EXPLAIN output including unstable plan node IDs/suffixes (pkg/expression/integration_test/integration_test.go)."
   ],
-  "failure_signature": "ddl: Stabilized TestRemovePartitioningAutoIDs test. (#56436) | tk.MustQuery(`EXPLAIN format = 'brief' SELECT VEC_COSINE_DISTANCE(c, '[1,2,3,4,5,6,7,8,9,10,11]') AS d FROM t ORDER BY d LIMIT 10;`).Check(testkit.Rows( (pkg/expression/integration_test/integration_test.go)",
+  "failure_signature": "TestVectorConstantExplain EXPLAIN output mismatch due to unstable plan node IDs/suffixes (pkg/expression/integration_test/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test asserted full EXPLAIN output that included plan node IDs/suffixes (e.g., `Projection_3`, `TableReader_5`), which are not stable across runs and can cause intermittent mismatches. The fix switches the assertions to `EXPLAIN format='brief'` and updates the expected rows so the output ignores those unstable IDs.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Use `EXPLAIN format='brief'` in TestVectorConstantExplain and update expected rows to avoid unstable plan node IDs/suffixes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56204",
     "https://github.com/pingcap/tidb/pull/56204.patch"

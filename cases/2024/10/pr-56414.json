@@ -8,24 +8,23 @@
   },
   "pr_merged_at": "2024-10-23T02:16:06+08:00",
   "test": {
-    "type": "integration",
-    "path": "tests/integrationtest/r/cte.result",
-    "name": "cte"
+    "type": "unit",
+    "path": "pkg/planner/core/testdata/runtime_filter_generator_suite_in.json",
+    "name": "runtime_filter_generator_suite"
   },
   "symptoms": [
-    "+ // TO-DO reinstate flaky test that was removed to support enabling fix control 46177 | explain format='brief' with cte1 as (select c1 from t1) select /*+ MERGE_JOIN(dt1, dt2) */ * from t1 dt1 inner join cte1 dt2 on dt2.c1 = dt1.c1 order by 1, 2; (tests/integrationtest/r/cte.result)"
+    "A planner runtime filter generator case was quarantined (commented out) with a TODO note to reinstate later due to flakiness under fix control 46177 (pkg/planner/core/testdata/runtime_filter_generator_suite_in.json)."
   ],
-  "failure_signature": "+ // TO-DO reinstate flaky test that was removed to support enabling fix control 46177 | explain format='brief' with cte1 as (select c1 from t1) select /*+ MERGE_JOIN(dt1, dt2) */ * from t1 dt1 inner join cte1 dt2 on dt2.c1 = dt1.c1 order by 1, 2; (tests/integrationtest/r/cte.result)",
+  "failure_signature": "runtime_filter_generator_suite_in.json: test case commented out with TODO due to flakiness (fix control 46177).",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; the PR quarantines (comments out) a flaky test case with a TODO to reinstate later.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Quarantine: comment out a flaky runtime filter generator test case (with TODO to reinstate) to unblock enabling fix control 46177.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56414",
     "https://github.com/pingcap/tidb/pull/56414.patch"

@@ -222,6 +222,26 @@
       "status": "active"
     },
     {
+      "key": "assert_exact_error_message",
+      "title": "Asserting on exact error message/constraint",
+      "description": "Tests that assert an exact error message or constraint name when multiple equivalent errors can occur depending on plan or execution order.",
+      "why_risky": "For multi-table statements (e.g. JOIN with foreign keys), which constraint fails first and the exact message can vary across runs, causing intermittent failures even when the error code is correct.",
+      "review_questions": [
+        "Does the test match the full error string or a specific constraint name?",
+        "Could a different but equivalent error be returned depending on join/plan order?",
+        "Is it sufficient to assert on the error code (and optionally a stable substring) instead of the full message?"
+      ],
+      "suggested_fixes": [
+        "Assert on stable error code (e.g. 1451) and allow multiple acceptable messages",
+        "Use regex/substring matching for the stable part of the message",
+        "Stabilize execution/plan with hints if the specific error source matters"
+      ],
+      "related_root_causes": ["nondeterministic_plan_selection"],
+      "applies_to": ["unit", "integration", "realtikv"],
+      "severity": 1,
+      "status": "active"
+    },
+    {
       "key": "plan_cache_dependency",
       "title": "Plan cache dependency",
       "description": "Tests that depend on plan cache behavior without clearing or accounting for cached plans.",

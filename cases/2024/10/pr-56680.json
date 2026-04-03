@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustExec(\"explain select * from t order by vec_cosine_distance(vec, '[1,2,3]') limit 3\") (pkg/planner/core/casetest/vectorsearch/vector_index_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The casetest asserts exact EXPLAIN output for vector-index queries. It was flaky because whether a vector index is considered as an access path depends on TiFlash replica availability, and changes in `TiFlashReplica.Available` can lead to different chosen plans. This PR stabilizes plan selection by skipping vector indexes when the TiFlash replica is unavailable, and extends the test to verify the expected plan when TiFlash is unavailable vs available.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Make vector-index access-path selection depend on TiFlash replica availability (skip vector index when TiFlashReplica.Available=false) and update casetest expectations to keep EXPLAIN output deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56680",
     "https://github.com/pingcap/tidb/pull/56680.patch"

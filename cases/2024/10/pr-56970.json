@@ -17,15 +17,14 @@
   ],
   "failure_signature": "explain format = brief select *, length(a) from t use index (ia) where a like '测试%' order by a,_tidb_rowid; (tests/integrationtest/r/planner/core/range_scan_for_like.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "relying_on_map_iteration_order"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; the PR mainly refactors collation/ranger logic and adds/updates integration tests, without a clear flaky signature or stabilization rationale in the case data.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Refactor `IsPadSpaceCollation()` (move to util/collate, support new PAD SPACE collations) and update range-scan-for-like integration tests accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56970",
     "https://github.com/pingcap/tidb/pull/56970.patch"
