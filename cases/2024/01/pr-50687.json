@@ -17,14 +17,14 @@
   ],
   "failure_signature": "ttl: fix unstable test `TestManagerJobAdapterCanSubmitJob`",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: ttl: fix unstable test `TestManagerJobAdapterCanSubmitJob`.",
+  "root_cause_explanation": "The test was flaky because a background TTLJobManager could keep scheduling TTL jobs while the test is running, interfering with the job-adapter assertions and making timing/state nondeterministic. The fix stops the TTLJobManager and waits until it is fully stopped before executing the test logic.",
   "module": "domain",
-  "fix_pattern": "ttl: fix unstable test `TestManagerJobAdapterCanSubmitJob`",
+  "fix_pattern": "Stop background TTLJobManager (and wait for stop) to avoid interference during the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50687",
     "https://github.com/pingcap/tidb/pull/50687.patch"

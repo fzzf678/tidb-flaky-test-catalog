@@ -17,14 +17,14 @@
   ],
   "failure_signature": "sort.Slice(r.rowPtrs, r.keyColumnsLess) (pkg/executor/sortexec/sort_spill_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR is a large refactor/performance refinement around sort spill. From the PR diff and available case data, the exact flaky trigger for TestSortSpillDisk is not clearly isolated, so we mark it as insufficient_evidence rather than guessing a root cause.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Refactor/refine sort spill implementation (performance + spill safety improvements)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48872",
     "https://github.com/pingcap/tidb/pull/48872.patch"

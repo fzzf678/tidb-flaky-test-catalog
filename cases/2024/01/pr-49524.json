@@ -17,16 +17,14 @@
   ],
   "failure_signature": "select VARIABLE_NAME from information_schema.VARIABLES_INFO where DEFAULT_VALUE = CURRENT_VALUE and variable_name in ('tidb_enable_async_commit','tidb_enable_1pc', 'tidb_mem_oom_action', 'tidb_enable_auto_analyze', 'tidb_row_format_version', 'tidb_txn_assertion_level', 'tidb_enable_mutation_checker', 'tidb_pessimistic_txn_fair_locking') order by VARIABLE_...",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR fixes how information_schema.VARIABLES_INFO computes DEFAULT_VALUE for some global system variables (it should reflect the initial value under current config/test mode). The case data does not show a clear flaky/non-deterministic trigger; it looks like a deterministic correctness mismatch, so we mark it as insufficient_evidence rather than forcing an ordering/schema category.",
   "module": "session",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Compute VARIABLES_INFO.DEFAULT_VALUE via GlobalSystemVariableInitialValue to match actual initial values",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49524",
     "https://github.com/pingcap/tidb/pull/49524.patch"

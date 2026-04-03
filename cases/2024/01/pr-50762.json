@@ -17,15 +17,14 @@
   ],
   "failure_signature": "slices.Sort(filesInReplayer) (pkg/server/handler/optimizor/plan_replayer_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test iterates over files inside a generated plan-replayer zip and compares the collected file list with an expected list. Zip entry iteration order is not guaranteed, so the file list could be in different orders across runs and cause intermittent assertion failures. The fix sorts the collected filenames before comparing.",
+  "module": "server",
+  "fix_pattern": "Sort collected filenames before asserting to avoid nondeterministic zip iteration order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50762",
     "https://github.com/pingcap/tidb/pull/50762.patch"

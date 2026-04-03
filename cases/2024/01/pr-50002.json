@@ -17,15 +17,14 @@
   ],
   "failure_signature": "explain format='brief' with t as(select i, (case when b.j = '20001' then b.l else b.k end) an from test.ast a inner join test.acc b on (a.i = b.m) and a.i = 'astp2019121731703151'), t1 as (select i, group_concat(an order by an separator '; ') an from t group by i) select * from t1; (tests/integrationtest/r/expression/issues.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR fixes a planner rule bug in aggregation push-down for ORDER BY items inside aggregate functions (e.g., GROUP_CONCAT ... ORDER BY ...). The case data doesn't show a flaky/non-deterministic trigger; it looks like a deterministic correctness issue, so we mark it as insufficient_evidence rather than forcing it into an ordering/plan-flakiness category.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Fix aggregation push-down to use per-agg ORDER BY items (newAggOrderItems[i])",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50002",
     "https://github.com/pingcap/tidb/pull/50002.patch"

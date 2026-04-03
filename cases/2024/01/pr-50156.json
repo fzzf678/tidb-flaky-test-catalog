@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix unstable test `TestFlashbackSchema`",
   "root_cause_categories": [
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: fix unstable test `TestFlashbackSchema`.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable test `TestFlashbackSchema`",
+  "root_cause_explanation": "The unit test could be affected by leftover metadata/DDL job state when using the default mock store setup, leading to unexpected errors (reported as \"old ddl jobs\" affecting the test). The fix forces an embedded unistore mock backend for the test to improve isolation and determinism.",
+  "module": "executor",
+  "fix_pattern": "Use EmbedUnistore mock store for TestFlashbackSchema to avoid interference from leftover DDL/meta state",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50156",
     "https://github.com/pingcap/tidb/pull/50156.patch"

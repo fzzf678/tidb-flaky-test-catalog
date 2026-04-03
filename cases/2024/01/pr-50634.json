@@ -17,14 +17,14 @@
   ],
   "failure_signature": "fix flaky test",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The disttask executor loop polls subtasks and balances work asynchronously, so the exact number/timing of internal polling calls can vary. The test used global interval knobs and strict gomock call counts, which made it flaky when the loop iterated more/less than expected. The fix saves/restores all relevant global intervals (including balance interval) and relaxes mock expectations (e.g., `AnyTimes`) so the test no longer depends on a precise call count under timing variance.",
   "module": "domain",
-  "fix_pattern": "disttask: refactor metrics, collect metrics in scheduler manager",
+  "fix_pattern": "Avoid strict mock call counts in async polling loops; reset global intervals and use flexible expectations.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50634",
     "https://github.com/pingcap/tidb/pull/50634.patch"

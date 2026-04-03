@@ -17,15 +17,14 @@
   ],
   "failure_signature": "{`create global binding using select /*+ order_index(t1, a) */ a from *.t1 where a<10 order by a limit 10`, (pkg/bindinfo/fuzzy_binding_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "shared_state_pollution"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR adds global binding fuzzy matching (e.g., bindings using wildcard schemas like `*.t1`). The case data does not clearly isolate a flaky/non-deterministic trigger from CI logs or a minimal repro, so we mark it as insufficient_evidence rather than forcing it into an ordering category.",
+  "module": "session",
+  "fix_pattern": "Support fuzzy matching for global bindings (wildcard schema like `*.t1`)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50085",
     "https://github.com/pingcap/tidb/pull/50085.patch"

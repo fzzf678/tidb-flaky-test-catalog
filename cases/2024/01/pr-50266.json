@@ -17,14 +17,14 @@
   ],
   "failure_signature": "order by task_key, exec_id, state`) (pkg/disttask/framework/storage/table_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR changes disttask behavior (converting extra running subtasks back to pending for rebalancing) and adds/updates related unit tests. The available case data does not clearly document a specific flaky/non-deterministic trigger, so we mark it as insufficient_evidence rather than forcing it into an ordering category.",
   "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Convert extra running subtasks back to pending for rebalancing; adjust related disttask/task table logic",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50266",
     "https://github.com/pingcap/tidb/pull/50266.patch"

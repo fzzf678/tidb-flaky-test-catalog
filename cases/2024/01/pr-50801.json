@@ -13,18 +13,18 @@
     "name": "framework_test"
   },
   "symptoms": [
-    "random := rand.New(rand.NewSource(seed)) (pkg/disttask/framework/framework_test.go)"
+    "disttask: mock to start multiple scheduler/taskexecutor"
   ],
-  "failure_signature": "random := rand.New(rand.NewSource(seed)) (pkg/disttask/framework/framework_test.go)",
+  "failure_signature": "disttask: mock to start multiple scheduler/taskexecutor",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "insufficient_evidence: this PR refactors the disttask test harness (single domain + multiple schedulers/task-executors) for better testability, but the patch does not contain a clearly attributable flaky failure signature or a targeted stabilization for a specific intermittent failure.",
   "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "insufficient_evidence",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50801",
     "https://github.com/pingcap/tidb/pull/50801.patch"

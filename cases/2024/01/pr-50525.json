@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix flaky case",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix flaky case",
+  "root_cause_explanation": "The tests use `require.Eventually` to wait for a new owner to be elected. Under slower CI timing, the previous 2s timeout was occasionally not enough, causing intermittent failures. The fix increases the Eventually timeout window (2s → 10s).",
+  "module": "domain",
+  "fix_pattern": "Increase Eventually timeout to accommodate slower owner election in CI.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50525",
     "https://github.com/pingcap/tidb/pull/50525.patch"

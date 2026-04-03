@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix unstable `TestIndexChange ` and `TestAlterAddConstraintStateChange3`",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "shared_table_without_isolation"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. This PR stabilizes it by: test: fix unstable `TestIndexChange ` and `TestAlterAddConstraintStateChange3`.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable `TestIndexChange ` and `TestAlterAddConstraintStateChange3`",
+  "root_cause_explanation": "The DDL callbacks (OnJobUpdatedExported) run asynchronously and the test previously used fixed sleeps (e.g., 50ms) after ALTER operations, which could be too short under CI load and cause intermittent failures. The fix filters callbacks to the target job/table and replaces the fixed sleep with a bounded wait loop that only proceeds after the expected hook has run (addIndexDone/addCheckDone).",
+  "module": "ddl",
+  "fix_pattern": "Replace fixed sleep with a wait loop on callback completion; filter DDL hook by job type/table",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50144",
     "https://github.com/pingcap/tidb/pull/50144.patch"

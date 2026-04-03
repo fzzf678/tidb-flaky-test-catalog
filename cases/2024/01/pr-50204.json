@@ -17,15 +17,14 @@
   ],
   "failure_signature": "require.Equal(t, tk.ExecToErr(\"select * from t where i = 1 order by j limit 10;\").Error(), \"[planner:1054]Unknown column 'j' in 'order clause'\") (pkg/executor/test/executor/executor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR adjusts point-get plan selection to bypass the point-get optimization when ORDER BY is present, and adds a regression test to ensure invalid ORDER BY columns still raise an error. The change is a deterministic planner correctness fix rather than a clearly evidenced flaky trigger, so we mark it as insufficient_evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Disable point-get plan when ORDER BY exists so ORDER BY is validated/handled correctly",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50204",
     "https://github.com/pingcap/tidb/pull/50204.patch"
