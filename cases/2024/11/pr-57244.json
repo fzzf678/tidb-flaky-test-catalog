@@ -16,19 +16,19 @@
     "sort.Slice(val, func(i, j int) bool { (pkg/statistics/handle/autoanalyze/priorityqueue/analysis_job_factory_test.go)"
   ],
   "failure_signature": "sort.Slice(val, func(i, j int) bool { (pkg/statistics/handle/autoanalyze/priorityqueue/analysis_job_factory_test.go)",
-  "root_cause_categories": [
-    "nondeterministic_result_order"
-  ],
-  "review_smells": [
-    "missing_order_by"
-  ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "statistics",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/57244",
-    "https://github.com/pingcap/tidb/pull/57244.patch"
-  ],
+    "root_cause_categories": [
+        "nondeterministic_result_order"
+    ],
+    "review_smells": [
+        "relying_on_map_iteration_order"
+    ],
+    "root_cause_explanation": "The test was flaky because it asserted on a collection (indexes/partitions) whose ordering depended on iteration order (maps/slices), causing nondeterministic results across runs. This PR stabilizes it by using a set-like representation keyed by IDs (or deterministic ordering) so comparisons no longer depend on element order.",
+    "module": "statistics",
+    "fix_pattern": "Avoid order-dependent assertions by representing partitions/indexes as ID-keyed sets (or deterministically ordering them) before comparing expected results.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/57244",
+        "https://github.com/pingcap/tidb/pull/57244.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/57244.patch",
   "changed_files": [
     "pkg/statistics/handle/autoanalyze/priorityqueue/analysis_job_factory.go",

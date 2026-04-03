@@ -16,19 +16,19 @@
     "rs, err := tk.Exec(\"select /*+ INL_HASH_JOIN(s) */ * from t join s on t.a=s.a order by t.a;\") (pkg/executor/join/index_lookup_join_test.go)"
   ],
   "failure_signature": "rs, err := tk.Exec(\"select /*+ INL_HASH_JOIN(s) */ * from t join s on t.a=s.a order by t.a;\") (pkg/executor/join/index_lookup_join_test.go)",
-  "root_cause_categories": [
-    "nondeterministic_result_order"
-  ],
-  "review_smells": [
-    "missing_order_by"
-  ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/57383",
-    "https://github.com/pingcap/tidb/pull/57383.patch"
-  ],
+    "root_cause_categories": [
+        "concurrency_data_race"
+    ],
+    "review_smells": [
+        "race_condition_in_async_code"
+    ],
+    "root_cause_explanation": "The test was flaky because INL Hash Join could hang when a join worker exits abnormally (panic/error) and cancellation was triggered too late, leaving other workers blocked. This PR stabilizes it by ensuring `cancelFunc()` is called promptly on abnormal exit so all workers are unblocked and the query terminates deterministically.",
+    "module": "executor",
+    "fix_pattern": "On join worker panic/error, call `cancelFunc()` early to unblock other workers and avoid INL Hash Join hang.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/57383",
+        "https://github.com/pingcap/tidb/pull/57383.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/57383.patch",
   "changed_files": [
     "pkg/executor/join/index_lookup_hash_join.go",

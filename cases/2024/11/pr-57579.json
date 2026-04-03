@@ -16,21 +16,20 @@
     "executor: Fix unstable test TestTiKVClientReadTimeout"
   ],
   "failure_signature": "executor: Fix unstable test TestTiKVClientReadTimeout",
-  "root_cause_categories": [
-    "async_timing_issue",
-    "external_dependency"
-  ],
-  "review_smells": [
-    "insufficient_timeout",
-    "clock_skew_dependency"
-  ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: executor: Fix unstable test TestTiKVClientReadTimeout.",
-  "module": "executor",
-  "fix_pattern": "executor: Fix unstable test TestTiKVClientReadTimeout",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/57579",
-    "https://github.com/pingcap/tidb/pull/57579.patch"
-  ],
+    "root_cause_categories": [
+        "async_timing_issue"
+    ],
+    "review_smells": [
+        "clock_skew_dependency",
+        "time_sleep_for_sync"
+    ],
+    "root_cause_explanation": "The test was flaky because stale-read queries use a captured timestamp (`now(6)`) but the system TS may not have advanced far enough yet, making AS OF TIMESTAMP behavior timing-dependent. This PR stabilizes it by waiting until `@@tidb_current_ts` is >= the expected TSO derived from the read timestamp before running stale-read assertions.",
+    "module": "executor",
+    "fix_pattern": "executor: Fix unstable test TestTiKVClientReadTimeout",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/57579",
+        "https://github.com/pingcap/tidb/pull/57579.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/57579.patch",
   "changed_files": [
     "pkg/executor/executor_failpoint_test.go"

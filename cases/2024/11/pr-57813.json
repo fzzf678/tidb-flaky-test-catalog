@@ -13,18 +13,18 @@
     "name": "TestAddIndexDistCancelWithPartition"
   },
   "symptoms": [
-    "t.Skip(\"unstable\") // TODO(tangenta): fix this unstable test"
+    "The dist-task add-index cancel test was unstable because DDL reorg steps did not reliably stop after the job was canceled."
   ],
-  "failure_signature": "t.Skip(\"unstable\") // TODO(tangenta): fix this unstable test",
+  "failure_signature": "DDL dist-task reorg could continue running after cancellation, making the cancel test slow/hanging and flaky.",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: check context done in isReorgRunnable function.",
+  "root_cause_explanation": "DXF/dist DDL tasks rely on `isReorgRunnable()` to stop work when a DDL job is canceled/paused. After refactoring, the runnable check no longer reliably reflected cancellation state, so reorg steps could continue running even after the test issued `ADMIN CANCEL DDL JOBS`, making the cancel test unstable. This PR fixes it by passing the step context into `isReorgRunnable()` and checking `ctx.Err()` (returning the cancellation cause), so cancellation/pausing is observed promptly and the test becomes deterministic.",
   "module": "ddl",
-  "fix_pattern": "ddl: check context done in isReorgRunnable function",
+  "fix_pattern": "Make dist DDL reorg steps observe cancellation promptly by checking `ctx.Err()` in `isReorgRunnable()` (pass step ctx through), so cancel/paused jobs stop deterministically.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/57813",
     "https://github.com/pingcap/tidb/pull/57813.patch"

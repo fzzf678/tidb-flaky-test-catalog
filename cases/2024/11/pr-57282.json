@@ -19,16 +19,16 @@
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
-  "review_smells": [
-    "missing_order_by"
-  ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/57282",
-    "https://github.com/pingcap/tidb/pull/57282.patch"
-  ],
+    "review_smells": [
+        "missing_order_by"
+    ],
+    "root_cause_explanation": "The test was flaky because it relied on implicit result ordering from an index scan (`select * from t use index (idx1)`), which is not guaranteed. This PR stabilizes it by adding an explicit `ORDER BY` clause to make the result deterministic.",
+    "module": "ddl",
+    "fix_pattern": "Add explicit `ORDER BY` to index-scan query in global-index tests to avoid relying on implicit row order.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/57282",
+        "https://github.com/pingcap/tidb/pull/57282.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/57282.patch",
   "changed_files": [
     "DEPS.bzl",

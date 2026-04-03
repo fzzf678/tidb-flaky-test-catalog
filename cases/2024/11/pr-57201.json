@@ -16,21 +16,19 @@
     "sort.Strings(expected) (pkg/planner/core/casetest/instanceplancache/concurrency_test.go)"
   ],
   "failure_signature": "sort.Strings(expected) (pkg/planner/core/casetest/instanceplancache/concurrency_test.go)",
-  "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
-  ],
-  "review_smells": [
-    "assert_exact_plan_or_cost",
-    "plan_cache_dependency"
-  ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/57201",
-    "https://github.com/pingcap/tidb/pull/57201.patch"
-  ],
+    "root_cause_categories": [
+        "shared_state_pollution"
+    ],
+    "review_smells": [
+        "global_variable_mutation"
+    ],
+    "root_cause_explanation": "The test was flaky because it depended on the global switch `tidb_enable_instance_plan_cache` being enabled; without pinning this global state, behavior can vary based on environment or previous tests. This PR stabilizes it by explicitly setting `tidb_enable_instance_plan_cache=1` in the test before running concurrent workloads.",
+    "module": "planner",
+    "fix_pattern": "Explicitly set `tidb_enable_instance_plan_cache=1` in the test to avoid environment/global-state dependent flakiness.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/57201",
+        "https://github.com/pingcap/tidb/pull/57201.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/57201.patch",
   "changed_files": [
     "pkg/planner/core/casetest/instanceplancache/BUILD.bazel",

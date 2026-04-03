@@ -16,19 +16,19 @@
     "test: fix the flaky test `TestDeleteIgnoreWithFK`"
   ],
   "failure_signature": "test: fix the flaky test `TestDeleteIgnoreWithFK`",
-  "root_cause_categories": [
-    "insufficient_evidence"
-  ],
-  "review_smells": [
-    "needs_more_evidence"
-  ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix the flaky test `TestDeleteIgnoreWithFK`",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/57095",
-    "https://github.com/pingcap/tidb/pull/57095.patch"
-  ],
+    "root_cause_categories": [
+        "nondeterministic_result_order"
+    ],
+    "review_smells": [
+        "unsorted_result_assertion"
+    ],
+    "root_cause_explanation": "The test was flaky because `SHOW WARNINGS` does not guarantee row ordering, so warning rows can appear in different orders across runs. This PR stabilizes it by sorting the warnings result before asserting.",
+    "module": "executor",
+    "fix_pattern": "Sort `SHOW WARNINGS` output before assertions to avoid nondeterministic warning row ordering.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/57095",
+        "https://github.com/pingcap/tidb/pull/57095.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/57095.patch",
   "changed_files": [
     "pkg/executor/delete_test.go"

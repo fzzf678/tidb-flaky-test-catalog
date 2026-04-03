@@ -16,21 +16,19 @@
     "res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)"
   ],
   "failure_signature": "res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)",
-  "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
-  ],
-  "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
-  ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/56786",
-    "https://github.com/pingcap/tidb/pull/56786.patch"
-  ],
+    "root_cause_categories": [
+        "schema_change_race"
+    ],
+    "review_smells": [
+        "async_schema_propagation"
+    ],
+    "root_cause_explanation": "The test was flaky because REORGANIZE PARTITION progresses through multiple intermediate schema states, and incorrect index metadata/state transitions (especially for global/unique indexes) can make different sessions observe inconsistent behavior (e.g., duplicate-key anomalies during rollback). This PR stabilizes it by correcting index management/state handling during REORGANIZE PARTITION and updating regression tests.",
+    "module": "ddl",
+    "fix_pattern": "Fix index metadata/state transitions during REORGANIZE PARTITION (avoid wrong index state usage during rollback; keep global/unique index behavior consistent across schema versions).",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/56786",
+        "https://github.com/pingcap/tidb/pull/56786.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/56786.patch",
   "changed_files": [
     "pkg/ddl/partition.go",

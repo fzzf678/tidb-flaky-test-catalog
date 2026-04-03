@@ -16,21 +16,19 @@
     "sort.Strings(parts) (pkg/planner/core/collect_column_stats_usage_test.go)"
   ],
   "failure_signature": "sort.Strings(parts) (pkg/planner/core/collect_column_stats_usage_test.go)",
-  "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
-  ],
-  "review_smells": [
-    "assert_exact_plan_or_cost",
-    "statistics_sensitive_test"
-  ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/56813",
-    "https://github.com/pingcap/tidb/pull/56813.patch"
-  ],
+    "root_cause_categories": [
+        "nondeterministic_result_order"
+    ],
+    "review_smells": [
+        "relying_on_map_iteration_order"
+    ],
+    "root_cause_explanation": "The test was flaky because it compared derived partition/column lists whose order depended on map/slice iteration order, so results could differ between runs even when logically equivalent. This PR stabilizes it by sorting the derived partition name lists (and related collections) before asserting.",
+    "module": "planner",
+    "fix_pattern": "Sort derived lists (e.g., expanded partition names) before assertions to avoid relying on map iteration order.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/56813",
+        "https://github.com/pingcap/tidb/pull/56813.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/56813.patch",
   "changed_files": [
     "pkg/executor/test/analyzetest/analyze_test.go",

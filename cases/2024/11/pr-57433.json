@@ -16,19 +16,19 @@
     "test: fix unstable case"
   ],
   "failure_signature": "test: fix unstable case",
-  "root_cause_categories": [
-    "insufficient_evidence"
-  ],
-  "review_smells": [
-    "needs_more_evidence"
-  ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable case",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/57433",
-    "https://github.com/pingcap/tidb/pull/57433.patch"
-  ],
+    "root_cause_categories": [
+        "concurrency_data_race"
+    ],
+    "review_smells": [
+        "race_condition_in_async_code"
+    ],
+    "root_cause_explanation": "The test was flaky because the failpoint was enabled with a one-shot rule (`1*return()`), and background/async calls could consume that single hit before the intended assertion path, making outcomes timing-dependent. This PR stabilizes it by enabling the failpoint unconditionally (`return()`) so the error path is triggered deterministically during the test.",
+    "module": "domain",
+    "fix_pattern": "Enable the failpoint unconditionally in the test (not one-shot) so async/background calls cannot consume the only hit and make the test timing-dependent.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/57433",
+        "https://github.com/pingcap/tidb/pull/57433.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/57433.patch",
   "changed_files": [
     "pkg/domain/db_test.go"

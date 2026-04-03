@@ -17,18 +17,18 @@
   ],
   "failure_signature": "executor: update log filter to avoid flaky test",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "test_suite_setup_issue"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: update log filter to avoid flaky test.",
-  "module": "executor",
-  "fix_pattern": "executor: update log filter to avoid flaky test",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/57511",
-    "https://github.com/pingcap/tidb/pull/57511.patch"
-  ],
+  "root_cause_explanation": "The test was flaky because unrelated background log messages were captured by the OOM test harness, causing assertions to intermittently fail. This PR stabilizes it by adding message filters to ignore known-noisy log lines during the test.",
+    "module": "executor",
+    "fix_pattern": "executor: update log filter to avoid flaky test",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/57511",
+        "https://github.com/pingcap/tidb/pull/57511.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/57511.patch",
   "changed_files": [
     "pkg/executor/test/oomtest/oom_test.go"

@@ -13,19 +13,18 @@
     "name": "TestInstancePlanCacheConcurrencySysbench"
   },
   "symptoms": [
-    "planner: fix flaky test TestInstancePlanCacheConcurrencySysbench"
+    "The stress test was flaky because its randomly generated update/delete statements could deadlock under concurrency."
   ],
-  "failure_signature": "planner: fix flaky test TestInstancePlanCacheConcurrencySysbench",
+  "failure_signature": "TestInstancePlanCacheConcurrencySysbench could intermittently hit deadlocks due to random update/delete lock order within a transaction.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "plan_cache_dependency",
-    "assert_exact_plan_or_cost"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: planner: fix flaky test TestInstancePlanCacheConcurrencySysbench.",
-  "module": "planner",
-  "fix_pattern": "planner: fix flaky test TestInstancePlanCacheConcurrencySysbench",
+  "root_cause_explanation": "The sysbench-style concurrency test generates random UPDATE/DELETE statements inside a transaction. With fully random IDs, concurrent sessions can acquire row locks in different orders and intermittently deadlock. This PR stabilizes the workload by making the chosen IDs monotonically increase within each transaction (and resetting on BEGIN), which makes lock acquisition order more consistent and avoids deadlocks.",
+  "module": "txn",
+  "fix_pattern": "Avoid deadlocks in the concurrency workload by generating monotonically increasing IDs within each transaction (txnLeastID), and reset it when starting a new transaction.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/57833",
     "https://github.com/pingcap/tidb/pull/57833.patch"

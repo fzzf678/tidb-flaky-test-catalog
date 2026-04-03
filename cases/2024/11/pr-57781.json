@@ -16,21 +16,19 @@
     "result := tk.MustQuery(`select instance, sql_text, executions from information_schema.cluster_tidb_plan_cache order by executions`) (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)"
   ],
   "failure_signature": "result := tk.MustQuery(`select instance, sql_text, executions from information_schema.cluster_tidb_plan_cache order by executions`) (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)",
-  "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
-  ],
-  "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
-  ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/57781",
-    "https://github.com/pingcap/tidb/pull/57781.patch"
-  ],
+    "root_cause_categories": [
+        "async_timing_issue"
+    ],
+    "review_smells": [
+        "async_wait_without_backoff"
+    ],
+    "root_cause_explanation": "The test was flaky because `information_schema.cluster_tidb_plan_cache` is populated via cluster/remote retrieval and may not reflect recent executions immediately. This PR stabilizes it by using `require.Eventually` to poll until the expected rows appear instead of assuming immediate consistency.",
+    "module": "domain",
+    "fix_pattern": "Use `require.Eventually` to wait for cluster table data to be available/consistent before asserting results.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/57781",
+        "https://github.com/pingcap/tidb/pull/57781.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/57781.patch",
   "changed_files": [
     "pkg/executor/builder.go",

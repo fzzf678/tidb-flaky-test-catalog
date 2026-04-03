@@ -13,18 +13,18 @@
     "name": "TestGetTargetNodeCpuCnt"
   },
   "symptoms": [
-    "test: stabilize TestGetTargetNodeCpuCnt"
+    "TestGetTargetNodeCpuCnt was flaky because it toggled a global dist-task flag in-process, which can leak or be inconsistent across sessions."
   ],
-  "failure_signature": "test: stabilize TestGetTargetNodeCpuCnt",
+  "failure_signature": "TestGetTargetNodeCpuCnt was flaky due to inconsistent global dist-task enable state across sessions.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: stabilize TestGetTargetNodeCpuCnt",
+  "root_cause_explanation": "The test directly mutated a global dist-task enable flag (`variable.EnableDistTask.Store(...)`) while also relying on session/global variable behavior. This can be order-dependent and can leak across tests or sessions, making the result nondeterministic. The fix sets `@@global.tidb_enable_dist_task` through SQL (so the session sees a consistent global-variable state) and uses `testfailpoint` helpers for deterministic failpoint cleanup.",
+  "module": "executor",
+  "fix_pattern": "Set `@@global.tidb_enable_dist_task` via SQL (instead of mutating `variable.EnableDistTask` directly) and use `testfailpoint` helpers for predictable cleanup, stabilizing TestGetTargetNodeCpuCnt.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/57823",
     "https://github.com/pingcap/tidb/pull/57823.patch"
