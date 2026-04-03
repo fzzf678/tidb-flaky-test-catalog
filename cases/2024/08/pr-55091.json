@@ -9,22 +9,22 @@
   "pr_merged_at": "2024-08-01T12:34:27+08:00",
   "test": {
     "type": "realtikv",
-    "path": "tests/realtikvtest/addindextest/add_index_test.go",
-    "name": "add_index_test"
+    "path": "tests/realtikvtest/addindextest1/disttask_test.go",
+    "name": "TestAddIndexDistPauseAndResume"
   },
   "symptoms": [
     "t.Skip(\"unstable\") // TODO(tangenta): fix this unstable test"
   ],
   "failure_signature": "t.Skip(\"unstable\") // TODO(tangenta): fix this unstable test",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: replace `OnJobUpdated` callback with failpoint.",
-  "module": "ddl",
-  "fix_pattern": "ddl: replace `OnJobUpdated` callback with failpoint",
+  "root_cause_explanation": "The test is explicitly marked as unstable and skipped (`t.Skip(\"unstable\")`). This PR refactors DDL test hooks by replacing the `OnJobUpdated` callback mechanism with a failpoint, but it does not provide enough evidence to identify the underlying flaky root cause; treat this as quarantine/infra refactor and keep it in the `insufficient_evidence/needs_more_evidence` bucket.",
+  "module": "test_infra",
+  "fix_pattern": "Refactor DDL test hooks to use failpoints instead of callback injection; quarantine/skip unstable realtikv disttask test pending a concrete root-cause fix.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55091",
     "https://github.com/pingcap/tidb/pull/55091.patch"

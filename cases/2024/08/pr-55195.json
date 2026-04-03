@@ -8,23 +8,23 @@
   },
   "pr_merged_at": "2024-08-10T00:20:12+08:00",
   "test": {
-    "type": "integration",
-    "path": "tests/integrationtest/r/planner/core/physical_plan.result",
-    "name": "physical_plan"
+    "type": "unit",
+    "path": "pkg/infoschema/test/clustertablestest/cluster_tables_test.go",
+    "name": "TestQuickBinding"
   },
   "symptoms": [
     "{`select /*+ inl_join(t1) */ * from t1, t2 where t1.a=t2.a and t1.b<? and t2.b<? order by t1.a limit 5`, \"inl_join(`test`.`t1`), use_index(@`sel_1` `test`.`t1` `k_a`), no_order_index(@`sel_1` `test`.`t1` `k_a`), use_index(@`sel_1` `test`.`t2` )\", nil}, (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)"
   ],
   "failure_signature": "{`select /*+ inl_join(t1) */ * from t1, t2 where t1.a=t2.a and t1.b<? and t2.b<? order by t1.a limit 5`, \"inl_join(`test`.`t1`), use_index(@`sel_1` `test`.`t1` `k_a`), no_order_index(@`sel_1` `test`.`t1` `k_a`), use_index(@`sel_1` `test`.`t2` )\", nil}, (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by"
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it asserted exact hint strings from `EXPLAIN FORMAT='hint'`, and the generated hints could vary due to query-block/QB qualifier differences even when the plan is equivalent. This PR makes hint generation and expectations less sensitive to those variations so the assertion becomes deterministic.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Stabilize `EXPLAIN FORMAT='hint'` output (avoid unstable QB qualifiers in hints) and update expected hint strings in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55195",
     "https://github.com/pingcap/tidb/pull/55195.patch"

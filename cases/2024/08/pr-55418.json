@@ -9,23 +9,22 @@
   "pr_merged_at": "2024-08-20T11:36:12+08:00",
   "test": {
     "type": "unit",
-    "path": "pkg/executor/sortexec/parallel_sort_test.go",
+    "path": "pkg/executor/sortexec/parallel_sort_spill_test.go",
     "name": "TestIssue55344"
   },
   "symptoms": [
-    "tk.MustQuery(\"SELECT t0.c0 FROM t0 WHERE 0 ORDER BY -646041453 ASC;\") (pkg/executor/sortexec/parallel_sort_test.go)"
+    "tk.MustQuery(\"SELECT t0.c0 FROM t0 WHERE 0 ORDER BY -646041453 ASC;\") (pkg/executor/sortexec/parallel_sort_spill_test.go)"
   ],
-  "failure_signature": "tk.MustQuery(\"SELECT t0.c0 FROM t0 WHERE 0 ORDER BY -646041453 ASC;\") (pkg/executor/sortexec/parallel_sort_test.go)",
+  "failure_signature": "tk.MustQuery(\"SELECT t0.c0 FROM t0 WHERE 0 ORDER BY -646041453 ASC;\") (pkg/executor/sortexec/parallel_sort_spill_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because parallel sort could hang/panic on certain edge cases (e.g. ORDER BY constant expression) and error paths did not properly close worker channels, leading to deadlocks. This PR stabilizes it by handling constant sort keys and ensuring channels are closed on initialization errors.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Handle ORDER BY constant expressions in parallel sort and close worker channels on init errors to prevent hangs/deadlocks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55418",
     "https://github.com/pingcap/tidb/pull/55418.patch"
@@ -33,7 +32,7 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/55418.patch",
   "changed_files": [
     "pkg/executor/sortexec/BUILD.bazel",
-    "pkg/executor/sortexec/parallel_sort_test.go",
+    "pkg/executor/sortexec/parallel_sort_spill_test.go",
     "pkg/executor/sortexec/sort.go",
     "pkg/executor/sortexec/topn.go"
   ],

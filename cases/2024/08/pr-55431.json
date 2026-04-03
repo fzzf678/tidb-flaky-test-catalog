@@ -17,14 +17,14 @@
   ],
   "failure_signature": "*: fix an unstable test case TestJoinSystemTableContainsView",
   "root_cause_categories": [
-    "external_dependency"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: *: fix an unstable test case TestJoinSystemTableContainsView.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix an unstable test case TestJoinSystemTableContainsView",
+  "root_cause_explanation": "The test was unstable because `testkit.MustQuery` performed an extra defensive check for INFORMATION_SCHEMA queries by enabling a global failpoint and running the query twice (with/without extractor pushdown) to compare results. Some INFORMATION_SCHEMA queries are not stable across repeated execution (false positives), making the test flaky. This PR stabilizes it by removing/relaxing that defensive check and using a direct query path in the test.",
+  "module": "test_infra",
+  "fix_pattern": "Remove the flaky double-execution defensive check in TestKit.MustQuery for INFORMATION_SCHEMA queries; use MustQueryWithContext in the affected test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55431",
     "https://github.com/pingcap/tidb/pull/55431.patch"
