@@ -17,14 +17,14 @@
   ],
   "failure_signature": "{`create global binding using select /*+ order_index(t1, a) */ a from *.t1 where a<10 order by a limit 10`, (pkg/bindinfo/tests/bind_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The fuzzy binding cache only looked at in-memory bindings; if a binding existed in storage but wasn't loaded yet, fuzzy matching could miss it and the test could intermittently observe that bindings were not applied (cache-warmup timing). The fix loads missing bindings from storage on a cache miss and retries matching (and the test adds a failpoint to simulate the miss).",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "On fuzzy binding cache miss, load bindings from storage and retry matching to avoid cache-warmup races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51400",
     "https://github.com/pingcap/tidb/pull/51400.patch"

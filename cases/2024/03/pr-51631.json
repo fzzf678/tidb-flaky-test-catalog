@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(`select a from t order by a;`).Check(testkit.Rows(\"1\", \"2\", \"3\")) (pkg/table/tables/test/partition/partition_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "schema_change_race"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "ddl_without_wait"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "During `ALTER TABLE ... PARTITION BY` / reorganize-partition rollback, intermediate partition reorg fields (`NewTableID`, `DDLType`, `DDLExpr`, `DDLColumns`) were not consistently cleared, leaving the table in a half-reorganized schema state after cancellation. The fix centralizes cleanup via `PartitionInfo.ClearReorgIntermediateInfo()` and ensures rollback keeps needed args so the schema is restored correctly.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Clear partition reorg intermediate fields on rollback/cancel so the table schema returns to a consistent state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51631",
     "https://github.com/pingcap/tidb/pull/51631.patch"

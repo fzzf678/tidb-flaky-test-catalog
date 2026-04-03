@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: fix flaky test TestAnalyzeClusteredIndexPrimary",
   "root_cause_categories": [
-    "external_dependency"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: fix flaky test TestAnalyzeClusteredIndexPrimary.",
+  "root_cause_explanation": "`SHOW STATS_BUCKETS` output order isn't guaranteed, but the test asserted a fixed row order. The fix sorts the query result before checking expected rows, eliminating nondeterministic ordering failures.",
   "module": "executor",
-  "fix_pattern": "executor: fix flaky test TestAnalyzeClusteredIndexPrimary",
+  "fix_pattern": "Sort `show stats_buckets` result before assertions in `TestAnalyzeClusteredIndexPrimary`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51670",
     "https://github.com/pingcap/tidb/pull/51670.patch"

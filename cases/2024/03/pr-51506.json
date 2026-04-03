@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rnd := rand.New(rand.NewSource(0)) (br/pkg/storage/s3_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "external_dependency"
   ],
   "review_smells": [
-    "missing_order_by"
+    "network_without_retry"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "S3 object reads can fail transiently (network/remote errors). The reader now retries up to 3 times within a single `Read` by reopening the object reader and resets retry state per call; the tests were updated to use deterministic random bytes and to cover retry/reset behavior.",
+  "module": "br",
+  "fix_pattern": "Retry transient S3 read failures within a `Read` (reopen reader, retry up to 3 times) and reset retry state per call.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51506",
     "https://github.com/pingcap/tidb/pull/51506.patch"

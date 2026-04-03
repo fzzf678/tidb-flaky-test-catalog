@@ -8,24 +8,23 @@
   },
   "pr_merged_at": "2024-03-14T22:09:42+08:00",
   "test": {
-    "type": "integration",
-    "path": "tests/integrationtest/r/executor/partition/issues.result",
-    "name": "issues"
+    "type": "unit",
+    "path": "pkg/planner/core/collect_column_stats_usage_test.go",
+    "name": "TestCollectHistNeededColumns"
   },
   "symptoms": [
     "sort.Strings(cols) (pkg/planner/core/collect_column_stats_usage_test.go)"
   ],
   "failure_signature": "sort.Strings(cols) (pkg/planner/core/collect_column_stats_usage_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "`CollectColumnStatsUsage` returns a set of stats-load items whose order can vary (e.g., map/set iteration). The test compared the returned list directly, so it could fail intermittently when the same items appeared in a different order. The fix normalizes each item to a string (including full/meta load type) and sorts the slice before asserting.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Normalize and sort collected stats-load items before asserting expected values.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47496",
     "https://github.com/pingcap/tidb/pull/47496.patch"

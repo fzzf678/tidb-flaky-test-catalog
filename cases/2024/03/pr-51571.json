@@ -17,16 +17,14 @@
   ],
   "failure_signature": "rows := tk.MustQuery(\"SELECT c1 from t order by c\").Rows() (pkg/ddl/db_integration_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence: this PR mainly adds/updates tests for expression default values and fixes a DDL bug (`DefaultIsExpr` handling), but it doesn't document an intermittent/flaky failure mode to classify without CI logs.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Reset `DefaultIsExpr` correctly when altering column defaults (and update default-expression tests).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51571",
     "https://github.com/pingcap/tidb/pull/51571.patch"

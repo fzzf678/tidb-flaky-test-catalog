@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select a, my_func1() from t1 order by a\").Check(testkit.Rows(\"1000 1\", \"2000 2\")) (pkg/extension/function_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "plan_cache_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Extension functions may have side effects and privilege requirements, but the optimizer could constant-fold them or the plan cache could reuse a plan built under a different privilege context. In `TestShouldNotOptimizeExtensionFunc`, `my_func1()` could be folded/cached so it was evaluated once (returning the same value for multiple rows) or skipped privilege checks, leading to unstable behavior. The fix disables constant folding for extension functions, forces `ConstNone`, skips plan cache for statements containing them, and rechecks dynamic privileges during evaluation.",
+  "module": "expression",
+  "fix_pattern": "Do not constant-fold or plan-cache extension functions; re-check dynamic privileges on evaluation.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51926",
     "https://github.com/pingcap/tidb/pull/51926.patch"

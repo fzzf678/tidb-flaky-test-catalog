@@ -17,14 +17,14 @@
   ],
   "failure_signature": "sql: \"select time from cluster_slow_query where time > '2020-02-17 12:00:05.000000' and time < '2020-05-14 20:00:00.000000' order by time desc\", (pkg/executor/cluster_table_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence: this PR changes logging behavior and extends `cluster_slow_query` tests (including compressed log files), but it doesn't document a concrete intermittent/flaky failure mode to classify from this catalog entry alone.",
+  "module": "executor",
+  "fix_pattern": "log: Support a dedicated log file to save general log",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51249",
     "https://github.com/pingcap/tidb/pull/51249.patch"
