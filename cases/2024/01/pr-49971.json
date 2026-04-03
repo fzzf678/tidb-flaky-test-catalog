@@ -17,14 +17,14 @@
   ],
   "failure_signature": "- see issue. also fix some flaky test",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The scheduler previously treated a step as succeeded when there were no pending/running subtasks, even if some subtasks had already failed/canceled. Depending on timing (when states/errors are observed), this could incorrectly advance to the next step and make the test behavior unstable. The fix checks per-state counts and only considers a step succeeded when states are empty or all succeed, otherwise it collects and handles subtask errors.",
   "module": "domain",
-  "fix_pattern": "disttask: fix failed step is taken as success",
+  "fix_pattern": "Determine step success from per-state counts; handle failed/canceled subtasks before advancing steps",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49971",
     "https://github.com/pingcap/tidb/pull/49971.patch"

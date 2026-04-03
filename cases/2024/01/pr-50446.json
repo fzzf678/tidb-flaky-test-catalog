@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix flaky dispatch loop",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix flaky dispatch loop",
+  "root_cause_explanation": "The test was flaky because the scheduler factory and its callbacks run asynchronously, but the test used a global counter / indexed channels assuming a deterministic invocation order. Under different timings, the scheduler could be invoked for an already-finished task or the counter could get out of sync, leading to hangs/panics. The fix makes the coordination deterministic by keying wait channels by task key, pre-creating them, and skipping scheduling work when the task is already done.",
+  "module": "domain",
+  "fix_pattern": "Avoid counter-based coordination in async scheduler tests; coordinate by task key and guard callbacks for already-done tasks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50446",
     "https://github.com/pingcap/tidb/pull/50446.patch"

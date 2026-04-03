@@ -8,24 +8,23 @@
   },
   "pr_merged_at": "2024-01-26T17:42:21+08:00",
   "test": {
-    "type": "realtikv",
-    "path": "tests/realtikvtest/importintotest/import_into_test.go",
-    "name": "import_into_test"
+    "type": "unit",
+    "path": "pkg/util/dbterror/plannererrors/errors_test.go",
+    "name": "errors_test"
   },
   "symptoms": [
-    "tk.MustGetDBError(\"(select a from t order by a) union all select a from t limit 1 union all select a from t limit 1\", plannererrors.ErrWrongUsage) (pkg/executor/test/executor/executor_test.go)"
+    "*: split planner errors and remove duplicate definitions"
   ],
-  "failure_signature": "tk.MustGetDBError(\"(select a from t order by a) union all select a from t limit 1 union all select a from t limit 1\", plannererrors.ErrWrongUsage) (pkg/executor/test/executor/executor_test.go)",
+  "failure_signature": "*: split planner errors and remove duplicate definitions",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "insufficient_evidence: this PR is primarily a planner/executor error-code refactor and does not contain a clearly attributable flaky failure signature or a targeted stabilization for an intermittent test failure.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "insufficient_evidence",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50695",
     "https://github.com/pingcap/tidb/pull/50695.patch"

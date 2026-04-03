@@ -22,9 +22,9 @@
   "review_smells": [
     "real_tikv_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: restore: limit scan region concurency during restore.",
+  "root_cause_explanation": "Region scanning/splitting during restore interacts with PD/TiKV and is sensitive to timing/load. The previous implementation could issue too many scan-region requests and/or hit context timeouts, leading to unstable restore behavior and tests. The fix limits scan-region concurrency, removes the scanRegion context timeout, and uses a proper range start key when scanning regions to avoid invalid ranges.",
   "module": "br",
-  "fix_pattern": "restore: limit scan region concurency during restore",
+  "fix_pattern": "Limit scan-region concurrency and remove scanRegion timeout; scan regions using the first range's start key",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50255",
     "https://github.com/pingcap/tidb/pull/50255.patch"
