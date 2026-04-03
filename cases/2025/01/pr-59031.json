@@ -23,9 +23,9 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Now that we will not maintain the live updates of the column sizes, the record in stats_histograms will not be re-filled automatically if the `DROP STATS` still drops everything.",
+  "root_cause_explanation": "The unit test was unstable because it validated stats metadata using results whose row ordering is not guaranteed (and the assertion implicitly depended on a stable order). The fix changes the check to query `mysql.stats_histograms` grouped by `table_id` with an explicit `ORDER BY table_id`, and compares against the actual table/partition IDs, making the assertion deterministic.",
   "module": "statistics",
-  "fix_pattern": "Now that we will not maintain the live updates of the column sizes, the record in stats_histograms will not be re-filled automatically if the `DROP STATS` still drops everything.",
+  "fix_pattern": "Make the stats metadata assertion deterministic by querying `mysql.stats_histograms` with `ORDER BY table_id` and comparing against computed table/partition IDs (instead of relying on unordered output).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/59031",
     "https://github.com/pingcap/tidb/pull/59031.patch"

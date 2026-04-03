@@ -17,13 +17,12 @@
   ],
   "failure_signature": "res := tkO.MustQuery(`select schema_state from information_schema.DDL_JOBS where table_name = 't' order by job_id desc limit 1`) (pkg/ddl/tests/partition/multi_domain_test.go)",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "async_schema_propagation",
-    "ddl_without_wait"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Reverted the use of table.AddRecord() for non-clustered tables and added the old row into the batch transaction, so the transaction would fail if the old row have been touched (if it already has been copied/double writte….",
+  "root_cause_explanation": "The test was flaky because DDL backfill (REORGANIZE PARTITION) could race with concurrent DML: for non-clustered tables, the backfill batch could overwrite a row that was updated concurrently (lost update / duplicate-row symptoms depending on timing). The fix avoids using AddRecord() for these backfill writes and instead involves the old row key in the same transaction (with assertions) so the backfill transaction will fail and retry if the row was touched concurrently, preventing the backfill from reverting updates.",
   "module": "ddl",
   "fix_pattern": "Reverted the use of table.AddRecord() for non-clustered tables and added the old row into the batch transaction, so the transaction would fail if the old row have been touched (if it already has been copied/double written and has not been touched, it will be skipped from being copied).",
   "evidence_links": [

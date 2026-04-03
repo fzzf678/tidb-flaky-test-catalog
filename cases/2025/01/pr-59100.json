@@ -20,9 +20,9 @@
     "async_timing_issue"
   ],
   "review_smells": [
-    "clock_skew_dependency"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: Use sleep instead of yield.",
+  "root_cause_explanation": "The test was flaky because it relied on Go runtime scheduling after `runtime.Gosched()`: both workers could be runnable and the execution order is not guaranteed, causing nondeterministic assertions. The fix replaces yield-based synchronization with a sleep-based delay to make the intended ordering more reliable in CI.",
   "module": "executor",
   "fix_pattern": "Use sleep instead of yield.",
   "evidence_links": [
