@@ -17,16 +17,14 @@
   ],
   "failure_signature": "Updated unstable test | result.Sort().Check(testkit.Rows(\"11 6 4\", \"12 7 7\", \"18 18 17\", \"19 17 18\", \"4 5 6\", \"6 4 5\", \"8 8 9\", \"9 9 8\")) (pkg/ddl/tests/partition/db_partition_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test compared query results where the effective order was not deterministic (e.g. ties under `ORDER BY b` when `b` can be empty/duplicated). This PR stabilizes the test by sorting the rows before comparing/asserting, so the assertion no longer depends on a nondeterministic tie-break order.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort result rows before assertions (avoid relying on nondeterministic ordering / tie-breaks).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53277",
     "https://github.com/pingcap/tidb/pull/53277.patch"

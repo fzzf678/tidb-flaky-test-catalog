@@ -17,16 +17,14 @@
   ],
   "failure_signature": "originalRes.Equal(clonedRes.Sort().Rows()) (pkg/planner/core/plan_cache_rebuild_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost",
-    "plan_cache_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky root cause; it adds `CloneForPlanCache` and expands plan cache clone tests/behavior, without an explicit flaky signature or deterministic stabilization change that clearly explains the original flakiness.",
+  "module": "session",
+  "fix_pattern": "planner: add CloneForPlanCache method to Plan interface",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54295",
     "https://github.com/pingcap/tidb/pull/54295.patch"

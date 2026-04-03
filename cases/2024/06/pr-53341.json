@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test generated random split keys and implicitly relied on their order. Because the generated keys are nondeterministic, the constructed key ranges could end up out of order and fail intermittently. This PR stabilizes the behavior by sorting the generated keys (`partRes`) before using them.",
   "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort generated keys/split points to enforce deterministic ordering before use/assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53341",
     "https://github.com/pingcap/tidb/pull/53341.patch"

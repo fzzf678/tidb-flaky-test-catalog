@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ddl: fix flaky test TestCancel & fix panic when we failed to get job in delivery2Worker",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix flaky test TestCancel & fix panic when we failed to get job in delivery2Worker.",
+  "root_cause_explanation": "TestCancel uses DDL hooks to cancel jobs, but hook callbacks can race with earlier/prepare jobs; the callback could observe an unexpected job/query and cancel the wrong job, making the test flaky. This PR stabilizes it by matching `job.Query` to the expected SQL (so the hook only triggers for the intended job), canceling only once, and by using the captured `jobID` when refreshing jobs to avoid a nil-job panic.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix flaky test TestCancel & fix panic when we failed to get job in delivery2Worker",
+  "fix_pattern": "Make hook-driven cancellations deterministic: match the target job/query, cancel once, and refresh by jobID to avoid races/panics.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53887",
     "https://github.com/pingcap/tidb/pull/53887.patch"
