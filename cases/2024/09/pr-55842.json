@@ -17,15 +17,14 @@
   ],
   "failure_signature": "select * from (SELECT DISTINCT cc2 as a, cc2 as b, cc1 as c FROM t2 UNION ALL SELECT count(1) over (partition by cc1), cc2, cc1 FROM t1) order by a,b,c; (tests/integrationtest/t/planner/core/issuetest/planner_issue.test)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to confidently classify this as a flaky-test stabilization from the available case data. The PR primarily addresses planner/statistics correctness (e.g., NaN/incorrect estRows/selectivity when stats are missing for JSON/global index) and updates integration test expectations; treat this as a low-confidence/unclear flaky-fix signal.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "planner: fix incorrect estRows with global index and json column",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55842",
     "https://github.com/pingcap/tidb/pull/55842.patch"

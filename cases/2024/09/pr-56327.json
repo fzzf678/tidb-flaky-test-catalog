@@ -20,12 +20,11 @@
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "schema_version_race"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix flaky TestRenameTableAutoIDs.",
+  "root_cause_explanation": "The test was flaky due to a schema/infoschema version race caused by creating a new session (`NewTestKit`) inside a polling loop. Repeatedly creating sessions during DDL progress could trigger inconsistent infoschema v1/v2 behavior and observe DDL job state inconsistently, leading to intermittent failures. The fix reuses a single session (`tk4`) outside the loop, avoiding infoschema switching during polling and making the observation deterministic.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix flaky TestRenameTableAutoIDs",
+  "fix_pattern": "Avoid schema-version/infoschema flakiness in polling loops by reusing a stable session instead of creating new sessions repeatedly during DDL progress checks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56327",
     "https://github.com/pingcap/tidb/pull/56327.patch"

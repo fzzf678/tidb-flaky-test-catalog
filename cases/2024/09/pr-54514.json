@@ -8,23 +8,23 @@
   },
   "pr_merged_at": "2024-09-30T10:14:39+08:00",
   "test": {
-    "type": "realtikv",
-    "path": "tests/realtikvtest/statisticstest/statistics_test.go",
-    "name": "TestColumnTable"
+    "type": "unit",
+    "path": "pkg/planner/cardinality/selectivity_test.go",
+    "name": "TestBuiltinInEstWithoutStats"
   },
   "symptoms": [
-    "*: fix flaky test TestColumnTable"
+    "Test flaps around stats-lite initialization: `ColAndIdxExistenceMap` content/assumptions differ depending on infoschema version used during InitStatsLite."
   ],
-  "failure_signature": "*: fix flaky test TestColumnTable",
+  "failure_signature": "TestBuiltinInEstWithoutStats: stats-lite init leads to unstable expectations about column existence map",
   "root_cause_categories": [
     "schema_change_race"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "schema_version_race"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: statistics: avoid using infoschema when to init stats.",
+  "root_cause_explanation": "The test was flaky because it relied on assumptions about which columns are recorded in `ColAndIdxExistenceMap` immediately after `InitStatsLite`. That initialization previously depended on an infoschema argument/version, which could lead to inconsistent existence-map contents across runs. The fix makes stats-lite initialization not require passing infoschema (`InitStatsLite(ctx)`), and removes the brittle per-column `Has(...)` assertion so the test no longer depends on unstable internal bookkeeping.",
   "module": "statistics",
-  "fix_pattern": "statistics: avoid using infoschema when to init stats",
+  "fix_pattern": "Avoid passing potentially stale infoschema into stats-lite initialization; use the updated `InitStatsLite(ctx)` API and remove brittle assertions that depend on internal existence-map details.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54514",
     "https://github.com/pingcap/tidb/pull/54514.patch"

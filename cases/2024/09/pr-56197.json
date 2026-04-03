@@ -13,16 +13,16 @@
     "name": "reorg_partition"
   },
   "symptoms": [
-    "Stabilize TestShowPlacement, so it passes unit tests"
+    "Adds validation checks for `ALTER TABLE ... PARTITION BY ...` to reject unsupported partition expression/column types (and updates integration tests accordingly)."
   ],
-  "failure_signature": "Stabilize TestShowPlacement, so it passes unit tests",
+  "failure_signature": "ALTER TABLE ... PARTITION BY: missing type checks could allow invalid partition expressions; tests updated to assert correct errors",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: Also check column types in ALTER TABLE t PARTITION BY ...",
+  "root_cause_explanation": "Insufficient evidence to classify this as a flaky-test stabilization from the available case data. This PR primarily adds missing DDL validation (type checks for `ALTER TABLE ... PARTITION BY ...`) and updates tests to assert correct error behavior; treat as a low-confidence/unclear flaky-fix signal.",
   "module": "ddl",
   "fix_pattern": "ddl: Also check column types in ALTER TABLE t PARTITION BY ...",
   "evidence_links": [

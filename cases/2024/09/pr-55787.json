@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "pkg/meta/meta_test.go",
-    "name": "TestReferredFKInfo"
+    "name": "TestInfoSchemaMiscFieldsCorrectnessAfterBootstrap"
   },
   "symptoms": [
-    "sort.Slice(group1, func(i, j int) bool { (pkg/meta/meta_test.go)"
+    "`AllResourceGroups()` returns a slice with nondeterministic ordering; the test assumed a stable index and flapped."
   ],
-  "failure_signature": "sort.Slice(group1, func(i, j int) bool { (pkg/meta/meta_test.go)",
+  "failure_signature": "TestInfoSchemaMiscFieldsCorrectnessAfterBootstrap: assertion on `group1[1]` is flaky unless `group1` is sorted",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test relied on the incidental ordering of a returned slice (`AllResourceGroups()`), then asserted on a specific index (`group1[1]`). Since the underlying order is not guaranteed to be stable, the test could fail intermittently depending on iteration/order. The fix sorts the slice by resource group name before making index-based assertions, making the test deterministic.",
+  "module": "domain",
+  "fix_pattern": "Sort returned collections before index-based assertions (avoid relying on nondeterministic iteration/order).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55787",
     "https://github.com/pingcap/tidb/pull/55787.patch"

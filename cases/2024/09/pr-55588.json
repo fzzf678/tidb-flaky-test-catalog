@@ -9,7 +9,7 @@
   "pr_merged_at": "2024-09-05T23:28:18+08:00",
   "test": {
     "type": "realtikv",
-    "path": "tests/realtikvtest/addindextest3/functional_test.go",
+    "path": "tests/realtikvtest/addindextest1/disttask_test.go",
     "name": "TestAddUniqueIndexAfterFlashBack"
   },
   "symptoms": [
@@ -17,14 +17,16 @@
   ],
   "failure_signature": "remove unstable TestAddUniqueIndexAfterFlashBack",
   "root_cause_categories": [
-    "schema_change_race"
+    "external_dependency"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "real_tikv_dependency",
+    "clock_skew_dependency",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl/ingest: set `minCommitTS` when detect remote duplicate keys.",
+  "root_cause_explanation": "The test was unstable because it exercised `FLASHBACK CLUSTER` in a real TiKV environment and relied on wall-clock/timestamp timing plus fixed sleeps to wait for cluster state to settle. In CI this kind of cluster-level, time-dependent behavior can vary and lead to intermittent failures. The PR quarantines the flakiness by removing the unstable test from the realtikv test suite and keeping the scenario covered by manual/integration testing instead.",
   "module": "ddl",
-  "fix_pattern": "ddl/ingest: set `minCommitTS` when detect remote duplicate keys",
+  "fix_pattern": "Quarantine: remove an unstable realtikv test that depends on FLASHBACK CLUSTER timing (sleep/timestamp) instead of trying to make it deterministic in CI.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55588",
     "https://github.com/pingcap/tidb/pull/55588.patch"
@@ -39,7 +41,8 @@
     "pkg/ddl/ingest/mock.go",
     "pkg/lightning/backend/encode/encode.go",
     "pkg/lightning/backend/local/duplicate.go",
-    "tests/realtikvtest/addindextest3/functional_test.go"
+    "tests/realtikvtest/addindextest3/functional_test.go",
+    "tests/realtikvtest/addindextest1/disttask_test.go"
   ],
   "triage": {
     "sources": [

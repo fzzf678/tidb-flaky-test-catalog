@@ -17,14 +17,14 @@
   ],
   "failure_signature": "*: fix flaky test TestConnectThrough636",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "external_dependency"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix flaky test TestConnectThrough636",
+  "root_cause_explanation": "The test was flaky because it picked a pseudo-random fixed port (`rand.Int()%10000 + 10000`) for a TLS listener. That can collide with other processes/tests or hit an unavailable port, causing intermittent bind/connect failures. The fix makes it deterministic by listening on an ephemeral port (`:0`) and then reading/parsing the actual port from `ln.Addr()`, avoiding port conflicts.",
+  "module": "security",
+  "fix_pattern": "Avoid flaky tests caused by port conflicts: bind to an ephemeral port (`:0`) and use the runtime-assigned port instead of guessing a random fixed port.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56310",
     "https://github.com/pingcap/tidb/pull/56310.patch"

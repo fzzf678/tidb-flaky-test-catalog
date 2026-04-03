@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix unstable TestAdminShowNextID",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: test: fix unstable TestAdminShowNextID.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable TestAdminShowNextID",
+  "root_cause_explanation": "The test was unstable because it depended on the global auto-id step configuration (`autoid.SetStep`) and the timing of when that global is set/restored across helper/test execution. Mutating and restoring a global like this can interact poorly with other tests or different execution orders, causing the expected next-row-id increments to vary. The fix sets the auto-id step deterministically at the beginning of the test (and avoids per-helper restore logic), making the assertions stable.",
+  "module": "executor",
+  "fix_pattern": "Avoid flaky tests caused by global configuration mutation: set required global auto-id step deterministically at test setup (and avoid racy set/restore inside helpers).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56002",
     "https://github.com/pingcap/tidb/pull/56002.patch"

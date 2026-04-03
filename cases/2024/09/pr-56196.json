@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sql: \"select * from pt2_global_index where b > 1 order by b\", (pkg/planner/core/logical_plans_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because the optimizer's skyline pruning could treat a global-index path and a normal-index path as equivalent (missing a tie-break dimension), so the chosen access path could vary depending on internal iteration/order. When the test asserted a specific chosen path (e.g. prefer global index `b` over normal index `b_1`), it could intermittently fail. The fix makes the choice deterministic by explicitly considering whether a candidate path is a global index during skyline pruning, so the expected plan/path is selected consistently.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Make optimizer path selection deterministic by adding an explicit tie-break dimension (e.g., prefer global index paths over normal index paths) so plan-based tests don't flap.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56196",
     "https://github.com/pingcap/tidb/pull/56196.patch"

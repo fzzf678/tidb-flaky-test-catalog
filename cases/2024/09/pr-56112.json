@@ -17,14 +17,14 @@
   ],
   "failure_signature": "r := rand.New(rand.NewSource(seed)) (pkg/lightning/backend/local/region_job_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The flakiness was caused by concurrency/cancellation issues in the Lightning local backend region-job workflow (store balancer / dispatch / retry pipeline). The old code relied on assumptions about component exit order and unblocked channels; under cancellation or timing differences it could deadlock or leave shared counters/state inconsistent, leading to intermittent test hangs/failures. The PR refactors the workflow to be cancellation-safe, uses atomic-style updates (e.g., Compare-And-Swap on store load counters), and adds stress-style unit tests (with logged random seeds) to cover cancellation and race scenarios.",
   "module": "lightning",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Refactor async pipeline code to be cancellation-safe (avoid blocked channel assumptions) and make shared-state updates atomic/consistent (e.g., CAS on counters); add concurrency-focused unit tests to prevent regressions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56112",
     "https://github.com/pingcap/tidb/pull/56112.patch"

@@ -8,23 +8,23 @@
   },
   "pr_merged_at": "2024-09-26T21:04:27+08:00",
   "test": {
-    "type": "integration",
-    "path": "tests/integrationtest/r/ddl/partition.result",
-    "name": "partition"
+    "type": "unit",
+    "path": "pkg/planner/core/testdata/runtime_filter_generator_suite_out.json",
+    "name": "TestRuntimeFilterGenerator"
   },
   "symptoms": [
-    "testcase flaky test"
+    "EXPLAIN output in casetest included unstable operator suffixes/IDs (e.g. `TableReader_32`, `ExchangeSender_31`), causing expected-plan assertions to flap."
   ],
-  "failure_signature": "testcase flaky test",
+  "failure_signature": "Plan assertion flaps because EXPLAIN operator names include nondeterministic numeric suffixes/IDs (e.g. `_32`, `_31`)",
   "root_cause_categories": [
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: increase tablescan cost for high risk scenarios | tidb-test=pr/2399.",
+  "root_cause_explanation": "The test was flaky because it asserted an exact EXPLAIN plan string that contained unstable operator identifiers/suffixes (e.g. `TableReader_32`, `ExchangeSender_31`). Those numeric suffixes can change across runs even when the logical plan is equivalent, causing intermittent mismatches. The fix switches the testcases to use `EXPLAIN format='brief'` and updates expected outputs to the brief format (without unstable suffixes), making the assertions deterministic.",
   "module": "planner",
-  "fix_pattern": "planner: increase tablescan cost for high risk scenarios | tidb-test=pr/2399",
+  "fix_pattern": "For plan-based tests, use `EXPLAIN format='brief'` (or otherwise normalize EXPLAIN output) to avoid flakiness from unstable operator IDs/names while still validating plan shape.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56203",
     "https://github.com/pingcap/tidb/pull/56203.patch"

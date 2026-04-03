@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(`EXPLAIN SELECT VEC_COSINE_DISTANCE(c, '[1,2,3,4,5,6,7,8,9,10,11]') AS d FROM t ORDER BY d LIMIT 10;`).Check(testkit.Rows( (pkg/expression/integration_test/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to confidently classify this as a flaky-test stabilization from the available case data. This PR mainly changes how long constants/vectors are stringified/truncated in EXPLAIN output (readability/redaction-related) and updates corresponding tests; treat as a low-confidence/unclear flaky-fix signal.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "planner: Display truncate vector in EXPLAIN",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55934",
     "https://github.com/pingcap/tidb/pull/55934.patch"

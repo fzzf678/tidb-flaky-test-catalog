@@ -9,23 +9,22 @@
   "pr_merged_at": "2024-09-20T13:02:17+08:00",
   "test": {
     "type": "unit",
-    "path": "pkg/executor/test/cte/cte_test.go",
-    "name": "TestMDLViewPrivilege1"
+    "path": "pkg/infoschema/test/clustertablestest/cluster_tables_test.go",
+    "name": "TestMDLViewWithNoPrivilege"
   },
   "symptoms": [
-    "tests: reduce some flaky timeout tests"
+    "Test suite contained long-running/timeout-prone tests (e.g. MDL view privilege tests could take ~85s+ on some machines), causing intermittent timeouts."
   ],
-  "failure_signature": "tests: reduce some flaky timeout tests",
+  "failure_signature": "Flaky timeouts in long-running tests (e.g. MDL view privilege / pprof profile endpoints / memtable extractor) under slower machines or heavy load",
   "root_cause_categories": [
     "async_timing_issue"
   ],
   "review_smells": [
-    "insufficient_timeout",
-    "clock_skew_dependency"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: tests: reduce some flaky timeout tests.",
-  "module": "test_infra",
-  "fix_pattern": "tests: reduce some flaky timeout tests",
+  "root_cause_explanation": "These tests were flaky due to wall-clock/time-budget sensitivity: on slower or loaded machines they could exceed time limits (e.g. MDL view privilege test took 85s+). The PR stabilizes CI by splitting heavyweight tests into smaller parts, constraining expensive endpoints (e.g. `pprof/profile?seconds=5`), and adjusting test parameters so the suite reliably finishes within expected time bounds.",
+  "module": "domain",
+  "fix_pattern": "Reduce timeout flakiness by splitting long-running tests and limiting expensive operations (e.g. shorten pprof profile duration) so the suite fits within CI time budgets.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56171",
     "https://github.com/pingcap/tidb/pull/56171.patch"
