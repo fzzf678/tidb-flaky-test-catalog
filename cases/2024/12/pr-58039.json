@@ -22,9 +22,9 @@
   "review_smells": [
     "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: planner: correct the vector index tests.",
+  "root_cause_explanation": "The vector index test was flaky because whether statistics were loaded and kept in memory depended on asynchronous DDL event handling; in some runs the stats cache entry could be deleted before the test observed a stable state, leading to different EXPLAIN/plan output. The fix explicitly handles the relevant DDL events/state so stats are available when the test asserts, avoiding timing-dependent behavior.",
   "module": "planner",
-  "fix_pattern": "planner: correct the vector index tests",
+  "fix_pattern": "Stabilize vector index tests by ensuring stats are loaded/retained deterministically (handle DDL events and avoid relying on timing-sensitive stats cache state).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58039",
     "https://github.com/pingcap/tidb/pull/58039.patch"

@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it asserted on a list of subtasks whose iteration order is not guaranteed (e.g., returned from storage without a stable ORDER BY). The fix makes the assertion deterministic by sorting the fetched subtasks (e.g., `slices.SortFunc(...)`) before comparing with expected values.",
   "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort the fetched subtasks deterministically (e.g., `slices.SortFunc(gotSubtasks, ...)`) before assertions to avoid nondeterministic ordering in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/57673",
     "https://github.com/pingcap/tidb/pull/57673.patch"

@@ -16,20 +16,19 @@
     "explain format = brief select * from t where 1 member of (j1) or 2 member of (j2) order by a; (tests/integrationtest/r/planner/core/indexmerge_path.result)"
   ],
   "failure_signature": "explain format = brief select * from t where 1 member of (j1) or 2 member of (j2) order by a; (tests/integrationtest/r/planner/core/indexmerge_path.result)",
-  "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
-  ],
-  "review_smells": [
-    "assert_exact_plan_or_cost"
-  ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/58397",
-    "https://github.com/pingcap/tidb/pull/58397.patch"
-  ],
+    "root_cause_categories": [
+        "nondeterministic_plan_selection"
+    ],
+    "review_smells": [
+        "assert_exact_plan_or_cost"
+    ],
+    "root_cause_explanation": "The test was flaky because index-merge plan selection can be unstable when multiple alternative access paths have similar row-count estimates, causing EXPLAIN output to differ between runs. This PR refactors `PartialAlternativeIndexPaths` handling and deterministically orders alternatives (via `cmpAlternativesByRowCount`) to stabilize the chosen plan and update the golden output.",
+    "module": "planner",
+    "fix_pattern": "Make index-merge alternative access-path selection deterministic (order alternatives by row-count and tie-breakers) so EXPLAIN output is stable; update integration test golden files accordingly.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/58397",
+        "https://github.com/pingcap/tidb/pull/58397.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/58397.patch",
   "changed_files": [
     "pkg/planner/core/find_best_task.go",

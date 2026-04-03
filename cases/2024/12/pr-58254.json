@@ -20,11 +20,11 @@
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: stabilize the vector index test.",
+  "root_cause_explanation": "The vector index test was flaky because it depended on ANALYZE/statistics timing: inserting too many rows could cause ANALYZE to read a snapshot value, leading to unstable stats and thus different plan/EXPLAIN output across runs. The fix reduces the inserted row count to keep ANALYZE deterministic for this test case, stabilizing the resulting plan output.",
   "module": "planner",
-  "fix_pattern": "planner: stabilize the vector index test",
+  "fix_pattern": "Reduce inserted rows in the vector index test to avoid timing-dependent ANALYZE snapshot behavior and stabilize stats/plan output.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58254",
     "https://github.com/pingcap/tidb/pull/58254.patch"

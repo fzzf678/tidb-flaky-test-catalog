@@ -17,14 +17,14 @@
   ],
   "failure_signature": "fix unstable TestTrafficError",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "external_dependency"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: executor, planner: send traffic requests to tiproxy.",
+  "root_cause_explanation": "The test was flaky because it asserted on an exact network error message when dialing an invalid TiProxy address/port. The concrete error string can vary across OS/network stacks, so the assertion failed intermittently in CI. The fix makes the check less brittle by asserting on a more general substring (e.g., `dial tcp`) instead of an OS-specific message.",
   "module": "executor",
-  "fix_pattern": "executor, planner: send traffic requests to tiproxy",
+  "fix_pattern": "Relax brittle error-message assertions for TiProxy dialing failures (match a stable substring like `dial tcp` instead of OS-specific error text).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/58006",
     "https://github.com/pingcap/tidb/pull/58006.patch"

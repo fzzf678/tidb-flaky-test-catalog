@@ -17,14 +17,14 @@
   ],
   "failure_signature": "ttl,partition: Stabilize test TestReorgPartExtensivePart",
   "root_cause_categories": [
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ttl,partition: Stabilize test TestReorgPartExtensivePart.",
+  "root_cause_explanation": "The test was flaky because it mutated table metadata directly in the test while the TTL background loop could still read/react to that metadata, causing nondeterministic interference between the test and background TTL logic. The fix disables TTL for this test and ensures the TTL loop is not triggered when TTL is disabled, restoring isolation and making the test stable.",
   "module": "domain",
-  "fix_pattern": "ttl,partition: Stabilize test TestReorgPartExtensivePart",
+  "fix_pattern": "Disable TTL and prevent the TTL loop from running during the partition reorg test to avoid background TTL reading mutated table meta and interfering with the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53017",
     "https://github.com/pingcap/tidb/pull/53017.patch"

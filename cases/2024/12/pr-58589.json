@@ -16,20 +16,19 @@
     "test: stabilize TestGetAndResetRecentInfoSchemaTS"
   ],
   "failure_signature": "test: stabilize TestGetAndResetRecentInfoSchemaTS",
-  "root_cause_categories": [
-    "schema_change_race",
-    "shared_state_pollution"
-  ],
-  "review_smells": [
-    "async_schema_propagation"
-  ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: stabilize TestGetAndResetRecentInfoSchemaTS.",
-  "module": "test_infra",
-  "fix_pattern": "test: stabilize TestGetAndResetRecentInfoSchemaTS",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/58589",
-    "https://github.com/pingcap/tidb/pull/58589.patch"
-  ],
+    "root_cause_categories": [
+        "shared_state_pollution"
+    ],
+    "review_smells": [
+        "global_variable_mutation"
+    ],
+    "root_cause_explanation": "The test was flaky because InfoSchema cache v2 is only enabled when `@@global.tidb_schema_cache_size` is configured; when disabled, `GetAndResetRecentInfoSchemaTS` never updates and returns MaxInt64, making assertions depend on global state. This PR stabilizes it by explicitly setting `@@global.tidb_schema_cache_size` in the test to enable cache v2 before asserting on the recent InfoSchema TS.",
+    "module": "domain",
+    "fix_pattern": "Enable InfoSchema cache v2 in the test by setting `@@global.tidb_schema_cache_size` before asserting recent InfoSchema TS.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/58589",
+        "https://github.com/pingcap/tidb/pull/58589.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/58589.patch",
   "changed_files": [
     "pkg/infoschema/cache.go",

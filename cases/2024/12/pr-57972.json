@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: fix flaky test TestUnionIssue",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test was flaky because it asserted on the row order of UNION ALL results without enforcing a deterministic ordering. UNION ALL does not guarantee output order, so the same query can return rows in different orders across runs. The fix stabilizes the test by adding an explicit sort (e.g., `MustQuery(...).Sort()`) or an ORDER BY before comparing results.",
   "module": "executor",
-  "fix_pattern": "executor: fix flaky test TestUnionIssue",
+  "fix_pattern": "Make UNION ALL result assertions deterministic by adding ORDER BY or sorting the result set (`.Sort()`) before `Check()`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/57972",
     "https://github.com/pingcap/tidb/pull/57972.patch"
