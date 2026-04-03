@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "pkg/statistics/handle/storage/dump_test.go",
-    "name": "TestPITRIDMap"
+    "name": "TestJSONTableToBlocks"
   },
   "symptoms": [
-    "slices.SortFunc(dumpJSONTable.PredicateColumns, func(a, b *handleutil.JSONPredicateColumn) int { (pkg/statistics/handle/storage/dump_test.go)"
+    "`PredicateColumns` slice order is generated from a map loop, so the JSON marshaling/comparison in the test can flap due to random iteration order."
   ],
-  "failure_signature": "slices.SortFunc(dumpJSONTable.PredicateColumns, func(a, b *handleutil.JSONPredicateColumn) int { (pkg/statistics/handle/storage/dump_test.go)",
+  "failure_signature": "TestJSONTableToBlocks: JSON comparison flaps because `PredicateColumns` is built from map iteration (nondeterministic order)",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test constructed/serialized `PredicateColumns` from a map iteration, so the slice order could change across runs. The test then compared marshaled JSON (or round-tripped JSON blocks) assuming a stable order, which caused intermittent mismatches. The fix explicitly sorts `PredicateColumns` by ID before marshaling/comparing, removing dependence on map iteration order.",
+  "module": "statistics",
+  "fix_pattern": "Sort map-derived slices (e.g., `PredicateColumns`) by a stable key (ID) before JSON marshal/comparison to avoid nondeterministic ordering flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55871",
     "https://github.com/pingcap/tidb/pull/55871.patch"

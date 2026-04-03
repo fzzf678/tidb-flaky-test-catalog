@@ -9,22 +9,22 @@
   "pr_merged_at": "2024-09-27T04:50:26+08:00",
   "test": {
     "type": "unit",
-    "path": "pkg/ddl/tests/partition/reorg_partition_test.go",
-    "name": "TestReorgPartitionGlobalIndex"
+    "path": "pkg/table/tables/test/partition/partition_test.go",
+    "name": "TestGlobalIndexPartitionByIntExtensivePart"
   },
   "symptoms": [
-    "Updated unstable test"
+    "Unstable test due to nondeterministic ordering when comparing `select * from t order by b` results (ties/empty string values can reorder)."
   ],
-  "failure_signature": "Updated unstable test",
+  "failure_signature": "partition_test: `select * from t order by b` comparison flaps because `b` can duplicate/empty-string and tie order is nondeterministic",
   "root_cause_categories": [
-    "schema_change_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: Reorganize Partition failure/rollback tests and fixes.",
+  "root_cause_explanation": "The test compared result sets ordered only by column `b`. Because `b` can contain duplicate values (including empty strings), the order among ties is not stable, so `select * ... order by b` can return rows in different orders across runs and cause intermittent mismatches. The fix stabilizes the assertion by calling `.Sort()` on both query results before comparing them, removing dependence on tie ordering.",
   "module": "ddl",
-  "fix_pattern": "ddl: Reorganize Partition failure/rollback tests and fixes",
+  "fix_pattern": "Sort query results before equality checks when ORDER BY is not fully deterministic (ties/duplicate keys), e.g. use `.Sort()` before `.Rows()` comparison.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53544",
     "https://github.com/pingcap/tidb/pull/53544.patch"
@@ -37,7 +37,8 @@
     "pkg/ddl/rollingback.go",
     "pkg/ddl/tests/partition/BUILD.bazel",
     "pkg/ddl/tests/partition/reorg_partition_test.go",
-    "pkg/meta/model/table.go"
+    "pkg/meta/model/table.go",
+    "pkg/table/tables/test/partition/partition_test.go"
   ],
   "triage": {
     "sources": [

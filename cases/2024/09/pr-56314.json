@@ -17,14 +17,14 @@
   ],
   "failure_signature": "*: fix flaky test TestShowPlacement",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix flaky test TestShowPlacement",
+  "root_cause_explanation": "`SHOW PLACEMENT` output ordering is not guaranteed, but the test asserted on an exact row order. This caused intermittent failures when the same rows were returned in a different order. The fix sorts the query result (`.Sort()`) before comparing expected rows, making the test deterministic.",
+  "module": "executor",
+  "fix_pattern": "Stabilize tests for unordered SHOW outputs by sorting results before assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56314",
     "https://github.com/pingcap/tidb/pull/56314.patch"

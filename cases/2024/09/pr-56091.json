@@ -17,14 +17,14 @@
   ],
   "failure_signature": "{\"select * from t use index(b) where b > 1 order by b limit 1 for update\", \"IndexLookUp\"}, (pkg/executor/partition_table_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to confidently classify this as a flaky-test stabilization from the available case data. This PR mainly adds more `SELECT ... FOR UPDATE` test coverage for global index/partitioned tables (including plan checks and lock behavior); treat as a low-confidence/unclear flaky-fix signal.",
+  "module": "executor",
+  "fix_pattern": "tests: add more tests for `select for update` with `global index`",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/56091",
     "https://github.com/pingcap/tidb/pull/56091.patch"

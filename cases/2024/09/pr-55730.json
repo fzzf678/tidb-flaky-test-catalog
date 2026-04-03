@@ -22,9 +22,9 @@
   "review_smells": [
     "schema_version_race"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: statistics: prevent columns not present in the information schema from affecting the final result.",
+  "root_cause_explanation": "The test was flaky due to a schema/stats race during async statistics loading: a column referenced by pending load tasks could be missing from the current infoschema (e.g. schema changed or column info not retrievable), and continuing to load/merge stats in that situation could produce incorrect/corrupted results. The fix detects this “column not present in infoschema” case and returns/ignores it early so async loading cannot pollute the final statistics state.",
   "module": "statistics",
-  "fix_pattern": "statistics: prevent columns not present in the information schema from affecting the final result",
+  "fix_pattern": "Guard async stats loading with infoschema checks: if the target column is missing from the current schema, skip/return early to avoid corrupting final stats state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55730",
     "https://github.com/pingcap/tidb/pull/55730.patch"
