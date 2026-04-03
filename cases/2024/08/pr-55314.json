@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from t order by a asc\").Check(testkit.Rows(\"1 1\", \"2 2\", \"3 3\")) (pkg/table/tables/index_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "schema_change_race"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it exercises DML while a `DROP INDEX` is in the non-public (WriteOnly) state, and transaction assertions depend on the index state. A bug where `opt.IgnoreAssertion` was mutated across multiple index operations could surface intermittently depending on DDL state. This PR stabilizes it by deriving a local `ignoreAssertion` based on index state instead of mutating shared options.",
+  "module": "txn",
+  "fix_pattern": "Avoid mutating `opt.IgnoreAssertion`; derive a local ignoreAssertion based on index state (non-public) to prevent intermittent txn assertion failures during DDL/DML overlap.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55314",
     "https://github.com/pingcap/tidb/pull/55314.patch"

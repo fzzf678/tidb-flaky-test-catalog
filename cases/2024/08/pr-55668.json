@@ -17,14 +17,14 @@
   ],
   "failure_signature": "disttask: fix flaky test TestParallelCancel",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: disttask: fix flaky test TestParallelCancel.",
+  "root_cause_explanation": "The test was flaky because it assumed synchronous state transitions and sequential task/subtask IDs in a parallel scheduler. Task/subtask IDs and visibility can vary (e.g. due to background scheduling and info cache changes), so fixed retry loops and position-based ID assumptions can fail intermittently. This PR stabilizes it by using `require.Eventually` with a sufficient timeout and by querying actual task/subtask IDs instead of assuming `1..N`.",
   "module": "domain",
-  "fix_pattern": "disttask: fix flaky test TestParallelCancel",
+  "fix_pattern": "Use require.Eventually with adequate timeout for async task state transitions and avoid assuming sequential task/subtask IDs; query real IDs before updating/canceling.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55668",
     "https://github.com/pingcap/tidb/pull/55668.patch"

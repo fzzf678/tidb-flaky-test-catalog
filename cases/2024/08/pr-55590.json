@@ -9,22 +9,22 @@
   "pr_merged_at": "2024-08-28T21:15:18+08:00",
   "test": {
     "type": "unit",
-    "path": "pkg/server/handler/tests/http_handler_test.go",
+    "path": "pkg/ddl/ddl_history_test.go",
     "name": "TestScanHistoryDDLJobsWithErrorLimit"
   },
   "symptoms": [
-    "slices.SortFunc(jobs, func(i, j *model.Job) int { (pkg/server/handler/tests/http_handler_test.go)"
+    "when 'start_job_id' is specified, it must work with a 'limit' (pkg/ddl/ddl_history_test.go)"
   ],
-  "failure_signature": "slices.SortFunc(jobs, func(i, j *model.Job) int { (pkg/server/handler/tests/http_handler_test.go)",
+  "failure_signature": "when 'start_job_id' is specified, it must work with a 'limit' (pkg/ddl/ddl_history_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Limit returned DDL history jobs to avoid OOM and validate/guard the request limit parameter.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55590",
     "https://github.com/pingcap/tidb/pull/55590.patch"

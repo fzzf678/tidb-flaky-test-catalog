@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ddl: fix flaky TestGenIDAndInsertJobsWithRetry",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix flaky TestGenIDAndInsertJobsWithRetry.",
+  "root_cause_explanation": "The test was flaky because it initialized test sessions (`testkit.NewTestKit`) concurrently inside goroutines; that setup touches shared test harness state and can fail intermittently under concurrency. This PR stabilizes it by creating per-goroutine TestKit instances upfront and reusing one TestKit per worker goroutine.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix flaky TestGenIDAndInsertJobsWithRetry",
+  "fix_pattern": "Pre-create per-goroutine TestKit/session objects before starting goroutines; avoid concurrent testkit initialization on shared test state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55233",
     "https://github.com/pingcap/tidb/pull/55233.patch"

@@ -13,18 +13,18 @@
     "name": "window"
   },
   "symptoms": [
-    "order by c0, c1, c2 desc (tests/integrationtest/r/executor/window.result)"
+    "Integration test hit intermittent panic: `runtime error: index out of range [32] with length 32` when `PipelinedWindowExec` was opened/closed repeatedly (e.g., under apply) and reused stale internal state."
   ],
-  "failure_signature": "order by c0, c1, c2 desc (tests/integrationtest/r/executor/window.result)",
+  "failure_signature": "Error 1105 (HY000): runtime error: index out of range [32] with length 32 (executor/window)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "`PipelinedWindowExec` can be opened/closed multiple times when used as a child executor (e.g., under apply). Before this PR, `Open()` did not fully reset all internal state/parameters, so a subsequent execution could reuse stale indices/counters from a previous run and trigger out-of-bounds access (`index out of range`). The fix resets all relevant fields in `Open()` so each execution starts from a clean state and no stale state leaks across opens.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Reset executor internal state on every `Open()` (especially for executors that may be reopened/reused under apply) to avoid stale-state reuse and intermittent panics.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54709",
     "https://github.com/pingcap/tidb/pull/54709.patch"

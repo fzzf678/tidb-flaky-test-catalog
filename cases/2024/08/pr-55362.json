@@ -17,14 +17,14 @@
   ],
   "failure_signature": "There are one bug and two unstable tests fix by that PR, it's better to make it into v8.3",
   "root_cause_categories": [
-    "schema_change_race"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: infoschema: update two tests to make them robust and a tiny fix.",
+  "root_cause_explanation": "The tests were unstable because the test environment could run with different InfoSchema implementations/settings (e.g. schema cache size / InfoSchema v1 vs v2), and some assertions relied on pointer identity or other environment-sensitive behavior. This PR stabilizes them by making InfoSchema behavior more consistent for tests and updating assertions to compare by value instead of pointer identity.",
   "module": "domain",
-  "fix_pattern": "infoschema: update two tests to make them robust and a tiny fix",
+  "fix_pattern": "Make InfoSchema v2 behavior deterministic for tests and update brittle assertions (e.g. use value equality instead of pointer identity).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55362",
     "https://github.com/pingcap/tidb/pull/55362.patch"

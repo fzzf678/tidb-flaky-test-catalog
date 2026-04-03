@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rawStmt, err := conn.Prepare(\"select id + v from t1 order by id\") (pkg/server/tests/cursor/cursor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to classify this as a flaky-test stabilization from the available case data. This PR primarily adds support for lazy cursor fetch by implementing `Detach` for Projection/Selection operators and adds/adjusts cursor tests; treat as a low-confidence/unclear flaky-fix signal.",
+  "module": "server",
+  "fix_pattern": "executor, expression: detach projection and selection operator",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54864",
     "https://github.com/pingcap/tidb/pull/54864.patch"

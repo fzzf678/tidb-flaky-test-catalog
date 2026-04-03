@@ -17,15 +17,14 @@
   ],
   "failure_signature": "explain with recursive cte1 as (select c1 from tt union select c1 from cte1 where exists (select /*+ no_decorrelate() */ c1 from tt1 where tt1.c2 = cte1.c1)) select c1 from tt2 where exists (select /*+ no_decorrelate() */ * from cte1 where cte1.c1 = tt2.c1) order by 1; (tests/integrationtest/r/cte.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Fix correlated column extraction for Apply inside CTE and update integration tests to cover the hang/wrong-result scenario.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55553",
     "https://github.com/pingcap/tidb/pull/55553.patch"

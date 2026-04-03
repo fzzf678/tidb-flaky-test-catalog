@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix unstable TestParallelErrStage",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: test: fix unstable TestParallelErrStage.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable TestParallelErrStage",
+  "root_cause_explanation": "The test was flaky because it assumed a deterministic ordering/sequence of task IDs in a parallel scheduling environment. Task lists/IDs are not guaranteed to be sequential or ordered, so position-based assertions can fail intermittently. This PR stabilizes it by asserting against the expected task IDs instead of `i+1`.",
+  "module": "domain",
+  "fix_pattern": "Avoid order-dependent assertions in disttask scheduler tests; compare returned task IDs against the expected list (or sort before checking).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55620",
     "https://github.com/pingcap/tidb/pull/55620.patch"

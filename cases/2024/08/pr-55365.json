@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it compared JSON-serialized stats objects whose internal slice order was not deterministic (typically originating from map iteration or non-stable iteration order). This PR stabilizes it by explicitly sorting the JSONTable fields before marshaling/comparison.",
+  "module": "statistics",
+  "fix_pattern": "Sort JSONTable fields (e.g. PredicateColumns) before marshaling/comparison to avoid nondeterministic ordering in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55365",
     "https://github.com/pingcap/tidb/pull/55365.patch"

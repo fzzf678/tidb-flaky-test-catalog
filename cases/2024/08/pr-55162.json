@@ -17,15 +17,14 @@
   ],
   "failure_signature": "select * from INFORMATION_SCHEMA.KEY_COLUMN_USAGE where table_schema = 'db1' order by TABLE_NAME; (tests/integrationtest/r/infoschema/infoschema.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to classify this as a flaky-test stabilization from the available case data. This PR fixes correctness of infoschema table predicate handling (`table_schema` filter for `INFORMATION_SCHEMA.KEY_COLUMN_USAGE`) and updates integration tests accordingly; treat as a low-confidence/unclear flaky-fix signal.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "executor: filter on `table_schema` for `INFORMATION_SCHEMA.KEY_COLUMN_USAGE` table",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/55162",
     "https://github.com/pingcap/tidb/pull/55162.patch"

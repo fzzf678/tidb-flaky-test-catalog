@@ -13,18 +13,18 @@
     "name": "TestMergeInputIdxToOutputIdxes"
   },
   "symptoms": [
-    "slices.Sort((*columnEval.mergedInputIdxToOutputIdxes.Load())[0]) (pkg/expression/evaluator_test.go)"
+    "Flaky behavior around `columnEvaluator.mergeInputIdxToOutputIdxes` lazy initialization: multiple workers could race while building `mergedInputIdxToOutputIdxes` at runtime."
   ],
-  "failure_signature": "slices.Sort((*columnEval.mergedInputIdxToOutputIdxes.Load())[0]) (pkg/expression/evaluator_test.go)",
+  "failure_signature": "columnEvaluator: `mergedInputIdxToOutputIdxes` is lazily initialized at runtime and can race across workers, causing intermittent wrong mapping / test failures",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "`columnEvaluator` computes `mergedInputIdxToOutputIdxes` lazily at runtime when it first sees the input chunk. Previously this mutable map was written without synchronization, so concurrent evaluations could race while initializing/updating it, leading to intermittent wrong mappings (and flaky test failures). The fix makes the lazy init concurrency-safe by storing the mapping behind an `atomic.Pointer` and using `CompareAndSwap(nil, &newMap)` so only one worker publishes the computed mapping.",
+  "module": "expression",
+  "fix_pattern": "Make lazy runtime initialization concurrency-safe (e.g., use `atomic.Pointer` + `CompareAndSwap` for publish-once maps) to avoid data races and intermittent wrong results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53794",
     "https://github.com/pingcap/tidb/pull/53794.patch"
