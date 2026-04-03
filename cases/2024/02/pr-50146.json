@@ -17,14 +17,14 @@
   ],
   "failure_signature": "select hex(col), hex(reverse(col)) from t order by reverse(col); (tests/integrationtest/r/expression/builtin.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR mainly fixes reverse() behavior for BIT columns (collation/casting handling). From the PR diff alone there isn't a clear flaky/non-deterministic trigger for the integration test (it already uses ORDER BY), so we mark it as insufficient_evidence and avoid guessing a root cause.",
   "module": "expression",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Fix reverse() handling for BIT columns by treating BIT as binary in collation/casting and reverse signature selection",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50146",
     "https://github.com/pingcap/tidb/pull/50146.patch"

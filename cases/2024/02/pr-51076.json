@@ -17,16 +17,14 @@
   ],
   "failure_signature": "rows := tk.MustQuery(fmt.Sprintf(\"SELECT c1 from t%d order by c\", i)).Rows() (pkg/ddl/db_integration_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "parser",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test compares DATE_FORMAT(NOW(), ...) output against a Go-captured nowTime. Around a second boundary, NOW() evaluated by TiDB can differ by 1s from nowTime, making the assertion intermittently fail. The fix makes the assertion tolerant by allowing either nowTime or nowTime+1s for second-level formats.",
+  "module": "ddl",
+  "fix_pattern": "Make NOW()/DATE_FORMAT assertions tolerant to 1s timing drift at second boundaries",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51076",
     "https://github.com/pingcap/tidb/pull/51076.patch"

@@ -22,9 +22,9 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix flaky test TestPhysicalTableScanExtractCorrelatedCols.",
+  "root_cause_explanation": "The unit test depended on a specific physical plan shape (where the TableScan and its pushed-down filter conditions could be found directly). In practice, the optimizer can produce slightly different Selection/TableScan structures, so the expected pushed-down condition may not appear in the exact place the test searches, making it flaky. The fix finds the Selection→TableScan pair and explicitly pushes down the chosen correlated predicate before asserting on the pushed-down conditions.",
   "module": "planner",
-  "fix_pattern": "planner: fix flaky test TestPhysicalTableScanExtractCorrelatedCols",
+  "fix_pattern": "Make the unit test robust to plan shape by locating Selection→TableScan and explicitly pushing down the correlated condition",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51355",
     "https://github.com/pingcap/tidb/pull/51355.patch"

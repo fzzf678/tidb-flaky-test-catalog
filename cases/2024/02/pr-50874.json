@@ -17,14 +17,14 @@
   ],
   "failure_signature": "fix flaky test",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner/infoschema: support push down lower to some memtables.",
+  "root_cause_explanation": "The infoschema integration tests queried INFORMATION_SCHEMA with predicates that were too broad (e.g., missing a stable TABLE_SCHEMA filter / using shared table names). Results could vary depending on other tests' leftover tables and execution order, making the assertions flaky. The fix isolates the tests by adding schema predicates and moving tables to a dedicated schema so counts and table attributes are deterministic.",
   "module": "planner",
-  "fix_pattern": "planner/infoschema: support push down lower to some memtables",
+  "fix_pattern": "Isolate infoschema tests with explicit schema filters / dedicated schema to avoid shared-state pollution",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50874",
     "https://github.com/pingcap/tidb/pull/50874.patch"

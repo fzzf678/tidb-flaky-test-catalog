@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sql := \"select company_no, ifnull((select /*+ read_from_storage(tiflash[test.t1]) */ taxpayer_no from test.t1 where client_no = c.company_no and client_type = 1 and status = 1 order by update_time desc limit 1), tax_registry_no) as tax_registry_no from test.t2 c where company_no = 'Z9005' limit 1\" (pkg/planner/core/physical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR fixes a correctness issue in correlated-column extraction for PhysicalTableScan (LateMaterializationFilterCondition) and adds a unit test. The diff doesn't indicate a flaky/non-deterministic trigger (it is a deterministic bug fix), so we mark it as insufficient_evidence rather than forcing it into an unrelated flakiness category.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Extract correlated columns from LateMaterializationFilterCondition in PhysicalTableScan to avoid plan-to-PB mismatch",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51205",
     "https://github.com/pingcap/tidb/pull/51205.patch"

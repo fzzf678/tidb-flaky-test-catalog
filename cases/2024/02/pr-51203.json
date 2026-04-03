@@ -17,14 +17,14 @@
   ],
   "failure_signature": "slices.SortFunc(usedIdxPair, func(a, b intPair) int { (pkg/executor/benchmark_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by"
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Different optimizer rule combinations can produce join schemas with column references whose order differs from the original child schemas. The join execution layer previously tracked used columns with a simple bool array, which could not restore the correct original order and could lead to resolveIndex errors or wrong join row construction only under certain plan variants (i.e., flaky depending on optimization path). The fix makes the used-column mapping order-aware by sorting used index pairs by their original indexes before building the join output.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Make join used-column mapping order-aware (sort used index pairs by original indexes) to avoid plan-dependent failures",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51203",
     "https://github.com/pingcap/tidb/pull/51203.patch"

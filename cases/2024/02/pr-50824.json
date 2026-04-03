@@ -17,15 +17,14 @@
   ],
   "failure_signature": "order by table_name, index_name;`, tableName)) (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Index usage statistics (including last_access_time and counters) are updated asynchronously after queries run. The test expected the information_schema index-usage table to be populated immediately, which can intermittently fail under CI timing. The fix uses require.Eventually to retry until the stats are visible before asserting exact values.",
+  "module": "statistics",
+  "fix_pattern": "Use require.Eventually to wait for async index-usage stats to be recorded before assertions",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50824",
     "https://github.com/pingcap/tidb/pull/50824.patch"
