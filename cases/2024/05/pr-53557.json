@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix flaky test TestAlterAddConstraintStateChange3",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "schema_change_race"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "ddl_without_wait"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: test: fix flaky test TestAlterAddConstraintStateChange3.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix flaky test TestAlterAddConstraintStateChange3",
+  "root_cause_explanation": "The test was flaky because the DDL job callback could observe `SchemaState==StatePublic` before the job is fully done, so the assertion on constraint state could run too early. This PR stabilizes it by only running the state check when the job is done (`job.IsDone()`).",
+  "module": "ddl",
+  "fix_pattern": "Wait for DDL job completion before asserting (gate the callback on `job.IsDone()`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53557",
     "https://github.com/pingcap/tidb/pull/53557.patch"

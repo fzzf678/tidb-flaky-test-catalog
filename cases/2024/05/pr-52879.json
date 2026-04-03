@@ -17,16 +17,14 @@
   ],
   "failure_signature": "rows := testTK.MustQuery(\"select table_name, query, start_time from mysql.tidb_mdl_view order by table_name\").Rows() (pkg/infoschema/test/clustertablestest/cluster_tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky-test root cause; the diff primarily fixes correctness of `mysql.tidb_mdl_view` REGEXP matching for overlapping table IDs.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Fix `tidb_mdl_view` REGEXP to avoid false matches when table IDs overlap (use parentheses around alternatives).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52879",
     "https://github.com/pingcap/tidb/pull/52879.patch"

@@ -13,18 +13,18 @@
     "name": "ingest_test"
   },
   "symptoms": [
-    "fix unstable test caused by info-schema v2"
+    "tk.MustExec(`set global tidb_enable_dist_task=off;`) (tests/realtikvtest/addindextest4/ingest_test.go)"
   ],
-  "failure_signature": "fix unstable test caused by info-schema v2",
+  "failure_signature": "tk.MustExec(`set global tidb_enable_dist_task=off;`) (tests/realtikvtest/addindextest4/ingest_test.go)",
   "root_cause_categories": [
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: decouple job scheduler from 'ddl' and make it run/exit as owner changes.",
+  "root_cause_explanation": "The real TiKV DDL ingest test was unstable because the DDL execution path could change depending on global config (dist task enabled/disabled), leading to different scheduling/timing. This PR stabilizes the test by explicitly setting `tidb_enable_dist_task=off` so it consistently uses the intended fast-reorg/ingest path during the test.",
   "module": "ddl",
-  "fix_pattern": "ddl: decouple job scheduler from 'ddl' and make it run/exit as owner changes",
+  "fix_pattern": "Set global DDL-related config explicitly in tests to avoid behavior changes from default/cluster-wide settings.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53548",
     "https://github.com/pingcap/tidb/pull/53548.patch"

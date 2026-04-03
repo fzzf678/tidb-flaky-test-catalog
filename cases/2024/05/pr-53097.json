@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"SELECT ( select (ref_4.c_pv <= ref_3.c_k) as c0 from t1 as ref_4 order by c0 asc limit 1) as p2 FROM t0 as ref_3 order by p2;\").Check(testkit.Rows(\"0\", \"0\", \"0\", \"0\", \"0\", \"0\", \"1\", \"1\", \"1\")) (pkg/executor/test/issuetest/executor_issue_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky-test root cause; it is primarily an executor correctness fix (detect correlated columns inside TopN when deciding distributed plan) plus a regression test.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "executor: ensure TopN pushdown logic handles correlated columns correctly (add regression test).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53097",
     "https://github.com/pingcap/tidb/pull/53097.patch"

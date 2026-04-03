@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: stabilize TestTruncateTableAndSchemaDependence",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: stabilize TestTruncateTableAndSchemaDependence.",
-  "module": "test_infra",
-  "fix_pattern": "test: stabilize TestTruncateTableAndSchemaDependence",
+  "root_cause_explanation": "The test uses a DDL hook callback, but the callback could be triggered by unexpected jobs; this caused the concurrent drop-database action to run at the wrong time and made the test flaky. This PR stabilizes it by ensuring the hook only triggers once and only for `ActionTruncateTable` jobs.",
+  "module": "ddl",
+  "fix_pattern": "Guard DDL hook callbacks: trigger once and only for the intended job type.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53245",
     "https://github.com/pingcap/tidb/pull/53245.patch"
