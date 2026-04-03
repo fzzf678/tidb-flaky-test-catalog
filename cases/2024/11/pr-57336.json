@@ -7,28 +7,28 @@
     "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and\r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #57229 #57526\r\n\r\nProblem Summary:\r\n\r\n### What changed and how does it work?\r\nFor the purpose of dynamically adjusting reorg configs, we need to persist the config value to disk, so in this pr, we support modify reorg config in system table by execute sql `ADMIN ALTER DDL JOBS ...`. Only `ADD INDEX`, `MODIFY COLUMN`, and `REORGANIZE PARTITION` three types ddl is allowed to change config. And for config we support `THREAD`, `BATCH_SIZE` and `MAX_WRITE_SPEED` now.\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [x] Unit test\r\n- [x] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No need to test\r\n  > - [ ] I checked and no code files have been changed.\r\n  > <!-- Or your custom  \"No need to test\" reasons -->\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
   },
   "pr_merged_at": "2024-11-15T12:58:23+08:00",
-  "test": {
-    "type": "integration",
-    "path": "tests/integrationtest/r/privilege/privileges.result",
-    "name": "privileges"
-  },
+    "test": {
+        "type": "unit",
+        "path": "pkg/planner/core/planbuilder_test.go",
+        "name": "TestBuildAdminAlterDDLJobPlan"
+    },
   "symptoms": [
     "sort.Slice(plan.Options, func(i, j int) bool { (pkg/planner/core/planbuilder_test.go)"
   ],
   "failure_signature": "sort.Slice(plan.Options, func(i, j int) bool { (pkg/planner/core/planbuilder_test.go)",
-  "root_cause_categories": [
-    "nondeterministic_result_order"
-  ],
-  "review_smells": [
-    "missing_order_by"
-  ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/57336",
-    "https://github.com/pingcap/tidb/pull/57336.patch"
-  ],
+    "root_cause_categories": [
+        "nondeterministic_result_order"
+    ],
+    "review_smells": [
+        "relying_on_map_iteration_order"
+    ],
+    "root_cause_explanation": "The test was flaky because the parsed `plan.Options` slice order is not guaranteed (it can depend on iteration/parse order), so assertions that assume a fixed option order can fail intermittently. This PR stabilizes it by sorting `plan.Options` by name before checking values.",
+    "module": "ddl",
+    "fix_pattern": "Sort `plan.Options` (admin alter ddl jobs options) by name before assertions to avoid order-dependent flakiness.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/57336",
+        "https://github.com/pingcap/tidb/pull/57336.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/57336.patch",
   "changed_files": [
     "pkg/ddl/db_test.go",

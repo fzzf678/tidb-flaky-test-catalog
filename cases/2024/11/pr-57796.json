@@ -13,18 +13,18 @@
     "name": "framework_scope_test"
   },
   "symptoms": [
-    "dxf: fix flaky scope test"
+    "TestScopeBasic could hang because the syncRefresh failpoint callback may send on an unbuffered channel multiple times."
   ],
-  "failure_signature": "dxf: fix flaky scope test",
+  "failure_signature": "TestScopeBasic could hang because the syncRefresh failpoint callback may send on an unbuffered channel multiple times.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test enabled a `syncRefresh` failpoint callback and used an unbuffered channel as a one-shot signal. Because `refreshNodesLoop` runs in another goroutine, the callback can be invoked more times than the test expects, causing a send to block (or the test to wait for a signal that was already consumed). The fix makes the callback deterministic by counting invocations and only signaling on the first (or first few) calls, and by using a separate channel for the second refresh phase.",
   "module": "domain",
-  "fix_pattern": "dxf: fix flaky scope test",
+  "fix_pattern": "Make the syncRefresh failpoint callback deterministic (gate channel sends with an atomic counter; use a separate channel for the second refresh) to avoid blocking/hangs in the scope integration test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/57796",
     "https://github.com/pingcap/tidb/pull/57796.patch"

@@ -16,21 +16,19 @@
     "sort.Slice(values, func(i, j int) bool { (pkg/planner/core/casetest/instanceplancache/others_test.go)"
   ],
   "failure_signature": "sort.Slice(values, func(i, j int) bool { (pkg/planner/core/casetest/instanceplancache/others_test.go)",
-  "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
-  ],
-  "review_smells": [
-    "assert_exact_plan_or_cost",
-    "plan_cache_dependency"
-  ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/57699",
-    "https://github.com/pingcap/tidb/pull/57699.patch"
-  ],
+    "root_cause_categories": [
+        "nondeterministic_result_order"
+    ],
+    "review_smells": [
+        "relying_on_map_iteration_order"
+    ],
+    "root_cause_explanation": "The test was flaky because iterating the instance plan cache does not guarantee a stable order, so assertions that assume a fixed entry order can fail intermittently. This PR stabilizes it by sorting the collected plan-cache entries by a stable key (SQLDigest) before asserting on their fields.",
+    "module": "planner",
+    "fix_pattern": "Sort plan-cache entries (e.g., by SQLDigest) before assertions to avoid relying on cache iteration order.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/57699",
+        "https://github.com/pingcap/tidb/pull/57699.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/57699.patch",
   "changed_files": [
     "pkg/executor/adapter.go",
