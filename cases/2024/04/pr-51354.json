@@ -17,15 +17,14 @@
   ],
   "failure_signature": "select /*+ INL_JOIN(tmp) */ t1.a, tmp.count_b from (select a, count(b) count_b from t group by a) tmp, t1 where tmp.a=t1.a order by t1.a, tmp.count_b; (tests/integrationtest/r/planner/core/indexjoin.result)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky-test root cause; the diff primarily adds support for using aggregation as the inner side of an index join and updates the integration test expectations accordingly.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Support aggregation as the inner side of index join and update `indexjoin` integration test expectations.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51354",
     "https://github.com/pingcap/tidb/pull/51354.patch"

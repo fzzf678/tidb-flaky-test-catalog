@@ -17,14 +17,14 @@
   ],
   "failure_signature": "br: fix flaky test",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "`TestGetTSWithRetry` could take too long because the backoff/retry logic makes many attempts (especially in the simulated PD-leader failure case), occasionally exceeding the time budget and becoming flaky. This PR stabilizes it by using a failpoint to cap the backoff attempt counter in the unit test so the retry loop stays fast and bounded.",
   "module": "br",
-  "fix_pattern": "br: fix flaky test",
+  "fix_pattern": "Use a failpoint in tests to cap backoff/retry attempts (keep the unit test runtime bounded and avoid timeout flakes).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52573",
     "https://github.com/pingcap/tidb/pull/52573.patch"

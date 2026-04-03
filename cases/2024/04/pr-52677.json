@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from t order by a\").Check(testkit.Rows(\"18apf -729850476163 3771-02-28 13:00:11\")) (pkg/ddl/column_type_change_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "expression",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky-test root cause; the diff primarily adds DDL support for adding columns with allowed default-value expressions (e.g. `date_format(now(), ...)`, `str_to_date(...)`) and adjusts tests accordingly.",
+  "module": "ddl",
+  "fix_pattern": "Support `ADD COLUMN ... DEFAULT (<expr>)` for allowed expressions (evaluate/store the origin default value correctly) and update related DDL tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52677",
     "https://github.com/pingcap/tidb/pull/52677.patch"

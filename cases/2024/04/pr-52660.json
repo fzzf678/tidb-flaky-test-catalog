@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"EXPLAIN format='brief' SELECT b FROM t use index(idx) WHERE b < 16 ORDER BY b\"). (pkg/statistics/handle/globalstats/global_stats_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "shared_state_pollution"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky-test root cause; the diff fixes global-index behavior with the `memIndexReader` executor and adjusts executor/planner internals and test expectations, not a result-order flake (the extracted query already uses `ORDER BY`).",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Fix global-index behavior for `memIndexReader` (and partition/global-index paths) and update related test expectations.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52660",
     "https://github.com/pingcap/tidb/pull/52660.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk1.MustHavePlan(\"select * from t use index(idx) where a = 1 and b = 1 order by a limit 1 for update\", \"IndexReader\") (tests/realtikvtest/txntest/txn_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky-test root cause; the diff primarily changes planner/executor behavior for partition tables with UnionScan (IndexLookUp → IndexReader/IndexRangeScan) and updates expected plan outputs in tests.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Adjust partition-table plan generation with UnionScan (use IndexReader paths) and update plan expectations in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52337",
     "https://github.com/pingcap/tidb/pull/52337.patch"

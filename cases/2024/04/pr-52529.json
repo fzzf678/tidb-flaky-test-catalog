@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sort.children = []base.PhysicalPlan{recv} (pkg/planner/core/optimizer_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky-test root cause; the diff is a large planner refactor that moves base plan/task definitions (e.g. `plan_base.go`) into `pkg/planner/core/base/` and updates many call sites.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Refactor planner base plan/task definitions into `pkg/planner/core/base/` and adjust interfaces/usages accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52529",
     "https://github.com/pingcap/tidb/pull/52529.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "disttask: fix flaky handle test",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test was flaky because it hard-coded assumptions about auto-generated task IDs (e.g. expecting IDs to be 1/2/3). Task IDs depend on existing tasks/history and are not stable across runs, so these assertions can intermittently fail. This PR stabilizes it by removing hardcoded ID checks and reusing the returned `task.ID` when querying tasks.",
   "module": "domain",
-  "fix_pattern": "disttask: fix flaky handle test",
+  "fix_pattern": "Avoid hardcoding auto-generated IDs in tests; use the returned `task.ID` and/or reset/clean up persisted state between test runs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52968",
     "https://github.com/pingcap/tidb/pull/52968.patch"

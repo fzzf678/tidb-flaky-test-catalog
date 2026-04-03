@@ -17,14 +17,14 @@
   ],
   "failure_signature": "br: fix flaky test `TestStoreRemoved`",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "`TestStoreRemoved` was flaky because the subscriber could still be producing/receiving events when `Drop()` is called; dropping the subscription manager would discard pending events and make assertions fail depending on timing. This PR stabilizes it by waiting until the event list stops progressing (using `Eventually`) before calling `Drop()`.",
   "module": "br",
-  "fix_pattern": "br: fix flaky test `TestStoreRemoved`",
+  "fix_pattern": "Wait for async event production to quiesce before dropping the subscriber (helper + `require.Eventually`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52834",
     "https://github.com/pingcap/tidb/pull/52834.patch"
