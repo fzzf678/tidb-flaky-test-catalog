@@ -13,18 +13,19 @@
     "name": "TestTiDBTrx"
   },
   "symptoms": [
-    "*: fix flaky test TestTiDBTrx"
+    "tk.MustQuery(`select state from information_schema.tidb_trx as trx  union select state from information_schema.tidb_trx as trx`).Sort().Check(...) (pkg/infoschema/test/clustertablestest/tables_test.go)"
   ],
-  "failure_signature": "*: fix flaky test TestTiDBTrx",
+  "failure_signature": "tk.MustQuery(`select state from information_schema.tidb_trx as trx  union select state from information_schema.tidb_trx as trx`).Sort().Check(...) (pkg/infoschema/test/clustertablestest/tables_test.go)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "missing_order_by",
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix flaky test TestTiDBTrx",
+  "root_cause_explanation": "The test queried results via `UNION` and asserted a fixed row order, but `UNION` does not guarantee ordering without an explicit `ORDER BY`. This PR fixes the flakiness by sorting the query result (`.Sort()`) before checking rows (and updating the expected order accordingly).",
+  "module": "domain",
+  "fix_pattern": "Sort UNION query results (or add ORDER BY) before asserting row order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53932",
     "https://github.com/pingcap/tidb/pull/53932.patch"

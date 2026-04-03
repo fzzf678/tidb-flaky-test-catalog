@@ -17,14 +17,14 @@
   ],
   "failure_signature": "select a from t tablesample regions() order by a; (tests/integrationtest/r/executor/sample.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this change to a specific flaky root cause; the PR is a planner behavior/correctness update for TABLESAMPLE (and updates expected errors / adds coverage), not a clear flaky stabilization fix.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "planner: skip index scan plan for tablesample",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54016",
     "https://github.com/pingcap/tidb/pull/54016.patch"

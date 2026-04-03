@@ -17,14 +17,14 @@
   ],
   "failure_signature": "tk1.MustExec(\"select * from t use index(b) where b = 2 order by b limit 1 for update;\") (pkg/executor/partition_table_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to determine the underlying flaky root cause from the PR diff alone; this PR is primarily a refactor/correctness change (replacing `ExtraPidCol` with `ExtraPhysTblIDCol`) plus broad test output updates, without a clear, specific flaky stabilization signal.",
+  "module": "executor",
+  "fix_pattern": "*: remove `ExtraPidCol` and replace it with `ExtraPhysTblIDCol`",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53974",
     "https://github.com/pingcap/tidb/pull/53974.patch"

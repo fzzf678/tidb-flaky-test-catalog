@@ -17,16 +17,15 @@
   ],
   "failure_signature": "sort.Ints(ssid) (pkg/ddl/ddl_running_jobs_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "relying_on_map_iteration_order",
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test asserted a comma-separated list of running job IDs, but the underlying collection order is not deterministic (e.g. map iteration order). This PR stabilizes the test by sorting IDs before comparing/asserting, removing dependence on nondeterministic iteration order.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort IDs/results before assertions to avoid dependence on nondeterministic iteration order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54110",
     "https://github.com/pingcap/tidb/pull/54110.patch"

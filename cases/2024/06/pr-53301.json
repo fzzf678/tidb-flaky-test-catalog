@@ -20,12 +20,12 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by",
+    "relying_on_map_iteration_order",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test collected table names via `InfoSchema.ListTablesWithSpecialAttribute(...)` and then compared the resulting list directly. The iteration/collection order is not guaranteed (it can vary with map/channel traversal), so the test was flaky. This PR makes it deterministic by sorting the collected rows before `require.Equal(...)`.",
   "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort collected results before assertions to avoid nondeterministic iteration order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53301",
     "https://github.com/pingcap/tidb/pull/53301.patch"

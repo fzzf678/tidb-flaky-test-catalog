@@ -17,15 +17,14 @@
   ],
   "failure_signature": "select partition_name, data_length, index_length from information_schema.PARTITIONS where table_name='t' and table_schema='globalindex__information_schema' order by partition_name; (tests/integrationtest/r/globalindex/information_schema.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this change to a flaky root cause; the PR is a correctness fix for `index_length` reporting in information_schema with corresponding expected output updates, not a clear flaky stabilization fix.",
   "module": "statistics",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "stats: fix `index_length` in information_schema",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54176",
     "https://github.com/pingcap/tidb/pull/54176.patch"

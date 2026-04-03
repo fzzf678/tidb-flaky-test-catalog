@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select table_name, job_info from mysql.analyze_jobs order by id desc limit 1\").Check( (pkg/statistics/handle/autoanalyze/autoanalyze_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky root cause; it primarily adds/adjusts analyze-plan behavior and related tests around `tidb_analyze_column_options`, without a clear flaky stabilization signal in the diff.",
+  "module": "statistics",
+  "fix_pattern": "planner: respect `tidb_analyze_column_options ` when build analyze plan",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/54240",
     "https://github.com/pingcap/tidb/pull/54240.patch"
