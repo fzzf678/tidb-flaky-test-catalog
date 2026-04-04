@@ -17,16 +17,15 @@
   ],
   "failure_signature": "test: fix flaky test TestParallelDDL",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: fix flaky test TestParallelDDL.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix flaky test TestParallelDDL",
+  "root_cause_explanation": "`TestParallelDDL` tried to enforce DDL job submission order by sleeping `5ms` between goroutines; under load, enqueuing into `tidb_ddl_job` is not guaranteed within that window, making seq_num/order assertions flaky. This PR stabilizes it by adding a failpoint hook (`waitJobSubmitted`) and using a channel to deterministically gate each DDL after the previous job is submitted (no fixed sleeps).",
+  "module": "ddl",
+  "fix_pattern": "Replace fixed `time.Sleep()` with deterministic synchronization (failpoint + channel) when waiting for async DDL job submission ordering.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53636",
     "https://github.com/pingcap/tidb/pull/53636.patch"

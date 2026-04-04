@@ -17,15 +17,14 @@
   ],
   "failure_signature": "test: fix flaky test TestSyncJobSchemaVerLoop",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: fix flaky test TestSyncJobSchemaVerLoop.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix flaky test TestSyncJobSchemaVerLoop",
+  "root_cause_explanation": "The test could observe leftover internal syncer state on cancellation: the `OwnerCheckAllVersions` loop could exit on `ctx.Done()` before clearing its match function, and a late event could keep `jobNodeVersionCnt()` non-zero. This PR stabilizes it by clearing the match function on `ctx.Done()` and removing a brittle end-of-test assertion that expected the counter to be zero immediately.",
+  "module": "ddl",
+  "fix_pattern": "Ensure internal state is cleared on context cancellation; avoid brittle assertions on transient background state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53507",
     "https://github.com/pingcap/tidb/pull/53507.patch"

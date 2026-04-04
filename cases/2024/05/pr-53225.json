@@ -13,18 +13,19 @@
     "name": "run"
   },
   "symptoms": [
-    "lightning: fix unstable test for conflict detection"
+    "export GO_FAILPOINTS=\"github.com/pingcap/tidb/lightning/pkg/importer/SlowDownImport=sleep(1000)\" (lightning/tests/lightning_duplicate_resolution_merge/run.sh)"
   ],
-  "failure_signature": "lightning: fix unstable test for conflict detection",
+  "failure_signature": "export GO_FAILPOINTS=\"github.com/pingcap/tidb/lightning/pkg/importer/SlowDownImport=sleep(1000)\" (lightning/tests/lightning_duplicate_resolution_merge/run.sh)",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: lightning: fix unstable test for conflict detection.",
+  "root_cause_explanation": "The test runs two lightning imports concurrently and relies on a failpoint sleep to keep them overlapping; the previous sleep (250ms) was too short under load, so one import could finish too quickly and the conflict-detection assertions became flaky. This PR stabilizes the test by increasing the SlowDownImport failpoint sleep to 1000ms and ensuring the row-count check happens after both lightning processes complete.",
   "module": "lightning",
-  "fix_pattern": "lightning: fix unstable test for conflict detection",
+  "fix_pattern": "Increase wait/slowdown to make concurrent lightning imports overlap deterministically; assert after both processes finish.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53225",
     "https://github.com/pingcap/tidb/pull/53225.patch"

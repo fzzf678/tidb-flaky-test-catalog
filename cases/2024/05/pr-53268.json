@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ORDER BY (tests/integrationtest/r/planner/core/issuetest/planner_issue.result)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The UPDATE planner path tracked column references in a non-deterministic way, which could lead to unstable output column IDs and unstable/explain output across runs. This PR stabilizes it by collecting referenced column IDs into a set (FastIntSet) and using that set when deciding projection elimination, making the generated plan/explain output deterministic.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Track UPDATE column references deterministically (use a set) so plan/explain output column IDs are stable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53268",
     "https://github.com/pingcap/tidb/pull/53268.patch"

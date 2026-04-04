@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ORDER BY res.branch_id; (pkg/planner/core/casetest/plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky-test root cause; the diff primarily adds a regression test for Issue #49721 and fixes privilege verification / error handling for views inside CTE.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Fix privilege verification for views in CTE and correct error handling to return the proper error when verification/user context is empty.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53556",
     "https://github.com/pingcap/tidb/pull/53556.patch"

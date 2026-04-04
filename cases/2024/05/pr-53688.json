@@ -17,14 +17,14 @@
   ],
   "failure_signature": "domain: fix unstable test TestRepairTable",
   "root_cause_categories": [
-    "external_dependency"
+    "schema_change_race"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: domain: fix unstable test TestRepairTable.",
+  "root_cause_explanation": "`admin repair table` maintains a \"repairing tables\" list. The DDL job can set the table state to PUBLIC before it is removed from that list; if a full infoschema reload happens in the gap (e.g. triggered by infoschema v1→v2 switching in CI), the domain code would mistakenly skip loading a PUBLIC table and the test becomes unstable. This PR stabilizes it by only skipping repaired tables when they are still non-PUBLIC; PUBLIC tables are loaded even if the list cleanup hasn't happened yet.",
   "module": "domain",
-  "fix_pattern": "domain: fix unstable test TestRepairTable",
+  "fix_pattern": "On infoschema reload, don't skip a repaired table that is already `StatePublic`; only skip it while repair is still in progress (non-PUBLIC).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/53688",
     "https://github.com/pingcap/tidb/pull/53688.patch"
