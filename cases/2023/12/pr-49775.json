@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix unstable `TestTiDBClusterInfo` test",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: test: fix unstable `TestTiDBClusterInfo` test.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable `TestTiDBClusterInfo` test",
+  "root_cause_explanation": "`TestTiDBClusterInfo` was flaky because it asserted an exact `start_time` value for the TiKV row, but that `start_time` is populated by `dataForTiDBClusterInfo` and is not guaranteed to exactly match the test's `s.startTime` (timing/capture-point differences). This PR stabilizes the test by only asserting `start_time` for the PD row and checking stable fields (`type`/`instance`) for the TiKV row.",
+  "module": "executor",
+  "fix_pattern": "Relax brittle assertions on `cluster_info.start_time` (only check PD start_time; for TiKV check stable fields like type/instance) to avoid timing-dependent flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49775",
     "https://github.com/pingcap/tidb/pull/49775.patch"

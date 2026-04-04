@@ -13,19 +13,18 @@
     "name": "enforce_mpp_test"
   },
   "symptoms": [
-    "// Default RPC encoding may cause statistics explain result differ and then the test unstable."
+    "EXPLAIN output for a `READ_FROM_STORAGE(TIFLASH[...])` query could unexpectedly use `TableDual`/non-TiFlash access paths, breaking the golden plan assertions in the enforce_mpp tests."
   ],
-  "failure_signature": "// Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "failure_signature": "TiFlash access path can be incorrectly identified/pruned as `TableDual` in EXPLAIN, causing unstable golden plans (Issue #49285).",
   "root_cause_categories": [
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: // Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "root_cause_explanation": "The enforce_mpp tests assert exact EXPLAIN output for TiFlash-related plans. A planner bug could incorrectly treat a TiFlash access path as `TableDual` (or prune it), leading to different plans and golden mismatches. The fix ensures TiFlash paths are built/kept when the query prefers TiFlash (e.g., via `read_from_storage(tiflash)`), making the EXPLAIN output deterministic for the test.",
   "module": "planner",
-  "fix_pattern": "// Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "fix_pattern": "Fix planner path-building/heuristics so TiFlash access paths are not mis-identified as `TableDual`, stabilizing EXPLAIN output for golden tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49338",
     "https://github.com/pingcap/tidb/pull/49338.patch"
@@ -43,9 +42,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: // Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+      "evidence: TiFlash path can be identified as `TableDual` leading to unstable EXPLAIN/golden output (Issue #49285)",
       "files: pkg/planner/core/casetest/enforcempp/enforce_mpp_test.go, pkg/planner/core/casetest/enforcempp/testdata/enforce_mpp_suite_in.json, pkg/planner/core/casetest/enforcempp/testdata/enforce_mpp_suite_out.json, pkg/planner/core/find_best_task.go, pkg/planner/core/stats.go"
     ]
   },
-  "analysis": "PR title: planner: fix tiflash path will be identified as table dual\nPR url: https://github.com/pingcap/tidb/pull/49338\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // Default RPC encoding may cause statistics explain result differ and then the test unstable.\nChanged files (4): pkg/planner/core/casetest/enforcempp/enforce_mpp_test.go, pkg/planner/core/casetest/enforcempp/testdata/enforce_mpp_suite_in.json, pkg/planner/core/casetest/enforcempp/testdata/enforce_mpp_suite_out.json, pkg/planner/core/stats.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: planner: fix tiflash path will be identified as table dual\nPR url: https://github.com/pingcap/tidb/pull/49338\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: TiFlash path can be identified as `TableDual` leading to unstable EXPLAIN/golden output (Issue #49285)\nChanged files (4): pkg/planner/core/casetest/enforcempp/enforce_mpp_test.go, pkg/planner/core/casetest/enforcempp/testdata/enforce_mpp_suite_in.json, pkg/planner/core/casetest/enforcempp/testdata/enforce_mpp_suite_out.json, pkg/planner/core/stats.go\nPatch series analyzed; see patch_url."
 }

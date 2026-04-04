@@ -17,13 +17,12 @@
   ],
   "failure_signature": "\"select version from mysql.stats_meta where table_id in (?, ?, ?, ?) order by table_id\", (pkg/statistics/handle/ddl/ddl_test.go)",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Added some tests to cover the issue case.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes deterministic statistics-meta cleanup when converting partitioned tables to non-partitioned tables (drop old partition stats meta and carry the old table ID in DDL events) and adds tests. The case evidence does not clearly indicate a flaky trigger, so we keep a conservative fallback classification.",
   "module": "statistics",
   "fix_pattern": "Added some tests to cover the issue case. Drop the old partition's stats meta. Added old table ID to the event to avoid abuse of the new table ID from partition info.",
   "evidence_links": [

@@ -13,18 +13,18 @@
     "name": "cte_test"
   },
   "symptoms": [
-    "// Otherwise we may got data race."
+    "A panic in `executor.Close()` could stop the Close chain, leaving child executors unclosed and leaking goroutines (Issue #49223)."
   ],
-  "failure_signature": "// Otherwise we may got data race.",
+  "failure_signature": "Panic in `executor.Close()` can leak goroutines by preventing other executors from closing (Issue #49223).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: // Otherwise we may got data race.",
+  "root_cause_explanation": "Some executor Close paths could panic; a panic would abort the Close sequence (e.g., in UnionExec or BaseExecutor), leaving other child executors not closed and potentially leaking goroutines. This can cause flaky behavior in later tests due to resource leaks. The fix introduces `exec.Close()` as a panic-recovering wrapper and updates callers to use it so all children are attempted to be closed even if one Close panics.",
   "module": "executor",
-  "fix_pattern": "// Otherwise we may got data race.",
+  "fix_pattern": "Wrap `executor.Close()` with panic recovery (return as error) and use the wrapper everywhere so a single Close panic doesn't stop closing other child executors.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49222",
     "https://github.com/pingcap/tidb/pull/49222.patch"
@@ -60,9 +60,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: // Otherwise we may got data race.",
+      "evidence: panic in `executor.Close()` can prevent other executors from closing, causing goroutine leaks (Issue #49223)",
       "files: pkg/executor/adapter.go, pkg/executor/coprocessor.go, pkg/executor/cte.go, pkg/executor/cte_test.go, pkg/executor/delete.go, pkg/executor/distsql.go, pkg/executor/executor.go, pkg/executor/explain.go, pkg/executor/index_lookup_join.go, pkg/executor/index_lookup_merge_join.go, pkg/executor/index_merge_reader.go, pkg/executor/insert.go, pkg/executor/internal/exec/executor.go, pkg/executor/join.go, pkg/executor/parallel_apply.go, pkg/executor/replace.go, pkg/executor/shuffle.go, pkg/executor/sortexec/sort.go, pkg/executor/test/executor/BUILD.bazel, pkg/executor/test/executor/executor_test.go, pkg/executor/union_scan.go, pkg/executor/update.go"
     ]
   },
-  "analysis": "PR title: executor: recover panic in executor.Close()\nPR url: https://github.com/pingcap/tidb/pull/49222\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // Otherwise we may got data race.\nChanged files (22): pkg/executor/adapter.go, pkg/executor/coprocessor.go, pkg/executor/cte.go, pkg/executor/cte_test.go, pkg/executor/delete.go, pkg/executor/distsql.go, pkg/executor/executor.go, pkg/executor/explain.go, pkg/executor/index_lookup_join.go, pkg/executor/index_lookup_merge_join.go, pkg/executor/index_merge_reader.go, pkg/executor/insert.go, pkg/executor/internal/exec/executor.go, pkg/executor/join.go, pkg/executor/parallel_apply.go, pkg/executor/replace.go, pkg/executor/shuffle.go, pkg/executor/sortexec/sort.go, pkg/executor/test/executor/BUILD.bazel, pkg/executor/test/executor/executor_test.go, pkg/executor/union_scan.go, pkg/executor/update.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: executor: recover panic in executor.Close()\nPR url: https://github.com/pingcap/tidb/pull/49222\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: panic in `executor.Close()` can prevent other executors from closing and leak goroutines (Issue #49223)\nChanged files (22): pkg/executor/adapter.go, pkg/executor/coprocessor.go, pkg/executor/cte.go, pkg/executor/cte_test.go, pkg/executor/delete.go, pkg/executor/distsql.go, pkg/executor/executor.go, pkg/executor/explain.go, pkg/executor/index_lookup_join.go, pkg/executor/index_lookup_merge_join.go, pkg/executor/index_merge_reader.go, pkg/executor/insert.go, pkg/executor/internal/exec/executor.go, pkg/executor/join.go, pkg/executor/parallel_apply.go, pkg/executor/replace.go, pkg/executor/shuffle.go, pkg/executor/sortexec/sort.go, pkg/executor/test/executor/BUILD.bazel, pkg/executor/test/executor/executor_test.go, pkg/executor/union_scan.go, pkg/executor/update.go\nPatch series analyzed; see patch_url."
 }

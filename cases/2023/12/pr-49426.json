@@ -17,14 +17,14 @@
   ],
   "failure_signature": "race = \"on\", | select * from `planner__core__integration` . `t1` where `a` < ? order by `a` limit ? SELECT /*+ order_index(`t1` `idx_a`)*/ * FROM `planner__core__integration`.`t1` WHERE `a` < 10 ORDER BY `a` LIMIT 1 planner__core__integration enabled <create_time> <update_time> utf8mb4 utf8mb4_general_ci manual d91fc2fee71140e271779ae603bf13e793040345ad88a8e6ab1d8a5cf31...",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Implement the syntax in TiDB: ``` CREATE [SESSION | GLOBAL] UNIVERSAL BINDING ...",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR introduces \"universal bindings\" (adds a `type` column in `mysql.bind_info`, updates binding creation/show paths, and adjusts related golden outputs). The available case evidence does not clearly indicate a flaky failure mode or a targeted stabilization fix, so we keep a conservative fallback classification.",
   "module": "planner",
-  "fix_pattern": "Implement the syntax in TiDB: ``` CREATE [SESSION | GLOBAL] UNIVERSAL BINDING ... ```",
+  "fix_pattern": "Add support for universal bindings (new syntax + bind_info `type` column) and update related binding capture/show logic and golden outputs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49426",
     "https://github.com/pingcap/tidb/pull/49426.patch"

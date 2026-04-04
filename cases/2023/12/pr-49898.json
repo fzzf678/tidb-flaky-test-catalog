@@ -17,14 +17,14 @@
   ],
   "failure_signature": "{\"select * from a where PK = 0 union all (select * from b where PK = 0 union all (select * from b where PK != 0) order by pk limit 1)\", true, (pkg/parser/parser_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: {\"select * from a where PK = 0 union all (select * from b where PK = 0 union all (select * from b where PK != 0) order by pk limit 1)\", true, (pkg/parser/parser_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic parser/AST construction bug where `LIMIT` (and `ORDER BY`) could be lost when building nested `SetOprStmt` (e.g. UNION/UNION ALL subqueries). The case evidence is a parser test input string that already contains `ORDER BY ... LIMIT ...` and does not indicate a flaky/nondeterministic trigger, so we keep a conservative fallback classification.",
   "module": "parser",
-  "fix_pattern": "{\"select * from a where PK = 0 union all (select * from b where PK = 0 union all (select * from b where PK != 0) order by pk limit 1)\", true, (pkg/parser/parser_test.go)",
+  "fix_pattern": "Preserve `LIMIT`/`ORDER BY` when constructing nested `SetOprStmt` in the parser (propagate Limit/OrderBy fields through SetOprSelectList) and update parser tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49898",
     "https://github.com/pingcap/tidb/pull/49898.patch"

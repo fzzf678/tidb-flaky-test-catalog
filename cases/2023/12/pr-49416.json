@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// As multiple threads may memorize regexp and cause data race, only the first thread",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: In this PR, we just add a new interface definition `EvalContext` and copy some needed methods from `sessionctx.Context`:.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a broad refactor that introduces `EvalContext` for expression evaluation and updates many expression-eval call sites. The case evidence here (a comment about potential regexp memoization races) does not clearly show a concrete flaky failure mode or a targeted stabilization fix, so we keep a conservative fallback classification.",
   "module": "expression",
-  "fix_pattern": "In this PR, we just add a new interface definition `EvalContext` and copy some needed methods from `sessionctx.Context`:",
+  "fix_pattern": "Refactor expression evaluation to use a dedicated `EvalContext` interface instead of `sessionctx.Context` across expression evaluation paths.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49416",
     "https://github.com/pingcap/tidb/pull/49416.patch"

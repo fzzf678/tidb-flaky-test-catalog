@@ -13,18 +13,18 @@
     "name": "bench_test"
   },
   "symptoms": [
-    "rnd: rand.New(rand.NewSource(int64(seed))), (br/pkg/lightning/backend/external/bench_test.go)"
+    "gloabl sort: revert \"writer upload data in background\""
   ],
-  "failure_signature": "rnd: rand.New(rand.NewSource(int64(seed))), (br/pkg/lightning/backend/external/bench_test.go)",
+  "failure_signature": "gloabl sort: revert \"writer upload data in background\"",
   "root_cause_categories": [
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: rnd: rand.New(rand.NewSource(int64(seed))), (br/pkg/lightning/backend/external/bench_test.go).",
-  "module": "kv",
-  "fix_pattern": "rnd: rand.New(rand.NewSource(int64(seed))), (br/pkg/lightning/backend/external/bench_test.go)",
+  "root_cause_explanation": "The previous change introduced background/asynchronous uploading in the global-sort writer, which added concurrency during flush/close and could lead to unstable behavior (racey shutdown/flush ordering). This PR reverts that approach, removing the async flush goroutine/channel and switching back to synchronous flush logic to make writer behavior deterministic and stable.",
+  "module": "lightning",
+  "fix_pattern": "Remove background upload (async flush goroutine) in global-sort writer and flush synchronously to avoid racey shutdown/ordering issues.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49118",
     "https://github.com/pingcap/tidb/pull/49118.patch"

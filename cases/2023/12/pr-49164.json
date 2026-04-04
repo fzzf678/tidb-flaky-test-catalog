@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: fix DATA RACE caused by TestDropBindBySQLDigest",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: planner: fix DATA RACE caused by TestDropBindBySQLDigest.",
+  "root_cause_explanation": "BindHandle reuses a singleton session context (`sctx`), and `Update()` / bind preparation could access it concurrently in tests, leading to a Go data race. The fix serializes access with `h.sctx.Lock()` / `Unlock()` around the critical sections.",
   "module": "planner",
-  "fix_pattern": "planner: fix DATA RACE caused by TestDropBindBySQLDigest",
+  "fix_pattern": "Protect singleton BindHandle.sctx with a mutex to avoid concurrent access/data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49164",
     "https://github.com/pingcap/tidb/pull/49164.patch"

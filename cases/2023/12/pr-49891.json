@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ddl: fix unstable test",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix unstable test.",
+  "root_cause_explanation": "The DDL callback-based test was flaky because `OnJobUpdated` could be invoked unexpectedly for the final DDL job even after it had already reached the `synced` state, causing nondeterministic extra callback invocations and brittle assertions. This PR stabilizes the behavior by ignoring `OnJobUpdated` events once the job state is `JobStateSynced`.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix unstable test",
+  "fix_pattern": "Guard `TestDDLCallback.OnJobUpdated` to return early when `job.State == JobStateSynced`, avoiding unexpected last-job update callbacks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49891",
     "https://github.com/pingcap/tidb/pull/49891.patch"

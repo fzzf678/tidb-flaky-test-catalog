@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: disable race check in session package to speed up bootstrap test",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "nondeterministic_plan_selection"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: planner: disable race check in session package to speed up bootstrap test.",
-  "module": "planner",
-  "fix_pattern": "planner: disable race check in session package to speed up bootstrap test",
+  "root_cause_explanation": "The bootstrap/unit tests in `pkg/session` were unstable mainly due to running too slowly under the race detector (higher overhead), which can cause timeouts or flaky failures in CI. This PR stabilizes the test run by turning Bazel race mode off for the `pkg/session` go_test target, reducing runtime variance.",
+  "module": "test_infra",
+  "fix_pattern": "Disable Bazel race mode for the `pkg/session` go_test target to speed up bootstrap tests and avoid race-detector-induced timeouts.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49718",
     "https://github.com/pingcap/tidb/pull/49718.patch"

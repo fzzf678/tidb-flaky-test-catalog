@@ -17,15 +17,14 @@
   ],
   "failure_signature": "\"select version from mysql.stats_meta where table_id in (?, ?) order by table_id\", partitionP0ID, partitionP1ID, (pkg/statistics/handle/ddl/ddl_test.go)",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Relocated truncate partition logic to truncate_partition.go.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes deterministic global stats meta updates after truncating partitions (count/modify_count/version handling) and adds/repairs unit tests. The case evidence does not clearly indicate nondeterministic/flaky behavior, so we keep a conservative fallback classification.",
   "module": "statistics",
-  "fix_pattern": "Relocated truncate partition logic to truncate_partition.go. Updated the global stats correctly, updated the count, and modify_count for the global table. Added test case for truncating one partition and multiple partitions. Fixed the broken old test case for global stats.",
+  "fix_pattern": "Fix global stats meta updates after truncating partitions (update count/modify_count/version correctly) and add/repair unit tests for the truncate-partition DDL event.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49362",
     "https://github.com/pingcap/tidb/pull/49362.patch"

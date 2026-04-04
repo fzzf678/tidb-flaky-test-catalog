@@ -13,18 +13,18 @@
     "name": "client_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "backup: more stable check liveness when store heartbeat behind too much"
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "backup: more stable check liveness when store heartbeat behind too much",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "The liveness check treated a store heartbeat that lagged more than a fixed threshold as disconnected, which could be too strict under some configurations and lead to intermittent failures. The fix increases the disconnection duration threshold and uses a proper retry/backoff loop when querying PD for regions/peers so transient PD/heartbeat delays don't fail the operation.",
   "module": "br",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Increase heartbeat-lag threshold and use retry/backoff (WithRetry) when querying PD for region/leader.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48403",
     "https://github.com/pingcap/tidb/pull/48403.patch"

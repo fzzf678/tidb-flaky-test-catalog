@@ -13,18 +13,18 @@
     "name": "TestColumnName"
   },
   "symptoms": [
-    "executor: fix data race for test TestColumnName"
+    "Data race in `TestColumnName` when executing the next SQL before closing the previous `RecordSet`."
   ],
-  "failure_signature": "executor: fix data race for test TestColumnName",
+  "failure_signature": "`TestColumnName` can hit a data race if it runs `SET @@tidb_enable_window_function=0` before calling `rs.Close()` on the previous query.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race for test TestColumnName.",
+  "root_cause_explanation": "The test ran a `SET` statement while the previous query's `RecordSet` was still open; internal cleanup triggered by `rs.Close()` could race with the subsequent statement execution, causing `-race` failures/flakiness. The fix ensures the record set is closed before executing the next SQL.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race for test TestColumnName",
+  "fix_pattern": "Close the `RecordSet` before executing the next statement (move `SET @@tidb_enable_window_function=0` after `rs.Close()`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49348",
     "https://github.com/pingcap/tidb/pull/49348.patch"
@@ -39,9 +39,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: executor: fix data race for test TestColumnName",
+      "evidence: We should call the rs.Close() first, and then run the next sql.",
       "files: pkg/executor/test/executor/executor_test.go"
     ]
   },
-  "analysis": "PR title: executor: fix data race for test TestColumnName\nPR url: https://github.com/pingcap/tidb/pull/49348\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: executor: fix data race for test TestColumnName\nChanged files (1): pkg/executor/test/executor/executor_test.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: executor: fix data race for test TestColumnName\nPR url: https://github.com/pingcap/tidb/pull/49348\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: We should call the rs.Close() first, and then run the next sql.\nChanged files (1): pkg/executor/test/executor/executor_test.go\nPatch series analyzed; see patch_url."
 }
