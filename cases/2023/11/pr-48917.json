@@ -13,18 +13,18 @@
     "name": "expr_to_pb_test"
   },
   "symptoms": [
-    "t.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\")"
+    "expression: replace `EvalWithInnerCtx` with `Eval` for `PbConverter` and `ExplainInfo` (no concrete flaky signature in patch)"
   ],
-  "failure_signature": "t.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\")",
+  "failure_signature": "expression: replace `EvalWithInnerCtx` with `Eval` for `PbConverter` and `ExplainInfo` (no concrete flaky signature in patch)",
   "root_cause_categories": [
-    "external_dependency"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: To make sure some `Eval` methods can have a outside input of the context, we did below two refactors.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a broad refactor that changes expression PB conversion and explain-info generation to take `sessionctx.Context` (replacing `EvalWithInnerCtx` and adding a context parameter for `ExplainInfo`). It touches many planner/expression call sites and adjusts unit tests, but the patch does not show a concrete flaky failure signature or a targeted stabilization change for a specific flaky behavior, so we keep the conservative fallback classification.",
   "module": "expression",
-  "fix_pattern": "To make sure some `Eval` methods can have a outside input of the context, we did below two refactors",
+  "fix_pattern": "Refactor expression PB conversion / explain-info APIs to accept `sessionctx.Context` (instead of an inner `StatementContext`), and update call sites + unit tests to use a proper mock session context where needed.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48917",
     "https://github.com/pingcap/tidb/pull/48917.patch"
@@ -64,9 +64,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: t.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\")",
+      "evidence: broad refactor (no concrete flaky signature in patch)",
       "files: pkg/executor/distsql.go, pkg/expression/aggregation/agg_to_pb.go, pkg/expression/aggregation/explain.go, pkg/expression/aggregation/window_func.go, pkg/expression/constant_fold.go, pkg/expression/explain.go, pkg/expression/expr_to_pb.go, pkg/expression/expr_to_pb_test.go, pkg/expression/expression.go, pkg/expression/grouping_sets.go, pkg/expression/util.go, pkg/expression/util_test.go, pkg/planner/cascades/transformation_rules.go, pkg/planner/core/exhaust_physical_plans.go, pkg/planner/core/explain.go, pkg/planner/core/find_best_task.go, pkg/planner/core/handle_cols.go, pkg/planner/core/indexmerge_path.go, pkg/planner/core/plan_to_pb.go, pkg/planner/core/rule_predicate_push_down.go, pkg/planner/core/runtime_filter.go, pkg/planner/core/scalar_subq_expression.go, pkg/planner/core/task.go, pkg/planner/core/tiflash_selection_late_materialization.go, pkg/planner/property/BUILD.bazel, pkg/planner/property/physical_property.go"
     ]
   },
-  "analysis": "PR title: expression: replace `EvalWithInnerCtx` with `Eval` for `PbConverter` and `ExplainInfo`\nPR url: https://github.com/pingcap/tidb/pull/48917\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: t.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\")\nChanged files (26): pkg/executor/distsql.go, pkg/expression/aggregation/agg_to_pb.go, pkg/expression/aggregation/explain.go, pkg/expression/aggregation/window_func.go, pkg/expression/constant_fold.go, pkg/expression/explain.go, pkg/expression/expr_to_pb.go, pkg/expression/expr_to_pb_test.go, pkg/expression/expression.go, pkg/expression/grouping_sets.go, pkg/expression/util.go, pkg/expression/util_test.go, pkg/planner/cascades/transformation_rules.go, pkg/planner/core/exhaust_physical_plans.go, pkg/planner/core/explain.go, pkg/planner/core/find_best_task.go, pkg/planner/core/handle_cols.go, pkg/planner/core/indexmerge_path.go, pkg/planner/core/plan_to_pb.go, pkg/planner/core/rule_predicate_push_down.go, pkg/planner/core/runtime_filter.go, pkg/planner/core/scalar_subq_expression.go, pkg/planner/core/task.go, pkg/planner/core/tiflash_selection_late_materialization.go, pkg/planner/property/BUILD.bazel, pkg/planner/property/physical_property.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: expression: replace `EvalWithInnerCtx` with `Eval` for `PbConverter` and `ExplainInfo`\nPR url: https://github.com/pingcap/tidb/pull/48917\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: broad refactor (no concrete flaky signature in patch)\nChanged files (26): pkg/executor/distsql.go, pkg/expression/aggregation/agg_to_pb.go, pkg/expression/aggregation/explain.go, pkg/expression/aggregation/window_func.go, pkg/expression/constant_fold.go, pkg/expression/explain.go, pkg/expression/expr_to_pb.go, pkg/expression/expr_to_pb_test.go, pkg/expression/expression.go, pkg/expression/grouping_sets.go, pkg/expression/util.go, pkg/expression/util_test.go, pkg/planner/cascades/transformation_rules.go, pkg/planner/core/exhaust_physical_plans.go, pkg/planner/core/explain.go, pkg/planner/core/find_best_task.go, pkg/planner/core/handle_cols.go, pkg/planner/core/indexmerge_path.go, pkg/planner/core/plan_to_pb.go, pkg/planner/core/rule_predicate_push_down.go, pkg/planner/core/runtime_filter.go, pkg/planner/core/scalar_subq_expression.go, pkg/planner/core/task.go, pkg/planner/core/tiflash_selection_late_materialization.go, pkg/planner/property/BUILD.bazel, pkg/planner/property/physical_property.go\nPatch series analyzed; see patch_url."
 }

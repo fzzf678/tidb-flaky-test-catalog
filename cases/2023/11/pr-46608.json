@@ -17,14 +17,14 @@
   ],
   "failure_signature": "select * from t order by a; (tests/integrationtest/r/table/index.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: select * from t order by a; (tests/integrationtest/r/table/index.result).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes deterministic duplicate-key error message formatting for prefix indexes (truncate index values to match MySQL) and updates/adds integration test expectations. The case evidence includes an ordered SELECT and does not show a flaky trigger, so we keep a conservative fallback classification.",
   "module": "executor",
-  "fix_pattern": "select * from t order by a; (tests/integrationtest/r/table/index.result)",
+  "fix_pattern": "When building duplicate-key error messages for prefix indexes, truncate index values before formatting the entry key so the message matches MySQL; update/add integration test coverage for prefix-index duplicate errors.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46608",
     "https://github.com/pingcap/tidb/pull/46608.patch"

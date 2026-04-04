@@ -17,14 +17,14 @@
   ],
   "failure_signature": "err := tk.ExecToErr(\"explain select ps_partkey, sum(ps_supplycost * ps_availqty) as value from partsupp, supplier, nation where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = 'MOZAMBIQUE' group by ps_partkey having sum(ps_supplycost * ps_availqty) > ( select sum(ps_supplycost * ps_availqty) * 0.0001000000 from partsupp, supplier, nation...",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: err := tk.ExecToErr(\"explain select ps_partkey, sum(ps_supplycost * ps_availqty) as value from partsupp, supplier, nation where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = 'MOZAMBIQUE' group by ps_p….",
+  "root_cause_explanation": "The tests were flaky due to a goroutine/resource leak in executor open/close handling (e.g. `EvalSubqueryFirstRow` paths): when a query is canceled (such as `tidb_mem_oom_action='CANCEL'` under a low memory quota), an error path could return before cleanup was properly deferred, leaving goroutines running and causing later tests to behave unpredictably. This PR stabilizes it by ensuring executor `Close()` is deferred before `Open()` so resources are released even when `Open()` fails, and adds a regression test asserting \"no leak\" for Issue #48007.",
   "module": "executor",
-  "fix_pattern": "err := tk.ExecToErr(\"explain select ps_partkey, sum(ps_supplycost * ps_availqty) as value from partsupp, supplier, nation where ps_suppkey = s_suppkey and s_nationkey = n_nationkey and n_name = 'MOZAMBIQUE' group by ps_partkey having sum(ps_supplycost * ps_availqty) > ( select sum(ps_supplycost * ps_availqty) * 0.0001000000 from partsupp, supplier, nation...",
+  "fix_pattern": "Defer executor `Close()` before calling `Open()` so cancellation/error paths still clean up; add regression test (Issue #48007) to ensure no goroutine leak under OOM-cancel and low memory quota.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48133",
     "https://github.com/pingcap/tidb/pull/48133.patch"

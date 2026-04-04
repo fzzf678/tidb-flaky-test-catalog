@@ -13,18 +13,18 @@
     "name": "framework_test"
   },
   "symptoms": [
-    "race = \"off\","
+    "Task cancellation can happen before `updateTask`, leaving the disttask dispatcher in an inconsistent state (covered by `TestTaskCancelledBeforeUpdateTask`)."
   ],
-  "failure_signature": "race = \"off\",",
+  "failure_signature": "Task cancellation can happen before `updateTask`, leaving the disttask dispatcher in an inconsistent state (TestTaskCancelledBeforeUpdateTask).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"off\",.",
+  "root_cause_explanation": "This case is flaky because task cancellation is an asynchronous state transition: the dispatcher can dispatch subtasks and then get cancelled before `updateTask(...)` persists the new task state. Depending on timing, the revert/error-handling path could observe `StepInit` (no real subtasks to revert) but still try to enumerate scheduler IDs and build revert subtasks, causing intermittent errors. The fix guards `dispatchSubTask4Revert` to skip revert-subtask creation when the task is still `StepInit`, and adds a failpoint-driven regression test (`TestTaskCancelledBeforeUpdateTask`) to deterministically exercise the cancel-before-update window.",
   "module": "domain",
-  "fix_pattern": "race = \"off\",",
+  "fix_pattern": "Make disttask state transitions resilient to cancellation timing: if the task is still `StepInit`, skip creating revert subtasks; add a failpoint + unit test to cover the cancel-before-update path and assert the dispatcher reaches a stable final state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48906",
     "https://github.com/pingcap/tidb/pull/48906.patch"
@@ -41,9 +41,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: race = \"off\",",
+      "evidence: task cancellation can happen before `updateTask` (TestTaskCancelledBeforeUpdateTask)",
       "files: pkg/disttask/framework/BUILD.bazel, pkg/disttask/framework/dispatcher/dispatcher.go, pkg/disttask/framework/framework_test.go"
     ]
   },
-  "analysis": "PR title: disttask: fix keep reporting error when cancel pending task\nPR url: https://github.com/pingcap/tidb/pull/48906\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"off\",\nChanged files (3): pkg/disttask/framework/BUILD.bazel, pkg/disttask/framework/dispatcher/dispatcher.go, pkg/disttask/framework/framework_test.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: disttask: fix keep reporting error when cancel pending task\nPR url: https://github.com/pingcap/tidb/pull/48906\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: task cancellation can happen before `updateTask` (TestTaskCancelledBeforeUpdateTask)\nChanged files (3): pkg/disttask/framework/BUILD.bazel, pkg/disttask/framework/dispatcher/dispatcher.go, pkg/disttask/framework/framework_test.go\nPatch series analyzed; see patch_url."
 }

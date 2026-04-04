@@ -17,14 +17,14 @@
   ],
   "failure_signature": "race = \"on\",",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: simplify the syntax of creating bindings.",
-  "module": "planner",
-  "fix_pattern": "planner: simplify the syntax of creating bindings",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a deterministic feature/change to the SQL grammar and bindinfo tests: it adds a simplified `CREATE [GLOBAL] BINDING USING <stmt>` syntax in the parser (`parser.y` regenerated `parser.go`) and adds unit test coverage in `bind_test.go`. The captured evidence (`race = \"on\"`) is just a test config flag, not a flaky failure signature, so we keep a conservative fallback classification.",
+  "module": "parser",
+  "fix_pattern": "Extend parser grammar to accept simplified `CREATE [GLOBAL] BINDING USING <BindableStmt>` syntax (regenerate parser) and add bindinfo unit tests validating the new binding creation workflow.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48878",
     "https://github.com/pingcap/tidb/pull/48878.patch"

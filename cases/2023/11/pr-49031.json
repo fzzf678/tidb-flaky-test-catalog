@@ -13,18 +13,18 @@
     "name": "hash_join"
   },
   "symptoms": [
-    "ORDER BY IF(ISNULL(`col_14`),0,1),`col_14`; (tests/integrationtest/r/executor/jointest/hash_join.result)"
+    "executor/codec: hash join builds wrong hash key for ENUM/SET values (issue #48991; regression test added)"
   ],
-  "failure_signature": "ORDER BY IF(ISNULL(`col_14`),0,1),`col_14`; (tests/integrationtest/r/executor/jointest/hash_join.result)",
+  "failure_signature": "executor/codec: hash join builds wrong hash key for ENUM/SET values (issue #48991)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: When the projection disables the ColumnEvaluator, it will eval the ENUM and parse a new ENUM.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a deterministic correctness bug fix (hash join building a wrong hash key for ENUM/SET values when the projection disables `ColumnEvaluator`) and adds a new integration test case for issue #48991. The patch does not provide evidence that the failure is flaky/non-deterministic (it may be a consistent wrong-result bug under a specific execution path), so we keep the conservative fallback classification rather than forcing it into an unrelated flakiness taxonomy bucket.",
   "module": "executor",
-  "fix_pattern": "When the projection disables the ColumnEvaluator, it will eval the ENUM and parse a new ENUM. But the new ENUM value's value index will be set to 0.",
+  "fix_pattern": "Fix hash join key construction for ENUM/SET values by ensuring vectorized evaluation parses ENUM/SET names into proper typed values (instead of leaving value index as 0), and add a regression integration test for the wrong-result scenario (issue #48991).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49031",
     "https://github.com/pingcap/tidb/pull/49031.patch"
@@ -41,9 +41,9 @@
       "determinism_stabilization"
     ],
     "evidence": [
-      "evidence: ORDER BY IF(ISNULL(`col_14`),0,1),`col_14`; (tests/integrationtest/r/executor/jointest/hash_join.result)",
+      "evidence: wrong hash join key for ENUM/SET values (issue #48991; regression test added)",
       "files: pkg/expression/chunk_executor.go, pkg/util/codec/codec.go, tests/integrationtest/r/executor/jointest/hash_join.result, tests/integrationtest/t/executor/jointest/hash_join.test"
     ]
   },
-  "analysis": "PR title: executor, codec: hash join build wrong hash key for ENUM/SET value\nPR url: https://github.com/pingcap/tidb/pull/49031\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: ORDER BY IF(ISNULL(`col_14`),0,1),`col_14`; (tests/integrationtest/r/executor/jointest/hash_join.result)\nChanged files (3): pkg/expression/chunk_executor.go, tests/integrationtest/r/executor/jointest/hash_join.result, tests/integrationtest/t/executor/jointest/hash_join.test\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: executor, codec: hash join build wrong hash key for ENUM/SET value\nPR url: https://github.com/pingcap/tidb/pull/49031\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: wrong hash join key for ENUM/SET values (issue #48991; regression test added)\nChanged files (3): pkg/expression/chunk_executor.go, tests/integrationtest/r/executor/jointest/hash_join.result, tests/integrationtest/t/executor/jointest/hash_join.test\nPatch series analyzed; see patch_url."
 }

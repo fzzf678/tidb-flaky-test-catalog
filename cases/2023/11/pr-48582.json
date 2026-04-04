@@ -17,15 +17,14 @@
   ],
   "failure_signature": "explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR changes util/ranger prefix-index range building logic (move prefix cutting earlier into the point builder to support future sort-key conversion) and updates the integration test EXPLAIN output accordingly. The case evidence is an EXPLAIN statement from the test suite, not a flaky failure signature or nondeterministic trigger, so we keep a conservative fallback classification.",
   "module": "planner",
-  "fix_pattern": "explain format=brief select col_250,col_251 from tbl_29711 use index (primary) where col_251 between 'Bob' and 'David' order by col_250,col_251 limit 6; (tests/integrationtest/r/planner/core/integration.result)",
+  "fix_pattern": "Move prefix cutting for prefix indexes from the range stage to the points-building stage (to keep original string values available), adjust range union/merge behavior, and refresh integration test `.result` EXPLAIN output to match the new ranger logic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48582",
     "https://github.com/pingcap/tidb/pull/48582.patch"

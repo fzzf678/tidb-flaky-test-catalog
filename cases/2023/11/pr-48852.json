@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + race = \"on\",.",
+  "root_cause_explanation": "This case is flaky because merging global stats TopN with concurrency exposed a logical merge bug: per-worker TopN/\"popped\" TopN results were combined incorrectly (and some empty-topn paths returned early), so the final merged TopN could be wrong depending on how work was sharded across workers. The fix changes the merge to aggregate counts via a shared counter map (merge by encoded value) and simplifies worker responses so concurrent merging produces stable, correct results.",
   "module": "statistics",
-  "fix_pattern": "+ race = \"on\",",
+  "fix_pattern": "Fix concurrent global-stats TopN merge by aggregating per-worker TopN values into a counter map keyed by encoded value (sum counts across workers, including previously 'popped' items), handle empty-topn cases consistently, and simplify merge-worker response structure to avoid shard-dependent incorrect results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48852",
     "https://github.com/pingcap/tidb/pull/48852.patch"

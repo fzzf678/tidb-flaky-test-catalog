@@ -17,15 +17,14 @@
   ],
   "failure_signature": "race = \"off\", | slices.SortFunc(dsp.TaskNodes, func(i, j string) int { (pkg/disttask/framework/dispatcher/dispatcher_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "concurrency_data_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: race = \"off\", | slices.SortFunc(dsp.TaskNodes, func(i, j string) int { (pkg/disttask/framework/dispatcher/dispatcher_test.go).",
+  "root_cause_explanation": "The test was flaky because it compared slices (`dsp.TaskNodes` and the updated subtasks list) using a fixed expected order, while the underlying ordering can vary between runs (e.g. iteration / query / scheduling order is not guaranteed). The fix sorts `dsp.TaskNodes` and the subtasks by `SchedulerID` before `require.Equal`, making the assertions order-independent and deterministic.",
   "module": "domain",
-  "fix_pattern": "race = \"off\", | slices.SortFunc(dsp.TaskNodes, func(i, j string) int { (pkg/disttask/framework/dispatcher/dispatcher_test.go)",
+  "fix_pattern": "Before asserting equality in dispatcher rebalance tests, sort `dsp.TaskNodes` (string compare) and sort the subtasks slice by `SchedulerID`, so `require.Equal` does not depend on nondeterministic ordering.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48306",
     "https://github.com/pingcap/tidb/pull/48306.patch"

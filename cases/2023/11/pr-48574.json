@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: In #41146 a input parameter `explicitTz` was introduced to function `types.ParseTime` to avoid data race.",
+  "root_cause_explanation": "This case is about concurrency safety in time parsing: `types.ParseTime` previously needed an extra `explicitTz` parameter (introduced in #41146) to avoid data races when using mutable statement context/timezone state. After refactoring to an immutable `types.Context`, this PR removes the `explicitTz` parameter while keeping `ParseTime` thread-safe, which prevents race-detector flakes or nondeterministic behavior caused by shared/mutable timezone context during concurrent parsing.",
   "module": "expression",
-  "fix_pattern": "In #41146 a input parameter `explicitTz` was introduced to function `types.ParseTime` to avoid data race. Now after some refactoring works after `47355`, we use `types.Context` which is immutable to replace `stmtctx.StatementContext`. So it is still thread-safe after we remove `explicitTz`.",
+  "fix_pattern": "Remove the `explicitTz` parameter from `types.ParseTime` and rely on immutable `types.Context` (`TypeCtx`) for timezone/stmt context, keeping parsing thread-safe; simplify related `Time.Check` helpers and update all call sites accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48574",
     "https://github.com/pingcap/tidb/pull/48574.patch"

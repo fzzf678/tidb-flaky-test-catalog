@@ -17,14 +17,14 @@
   ],
   "failure_signature": "SELECT * FROM a TABLESAMPLE REGIONS() ORDER BY pk; (tests/integrationtest/r/executor/sample.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: SELECT * FROM a TABLESAMPLE REGIONS() ORDER BY pk; (tests/integrationtest/r/executor/sample.result).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes TABLESAMPLE planning/correctness (validate unsupported plans as errors and add a regression test for unsigned-int handles with `TABLESAMPLE ... ORDER BY`). The case evidence is just a SQL statement from the integration test, without flaky CI signatures or a nondeterministic trigger, so we keep a conservative fallback classification instead of forcing it into an ordering-flakiness bucket.",
   "module": "planner",
-  "fix_pattern": "SELECT * FROM a TABLESAMPLE REGIONS() ORDER BY pk; (tests/integrationtest/r/executor/sample.result)",
+  "fix_pattern": "Tighten TABLESAMPLE plan validation (return error for unsupported plans rather than warning), adjust DataSource sample-table path behavior for keep-order properties, and add an integration regression test covering unsigned primary-key handles with `TABLESAMPLE ... ORDER BY`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48315",
     "https://github.com/pingcap/tidb/pull/48315.patch"

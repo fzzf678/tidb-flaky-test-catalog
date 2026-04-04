@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rnd: rand.New(rand.NewSource(int64(seed))), (br/pkg/lightning/backend/external/bench_test.go)",
   "root_cause_categories": [
-    "external_dependency"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: test the performance of different cases Add another goroutine for each writer to handle writing to external storage.",
-  "module": "kv",
-  "fix_pattern": "test the performance of different cases Add another goroutine for each writer to handle writing to external storage.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a large feature/performance change around Lightning external/global sort (add more test/benchmark cases and make writers upload data in background). The captured evidence is a benchmark snippet showing a local RNG (`rand.New(rand.NewSource(seed))`) for reproducibility, not a flaky failure signature. Since the diff does not provide a clear flaky mechanism or targeted stabilization, we keep a conservative fallback classification.",
+  "module": "lightning",
+  "fix_pattern": "Extend Lightning external/global-sort code to upload data in background and add more benchmark/test cases for performance coverage; adjust related external reader/writer and storage code as needed.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48873",
     "https://github.com/pingcap/tidb/pull/48873.patch"

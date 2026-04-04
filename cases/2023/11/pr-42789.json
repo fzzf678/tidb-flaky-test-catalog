@@ -17,15 +17,14 @@
   ],
   "failure_signature": "order by c1 desc limit 1)) as subq_2 (tests/integrationtest/r/planner/core/tests/prepare/issue.result)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: order by c1 desc limit 1)) as subq_2 (tests/integrationtest/r/planner/core/tests/prepare/issue.result).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic nil-pointer bug in the planner (initialize `expression.CorrelatedColumn.Data`) and adds an integration test to cover the issue. The case evidence does not include CI logs or a flaky/nondeterministic trigger, so we keep a conservative fallback classification instead of forcing it into a flaky taxonomy bucket.",
   "module": "planner",
-  "fix_pattern": "order by c1 desc limit 1)) as subq_2 (tests/integrationtest/r/planner/core/tests/prepare/issue.result)",
+  "fix_pattern": "Initialize `expression.CorrelatedColumn.Data` (set it to `new(types.Datum)`) to avoid nil-pointer crashes in correlated aggregation handling; add an integration test case to cover the regression.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42789",
     "https://github.com/pingcap/tidb/pull/42789.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select b from t use index(k) where b > 50 order by b desc\") (pkg/executor/union_scan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select b from t use index(k) where b > 50 order by b desc\") (pkg/executor/union_scan_test.go).",
+  "root_cause_explanation": "This case is flaky because benchmark/test code left session state dirty: the union-scan benchmark functions executed queries inside a transaction/session context but did not `ROLLBACK` at the end, which can leak an open transaction and interfere with subsequent benchmarks/tests in the same process (order-dependent failures). The fix adds `tk.MustExec(\"rollback\")` after the benchmark loops and also corrects a typo by using `MustQuery` for SELECT statements.",
   "module": "executor",
-  "fix_pattern": "tk.MustQuery(\"select b from t use index(k) where b > 50 order by b desc\") (pkg/executor/union_scan_test.go)",
+  "fix_pattern": "Add `ROLLBACK` cleanup at the end of union-scan benchmark functions to avoid leaking open transactions across benchmarks/tests, and replace `MustExec(\"select ...\")` with `MustQuery(\"select ...\")` for SELECT statements.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48604",
     "https://github.com/pingcap/tidb/pull/48604.patch"

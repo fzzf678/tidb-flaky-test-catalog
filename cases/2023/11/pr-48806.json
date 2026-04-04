@@ -17,14 +17,14 @@
   ],
   "failure_signature": "race = \"on\",",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: remove duplicated pseudo bindings after loading data with BR.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic bindinfo/BR interaction: after syncing `mysql.bind_info` via BR, the builtin pseudo binding used for bind lock (`builtin_pseudo_sql_for_bind_lock`) can be duplicated, and BR needs a statement to clean up duplicates. The change adds a dedicated DELETE statement and a unit test to verify it. The captured evidence (`race = \"on\"`) is a test config flag, not a flaky failure signature, so we keep a conservative fallback classification.",
   "module": "planner",
-  "fix_pattern": "planner: remove duplicated pseudo bindings after loading data with BR",
+  "fix_pattern": "Introduce `StmtRemoveDuplicatedPseudoBinding` to delete duplicated builtin pseudo-binding rows in `mysql.bind_info` (keeping one arbitrary row) after BR sync, add unit test coverage, and adjust Bazel shard_count as needed.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48806",
     "https://github.com/pingcap/tidb/pull/48806.patch"

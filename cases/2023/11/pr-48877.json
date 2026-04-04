@@ -17,19 +17,18 @@
   ],
   "failure_signature": "- // Default RPC encoding may cause statistics explain result differ and then the test unstable. | select * from t1 where a<10 order by a limit 1; (tests/integrationtest/r/planner/core/integration.result)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+        "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+        "statistics_sensitive_test",
+        "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: - // Default RPC encoding may cause statistics explain result differ and then the test unstable.",
-  "module": "test_infra",
-  "fix_pattern": "- // Default RPC encoding may cause statistics explain result differ and then the test unstable. | select * from t1 where a<10 order by a limit 1; (tests/integrationtest/r/planner/core/integration.result)",
+  "root_cause_explanation": "The test was flaky because it asserts exact EXPLAIN/plan outputs that are sensitive to statistics/RPC encoding differences: the default RPC encoding can change how stats/explain results are produced, causing plan-golden differences across environments and making the test unstable. The stabilization is to force a consistent encoding (`set @@tidb_enable_chunk_rpc = on`) before running/loading the plan test suite, and to host these cases under `tests/integrationtest/` for more controlled golden outputs.",
+  "module": "planner",
+  "fix_pattern": "Stabilize plan/EXPLAIN golden tests by setting `tidb_enable_chunk_rpc=on` (avoid explain differences caused by default RPC encoding/statistics), and migrate the affected planner test cases into `tests/integrationtest` with refreshed `.test`/`.result` outputs.",
   "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/48877",
-    "https://github.com/pingcap/tidb/pull/48877.patch"
+        "https://github.com/pingcap/tidb/pull/48877",
+        "https://github.com/pingcap/tidb/pull/48877.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/48877.patch",
   "changed_files": [

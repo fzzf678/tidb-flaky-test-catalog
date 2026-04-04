@@ -17,14 +17,14 @@
   ],
   "failure_signature": "<li>[BUGFIX] TSDB: Fix PostingsForMatchers race with creating new series. <a href=\"https://redirect.github.com/prometheus/prometheus/issues/12558\">#12558</a></li>",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: In the old way of sorting data, we use merge sort to sort multiple source files.",
-  "module": "statistics",
-  "fix_pattern": "In the old way of sorting data, we use merge sort to sort multiple source files. The IO pattern of source files is hard to handle, we can't fully use the bandwith of the machine. Another drawback is the one-thead heap sort is not very effective. So we try to concurrently download all needed data and sort all data instead of merge it streamingly.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a dependency bump (Dependabot) upgrading `github.com/prometheus/prometheus` to a newer release and updating `go.mod`/`go.sum`/DEPS and related patches. The cited \"race\" in the changelog is about the upstream dependency, not a TiDB flaky-test root cause captured in this case, so we keep a conservative fallback classification.",
+  "module": "test_infra",
+  "fix_pattern": "Bump `github.com/prometheus/prometheus` dependency version (update `go.mod`/`go.sum`/DEPS) and adjust any needed build patches to keep the build and tests passing.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48866",
     "https://github.com/pingcap/tidb/pull/48866.patch"
