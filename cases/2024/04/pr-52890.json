@@ -17,14 +17,14 @@
   ],
   "failure_signature": "errCh <- tk1.ExecToErr(\"insert into t1 select * from t2 order by a\") (tests/realtikvtest/pipelineddmltest/pipelineddml_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "With pipelined DML, a write-conflict/assertion error can surface during a Flush (statement execution) rather than only at Commit, depending on timing. Previously, errors returned from Flush were not handled like commit-time errors, so the observed error content/path could differ between runs. This PR stabilizes it by handling errors returned from Flush in the same way as commit errors and adjusts the test to force flushes and assert the expected write-conflict message fields.",
   "module": "txn",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Handle write-conflict/assertion errors returned during pipelined Flush like commit-time errors; use failpoints in tests to force flush and validate the returned error message.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52890",
     "https://github.com/pingcap/tidb/pull/52890.patch"

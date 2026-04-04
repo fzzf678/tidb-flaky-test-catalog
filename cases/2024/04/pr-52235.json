@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it built `expected` split-key slices by iterating over a Go map, so the per-region slice order was nondeterministic and could mismatch the deterministic output order. This PR stabilizes it by sorting the expected keys before comparison (and refactors `GetSplitKeysOfRegions` to return a map keyed by region info).",
   "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Avoid relying on Go map iteration order in tests; sort the expected keys/slices before asserting equality.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52235",
     "https://github.com/pingcap/tidb/pull/52235.patch"

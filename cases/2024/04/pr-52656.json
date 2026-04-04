@@ -17,14 +17,14 @@
   ],
   "failure_signature": "mockDB.ExpectQuery(\"\\\\QSELECT _tidb_rowid, raw_key, index_name, raw_value, raw_handle FROM `lightning_task_info`.conflict_error_v3 WHERE table_name = ? AND kv_type = 0 AND _tidb_rowid >= ? and _tidb_rowid < ? ORDER BY _tidb_rowid LIMIT ?\\\\E\"). (pkg/lightning/errormanager/errormanager_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky-test root cause; the diff is a large refactor/performance optimization of Lightning's post-import conflict detection and updates mock SQL expectations, rather than an ordering-related flake.",
   "module": "lightning",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Refactor/optimize post-import conflict detection logic and update related SQL/mocked expectations in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52656",
     "https://github.com/pingcap/tidb/pull/52656.patch"

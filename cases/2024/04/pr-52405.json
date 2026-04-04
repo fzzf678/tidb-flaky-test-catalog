@@ -17,14 +17,14 @@
   ],
   "failure_signature": "select * from t tablesample regions() order by a; (tests/integrationtest/r/executor/sample.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Insufficient evidence to attribute this PR to a specific flaky-test root cause; the diff fixes `TABLESAMPLE REGIONS()` behavior under different partition-prune modes (avoid sampling from all partitions and returning duplicated rows), rather than an ordering nondeterminism issue.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Pass `physicalTableID` into `TableSampleExecutor` so region sampling only scans the intended partition(s) under static prune mode.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/52405",
     "https://github.com/pingcap/tidb/pull/52405.patch"
