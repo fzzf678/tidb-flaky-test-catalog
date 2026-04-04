@@ -17,13 +17,13 @@
   ],
   "failure_signature": "rand.Seed(uint64(seed)) (br/pkg/lightning/backend/external/byte_reader_test.go)",
   "root_cause_categories": [
-    "external_dependency"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: rand.Seed(uint64(seed)) (br/pkg/lightning/backend/external/byte_reader_test.go).",
-  "module": "kv",
+  "root_cause_explanation": "The test was flaky because it depended on randomness without a fixed seed, so behavior could vary between runs. This PR stabilizes it by explicitly seeding the random generator (`rand.Seed(...)`) to make results deterministic.",
+  "module": "lightning",
   "fix_pattern": "rand.Seed(uint64(seed)) (br/pkg/lightning/backend/external/byte_reader_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46979",

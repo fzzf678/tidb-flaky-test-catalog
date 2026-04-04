@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix race.",
+  "root_cause_explanation": "The test was flaky under the race detector due to concurrent/asynchronous behavior in the Zstd decompression path used by import-into (background goroutines started by `newCompressReader` / `OpenReader`). This PR stabilizes the behavior by forcing synchronous decoding (`ZStdDecodeConcurrency: 1`) and tightening the unit test to assert goroutine behavior deterministically using `runtime.NumGoroutine()`.",
   "module": "executor",
-  "fix_pattern": "fix race",
+  "fix_pattern": "Avoid async decode races in import-into reader path: set `ZStdDecodeConcurrency: 1` (synchronous decode) when opening compressed files, and update `writer_test.go` to assert goroutine creation deterministically via `runtime.NumGoroutine()`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46404",
     "https://github.com/pingcap/tidb/pull/46404.patch"

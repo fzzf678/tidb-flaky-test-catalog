@@ -17,14 +17,14 @@
   ],
   "failure_signature": "race = \"on\",",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
-  "module": "module_unknown",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds/discusses node failure handling for the disttask framework (replacing failed nodes with live ones and canceling schedulers). The captured signal here is only `race = \"on\"`, which is insufficient to conclude a specific flaky root cause without CI logs/repro. Conservatively downgraded.",
+  "module": "domain",
+  "fix_pattern": "Improve disttask HA: detect failed task nodes (absent from liveNodes), replace them with random live nodes via `UpdateFailedSchedulerIDs`, and add a background cancellation check in scheduler to call `runtimeCancel` when canceled by dispatcher.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45935",
     "https://github.com/pingcap/tidb/pull/45935.patch"

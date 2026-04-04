@@ -13,19 +13,18 @@
     "name": "integration_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"SELECT GROUP_CONCAT(effective_date order by stlmnt_hour DESC) FROM ( SELECT (COALESCE(pct.clearing_time, 0)/3600000) AS stlmnt_hour ,COALESCE(pct.effective_date, '1970-01-01 08:00:00') AS effective_date FROM poi_clearing_time_topic pct ORDER BY pct.effective_date DESC ) a;\").Check(testkit.Rows(\"2023-08-25 00:00:00\")) (expression/integration_..."
+    "GROUP_CONCAT with an ORDER BY item inside a subquery could fail to resolve the order-by expression (\"can't find column\" / resolution error) after aggregation pushdown."
   ],
-  "failure_signature": "tk.MustQuery(\"SELECT GROUP_CONCAT(effective_date order by stlmnt_hour DESC) FROM ( SELECT (COALESCE(pct.clearing_time, 0)/3600000) AS stlmnt_hour ,COALESCE(pct.effective_date, '1970-01-01 08:00:00') AS effective_date FROM poi_clearing_time_topic pct ORDER BY pct.effective_date DESC ) a;\").Check(testkit.Rows(\"2023-08-25 00:00:00\")) (expression/integration_...",
+  "failure_signature": "GROUP_CONCAT order-by item resolution error after aggregation pushdown.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"SELECT GROUP_CONCAT(effective_date order by stlmnt_hour DESC) FROM ( SELECT (COALESCE(pct.clearing_time, 0)/3600000) AS stlmnt_hour ,COALESCE(pct.effective_date, '1970-01-01 08:00:00') AS effective_date FRO….",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a planner correctness bug (aggregation pushdown not correctly substituting/resolving GROUP_CONCAT order-by items through projection), and adds a regression test. The change is not a clearly documented flaky-test stabilization, and the taxonomy here does not have a dedicated category for deterministic planner resolution bugs. Without CI logs/repro indicating this manifests as flakiness, we conservatively avoid guessing a flaky root cause category.",
   "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"SELECT GROUP_CONCAT(effective_date order by stlmnt_hour DESC) FROM ( SELECT (COALESCE(pct.clearing_time, 0)/3600000) AS stlmnt_hour ,COALESCE(pct.effective_date, '1970-01-01 08:00:00') AS effective_date FROM poi_clearing_time_topic pct ORDER BY pct.effective_date DESC ) a;\").Check(testkit.Rows(\"2023-08-25 00:00:00\")) (expression/integration_...",
+  "fix_pattern": "Fix aggregation pushdown for GROUP_CONCAT: when pushing through projection, also substitute/validate the aggregation `OrderByItems` expressions so order-by items resolve correctly and regression test `TestIssue41986` passes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46419",
     "https://github.com/pingcap/tidb/pull/46419.patch"
