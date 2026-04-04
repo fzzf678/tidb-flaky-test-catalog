@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: fix DATA RACE caused by TestCaptureWildcardFilter",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix DATA RACE caused by TestCaptureWildcardFilter.",
+  "root_cause_explanation": "BindHandle kept a singleton `sctx` that was not thread-safe, and `extractCaptureFilterFromStorage()` could be called concurrently during tests, causing a Go data race. The fix protects access to `sctx` with a mutex (Lock/Unlock) when extracting the capture filter.",
   "module": "planner",
-  "fix_pattern": "fix DATA RACE caused by TestCaptureWildcardFilter",
+  "fix_pattern": "Protect singleton BindHandle.sctx with a mutex to avoid concurrent access/data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49092",
     "https://github.com/pingcap/tidb/pull/49092.patch"

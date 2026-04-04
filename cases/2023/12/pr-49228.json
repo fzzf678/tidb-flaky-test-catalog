@@ -17,14 +17,14 @@
   ],
   "failure_signature": "select id, a, \"1900-01-01 00:00:00\" + INTERVAL a MICROSECOND as result from t order by id ASC; (tests/integrationtest/r/expression/time.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: `date + interval X uint` when X is a big value, we should get `NULL` Fix some other interval cases to keep the same behavior with MySQL 8.0: `date + interval \"true\" DAY` should not add one day, only `date + interval true….",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly fixes deterministic `DATE + INTERVAL` parsing/overflow semantics to align with MySQL. The case evidence here doesn't clearly indicate a flaky trigger or nondeterminism, so we keep a conservative fallback classification.",
   "module": "expression",
-  "fix_pattern": "`date + interval X uint` when X is a big value, we should get `NULL` Fix some other interval cases to keep the same behavior with MySQL 8.0: `date + interval \"true\" DAY` should not add one day, only `date + interval true DAY` should be seen as add 1 time unit. `date + interval \"xxx1\" uint`, if an interval string does not start with +/- or a digit, it should be truncated as 0, not 1. The unit `SECOND` is special, it should accept string in in exponential format, for example:  `select \"1900-01-01 00:00:00\" + INTERVAL \"1e2\" second;` should add 100 seconds. If the unit is `SECOND` , the interval string should be regarded as float, other units should be regarded as int.",
+  "fix_pattern": "Insufficient evidence of flakiness; PR adjusts deterministic date/interval parsing and overflow behavior (MySQL compatibility).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49228",
     "https://github.com/pingcap/tidb/pull/49228.patch"

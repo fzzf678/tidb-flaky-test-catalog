@@ -17,14 +17,14 @@
   ],
   "failure_signature": "err := tk.QueryToErr(\"SELECT SUM(i) OVER W FROM t1 WINDOW w AS (PARTITION BY j ORDER BY i) ORDER BY 1+SUM(i) OVER w;\") (pkg/executor/executor_failpoint_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: err := tk.QueryToErr(\"SELECT SUM(i) OVER W FROM t1 WINDOW w AS (PARTITION BY j ORDER BY i) ORDER BY 1+SUM(i) OVER w;\") (pkg/executor/executor_failpoint_test.go).",
+  "root_cause_explanation": "ShuffleExec runs multiple goroutines (fetch/split per data source + worker goroutines). When a worker exits/panics unexpectedly, the original implementation did not track all goroutines in the WaitGroup and could also block on a too-small output channel buffer, leading to crashes or hangs during early-exit cleanup. The fix increases the output channel buffer and ensures the WaitGroup accounts for both workers and fetch goroutines (with proper Done) so ShuffleExec can exit safely under failure.",
   "module": "executor",
-  "fix_pattern": "err := tk.QueryToErr(\"SELECT SUM(i) OVER W FROM t1 WINDOW w AS (PARTITION BY j ORDER BY i) ORDER BY 1+SUM(i) OVER w;\") (pkg/executor/executor_failpoint_test.go)",
+  "fix_pattern": "Make ShuffleExec goroutine lifecycle deterministic (WaitGroup covers fetch+workers) and buffer output channel to avoid crash on early exit.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48828",
     "https://github.com/pingcap/tidb/pull/48828.patch"

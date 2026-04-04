@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: 1.",
-  "module": "module_unknown",
-  "fix_pattern": "1. enable switch concurrent mode in byte reader test 2. fix a bug when switch mode.",
+  "root_cause_explanation": "`byteReader` supports switching between normal and concurrent-read modes. A bug in the mode-switch/cleanup path used the wrong buffer length when computing remaining bytes (`len(r.curBuf)` instead of the current sub-buffer), which could drop the wrong amount or break the reader state when switching modes. The PR adds a more thorough switch-mode test and fixes the bookkeeping to use the current buffer slice, making the concurrent-read test stable.",
+  "module": "lightning",
+  "fix_pattern": "Fix byteReader mode-switch bookkeeping (use the current buffer slice length when closing concurrent reader) and enable/strengthen the concurrent-read switch-mode unit test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49539",
     "https://github.com/pingcap/tidb/pull/49539.patch"

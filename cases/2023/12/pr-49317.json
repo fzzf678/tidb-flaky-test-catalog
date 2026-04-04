@@ -17,14 +17,14 @@
   ],
   "failure_signature": "Problem Summary: **test: Global Kill e2e test is flaky**",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: Wait services (PD, TiKV & TiDB) to be healthy before executing test cases.",
+  "root_cause_explanation": "The GlobalKill e2e test relied on fixed sleeps after starting PD/TiKV/TiDB. Under variable CI startup latency, services might not be ready/healthy when the test begins, causing intermittent failures. The fix replaces sleeps with retrying health/status checks (and a bounded connect retry) before running assertions.",
   "module": "test_infra",
-  "fix_pattern": "Wait services (PD, TiKV & TiDB) to be healthy before executing test cases.",
+  "fix_pattern": "Replace fixed sleeps with health/status checks + retry (bounded by timeouts) before executing the e2e test cases.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49317",
     "https://github.com/pingcap/tidb/pull/49317.patch"

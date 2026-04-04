@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// unstable, i.e. count, order and content of the subtasks are changed on",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Use the affected rows to check if the executor owns the subtask, if not owned, task executor should not run it.",
+  "root_cause_explanation": "The disttask subtask execution flow was flaky because the \"start subtask\" transition could race with ownership changes: a task executor might mark a subtask as running even if it no longer owned it (or another executor was racing), leading to unstable subtask sets (count/order/content) observed by tests. This PR makes the state transition conditional on `exec_id` and uses the UPDATE affected-rows result to confirm ownership before running the subtask, preventing concurrent executors from starting the wrong subtask.",
   "module": "domain",
-  "fix_pattern": "Use the affected rows to check if the executor owns the subtask, if not owned, task executor should not run it.",
+  "fix_pattern": "Make `StartSubtask` update conditional on `exec_id` (owner) and check affected rows to ensure only the owning executor can transition a subtask to running; update tests/mocks accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49810",
     "https://github.com/pingcap/tidb/pull/49810.patch"

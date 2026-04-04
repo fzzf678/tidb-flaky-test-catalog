@@ -17,14 +17,14 @@
   ],
   "failure_signature": "+ // met unstable subtasks | sort.Slice(gotSubtasks, func(i, j int) bool { (pkg/disttask/framework/storage/table_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: insert subtasks in batch if size of subtasks of some step is larger than transaction size limit, else we update task/subtask in a single transaction.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR improves disttask robustness by inserting large subtasks in batches (to avoid transaction size limits) and adding retry/backoff for unstable subtasks. The case evidence here doesn't clearly show a flaky trigger/nondeterminism root cause, so we keep a conservative fallback classification.",
   "module": "domain",
-  "fix_pattern": "insert subtasks in batch if size of subtasks of some step is larger than transaction size limit, else we update task/subtask in a single transaction",
+  "fix_pattern": "Insert subtasks in batches when the total subtask meta size may exceed the transaction size limit, and retry with backoff on unstable subtasks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49282",
     "https://github.com/pingcap/tidb/pull/49282.patch"

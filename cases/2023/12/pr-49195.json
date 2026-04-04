@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: impl slotManager on dispatcher check resource before start disaptcher.",
+  "root_cause_explanation": "The dispatcher-manager test collected running task keys from `GetTasksInStates` and compared them in a fixed order, but the returned task slice ordering is not guaranteed. This made the assertion order-dependent and flaky. The fix sorts the collected task keys (`slices.Sort(taskKeys)`) before comparison so the test is deterministic.",
   "module": "domain",
-  "fix_pattern": "impl slotManager on dispatcher check resource before start disaptcher",
+  "fix_pattern": "Sort task key lists before assertions to avoid order-dependent flakiness in dispatcher tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49195",
     "https://github.com/pingcap/tidb/pull/49195.patch"

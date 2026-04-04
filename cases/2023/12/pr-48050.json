@@ -17,15 +17,14 @@
   ],
   "failure_signature": "run_sql \"select count(*) DELETE_RANGE_CNT from (select * from mysql.gc_delete_range union all select * from mysql.gc_delete_range_done) del_range group by ts order by DELETE_RANGE_CNT desc limit 1;\" (br/tests/br_pitr/run.sh)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by",
-    "relying_on_map_iteration_order"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: run_sql \"select count(*) DELETE_RANGE_CNT from (select * from mysql.gc_delete_range union all select * from mysql.gc_delete_range_done) del_range group by ts order by DELETE_RANGE_CNT desc limit 1;\" (br/tests/br_pitr/run….",
-  "module": "ddl",
-  "fix_pattern": "run_sql \"select count(*) DELETE_RANGE_CNT from (select * from mysql.gc_delete_range union all select * from mysql.gc_delete_range_done) del_range group by ts order by DELETE_RANGE_CNT desc limit 1;\" (br/tests/br_pitr/run.sh)",
+  "root_cause_explanation": "The PITR integration test checked `mysql.gc_delete_range` with a hard-coded expected count, but these system tables can already contain delete-range records from earlier steps (and from `gc_delete_range_done`). This made the asserted count vary and fail intermittently. The fix records the delete-range counts after the prepare and incremental phases and asserts on the delta instead of a constant value.",
+  "module": "br",
+  "fix_pattern": "Avoid hard-coded gc_delete_range counts; record baseline counts and assert on the delta to eliminate shared-state interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48050",
     "https://github.com/pingcap/tidb/pull/48050.patch"

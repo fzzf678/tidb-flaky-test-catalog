@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// rand.Seed(uint64(seed)) (br/pkg/lightning/backend/external/bench_test.go)",
   "root_cause_categories": [
-    "external_dependency"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: When exceed writer memlimit, create new prop with kv.offset.",
-  "module": "kv",
-  "fix_pattern": "When exceed writer memlimit, create new prop with kv.offset.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a bug in the global-sort onefile writer where properties could be broken when the writer exceeds its memory limit. The fix creates a new prop using the current KV offset when rolling over, keeping props consistent. The case evidence does not clearly describe a flaky trigger beyond this bug fix, so we keep a conservative fallback classification.",
+  "module": "lightning",
+  "fix_pattern": "When the onefile writer exceeds its mem limit, start a new prop using the current KV offset so props remain consistent across rollovers.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49589",
     "https://github.com/pingcap/tidb/pull/49589.patch"

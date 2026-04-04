@@ -13,19 +13,18 @@
     "name": "load_data_test"
   },
   "symptoms": [
-    "race = \"on\", | s.tk.MustQuery(\"select i from load_csv.t order by i\").Check( (pkg/executor/test/loadremotetest/one_csv_test.go)"
+    "txn: make load data transactional"
   ],
-  "failure_signature": "race = \"on\", | s.tk.MustQuery(\"select i from load_csv.t order by i\").Check( (pkg/executor/test/loadremotetest/one_csv_test.go)",
+  "failure_signature": "txn: make load data transactional",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: ``` Make `LOAD DATA` statements behave normally in a transaction.",
+  "root_cause_explanation": "insufficient_evidence: this PR is primarily a deterministic behavior change (LOAD DATA should not auto-commit the surrounding transaction) plus test refactors; the patch does not show a clear flaky/non-deterministic trigger or a targeted stabilization for intermittent failures.",
   "module": "txn",
-  "fix_pattern": "``` Make `LOAD DATA` statements behave normally in a transaction. Previously the `LOAD DATA` statement commits the current transaction, start a new transaction for its own use and commit it immediately after the statement. The PR fixes the issue and make `LOAD DATA` behave like other normal DMLs. It doesn't create txn for its own and respects the rollback or commit action of its surrounding transaction. ```",
+  "fix_pattern": "insufficient_evidence",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49079",
     "https://github.com/pingcap/tidb/pull/49079.patch"

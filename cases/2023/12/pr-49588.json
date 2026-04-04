@@ -13,20 +13,18 @@
     "name": "cmd_test"
   },
   "symptoms": [
-    "build:race --config=ci | fmt.Printf(\"%#v\", res.Sort().Rows()) (br/pkg/task/show/cmd_test.go)"
+    "Unit tests produced different datetime strings depending on session/system time zone (e.g., `SHOW BACKUP METADATA` timestamp column shifts by offset)."
   ],
-  "failure_signature": "build:race --config=ci | fmt.Printf(\"%#v\", res.Sort().Rows()) (br/pkg/task/show/cmd_test.go)",
+  "failure_signature": "Tests compare literal datetime output but assume a fixed TZ; results change when TZ differs (e.g., CI without `TZ=Asia/Shanghai`).",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: build:race --config=ci | fmt.Printf(\"%#v\", res.Sort().Rows()) (br/pkg/task/show/cmd_test.go).",
-  "module": "test_infra",
-  "fix_pattern": "build:race --config=ci | fmt.Printf(\"%#v\", res.Sort().Rows()) (br/pkg/task/show/cmd_test.go)",
+  "root_cause_explanation": "Several tests implicitly depended on a specific time zone (previously enforced via `TZ=Asia/Shanghai` in Bazel). When running in a different environment/time zone, hard-coded Unix timestamps and datetime formatting produced different results and caused intermittent failures. The fix removes the global TZ override and makes tests/time conversions explicit: set `@@time_zone` in tests and convert times using the session location (`sctx.GetSessionVars().Location()`) before building `types.Time` values, so outputs are deterministic across environments.",
+  "module": "br",
+  "fix_pattern": "Make time-zone handling explicit in tests and executor output: set `@@time_zone` in test sessions and convert/format times using the session location to avoid environment-dependent datetime shifts.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49588",
     "https://github.com/pingcap/tidb/pull/49588.patch"

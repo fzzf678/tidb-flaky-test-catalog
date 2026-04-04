@@ -17,14 +17,14 @@
   ],
   "failure_signature": "\"collation , source , `sql_digest` , `plan_digest` from `mysql` . `bind_info` where `update_time` > ? order by `update_time` , `create_time`\")) (pkg/infoschema/test/clustertablestest/tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Introduce by https://github.com/pingcap/tidb/pull/49426.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR removes the unnecessary `type` column from `mysql.bind_info` and updates related queries, bootstrap logic, and golden test outputs. The case evidence is a deterministic SELECT statement against `mysql.bind_info` (with explicit ORDER BY) and does not provide a clear flaky trigger or nondeterminism, so we keep a conservative fallback classification.",
   "module": "planner",
-  "fix_pattern": "Introduce by https://github.com/pingcap/tidb/pull/49426.",
+  "fix_pattern": "Remove the redundant `type` column from `mysql.bind_info` and update bindinfo/infoschema queries and tests accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49841",
     "https://github.com/pingcap/tidb/pull/49841.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "\"select version from mysql.stats_meta where table_id in (?, ?) order by table_id\", (pkg/statistics/handle/ddl/ddl_test.go)",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Refactored drop partition cases use the util to find the event.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly refactors and extends statistics DDL tests for drop-partition scenarios (including dropping multiple partitions) and adds assertions around stats meta reset/version changes. The case evidence does not clearly indicate a flaky trigger, so we keep a conservative fallback classification.",
   "module": "statistics",
-  "fix_pattern": "Refactored drop partition cases use the util to find the event. Added tests to cover the reset logic after dropping a partition. Added a new test case to cover drop multiple partitions.",
+  "fix_pattern": "Refactor and extend drop-partition statistics tests (use event-finding util, add reset/version coverage, and add a multiple-partitions drop case).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49407",
     "https://github.com/pingcap/tidb/pull/49407.patch"

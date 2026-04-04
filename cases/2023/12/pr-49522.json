@@ -17,15 +17,14 @@
   ],
   "failure_signature": "\"select version from mysql.stats_meta where table_id in (?, ?) order by table_id\", partitionP0ID, partitionP1ID, (pkg/statistics/handle/ddl/ddl_test.go)",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Reset old partition information.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes deterministic statistics cleanup after partition reorganization (reset/delete old partition stats information) and adds/updates unit tests. The case evidence does not clearly indicate a flaky trigger, so we keep a conservative fallback classification.",
   "module": "statistics",
-  "fix_pattern": "Reset old partition information. Added a test to cover it.",
+  "fix_pattern": "Reset/remove old partition statistics information after partition reorganization and add unit test coverage for the cleanup logic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49522",
     "https://github.com/pingcap/tidb/pull/49522.patch"

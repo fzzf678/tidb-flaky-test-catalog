@@ -17,14 +17,14 @@
   ],
   "failure_signature": "race = \"off\", | random := rand.New(rand.NewSource(seed)) (pkg/disttask/framework/framework_test.go)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: merge & refactor framework test notify task change when new task is submitted or finishes, and wait task asyncly.",
+  "root_cause_explanation": "Disttask framework tests were flaky because they relied on fixed sleeps/polling to wait for asynchronous task state/owner changes, which is load-dependent and can race (too short) or waste time (too long). This PR stabilizes the tests by adding task-change notifications (`NotifyTaskChange`/`TaskChangedCh`) and refactoring the test utilities to wait for tasks via proper signals/Eventually-style checks instead of blind sleeps, reducing runtime variance and flakes.",
   "module": "domain",
-  "fix_pattern": "merge & refactor framework test notify task change when new task is submitted or finishes, and wait task asyncly. now tests in `framework_test.go` can run in 1:30, it takes 2:30 previously. rename ExecuteTask in scheduler to ScheduleTask",
+  "fix_pattern": "Add task-change notifications to the disttask scheduler/handle layer and refactor framework tests to wait for task completion via notifications/Eventually (instead of fixed sleeps/polling).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49805",
     "https://github.com/pingcap/tidb/pull/49805.patch"

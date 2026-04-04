@@ -17,12 +17,12 @@
   ],
   "failure_signature": "race = \"on\", | {`create universal binding using select /*+ order_index(t1, a) */ a from t1 where a<10 order by a limit 10`, (pkg/bindinfo/universal_binding_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: match hints from universal bindings correctly.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes how planner hints from universal bindings are matched/applied. The case evidence does not clearly indicate a flaky (nondeterministic) failure mode, so we keep a conservative fallback classification.",
   "module": "planner",
   "fix_pattern": "planner: match hints from universal bindings correctly",
   "evidence_links": [
