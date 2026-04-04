@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "GetActiveSubtasks() can return subtasks in an unspecified order. The test implicitly assumed a stable ordering and could intermittently fail when the returned slice order differed. The fix sorts the returned subtasks by ID before asserting on specific positions, making the assertion deterministic.",
   "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort returned subtasks by ID before assertions (do not rely on implicit ordering)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51231",
     "https://github.com/pingcap/tidb/pull/51231.patch"

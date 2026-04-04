@@ -17,14 +17,14 @@
   ],
   "failure_signature": "fix: unstable tests",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "statistics_sensitive_test"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: executor,planner: make used stats info thread safe.",
-  "module": "executor",
-  "fix_pattern": "executor,planner: make used stats info thread safe",
+  "root_cause_explanation": "usedStatsInfo was stored in a non-thread-safe map and could be accessed/initialized concurrently during planning/execution, leading to data races and unstable test behavior. The fix makes usedStatsInfo initialization and access thread-safe (atomic pointer + sync.Map / CAS init), removing the race.",
+  "module": "planner",
+  "fix_pattern": "Make usedStatsInfo thread-safe (atomic pointer + sync.Map, CAS initialization)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51029",
     "https://github.com/pingcap/tidb/pull/51029.patch"

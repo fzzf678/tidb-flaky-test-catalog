@@ -17,14 +17,14 @@
   ],
   "failure_signature": "br: fix register_test failed error for flaky test",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The task-register lease can expire before the test calls register.Close() in CI, causing Close() to return an expected error like \"requested lease not found\". The test previously asserted no error and became flaky; the fix allows that specific lease-expiry error instead of failing.",
   "module": "br",
-  "fix_pattern": "br: fix register_test failed error for flaky test",
+  "fix_pattern": "Allow lease-expiry error on register.Close() (\"requested lease not found\") in register tests",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46991",
     "https://github.com/pingcap/tidb/pull/46991.patch"

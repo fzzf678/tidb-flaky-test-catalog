@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from t order by c1,c2\").Check(testkit.Rows(\"0 5.00000000000000000\")) (pkg/executor/test/executor/executor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR fixes correctness around column default-value handling (NoDefaultValueFlag / insert path) and adds regression tests. The diff does not indicate a flaky/non-deterministic trigger (the query already has ORDER BY), so we mark it as insufficient_evidence instead of forcing it into an ordering category.",
+  "module": "executor",
+  "fix_pattern": "Fix GetColDefaultValue handling for columns without defaults (insert path) and add regression tests",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51309",
     "https://github.com/pingcap/tidb/pull/51309.patch"

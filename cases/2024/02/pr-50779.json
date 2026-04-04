@@ -17,15 +17,14 @@
   ],
   "failure_signature": "fix flaky test | desc format='brief' SELECT column_name FROM information_schema.statistics WHERE index_name = 'idx1' AND table_schema = DATABASE () AND table_name = 't' ORDER BY seq_in_index; (tests/integrationtest/r/executor/explainfor.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The EXPLAIN output for infoschema memtable predicate pushdown included fields rendered from a Go map (e.g., ColPredicates). Map iteration order is randomized, so the operator info could print keys in different orders and intermittently mismatch the golden result. The fix sorts the predicate keys before formatting EXPLAIN output to make it deterministic.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort map keys before formatting infoschema memtable predicate EXPLAIN output",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50779",
     "https://github.com/pingcap/tidb/pull/50779.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "select * from t use index(b, c) where b=2 or c=3 order by a limit 10000000000000000; (tests/integrationtest/r/executor/index_merge_reader.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "external_dependency"
   ],
   "review_smells": [
-    "missing_order_by"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "For IndexMerge with a huge LIMIT/OFFSET, the executor pre-allocated a handle slice sized by the pushed limit, which could be enormous and trigger OOM depending on CI machine memory. This makes the test/environment flaky. The fix caps pre-allocation (e.g., up to 1024) to avoid allocating an unbounded slice while still functioning correctly.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Cap IndexMerge handle pre-allocation (min(1024, pushedLimit)) to avoid OOM under huge LIMIT",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/51284",
     "https://github.com/pingcap/tidb/pull/51284.patch"

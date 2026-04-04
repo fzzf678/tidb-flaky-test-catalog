@@ -17,16 +17,14 @@
   ],
   "failure_signature": "rows := tk.MustQuery(\"SELECT c1 from t order by c\").Rows() (pkg/ddl/db_integration_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "parser",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR primarily adds support for a new default-expression pattern and introduces/updates related tests. From the PR diff alone there isn't a clear flaky/non-deterministic trigger tied to the highlighted test statement (the existing schema/order tags are mismatched), so we mark it as insufficient_evidence and avoid guessing a root cause.",
+  "module": "ddl",
+  "fix_pattern": "Add support/tests for UPPER(SUBSTRING_INDEX(USER(), '@', 1)) in default values; relax a brittle error-code assertion",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/50992",
     "https://github.com/pingcap/tidb/pull/50992.patch"
