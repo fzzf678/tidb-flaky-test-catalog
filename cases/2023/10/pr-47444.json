@@ -17,14 +17,14 @@
   ],
   "failure_signature": "race = \"on\",",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
-  "module": "planner",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a performance-oriented refactor to speed up loading partition-table statistics (including concurrent loading and related API plumbing). The captured evidence is a Bazel flag (`race = \"on\"`), not a concrete flaky failure signature nor a targeted stabilization of a flaky mechanism, so we keep the conservative fallback classification.",
+  "module": "statistics",
+  "fix_pattern": "Performance refactor: speed up loading partition-table stats (e.g., concurrent partition stats load) and update related call sites/tests accordingly (no specific flaky failure signature proven in the patch).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47444",
     "https://github.com/pingcap/tidb/pull/47444.patch"
@@ -45,9 +45,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: race = \"on\",",
+      "evidence: speed up partition stats loading (concurrent load refactor; no concrete flaky signature in patch)",
       "files: br/pkg/restore/client.go, executor/load_stats.go, executor/plan_replayer.go, planner/core/casetest/cbotest/cbo_test.go, statistics/handle/BUILD.bazel, statistics/handle/dump.go, statistics/handle/dump_test.go"
     ]
   },
-  "analysis": "PR title: planner: speed up the process of loading partition table stats\nPR url: https://github.com/pingcap/tidb/pull/47444\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"on\",\nChanged files (7): br/pkg/restore/client.go, executor/load_stats.go, executor/plan_replayer.go, planner/core/casetest/cbotest/cbo_test.go, statistics/handle/BUILD.bazel, statistics/handle/dump.go, statistics/handle/dump_test.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: planner: speed up the process of loading partition table stats\nPR url: https://github.com/pingcap/tidb/pull/47444\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: speed up partition stats loading (concurrent load refactor; no concrete flaky signature in patch)\nChanged files (7): br/pkg/restore/client.go, executor/load_stats.go, executor/plan_replayer.go, planner/core/casetest/cbotest/cbo_test.go, statistics/handle/BUILD.bazel, statistics/handle/dump.go, statistics/handle/dump_test.go\nPatch series analyzed; see patch_url."
 }

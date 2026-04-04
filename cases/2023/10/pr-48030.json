@@ -17,14 +17,13 @@
   ],
   "failure_signature": "stabilize TestUpgradeVersionForResumeJob | sql := fmt.Sprintf(\"select job_meta from mysql.tidb_ddl_history where job_id >=%d order by job_id\", jobID) (pkg/session/bootstraptest/bootstrap_upgrade_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
     "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: stabilize TestUpgradeVersionForResumeJob | sql := fmt.Sprintf(\"select job_meta from mysql.tidb_ddl_history where job_id >=%d order by job_id\", jobID) (pkg/session/bootstraptest/bootstrap_upgrade_test.go).",
-  "module": "module_unknown",
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (querying DDL history without a deterministic order). This PR stabilizes it by adding an explicit `ORDER BY job_id` to make the result stable.",
+  "module": "session",
   "fix_pattern": "stabilize TestUpgradeVersionForResumeJob | sql := fmt.Sprintf(\"select job_meta from mysql.tidb_ddl_history where job_id >=%d order by job_id\", jobID) (pkg/session/bootstraptest/bootstrap_upgrade_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48030",

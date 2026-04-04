@@ -22,9 +22,9 @@
   "review_smells": [
     "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: The test result is unstable.",
+  "root_cause_explanation": "This case is flaky because the query `select a from deci union all select b from deci;` does not guarantee a stable output order, but the integrationtest harness was checking results as an ordered list. Depending on execution details, the two rows can appear in different order and cause intermittent failures. The fix makes the assertion order-insensitive by adding the `--sorted_result` annotation for that statement in the `.test` file.",
   "module": "test_infra",
-  "fix_pattern": "The test result is unstable. This PR adds the annotation `--sorted_result` to the line.",
+  "fix_pattern": "For integrationtest cases where row order is not guaranteed (e.g., UNION/UNION ALL without ORDER BY), add `--sorted_result` to make result checking order-insensitive (or add an explicit ORDER BY when appropriate).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47415",
     "https://github.com/pingcap/tidb/pull/47415.patch"

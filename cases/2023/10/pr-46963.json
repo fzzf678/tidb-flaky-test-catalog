@@ -23,9 +23,9 @@
     "statistics_sensitive_test",
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: + // Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "root_cause_explanation": "This case is flaky because the test is sensitive to planner output that can vary with statistics/explain details (e.g., default RPC encoding can change the statistics explain output) and also expects a specific access path (IndexLookUp) under a fix-control setting. The fix makes the test more robust by adding an `EventuallyMustIndexLookup(...)` helper (polling `HasPlan(..., \"IndexLookUp\")` with a short timeout/interval) so the assertion does not depend on an instantaneous planner state, reducing nondeterministic failures caused by explain/statistics variance and timing/caching effects.",
   "module": "planner",
-  "fix_pattern": "+ // Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "fix_pattern": "Make plan assertions robust: add `TestKit.EventuallyMustIndexLookup(...)` and use it in `TestFixControl45132` to poll until the expected access path (IndexLookUp) is observed, instead of assuming the plan is stable immediately; add a note about RPC-encoding-driven explain/stats differences to avoid brittle exact-output checks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46963",
     "https://github.com/pingcap/tidb/pull/46963.patch"

@@ -13,18 +13,18 @@
     "name": "TestAlterAddConstraintStateChange3"
   },
   "symptoms": [
-    "test: fix flaky TestAlterAddConstraintStateChange3"
+    "There is a timing race between a DDL hook that mutates constraint state and the test reading constraint state immediately after `ALTER TABLE ... ADD CONSTRAINT`."
   ],
-  "failure_signature": "test: fix flaky TestAlterAddConstraintStateChange3",
+  "failure_signature": "Constraint state observed as non-public due to hook timing after DDL completion.",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "schema_change_race"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "ddl_without_wait"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: test: fix flaky TestAlterAddConstraintStateChange3.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix flaky TestAlterAddConstraintStateChange3",
+  "root_cause_explanation": "The test was flaky because it executed DDL and immediately ran follow-up statements while the DDL hook callback could still be in-flight. The hook could temporarily set the local constraint state back to a non-public state, so subsequent reads could observe an unexpected state and fail. This PR stabilizes the test by waiting after adding the constraint (sleeping briefly) so the hook can finish before the next assertions/queries run.",
+  "module": "ddl",
+  "fix_pattern": "Add an explicit wait after `ALTER TABLE ... ADD CONSTRAINT` so the DDL hook completes before subsequent statements read constraint state (the PR uses a short `time.Sleep`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48131",
     "https://github.com/pingcap/tidb/pull/48131.patch"

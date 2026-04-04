@@ -13,18 +13,18 @@
     "name": "detach_test"
   },
   "symptoms": [
-    "importinto: fix flaky test"
+    "Eventually timeouts too short for slow CI (10s) in importinto realtikv tests"
   ],
-  "failure_signature": "importinto: fix flaky test",
+  "failure_signature": "importinto realtikv tests can exceed 10s Eventually timeout under slow CI",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "This case is flaky because the importinto real-TiKV tests rely on asynchronous state transitions and use `require.Eventually(...)` with a timeout that was too aggressive for slow CI environments (10 seconds). When the cluster is under load, the expected condition may not become true within 10s, causing intermittent failures even though the logic is correct. The fix mitigates the flake by increasing the maximum wait time (e.g., 10s → 30s) while keeping the polling interval the same.",
   "module": "executor",
-  "fix_pattern": "importinto: fix flaky test",
+  "fix_pattern": "Mitigate CI timing jitter by increasing `require.Eventually(...)` timeouts in importinto real-TiKV tests (e.g., from 10s to 30s) so async operations have enough time to complete under load.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47431",
     "https://github.com/pingcap/tidb/pull/47431.patch"
@@ -44,9 +44,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: importinto: fix flaky test",
+      "evidence: increase `require.Eventually` timeout (10s→30s) for slow CI",
       "files: tests/realtikvtest/importintotest/detach_test.go, tests/realtikvtest/importintotest/import_into_test.go, tests/realtikvtest/importintotest/job_test.go, tests/realtikvtest/importintotest/one_parquet_test.go, tests/realtikvtest/importintotest/util_test.go, tests/realtikvtest/importintotest4/global_sort_test.go"
     ]
   },
-  "analysis": "PR title: importinto: fix flaky test\nPR url: https://github.com/pingcap/tidb/pull/47431\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: importinto: fix flaky test\nChanged files (6): tests/realtikvtest/importintotest/detach_test.go, tests/realtikvtest/importintotest/import_into_test.go, tests/realtikvtest/importintotest/job_test.go, tests/realtikvtest/importintotest/one_parquet_test.go, tests/realtikvtest/importintotest/util_test.go, tests/realtikvtest/importintotest4/global_sort_test.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: importinto: fix flaky test\nPR url: https://github.com/pingcap/tidb/pull/47431\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: increase `require.Eventually` timeout (10s→30s) for slow CI\nChanged files (6): tests/realtikvtest/importintotest/detach_test.go, tests/realtikvtest/importintotest/import_into_test.go, tests/realtikvtest/importintotest/job_test.go, tests/realtikvtest/importintotest/one_parquet_test.go, tests/realtikvtest/importintotest/util_test.go, tests/realtikvtest/importintotest4/global_sort_test.go\nPatch series analyzed; see patch_url."
 }
