@@ -17,15 +17,16 @@
   ],
   "failure_signature": "gctuner: fix unstable test in the TestGlobalMemoryTuner",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "shared_state_pollution",
+    "async_timing_issue"
   ],
   "review_smells": [
     "global_variable_mutation",
-    "shared_table_without_isolation"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: gctuner: fix unstable test in the TestGlobalMemoryTuner.",
+  "root_cause_explanation": "The test was unstable because it depends on a global tuner (`GlobalMemoryLimitTuner`) whose state is updated asynchronously by background logic. When tests are rerun (e.g., `-count > 1`), a fixed `time.Sleep(1s)` is not a reliable way to wait for the global tuning/reset flags (`isTuning`, `waitingReset`, `nextGCTriggeredByMemoryLimit`) to converge, leading to flaky assertions. This PR stabilizes the test by replacing the fixed sleep with bounded polling via `require.Eventually(...)` on those atomic flags.",
   "module": "gc",
-  "fix_pattern": "gctuner: fix unstable test in the TestGlobalMemoryTuner",
+  "fix_pattern": "When tests depend on global state that is updated asynchronously, avoid fixed sleeps; use bounded polling (`Eventually`) to wait until the global state reaches the expected values before asserting.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42776",
     "https://github.com/pingcap/tidb/pull/42776.patch"

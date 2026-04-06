@@ -13,18 +13,18 @@
     "name": "integration_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Ingest add-index cop chunks were not recycled correctly on some paths, leading to resource leakage / inconsistent chunk pool state."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "panic: unexpected chunk size (cop chunk pool not fully recycled)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "The add-index ingest workflow uses a shared cop-request chunk pool. The system/test could become unstable because chunks were not reliably recycled on all paths (especially error paths), leaving the pool in an unexpected state and effectively leaking resources across tasks/runs. This PR stabilizes the behavior by always recycling the chunk via a `defer` in `HandleTask`, removing duplicate/conditional recycling in `WriteLocal`, and adding a test-mode assertion (panic) to catch unexpected pool size at scheduler close.",
   "module": "ddl",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Ensure pooled resources (e.g., chunk buffers) are always returned via `defer` and are recycled even on error paths to avoid leaks and cross-test/task interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43067",
     "https://github.com/pingcap/tidb/pull/43067.patch"

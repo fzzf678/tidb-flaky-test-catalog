@@ -13,19 +13,18 @@
     "name": "main_test"
   },
   "symptoms": [
-    "race = \"on\", | stmt, err := parser.New().ParseOneStmt(\"select * from t use index(b) where b > 1 order by b limit 1\", \"\", \"\") (planner/core/physical_plan_test.go)"
+    "IndexLookup double-reader plan reused the same `ColumnInfo` slice between IndexScan and TableScan, leading to aliasing and potential races."
   ],
-  "failure_signature": "race = \"on\", | stmt, err := parser.New().ParseOneStmt(\"select * from t use index(b) where b > 1 order by b limit 1\", \"\", \"\") (planner/core/physical_plan_test.go)",
+  "failure_signature": "IndexScan.Columns and TableScan.Columns alias in double-read (planner/core/find_best_task.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "unsafe_zero_copy_alias"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: race = \"on\", | stmt, err := parser.New().ParseOneStmt(\"select * from t use index(b) where b > 1 order by b limit 1\", \"\", \"\") (planner/core/physical_plan_test.go).",
+  "root_cause_explanation": "In IndexLookup (double-reader) plans, the planner constructed both an IndexScan and a TableScan using the same underlying `ds.Columns` slice. Because `ColumnInfo` slices are mutable and may be adjusted during planning/optimization, sharing the same slice between two plan nodes can cause unintended cross-mutation and race conditions (especially visible under `race = \"on\"`). This PR fixes the issue by cloning the column info list (`util.CloneColInfos(ds.Columns)`) when building the TableScan/IndexScan in the double-read path, and adds a regression test that asserts the two plan nodes do not share the same `Columns` slice.",
   "module": "planner",
-  "fix_pattern": "race = \"on\", | stmt, err := parser.New().ParseOneStmt(\"select * from t use index(b) where b > 1 order by b limit 1\", \"\", \"\") (planner/core/physical_plan_test.go)",
+  "fix_pattern": "Avoid sharing mutable slices/struct pointers between plan nodes; clone `ColumnInfo` lists (or other shared mutable state) when constructing multiple readers in IndexLookup/double-read plans.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43476",
     "https://github.com/pingcap/tidb/pull/43476.patch"

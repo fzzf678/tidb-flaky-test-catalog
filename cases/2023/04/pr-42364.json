@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ddl: fix unstable TestMDLStaleRead",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix unstable TestMDLStaleRead.",
+  "root_cause_explanation": "The test was flaky because it relied on timing-sensitive concurrency: it started a stale-read transaction, then ran `ALTER TABLE` in a goroutine and used `time.Sleep(...)` + timestamp comparisons to assert ordering. Scheduling jitter can violate the assumed timing and make the assertions flaky. This PR stabilizes the test by running the DDL synchronously and removing the sleep/timestamp-order assertions.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix unstable TestMDLStaleRead",
+  "fix_pattern": "Avoid goroutines + fixed sleeps + timestamp-order assertions to coordinate DDL vs reads; run the operations deterministically (synchronously) instead of depending on timing.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42364",
     "https://github.com/pingcap/tidb/pull/42364.patch"

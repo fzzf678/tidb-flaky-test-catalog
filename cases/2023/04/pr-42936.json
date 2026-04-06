@@ -13,20 +13,18 @@
     "name": "*: set short timeout as 2min30s"
   },
   "symptoms": [
-    "test:race --test_timeout=1200,6000,18000,72000"
+    "Bazel CI short timeout increased (120s -> 150s) in `.bazelrc`"
   ],
-  "failure_signature": "test:race --test_timeout=1200,6000,18000,72000",
+  "failure_signature": "Bazel CI test timeouts (short tests) too tight under load",
   "root_cause_categories": [
-    "async_timing_issue",
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "insufficient_timeout",
-    "clock_skew_dependency"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: test:race --test_timeout=1200,6000,18000,72000.",
-  "module": "module_unknown",
-  "fix_pattern": "test:race --test_timeout=1200,6000,18000,72000",
+  "root_cause_explanation": "Some Bazel CI \"short\" tests were prone to timing out under load. This PR reduces timeout-related flakiness by increasing the Bazel CI short timeout bucket in `.bazelrc` (from 120s to 150s), giving short tests more headroom before being killed by the test runner.",
+  "module": "test_infra",
+  "fix_pattern": "Increase test-runner timeouts (e.g., Bazel `--test_timeout`) for short tests when timeouts are the primary flaky failure mode.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42936",
     "https://github.com/pingcap/tidb/pull/42936.patch"

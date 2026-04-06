@@ -17,14 +17,14 @@
   ],
   "failure_signature": "oomtest: add message filer for oom test to avoid flaky test",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "assert_exact_error_message"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "oomtest: add message filer for oom test to avoid flaky test",
+  "root_cause_explanation": "The OOM test captures a global log message tracker and asserts specific messages via `oom.GetTracker()`. Background tasks can emit unrelated messages (e.g., bootstrap/background warnings), which can pollute the tracker and make the assertion flaky. This PR stabilizes the test by introducing a message allowlist (`messageFilter`) for the OOM log hook, and clearing/resetting that filter between test phases so only relevant messages are tracked.",
+  "module": "executor",
+  "fix_pattern": "When tests assert exact log/error messages via a global hook, add an allowlist filter and reset it between phases to avoid unrelated background log noise causing flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42628",
     "https://github.com/pingcap/tidb/pull/42628.patch"

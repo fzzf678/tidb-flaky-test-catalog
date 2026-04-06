@@ -13,19 +13,18 @@
     "name": "progress_test"
   },
   "symptoms": [
-    "race = \"on\", | querySQL: \"select * from t order by b\", (tests/realtikvtest/loaddatatest/load_data_test.go)"
+    "Bazel test metadata: flaky = True, race = \"on\" (no concrete failure signature)"
   ],
-  "failure_signature": "race = \"on\", | querySQL: \"select * from t order by b\", (tests/realtikvtest/loaddatatest/load_data_test.go)",
+  "failure_signature": "Bazel test metadata: flaky = True, race = \"on\" (no concrete failure signature)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: race = \"on\", | querySQL: \"select * from t order by b\", (tests/realtikvtest/loaddatatest/load_data_test.go).",
-  "module": "executor",
-  "fix_pattern": "race = \"on\", | querySQL: \"select * from t order by b\", (tests/realtikvtest/loaddatatest/load_data_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The only concrete flaky signal captured in this case is Bazel test metadata (`flaky = True`, `race = \"on\"`) for the realtikv loaddata target. This PR is mainly a functional change for LOAD DATA physical mode (e.g., checksum/lastInsertID/affectedRows and related refactors) and does not include a targeted stabilization fix or a concrete failure signature that explains the flakiness. Keep this as insufficient evidence until we have failing CI logs or a dedicated flaky-fix PR that addresses a specific symptom.",
+  "module": "lightning",
+  "fix_pattern": "Quarantine/metadata-only signal (Bazel `flaky`/`race`) without a concrete failure signature or targeted stabilization fix; keep as insufficient evidence.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43162",
     "https://github.com/pingcap/tidb/pull/43162.patch"

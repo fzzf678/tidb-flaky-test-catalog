@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: fix flaky LOAD DATA test by adding a channel to synchronize",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: executor: fix flaky LOAD DATA test by adding a channel to synchronize.",
+  "root_cause_explanation": "The LOAD DATA status test was flaky because it relied on timing-based synchronization: failpoints injected `sleep(3000)` and the test used `time.Sleep(...)` to \"wait\" for the job state/progress to advance across sessions. Scheduling/latency variance can make those fixed sleeps insufficient or unnecessarily long, causing flaky assertions. This PR stabilizes the test by replacing sleep-based coordination with explicit channel synchronization via failpoints (`SyncAfterCreateLoadDataJob` / `SyncAfterStartJob` / `SyncAfterCommitOneTask`) and by using `require.Eventually` to wait for progress updates to become visible.",
   "module": "executor",
-  "fix_pattern": "executor: fix flaky LOAD DATA test by adding a channel to synchronize",
+  "fix_pattern": "Replace fixed sleeps used for async coordination with explicit synchronization (channels/failpoints) and bounded polling (`Eventually`) when asserting asynchronous job state/progress.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42741",
     "https://github.com/pingcap/tidb/pull/42741.patch"

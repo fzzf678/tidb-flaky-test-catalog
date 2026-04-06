@@ -13,18 +13,18 @@
     "name": "backfilling_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Bazel test metadata: flaky = True, race = \"on\""
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Bazel test metadata: flaky = True, race = \"on\"",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "Concurrent ingest-based backfill jobs share global ingest backend resources/state. Allowing multiple ingest jobs to run at the same time can lead to interference and unstable behavior (and makes race-enabled tests more likely to expose timing issues). This PR stabilizes the system by adding an explicit availability gate in the ingest backend context manager (only one active ingest job at a time, via `CheckAvailable`/`Register`/`Unregister`) and by adding additional pre-checks (e.g., disk usage) before enabling ingest backfill.",
   "module": "ddl",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Serialize ingest backfill usage: add an explicit availability gate so only one ingest job can run at a time, and validate backend/disk availability before starting ingest-based reorg.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43210",
     "https://github.com/pingcap/tidb/pull/43210.patch"

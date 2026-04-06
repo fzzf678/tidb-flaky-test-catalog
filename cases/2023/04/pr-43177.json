@@ -13,18 +13,18 @@
     "name": "rewrite_meta_rawkv_test"
   },
   "symptoms": [
-    "br: fix unstable test"
+    "Test assumes a stable ordering of `partitionMap` entries, but the order can vary between runs."
   ],
-  "failure_signature": "br: fix unstable test",
+  "failure_signature": "Nondeterministic `partitionMap` ordering in `TestTidySchemaMaps` (br/pkg/stream/rewrite_meta_rawkv_test.go)",
   "root_cause_categories": [
-    "external_dependency"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: br: fix unstable test.",
+  "root_cause_explanation": "The unit test was flaky because it assumed a deterministic order for `partitionMap` (e.g., always expecting `partitionMap[0]` to correspond to a specific upstream partition ID). In practice, the partition list can be produced in a non-deterministic order (often due to map iteration or non-stable aggregation). This PR fixes the flakiness by making the assertions order-insensitive: it checks which upstream ID appears first and validates the corresponding downstream mapping accordingly.",
   "module": "br",
-  "fix_pattern": "br: fix unstable test",
+  "fix_pattern": "Do not rely on the iteration order of maps/slices derived from maps in tests; sort by a stable key (e.g., ID) or make assertions order-insensitive (treat as a set).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43177",
     "https://github.com/pingcap/tidb/pull/43177.patch"
