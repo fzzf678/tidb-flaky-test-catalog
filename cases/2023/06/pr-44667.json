@@ -17,15 +17,14 @@
   ],
   "failure_signature": "slices.Sort(filesInReplayer) (server/plan_replayer_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: slices.Sort(filesInReplayer) (server/plan_replayer_test.go).",
+  "root_cause_explanation": "The test was flaky due to nondeterministic ordering of in-memory results: it relied on a stable order of plan replayer files without enforcing one. This PR stabilizes it by deterministically sorting the file list (`slices.Sort(filesInReplayer)`) before assertions/processing.",
   "module": "domain",
-  "fix_pattern": "slices.Sort(filesInReplayer) (server/plan_replayer_test.go)",
+  "fix_pattern": "Deterministically sort in-memory lists (e.g., plan replayer file lists) before assertions/processing.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44667",
     "https://github.com/pingcap/tidb/pull/44667.patch"

@@ -17,16 +17,14 @@
   ],
   "failure_signature": "result.Sort().Check(testkit.Rows(`1 1 1`, `2 2 2`, `5 5 5`)) (ddl/db_partition_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: result.Sort().Check(testkit.Rows(`1 1 1`, `2 2 2`, `5 5 5`)) (ddl/db_partition_test.go).",
+  "root_cause_explanation": "The test was flaky due to nondeterministic row ordering: it compared result rows in a fixed order without enforcing a stable order. This PR stabilizes the test by sorting the result before asserting (`result.Sort().Check(...)`).",
   "module": "ddl",
-  "fix_pattern": "result.Sort().Check(testkit.Rows(`1 1 1`, `2 2 2`, `5 5 5`)) (ddl/db_partition_test.go)",
+  "fix_pattern": "Sort result rows before assertions to avoid nondeterministic ordering.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42433",
     "https://github.com/pingcap/tidb/pull/42433.patch"

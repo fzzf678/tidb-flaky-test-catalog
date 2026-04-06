@@ -13,18 +13,18 @@
     "name": "rule_join_reorder_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"SELECT `queries_identifier`.`id`, `queries_identifier`.`name` FROM `queries_identifier` LEFT OUTER JOIN `queries_channel` ON (`queries_identifier`.`id` = `queries_channel`.`identifier_id`) INNER JOIN `queries_program` ON (`queries_identifier`.`id` = `queries_program`.`identifier_id`) WHERE ((`queries_channel`.`id` = 5 AND `queries_program`.`..."
+    "Join reorder test queried rows without a stable ordering; result ordering is nondeterministic without an explicit ORDER BY."
   ],
-  "failure_signature": "tk.MustQuery(\"SELECT `queries_identifier`.`id`, `queries_identifier`.`name` FROM `queries_identifier` LEFT OUTER JOIN `queries_channel` ON (`queries_identifier`.`id` = `queries_channel`.`identifier_id`) INNER JOIN `queries_program` ON (`queries_identifier`.`id` = `queries_program`.`identifier_id`) WHERE ((`queries_channel`.`id` = 5 AND `queries_program`.`...",
+  "failure_signature": "Join reorder test query result order nondeterministic without ORDER BY.",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"SELECT `queries_identifier`.`id`, `queries_identifier`.`name` FROM `queries_identifier` LEFT OUTER JOIN `queries_channel` ON (`queries_identifier`.`id` = `queries_channel`.`identifier_id`) INNER JOIN `queri….",
+  "root_cause_explanation": "The test was flaky due to nondeterministic result ordering: it asserted on a fixed row order without enforcing one. This PR stabilizes it by adding an explicit `ORDER BY` clause (ordering by identifier id) to the query used by the join reorder test.",
   "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"SELECT `queries_identifier`.`id`, `queries_identifier`.`name` FROM `queries_identifier` LEFT OUTER JOIN `queries_channel` ON (`queries_identifier`.`id` = `queries_channel`.`identifier_id`) INNER JOIN `queries_program` ON (`queries_identifier`.`id` = `queries_program`.`identifier_id`) WHERE ((`queries_channel`.`id` = 5 AND `queries_program`.`...",
+  "fix_pattern": "Add `ORDER BY` to order-dependent test queries (e.g., order by identifier id) before asserting rows.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44409",
     "https://github.com/pingcap/tidb/pull/44409.patch"

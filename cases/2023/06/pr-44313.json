@@ -13,18 +13,18 @@
     "name": "register_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Concurrent registration/unregistration logic for IMPORT INTO tasks can be racy without proper locking/atomic state."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Potential data race in task registration / ticker flow due to unsynchronized shared state.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
-  "module": "kv",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "The test was flaky due to a concurrency data race in the IMPORT INTO / disttask flow-handle code path. This PR makes the shared state concurrency-safe (e.g., per-task info guarded by a mutex/atomic timestamps and using `sync.Map` for task storage), and also enables running the relevant tests with the race detector to catch such issues early.",
+  "module": "domain",
+  "fix_pattern": "Make shared task-registration state concurrency-safe (mutex/atomic + `sync.Map`), and enable race-detector runs for the relevant tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44313",
     "https://github.com/pingcap/tidb/pull/44313.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk1.HasPlan(\"select * from t use index(idx) where a = 1 and b = 1 order by a limit 1 for update\", \"IndexLookUp_9\") (tests/realtikvtest/txntest/txn_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk1.HasPlan(\"select * from t use index(idx) where a = 1 and b = 1 order by a limit 1 for update\", \"IndexLookUp_9\") (tests/realtikvtest/txntest/txn_test.go).",
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan shape via `HasPlan(...)`, and optimizer choices can vary unless the query is constrained. This PR stabilizes the plan assertion by rewriting the tested SQL (e.g., adding `ORDER BY` + `LIMIT` for `SELECT ... FOR UPDATE` on partition tables) so the optimizer consistently chooses the expected plan (IndexLookUp) for the assertion.",
   "module": "planner",
-  "fix_pattern": "tk1.HasPlan(\"select * from t use index(idx) where a = 1 and b = 1 order by a limit 1 for update\", \"IndexLookUp_9\") (tests/realtikvtest/txntest/txn_test.go)",
+  "fix_pattern": "Constrain the tested SQL (e.g., add ORDER BY/LIMIT) so optimizer plan selection is stable for plan assertions (`HasPlan`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44985",
     "https://github.com/pingcap/tidb/pull/44985.patch"

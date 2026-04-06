@@ -17,14 +17,15 @@
   ],
   "failure_signature": "tests: fix unstable test in resource group",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "hardcoded_port_or_resource"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: tests: fix unstable test in resource group.",
+  "root_cause_explanation": "The test was flaky due to asynchronous timing issues: the resource group runaway/quarantine state is updated asynchronously, so fixed sleeps and short waits can lead to intermittent timeouts or checking too early. This PR stabilizes it by replacing fixed `time.Sleep(...)` waits with an Eventually-style query-and-check loop (with bounded max wait and interval), making the test robust to timing variance.",
   "module": "test_infra",
-  "fix_pattern": "tests: fix unstable test in resource group",
+  "fix_pattern": "Replace fixed sleeps with Eventually-style polling (bounded wait + interval) when asserting asynchronously updated system tables/state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44918",
     "https://github.com/pingcap/tidb/pull/44918.patch"

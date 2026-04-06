@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix unstable TestFrameworkCancelGTask",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: test: fix unstable TestFrameworkCancelGTask.",
+  "root_cause_explanation": "The test was flaky due to asynchronous timing issues: it relied on sleep-based polling and timeouts to observe task cancellation state transitions, which is sensitive to scheduling/load. This PR stabilizes it by using a failpoint to deterministically trigger cancellation during executor run, removing the timing-sensitive sleep/poll loop from the test.",
   "module": "test_infra",
-  "fix_pattern": "test: fix unstable TestFrameworkCancelGTask",
+  "fix_pattern": "Use failpoints to deterministically trigger cancellation/state transitions in tests, avoiding timing-sensitive sleep/poll loops.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44923",
     "https://github.com/pingcap/tidb/pull/44923.patch"

@@ -13,18 +13,18 @@
     "name": "lru_cache_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Statistics cache code is concurrency sensitive; cache access must be synchronized to avoid data races under concurrent tests."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Data race risk in statistics cache due to unsynchronized concurrent access.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "The test was flaky due to a concurrency data race in statistics cache code. This PR stabilizes it by refactoring the cache implementation to use proper synchronization (e.g., RWMutex guarding cache maps/LRU structures) and enabling race-detector runs for relevant cache tests.",
   "module": "statistics",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Guard shared cache state with RWMutex/locks (cache maps/LRU) and run tests under the race detector to catch data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44748",
     "https://github.com/pingcap/tidb/pull/44748.patch"
