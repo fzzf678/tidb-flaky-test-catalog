@@ -13,9 +13,10 @@
     "name": "enforce_mpp_test"
   },
   "symptoms": [
-    "// Default RPC encoding may cause statistics explain result differ and then the test unstable."
+    "Queries with a `READ_FROM_STORAGE(TIFLASH...)` hint could hit `can't find proper physical plan` or produce an unexpected access path because a heuristic access-path pruning rule removed the hinted TiFlash path.",
+    "The unit test asserts EXPLAIN output (golden JSON), so plan-selection differences can make it unstable."
   ],
-  "failure_signature": "// Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "failure_signature": "can't find proper physical plan / hint-preferred TiFlash path pruned by heuristic access-path pruning",
   "root_cause_categories": [
     "nondeterministic_plan_selection"
   ],
@@ -23,9 +24,9 @@
     "statistics_sensitive_test",
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: // Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "root_cause_explanation": "The test is sensitive to planner access-path selection because it checks a specific EXPLAIN plan. A heuristic rule in `DataSource.derivePathStatsAndTryHeuristics()` could prune other access paths once it selected a TiKV index path, even when the query explicitly preferred TiFlash via `READ_FROM_STORAGE(TIFLASH...)`. This could lead to an unexpected plan (or `can't find proper physical plan`) and make the EXPLAIN-based test unstable. The fix makes heuristic pruning respect the TiFlash preference/hint and keeps the hinted TiFlash access path, and adds a regression EXPLAIN case to cover it.",
   "module": "planner",
-  "fix_pattern": "// Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "fix_pattern": "Do not prune hint-preferred TiFlash access paths during heuristic path selection; add a regression EXPLAIN case for `READ_FROM_STORAGE(TIFLASH...)`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46102",
     "https://github.com/pingcap/tidb/pull/46102.patch"
