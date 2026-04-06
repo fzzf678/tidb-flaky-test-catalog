@@ -22,9 +22,8 @@
   "review_smells": [
     "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: tk.MustQuery(\"select REGION_ID, DB_NAME, TABLE_NAME, IS_INDEX, INDEX_ID, INDEX_NAME, IS_PARTITION, PARTITION_NAME from information_schema.TIKV_REGION_STATUS where DB_NAME = 'test' and TABLE_NAME = 'test_t1' order by PART….",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The available evidence does not show a specific flaky mechanism being fixed: the patch adds partition metadata fields to the `TIKV_REGION_STATUS` cluster table and updates unit tests accordingly. Without an actual flaky signature or a targeted stabilization (e.g., wait/retry for schema propagation), classify this case as insufficient evidence rather than guessing schema-race/external-dependency causes.",
   "module": "executor",
-  "root_cause_explanation": "The available evidence does not show a specific flaky mechanism being fixed: the patch adds partition metadata fields to the `TIKV_REGION_STATUS` cluster table and updates unit tests accordingly. Without an actual flaky signature or a targeted stabilization (e.g., wait/retry for schema propagation), classify this case as insufficient evidence rather than guessing schema-race/external-dependency causes.",
   "fix_pattern": "Add partition metadata to `information_schema.TIKV_REGION_STATUS` and extend tests; no clearly evidenced anti-flake stabilization in the case.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42215",
