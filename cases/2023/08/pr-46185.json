@@ -13,18 +13,18 @@
     "name": "workpool_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "`resourcemanager/pool/workerpool` Bazel go_test is marked `flaky=True` and `race=\"on\"` (resourcemanager/pool/workerpool/BUILD.bazel)"
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "`flaky=True` in resourcemanager/pool/workerpool/BUILD.bazel (race=on)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "This PR refactors the workerpool implementation (generic result type) and adjusts related code. The test suite is marked `flaky=True` and runs with `-race`, but this catalog entry does not include a concrete flaky failure signature or a patch-backed explanation tying the refactor to a specific race. To avoid guessing, classify as insufficient evidence.",
   "module": "module_unknown",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Refactor workerpool implementation and adjust test/build metadata; flaky quarantine signal exists but no concrete flaky signature captured here.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46185",
     "https://github.com/pingcap/tidb/pull/46185.patch"

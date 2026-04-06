@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + // in order to prevent data race.",
+  "root_cause_explanation": "The LFU stats cache updates multiple shared structures (the underlying cache, a key/value set, and a memory cost counter). When the cache is full, `Set(...)` can trigger eviction callbacks that also touch these structures. The previous update order could interleave insertion/eviction/cost accounting and cause data races under concurrency. The fix staggers the operations (update the key/value set and cost before calling into the cache that may evict) and adjusts value enumeration to read from the key/value set, preventing racy interactions.",
   "module": "statistics",
-  "fix_pattern": "+ // in order to prevent data race. If the LFU cost is already full,",
+  "fix_pattern": "Reorder LFU cache updates to avoid eviction/update races (stage key-set/cost updates before cache.Set that may evict) and read values from the key/value set to prevent concurrent access races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46090",
     "https://github.com/pingcap/tidb/pull/46090.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "r := MustExecToRecodeSet(t, se, `select original_sql, bind_sql, default_db, status, create_time from mysql.bind_info where source != 'builtin' order by create_time`) (session/bootstrap_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: r := MustExecToRecodeSet(t, se, `select original_sql, bind_sql, default_db, status, create_time from mysql.bind_info where source != 'builtin' order by create_time`) (session/bootstrap_test.go).",
-  "module": "expression",
-  "fix_pattern": "r := MustExecToRecodeSet(t, se, `select original_sql, bind_sql, default_db, status, create_time from mysql.bind_info where source != 'builtin' order by create_time`) (session/bootstrap_test.go)",
+  "root_cause_explanation": "This PR is a cleanup/refactor (removing/renaming helper code in bootstrap tests). The catalog entry does not show a concrete flaky failure signature or a targeted stabilization change (the referenced SQL already has an ORDER BY). To avoid mislabeling it as an order-related flake, classify as insufficient evidence.",
+  "module": "session",
+  "fix_pattern": "Refactor bootstrap test helpers / remove useless code; no concrete flaky signature captured in this case.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45883",
     "https://github.com/pingcap/tidb/pull/45883.patch"

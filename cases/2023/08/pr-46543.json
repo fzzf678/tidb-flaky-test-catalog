@@ -13,19 +13,18 @@
     "name": "executor_issue_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"(select 'a' as c, id, v from t1 for update) union all (select 'b', id, v from t1) order by c\").Check(testkit.Rows(\"a 1 11\", \"b 1 10\")) (executor/test/issuetest/executor_issue_test.go)"
+    "The PR merges several UNION-related issue tests into a combined `TestUnionIssue`; no concrete flaky failure signature or targeted stabilization change is captured in the case (executor/test/issuetest/executor_issue_test.go)."
   ],
-  "failure_signature": "tk.MustQuery(\"(select 'a' as c, id, v from t1 for update) union all (select 'b', id, v from t1) order by c\").Check(testkit.Rows(\"a 1 11\", \"b 1 10\")) (executor/test/issuetest/executor_issue_test.go)",
+  "failure_signature": "No concrete failure signature captured (PR mainly reorganizes/merges tests into `TestUnionIssue`).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"(select 'a' as c, id, v from t1 for update) union all (select 'b', id, v from t1) order by c\").Check(testkit.Rows(\"a 1 11\", \"b 1 10\")) (executor/test/issuetest/executor_issue_test.go).",
+  "root_cause_explanation": "The patch is a test refactor that consolidates multiple UNION-related issue tests into a single `TestUnionIssue`. While the diff contains specific SQL assertions, it does not introduce an explicit ordering stabilization or other clear anti-flake change tied to a recorded flaky symptom in this case. Without a concrete failure log or a patch-level stabilization, classify as insufficient evidence rather than guessing a nondeterministic ordering root cause.",
   "module": "executor",
-  "fix_pattern": "tk.MustQuery(\"(select 'a' as c, id, v from t1 for update) union all (select 'b', id, v from t1) order by c\").Check(testkit.Rows(\"a 1 11\", \"b 1 10\")) (executor/test/issuetest/executor_issue_test.go)",
+  "fix_pattern": "Refactor/consolidate UNION-related issue tests into `TestUnionIssue`; no clearly evidenced targeted flaky stabilization change in the case.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46543",
     "https://github.com/pingcap/tidb/pull/46543.patch"

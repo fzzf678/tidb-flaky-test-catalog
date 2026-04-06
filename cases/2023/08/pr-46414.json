@@ -13,18 +13,18 @@
     "name": "backfilling_operator_test"
   },
   "symptoms": [
-    "fix data race"
+    "Go race detector reported a data race in the worker pool tests while consuming results from the pool (resourcemanager/pool/workerpool/workpool_test.go)."
   ],
-  "failure_signature": "fix data race",
+  "failure_signature": "DATA RACE reported in resourcemanager/pool/workerpool/workpool_test.go when consuming the pool result channel.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix data race.",
+  "root_cause_explanation": "The patch includes an explicit race-fix in the worker pool test: the consumer goroutine previously ranged over `pool.GetResultChan()` directly, which can race if the result channel is accessed/updated concurrently. The fix caches the result channel (`resultCh := pool.GetResultChan()`) before starting the consumer loop, avoiding unsafe concurrent access and making the test race-free (resourcemanager/pool/workerpool/workpool_test.go).",
   "module": "ddl",
-  "fix_pattern": "fix data race",
+  "fix_pattern": "Avoid concurrent access to a shared channel getter by caching the channel reference before starting goroutines that consume it.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46414",
     "https://github.com/pingcap/tidb/pull/46414.patch"

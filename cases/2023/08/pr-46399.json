@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: // to test DATA RACE.",
+  "root_cause_explanation": "Enabling LFU-backed stats cache for ANALYZE increases concurrent access to shared cache/state. The PR adds explicit high-concurrency unit tests (annotated \"to test DATA RACE\") intended to be run under the Go race detector to surface and prevent concurrency races in the LFU/analyze code paths. This strengthens coverage against `-race` flakiness caused by unsynchronized shared state.",
   "module": "statistics",
-  "fix_pattern": "// to test DATA RACE",
+  "fix_pattern": "Add explicit high-concurrency tests to exercise LFU/analyze paths under the race detector, guarding against data races when enabling LFU for analyze.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46399",
     "https://github.com/pingcap/tidb/pull/46399.patch"

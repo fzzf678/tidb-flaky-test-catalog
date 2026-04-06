@@ -13,18 +13,18 @@
     "name": "dispatcher_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "`disttask/framework` Bazel go_test is marked `flaky=True` and `race=\"on\"` (disttask/framework/BUILD.bazel)"
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "`flaky=True` in disttask/framework/BUILD.bazel (race=on)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "This PR refactors the disttask dispatcher/manager code and also touches Bazel test metadata (the suite is marked `flaky=True`). However, the available evidence in this catalog entry does not contain a concrete flaky failure signature or a patch-backed root-cause analysis (the extracted signal is mainly the Bazel `race`/`flaky` attributes). To avoid guessing, classify as insufficient evidence.",
   "module": "domain",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Quarantine/adjust the disttask test suite metadata while refactoring dispatcher logic; no concrete flaky signature captured in this case.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45460",
     "https://github.com/pingcap/tidb/pull/45460.patch"

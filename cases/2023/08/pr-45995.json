@@ -17,14 +17,14 @@
   ],
   "failure_signature": "- race=`grep 'DATA RACE' $explain_test_log || true`",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: - race=`grep 'DATA RACE' $explain_test_log || true`.",
-  "module": "module_unknown",
-  "fix_pattern": "- race=`grep 'DATA RACE' $explain_test_log || true`",
+  "root_cause_explanation": "This PR migrates the explaintest harness to use mysql-tester and removes a hard failure condition based on grepping `DATA RACE` from the test log. That change is a mitigation/quarantine (it avoids failing when the race detector reports issues) rather than a patch-backed race fix with a concrete root-cause analysis. To avoid over-claiming a specific concurrency root cause, classify as insufficient evidence.",
+  "module": "test_infra",
+  "fix_pattern": "Mitigate by removing the `DATA RACE` grep-based failure gate in explaintest while migrating the test harness (no concrete flaky signature/root cause captured).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45995",
     "https://github.com/pingcap/tidb/pull/45995.patch"

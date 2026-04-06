@@ -13,18 +13,18 @@
     "name": "framework_err_handling_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Disttask state-machine handled non-retryable dist-plan generation errors inconsistently (marking as reverted instead of failed)"
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Non-retryable dist-plan error leads to wrong task state transform (pending → reverted/incorrect)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "The disttask framework includes retryable/non-retryable error handling and task state transitions. When dist-plan generation hits a non-retryable error, the previous state transform path was inconsistent (e.g., marking tasks as reverted, which is not meaningful) and could interact poorly with dispatcher retry logic, leading to intermittent test failures around error handling. This PR fixes the state-machine transitions by allowing pending → failed for non-retryable errors and clarifying the retry behavior.",
   "module": "domain",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Fix disttask state-machine transitions for non-retryable dist-plan generation errors (pending → failed) and align dispatcher retry logic accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46357",
     "https://github.com/pingcap/tidb/pull/46357.patch"

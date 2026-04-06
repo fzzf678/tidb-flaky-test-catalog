@@ -13,20 +13,18 @@
     "name": "index_merge"
   },
   "symptoms": [
-    "race = \"on\", | maxEle := tk.MustQuery(fmt.Sprintf(\"select ifnull(max(c), 100) from (select c from t use index(idx3) where (a = %d or b = %d) and c >= %d order by c limit %d) t\", valA, valB, valC, offset)).Rows()[0][0] (executor/test/indexmergereadtest/index_merge_reader_test.go)"
+    "`executor/test/indexmergereadtest` is marked `flaky=True` and `race=\"on\"` in Bazel BUILD (executor/test/indexmergereadtest/BUILD.bazel)"
   ],
-  "failure_signature": "race = \"on\", | maxEle := tk.MustQuery(fmt.Sprintf(\"select ifnull(max(c), 100) from (select c from t use index(idx3) where (a = %d or b = %d) and c >= %d order by c limit %d) t\", valA, valB, valC, offset)).Rows()[0][0] (executor/test/indexmergereadtest/index_merge_reader_test.go)",
+  "failure_signature": "`flaky=True` in executor/test/indexmergereadtest/BUILD.bazel (race=on)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: race = \"on\", | maxEle := tk.MustQuery(fmt.Sprintf(\"select ifnull(max(c), 100) from (select c from t use index(idx3) where (a = %d or b = %d) and c >= %d order by c limit %d) t\", valA, valB, valC, offset)).Rows()[0][0] (e….",
-  "module": "planner",
-  "fix_pattern": "race = \"on\", | maxEle := tk.MustQuery(fmt.Sprintf(\"select ifnull(max(c), 100) from (select c from t use index(idx3) where (a = %d or b = %d) and c >= %d order by c limit %d) t\", valA, valB, valC, offset)).Rows()[0][0] (executor/test/indexmergereadtest/index_merge_reader_test.go)",
+  "root_cause_explanation": "This PR changes index-merge order property handling and limit pushdown logic, and it adjusts/adds tests under a Bazel target that is flagged `flaky=True`. However, the PR body and the catalog evidence here do not provide a concrete flaky failure signature or a specific root-cause analysis that can be confidently mapped to a taxonomy category (beyond the fact that the suite is quarantined as flaky). To avoid guessing, classify as insufficient evidence while retaining the observed quarantine signal.",
+  "module": "executor",
+  "fix_pattern": "Adjust index-merge order/limit handling and make tests avoid asserting on inherently unstable results when ordering is not guaranteed.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43881",
     "https://github.com/pingcap/tidb/pull/43881.patch"

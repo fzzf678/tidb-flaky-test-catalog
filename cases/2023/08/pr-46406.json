@@ -13,18 +13,18 @@
     "name": "engine_test"
   },
   "symptoms": [
-    "sort.Slice(jobs, func(i, j int) bool { (br/pkg/lightning/backend/local/local_test.go)"
+    "The test compared region jobs from a channel in arrival order, but the job order can vary across runs, causing mismatches against the expected key ranges (br/pkg/lightning/backend/local/local_test.go)."
   ],
-  "failure_signature": "sort.Slice(jobs, func(i, j int) bool { (br/pkg/lightning/backend/local/local_test.go)",
+  "failure_signature": "Expected region job key ranges in a fixed order, but jobs arrived in a different order (br/pkg/lightning/backend/local/local_test.go).",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: sort.Slice(jobs, func(i, j int) bool { (br/pkg/lightning/backend/local/local_test.go).",
+  "root_cause_explanation": "The test implicitly assumed that region jobs generated and sent through a channel arrive in a deterministic order. In practice, the enqueue/receive order can vary (e.g., due to scheduling), so asserting against a fixed ordering can be flaky. The fix stabilizes the test by collecting the jobs and sorting them by key range start before comparing against the expected ranges (br/pkg/lightning/backend/local/local_test.go).",
   "module": "lightning",
-  "fix_pattern": "sort.Slice(jobs, func(i, j int) bool { (br/pkg/lightning/backend/local/local_test.go)",
+  "fix_pattern": "Collect results and sort deterministically before asserting (sort jobs by key range start before comparing with expected ranges).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46406",
     "https://github.com/pingcap/tidb/pull/46406.patch"

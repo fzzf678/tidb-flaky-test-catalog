@@ -20,11 +20,11 @@
     "async_timing_issue"
   ],
   "review_smells": [
-    "async_wait_without_backoff"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). Fixed waits without polling/backoff are brittle under CI timing jitter. This PR stabilizes it by: br: wait tiflash replicas ready && fix unstable test.",
+  "root_cause_explanation": "BR restore needs to wait for TiFlash replicas to become ready (including partitioned tables). The integration test was timing-sensitive because the TiFlash refresh ticker needs time to trigger; without sufficient waiting, CI timing jitter causes intermittent failures. The fix adds readiness handling and uses an explicit sleep in the test script to wait for the refresh tick, stabilizing the eventual-consistency timing.",
   "module": "br",
-  "fix_pattern": "br: wait tiflash replicas ready && fix unstable test",
+  "fix_pattern": "Add explicit waiting for TiFlash replica readiness (including partitions) and use a fixed sleep in the test script to allow background refresh ticks to complete.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46301",
     "https://github.com/pingcap/tidb/pull/46301.patch"

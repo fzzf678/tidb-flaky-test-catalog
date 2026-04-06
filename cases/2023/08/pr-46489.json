@@ -13,18 +13,18 @@
     "name": "benchmark_test"
   },
   "symptoms": [
-    "+ // Because the next execution of HashAgg may have started when this goroutine haven't exited and then there will be data race."
+    "The PR is primarily a refactor (splitting `aggregate.go` into multiple files). The case does not include a concrete flaky failure signature beyond a comment about a possible HashAgg goroutine overlap/data-race scenario."
   ],
-  "failure_signature": "+ // Because the next execution of HashAgg may have started when this goroutine haven't exited and then there will be data race.",
+  "failure_signature": "No concrete failure signature captured (PR mainly refactors/splits files; only a comment references a potential data-race scenario).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + // Because the next execution of HashAgg may have started when this goroutine haven't exited and then there will be data race.",
+  "root_cause_explanation": "Although the diff includes commentary about a potential HashAgg goroutine overlap/data-race risk when executors are reused, the patch itself is a large refactor that splits the implementation across multiple files without a clearly evidenced, targeted stabilization change for a flaky failure. Without an actual flaky signature or an explicit fix tied to the flakiness, classify as insufficient evidence rather than guessing a concrete concurrency root cause.",
   "module": "executor",
-  "fix_pattern": "+ // Because the next execution of HashAgg may have started when this goroutine haven't exited and then there will be data race.",
+  "fix_pattern": "Refactor/split executor implementation files; no clearly evidenced targeted flaky stabilization change in the case.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46489",
     "https://github.com/pingcap/tidb/pull/46489.patch"

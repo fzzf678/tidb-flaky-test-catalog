@@ -13,18 +13,18 @@
     "name": "stats_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "`statstest` Bazel go_test is marked `flaky=True` and runs with `race=\"on\"` (statistics/handle/handletest/statstest/BUILD.bazel)"
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "`flaky=True` in statistics/handle/handletest/statstest/BUILD.bazel (race=on)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "This PR primarily optimizes the stats test runtime by splitting a single test into two separate tests (so they can shard better) and adjusting Bazel shard_count. While this may mitigate flakiness caused by slow/overloaded CI runs, the catalog entry does not contain a concrete flaky failure signature or root-cause analysis beyond the suite being marked flaky. To avoid guessing, classify as insufficient evidence.",
   "module": "statistics",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Split a slow test into two to speed up/shard better and adjust shard_count; mitigation without a captured flaky signature.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45772",
     "https://github.com/pingcap/tidb/pull/45772.patch"

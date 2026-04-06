@@ -17,14 +17,14 @@
   ],
   "failure_signature": "reorgRand := rand.New(rand.NewSource(seed)) (table/tables/partition_test.go)",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: reorgRand := rand.New(rand.NewSource(seed)) (table/tables/partition_test.go).",
+  "root_cause_explanation": "The patch refactors partition extensive tests to use a local rand source (seeded once and logged) and threads it through helper functions. However, the PR body/diff does not clearly describe a concrete flaky failure signature tied to this change (it reads more like test refactoring/mitigation). To avoid over-claiming a specific root cause, classify as insufficient evidence and keep this as an observed stabilization change.",
   "module": "ddl",
-  "fix_pattern": "reorgRand := rand.New(rand.NewSource(seed)) (table/tables/partition_test.go)",
+  "fix_pattern": "Use a locally seeded rand source (log the seed) and pass it through helpers to make randomized test behavior reproducible/isolated.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42907",
     "https://github.com/pingcap/tidb/pull/42907.patch"

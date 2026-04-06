@@ -13,18 +13,18 @@
     "name": "TestTTLDeleteWithTimeZoneChange"
   },
   "symptoms": [
-    "*: fix ttl unstable test `TestTTLDeleteWithTimeZoneChange`"
+    "TTL integration test `TestTTLDeleteWithTimeZoneChange` was unstable due to timing-sensitive polling/scheduling in the mock TTL client and worker setup"
   ],
-  "failure_signature": "*: fix ttl unstable test `TestTTLDeleteWithTimeZoneChange`",
+  "failure_signature": "Intermittent TTL integration test instability (polling loop / scheduling timing)",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: *: fix ttl unstable test `TestTTLDeleteWithTimeZoneChange`.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix ttl unstable test `TestTTLDeleteWithTimeZoneChange`",
+  "root_cause_explanation": "The mock TTL client command path polled for responses in a tight loop, making the test sensitive to scheduling/CI load and causing intermittent failures. The fix adds a sleep in the polling loop (basic backoff) and configures TTL running-tasks concurrency in the test setup, stabilizing the timing-dependent behavior.",
+  "module": "domain",
+  "fix_pattern": "Add sleep/backoff in the mock TTL command polling loop and tune TTL running-tasks concurrency in test setup to reduce timing sensitivity.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46076",
     "https://github.com/pingcap/tidb/pull/46076.patch"

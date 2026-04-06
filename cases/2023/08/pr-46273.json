@@ -17,15 +17,14 @@
   ],
   "failure_signature": "// skip instance and host column because it now includes the TCP socket details (unstable) | tk.MustQuery(\"select query_time, conn_id, session_alias from `CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4.895492 6 \")) (infoschema/test/clustertablestest/cluster_tables_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: // skip instance and host column because it now includes the TCP socket details (unstable) | tk.MustQuery(\"select query_time, conn_id, session_alias from `CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4….",
+  "root_cause_explanation": "The flakiness here comes from asserting on result columns whose values are inherently unstable across environments/runs: the `instance`/`host` columns in CLUSTER_SLOW_QUERY now include TCP socket details, so exact matching is brittle. The PR mitigates by skipping those unstable columns in the assertion. Since we don't have the full CI failure context to map this to a more specific taxonomy bucket, classify as insufficient evidence.",
   "module": "domain",
-  "fix_pattern": "// skip instance and host column because it now includes the TCP socket details (unstable) | tk.MustQuery(\"select query_time, conn_id, session_alias from `CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4.895492 6 \")) (infoschema/test/clustertablestest/cluster_tables_test.go)",
+  "fix_pattern": "Avoid brittle assertions by skipping unstable `instance`/`host` columns whose values include runtime TCP socket details.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46273",
     "https://github.com/pingcap/tidb/pull/46273.patch"
