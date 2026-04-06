@@ -13,20 +13,18 @@
     "name": "cte"
   },
   "symptoms": [
-    "tk.MustQuery(\"explain format = 'brief' select * from (select * from t1 order by a) tmp;\").Check( (planner/core/physical_plan_test.go)"
+    "session variable: change default value of `tidb_remove_orderby_in_subquery` to true"
   ],
-  "failure_signature": "tk.MustQuery(\"explain format = 'brief' select * from (select * from t1 order by a) tmp;\").Check( (planner/core/physical_plan_test.go)",
+  "failure_signature": "session variable: change default value of `tidb_remove_orderby_in_subquery` to true",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"explain format = 'brief' select * from (select * from t1 order by a) tmp;\").Check( (planner/core/physical_plan_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR changes the default value of a session variable (`tidb_remove_orderby_in_subquery`) and updates a large set of plan/EXPLAIN test outputs. The case data does not include a concrete flaky failure signature or a targeted stabilization mechanism (this is primarily a behavior change + test expectation updates). Keep as insufficient evidence until CI flake logs or a reliable repro are available.",
   "module": "session",
-  "fix_pattern": "tk.MustQuery(\"explain format = 'brief' select * from (select * from t1 order by a) tmp;\").Check( (planner/core/physical_plan_test.go)",
+  "fix_pattern": "Change session-variable default + update expected plan outputs; treat as insufficient evidence for flaky attribution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44164",
     "https://github.com/pingcap/tidb/pull/44164.patch"

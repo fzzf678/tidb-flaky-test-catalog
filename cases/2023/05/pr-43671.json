@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: re.once.Do(memorize) // Avoid data race.",
+  "root_cause_explanation": "`regexp_replace` uses lazy memoization/initialization of regexp state. Under concurrent execution, that lazy path can be entered concurrently, triggering a data race. This PR stabilizes it by guarding the memoization with `sync.Once` (e.g. `re.once.Do(memorize)`), ensuring the shared state is initialized exactly once.",
   "module": "expression",
-  "fix_pattern": "re.once.Do(memorize) // Avoid data race",
+  "fix_pattern": "Guard lazy initialization / memoization with `sync.Once` to prevent concurrent initialization races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43671",
     "https://github.com/pingcap/tidb/pull/43671.patch"

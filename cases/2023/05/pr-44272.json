@@ -13,19 +13,18 @@
     "name": "stale_txn_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select * from t as of timestamp \" + expr + \" order by id asc\").Check(testkit.Rows(\"1\")) (executor/stale_txn_test.go)"
+    "Stale read `AS OF TIMESTAMP now()/curtime() - interval ...` can be time-dependent if `now()` is evaluated from wall-clock time instead of the stale TSO provider."
   ],
-  "failure_signature": "tk.MustQuery(\"select * from t as of timestamp \" + expr + \" order by id asc\").Check(testkit.Rows(\"1\")) (executor/stale_txn_test.go)",
+  "failure_signature": "Time-based stale read TS calculation depends on clock/TSO evaluation source (wall clock vs stale TSO provider).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select * from t as of timestamp \" + expr + \" order by id asc\").Check(testkit.Rows(\"1\")) (executor/stale_txn_test.go).",
-  "module": "session",
-  "fix_pattern": "tk.MustQuery(\"select * from t as of timestamp \" + expr + \" order by id asc\").Check(testkit.Rows(\"1\")) (executor/stale_txn_test.go)",
+  "root_cause_explanation": "Stale read TS calculation for `AS OF TIMESTAMP <expr>` can be timing-sensitive when the expression uses `now()`/`curtime()` semantics. This PR makes stale TS evaluation more accurate by evaluating the statement timestamp from the cached stale TSO provider when available (instead of wall-clock time), reducing time jitter and stale-read fallback. It adds a failpoint-based regression test (`TestStaleTSO`) to ensure `now()/curtime()` are evaluated from the stale ts provider in stale-read context.",
+  "module": "txn",
+  "fix_pattern": "Derive `now()/curtime()` from the stale TSO provider (statement stale TSO) when available; add a failpoint-based test to lock down the timing semantics.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44272",
     "https://github.com/pingcap/tidb/pull/44272.patch"

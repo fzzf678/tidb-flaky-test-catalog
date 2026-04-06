@@ -10,23 +10,21 @@
   "test": {
     "type": "unit",
     "path": "ddl/db_partition_test.go",
-    "name": "db_partition_test"
+    "name": "TestTruncatePartitionMultipleTimes"
   },
   "symptoms": [
-    "ddl: fix data race at the test"
+    "Data race in TestTruncatePartitionMultipleTimes (errCount updated in hook, read without atomic load)"
   ],
-  "failure_signature": "ddl: fix data race at the test",
+  "failure_signature": "Data race on shared errCount (atomic add + non-atomic read) in TestTruncatePartitionMultipleTimes",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix data race at the test.",
+  "root_cause_explanation": "The test spawns background DDL executions while an `OnJobUpdated` hook increments a shared counter (`errCount`). Previously `errCount` was an `int32` incremented via `atomic.AddInt32`, but later read non-atomically in the main goroutine, which triggers a data race under the race detector. This PR fixes it by switching to `atomic.Int32` and using `Add`/`Load` consistently.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix data race at the test",
+  "fix_pattern": "Use `atomic.Int32` and consistent atomic `Add`/`Load` when a counter is shared between hook callbacks and the main test goroutine.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43598",
     "https://github.com/pingcap/tidb/pull/43598.patch"

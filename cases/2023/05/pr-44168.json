@@ -13,19 +13,18 @@
     "name": "TestAggPushToCopForCachedTable"
   },
   "symptoms": [
-    "planner: fix unstable test TestAggPushToCopForCachedTable"
+    "`TestAggPushToCopForCachedTable` sometimes fails because table cache is not yet used (`ReadFromTableCache` remains false) within a short fixed retry loop."
   ],
-  "failure_signature": "planner: fix unstable test TestAggPushToCopForCachedTable",
+  "failure_signature": "Timing-dependent check for `StmtCtx.ReadFromTableCache` in `TestAggPushToCopForCachedTable`.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "plan_cache_dependency",
-    "assert_exact_plan_or_cost"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: planner: fix unstable test TestAggPushToCopForCachedTable.",
+  "root_cause_explanation": "`TestAggPushToCopForCachedTable` needs the table cache to become effective so that `StmtCtx.ReadFromTableCache` turns true. Previously the test used a short fixed loop (10 iterations) without a proper polling interval, which is brittle under CI timing jitter. This PR fixes the flakiness by using `require.Eventually` with a longer timeout and a polling interval to wait for `ReadFromTableCache` to become true.",
   "module": "planner",
-  "fix_pattern": "planner: fix unstable test TestAggPushToCopForCachedTable",
+  "fix_pattern": "Use `require.Eventually` (timeout + polling interval) to wait for asynchronous cache state (`ReadFromTableCache`) instead of a short fixed retry loop.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44168",
     "https://github.com/pingcap/tidb/pull/44168.patch"

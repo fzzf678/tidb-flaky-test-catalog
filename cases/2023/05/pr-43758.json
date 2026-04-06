@@ -10,22 +10,21 @@
   "test": {
     "type": "unit",
     "path": "executor/cte_test.go",
-    "name": "cte_test"
+    "name": "TestCTESeedPanic"
   },
   "symptoms": [
-    "tk.MustQuery(\"with recursive cte1 as (select c1 from t1 union all select c1 + 1 from cte1 where c1 < 5) select t_alias_1.c1 from cte1 as t_alias_1 inner join cte1 as t_alias_2 on t_alias_1.c1 = t_alias_2.c1 order by c1\").Check(testkit.Rows(\"1 2 3 4 5\")) (executor/cte_test.go)"
+    "executor: fix cte may hang because register OOMAction repeatedly"
   ],
-  "failure_signature": "tk.MustQuery(\"with recursive cte1 as (select c1 from t1 union all select c1 + 1 from cte1 where c1 < 5) select t_alias_1.c1 from cte1 as t_alias_1 inner join cte1 as t_alias_2 on t_alias_1.c1 = t_alias_2.c1 order by c1\").Check(testkit.Rows(\"1 2 3 4 5\")) (executor/cte_test.go)",
+  "failure_signature": "CTE query may hang / timeout due to OOM action registration/lifecycle issues",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"with recursive cte1 as (select c1 from t1 union all select c1 + 1 from cte1 where c1 < 5) select t_alias_1.c1 from cte1 as t_alias_1 inner join cte1 as t_alias_2 on t_alias_1.c1 = t_alias_2.c1 order by c1\")….",
+  "root_cause_explanation": "A CTE execution can register memory OOM actions (spill actions) and reuse/close storage across iterations. Incorrect lifecycle management can lead to repeated registration and stale state, causing a hang/timeout. This PR stabilizes the behavior by fixing the CTE storage close/reset path (so state is properly cleared) and adding a failpoint-based test to cover the panic/OOM path and ensure cleanup.",
   "module": "executor",
-  "fix_pattern": "tk.MustQuery(\"with recursive cte1 as (select c1 from t1 union all select c1 + 1 from cte1 where c1 < 5) select t_alias_1.c1 from cte1 as t_alias_1 inner join cte1 as t_alias_2 on t_alias_1.c1 = t_alias_2.c1 order by c1\").Check(testkit.Rows(\"1 2 3 4 5\")) (executor/cte_test.go)",
+  "fix_pattern": "Fix CTE storage cleanup/close semantics to avoid repeated OOM action registration and stale state; add failpoint-based tests to cover panic/OOM cleanup paths.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43758",
     "https://github.com/pingcap/tidb/pull/43758.patch"

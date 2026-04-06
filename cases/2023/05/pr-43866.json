@@ -13,19 +13,18 @@
     "name": "TestCancelAddIndexJobError"
   },
   "symptoms": [
-    "ddl: fix data race at hte TestCancelAddIndexJobError"
+    "ddl: fix data race at the TestCancelAddIndexJobError"
   ],
-  "failure_signature": "ddl: fix data race at hte TestCancelAddIndexJobError",
+  "failure_signature": "ddl: fix data race at the TestCancelAddIndexJobError",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: ddl: fix data race at hte TestCancelAddIndexJobError.",
+  "root_cause_explanation": "This PR is a patch series; one of the commits addresses a race-detector finding reported by `TestCancelAddIndexJobError`. The fix avoids reusing a shared/named `err` variable for the remaining-duration calculation in `dataForAnalyzeStatusHelper` by introducing a dedicated local error variable and logging failures instead of returning them, making the execution race-clean under concurrent access.",
   "module": "executor",
-  "fix_pattern": "ddl: fix data race at hte TestCancelAddIndexJobError",
+  "fix_pattern": "Avoid sharing/reusing a named return `err` across code paths that can be accessed concurrently; use a dedicated local error variable and log non-fatal errors instead of propagating them in a racy way.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43866",
     "https://github.com/pingcap/tidb/pull/43866.patch"

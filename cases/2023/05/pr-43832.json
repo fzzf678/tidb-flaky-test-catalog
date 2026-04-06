@@ -23,9 +23,9 @@
     "ddl_without_wait",
     "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: stabilize TestRenameTableIntermediateState.",
+  "root_cause_explanation": "The test registers an `OnJobUpdated` callback and triggers an insert when it observes a DDL job reaching `StatePublic`. In some runs, the callback can be invoked for non-rename-table jobs (or the previous job hasn't exited yet), causing the insert/assertions to happen at the wrong time and making the test unstable. This PR stabilizes it by restricting the callback to `ActionRenameTable` and tightening the error assertions.",
   "module": "ddl",
-  "fix_pattern": "ddl: stabilize TestRenameTableIntermediateState",
+  "fix_pattern": "Filter `OnJobUpdated` callbacks to only act on the target DDL job type (rename table) and make assertions robust to intermediate DDL job states.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43832",
     "https://github.com/pingcap/tidb/pull/43832.patch"

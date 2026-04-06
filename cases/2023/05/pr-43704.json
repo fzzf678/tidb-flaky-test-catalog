@@ -17,15 +17,14 @@
   ],
   "failure_signature": "session: fix TestUpgradeWithPauseDDL data race",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: session: fix TestUpgradeWithPauseDDL data race.",
+  "root_cause_explanation": "The test `TestUpgradeWithPauseDDL` spawns a goroutine that executes SQL and assigns to a shared `err` variable, which is also read by the main goroutine. That shared mutable variable triggers a data race under the race detector. This PR fixes it by making `err` a goroutine-local variable (using `:=` inside the goroutine) so there is no shared write/read race.",
   "module": "session",
-  "fix_pattern": "session: fix TestUpgradeWithPauseDDL data race",
+  "fix_pattern": "Avoid sharing mutable variables between goroutines; use goroutine-local variables (`:=`) instead of assigning to an outer `err`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43704",
     "https://github.com/pingcap/tidb/pull/43704.patch"

@@ -13,20 +13,18 @@
     "name": "TestIndexChange"
   },
   "symptoms": [
-    "ddl: fix DATA RACE in the TestIndexChange"
+    "Go race detector reports a data race in `TestIndexChange` (shared `jobID` accessed from a DDL hook callback and the main goroutine without synchronization)."
   ],
-  "failure_signature": "ddl: fix DATA RACE in the TestIndexChange",
+  "failure_signature": "DATA RACE: `jobID` written in `OnJobUpdated` callback and read in main goroutine in `TestIndexChange`.",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix DATA RACE in the TestIndexChange.",
+  "root_cause_explanation": "`TestIndexChange` installs a DDL hook (`OnJobUpdated`) that updates a shared `jobID` while the main goroutine later reads that value to validate history job args. These accesses can happen concurrently, triggering a data race under the Go race detector. This PR fixes it by switching `jobID` to `atomic.Int64` and using `Store`/`Load` consistently.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix DATA RACE in the TestIndexChange",
+  "fix_pattern": "Use `atomic.Int64` (or a mutex) for shared variables touched by hook callbacks and the main test goroutine; use `Store`/`Load` consistently.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43952",
     "https://github.com/pingcap/tidb/pull/43952.patch"
