@@ -9,22 +9,22 @@
   "pr_merged_at": "2023-02-20T13:33:05+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/cluster_table_test.go",
+    "path": "infoschema/tables_test.go",
     "name": "TestTableIfHasColumn"
   },
   "symptoms": [
-    "infoschema: fix unstable test TestTableIfHasColumn"
+    "TestTableIfHasColumn is unstable because it relies on the slow-log file path from global config; using the default slow log filename can conflict with other tests or not point to the prepared file."
   ],
-  "failure_signature": "infoschema: fix unstable test TestTableIfHasColumn",
+  "failure_signature": "TestTableIfHasColumn: slow-log/infoschema assertions fail due to SlowQueryFile config mismatch (default `tidb-slow.log` shared across tests)",
   "root_cause_categories": [
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: infoschema: fix unstable test TestTableIfHasColumn.",
+  "root_cause_explanation": "The flakiness was caused by shared global configuration/state: the test writes a slow log file but (without explicitly updating the global SlowQueryFile) TiDB may read from the default slow log path, which is shared across tests. The fix uses unique slow-log filenames, updates the global config (Log.SlowQueryFile) to point to the intended file, and restores the global config after the test to avoid cross-test interference.",
   "module": "domain",
-  "fix_pattern": "infoschema: fix unstable test TestTableIfHasColumn",
+  "fix_pattern": "Use unique slow-log filenames and update/restore global SlowQueryFile config in tests to avoid shared-file interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41547",
     "https://github.com/pingcap/tidb/pull/41547.patch"

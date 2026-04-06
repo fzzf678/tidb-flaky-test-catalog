@@ -9,24 +9,23 @@
   "pr_merged_at": "2023-02-11T20:28:01+08:00",
   "test": {
     "type": "unit",
-    "path": "autoid_service/autoid_test.go",
+    "path": "sessiontxn/staleread/processor_test.go",
     "name": "TestStaleReadProcessorWithExecutePreparedStmt"
   },
   "symptoms": [
-    "* staleread: fix flaky test TestStaleReadProcessorWithExecutePreparedStmt (#39805) | tk.MustQuery(`select * from t order by b`).Check(testkit.Rows(\"\"+ (ddl/db_partition_test.go)"
+    "TestStaleReadProcessorWithExecutePreparedStmt was flaky due to timing sensitivity in stale-read timestamp calculation with a too-small read staleness window."
   ],
-  "failure_signature": "* staleread: fix flaky test TestStaleReadProcessorWithExecutePreparedStmt (#39805) | tk.MustQuery(`select * from t order by b`).Check(testkit.Rows(\"\"+ (ddl/db_partition_test.go)",
+  "failure_signature": "Stale-read processor test intermittently fails due to timing-sensitive @@tidb_read_staleness/expectedTS evaluation",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "insufficient_timeout",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: * staleread: fix flaky test TestStaleReadProcessorWithExecutePreparedStmt (#39805) | tk.MustQuery(`select * from t order by b`).Check(testkit.Rows(\"\"+ (ddl/db_partition_test.go).",
-  "module": "ddl",
-  "fix_pattern": "* staleread: fix flaky test TestStaleReadProcessorWithExecutePreparedStmt (#39805) | tk.MustQuery(`select * from t order by b`).Check(testkit.Rows(\"\"+ (ddl/db_partition_test.go)",
+  "root_cause_explanation": "The flake was caused by timing sensitivity in stale-read tests: using a small staleness value (e.g. `@@tidb_read_staleness=-5`) and sleep-based timing (`do sleep(...)`) can make the computed stale-read TS vary across runs. This PR stabilizes the test by increasing the staleness buffer (changing -5s to -100s) so the expected TS calculation is less sensitive to runtime timing and scheduling.",
+  "module": "txn",
+  "fix_pattern": "Increase the stale-read time buffer in tests (e.g. set @@tidb_read_staleness from -5s to -100s) to reduce timing sensitivity in expected stale-read TS evaluation.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41096",
     "https://github.com/pingcap/tidb/pull/41096.patch"

@@ -13,18 +13,18 @@
     "name": "TestAddIndexMergeConflictWithPessimistic"
   },
   "symptoms": [
-    "test: stabilize TestAddIndexMergeConflictWithPessimistic"
+    "TestAddIndexMergeConflictWithPessimistic was timing-sensitive: the test could roll back the pessimistic transaction before the DML in the DDL hook finished, making the expected blocking behavior unstable."
   ],
-  "failure_signature": "test: stabilize TestAddIndexMergeConflictWithPessimistic",
+  "failure_signature": "require.Fail(\"should be blocked by the pessimistic txn\") can trigger due to missing synchronization between hook DML and rollback",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: stabilize TestAddIndexMergeConflictWithPessimistic",
+  "root_cause_explanation": "The flakiness was caused by missing synchronization between asynchronous steps in the test: the DDL hook performs a pessimistic DML, and the main test flow expected the transaction to still be active and block an ADD INDEX merge. Without an explicit signal, rollback could happen too early. This PR stabilizes the test by adding a channel to signal completion of the pessimistic DML and waiting for it before rolling back, and it enables Bazel race checking for the test target.",
+  "module": "ddl",
+  "fix_pattern": "Add an explicit synchronization signal (channel) to wait for the hook's pessimistic DML to complete before rollback; enable Bazel race=on for indexmergetest.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40975",
     "https://github.com/pingcap/tidb/pull/40975.patch"

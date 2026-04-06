@@ -8,23 +8,23 @@
   },
   "pr_merged_at": "2023-02-10T11:14:00+08:00",
   "test": {
-    "type": "unit",
-    "path": "br/pkg/lightning/backend/local/engine.go",
-    "name": "lightning: fix panic when user cancel"
+    "type": "integration",
+    "path": "br/tests/lightning_checkpoint_chunks/run.sh",
+    "name": "lightning_checkpoint_chunks"
   },
   "symptoms": [
-    "#last_id=$(run_sql \"select n from $DB.auto_inc order by n desc limit 1\" | trim_sql_result) (br/tests/br_views_and_sequences/run.sh)"
+    "Lightning could panic when the user cancels the task (context cancellation) while restore workers/writer goroutines are still running (orphan goroutine / cleanup ordering issue)."
   ],
-  "failure_signature": "#last_id=$(run_sql \"select n from $DB.auto_inc order by n desc limit 1\" | trim_sql_result) (br/tests/br_views_and_sequences/run.sh)",
+  "failure_signature": "panic when lightning task is canceled while restoreEngine returns early without waiting for worker goroutines to finish (orphan goroutine)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: #last_id=$(run_sql \"select n from $DB.auto_inc order by n desc limit 1\" | trim_sql_result) (br/tests/br_views_and_sequences/run.sh).",
+  "root_cause_explanation": "The flakiness was caused by an async cancellation/cleanup ordering issue: when the Lightning task context is canceled, restoreEngine could return immediately from the chunk loop, leaving worker goroutines (e.g. writer/addSST) still running and triggering a panic (orphan goroutine). The fix breaks out of the loop on ctx.Done, waits for all goroutines (wg.Wait), then returns the cancellation error. A failpoint-based integration test is added to reliably trigger ctx cancellation and assert the process does not panic.",
   "module": "lightning",
-  "fix_pattern": "#last_id=$(run_sql \"select n from $DB.auto_inc order by n desc limit 1\" | trim_sql_result) (br/tests/br_views_and_sequences/run.sh)",
+  "fix_pattern": "On context cancellation, do not return early before waiting for goroutines; break out, `wg.Wait()`, then return ctx.Err; add a failpoint-based regression test for cancellation panic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41236",
     "https://github.com/pingcap/tidb/pull/41236.patch"

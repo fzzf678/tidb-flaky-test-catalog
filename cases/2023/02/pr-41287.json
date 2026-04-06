@@ -13,18 +13,18 @@
     "name": "stmtsummary_test"
   },
   "symptoms": [
-    "stmtsummary: fix data race in test"
+    "Race detector reports a data race in statement summary window rotation/persist logic exercised by TestStmtSummary (util/stmtsummary/v2/stmtsummary_test.go)."
   ],
-  "failure_signature": "stmtsummary: fix data race in test",
+  "failure_signature": "DATA RACE in StmtSummary.rotateLoop / async persist triggered by TestStmtSummary (util/stmtsummary/v2/stmtsummary_test.go)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: stmtsummary: fix data race in test.",
+  "root_cause_explanation": "The flakiness was caused by a concurrency/data-race issue in the statement summary rotation path: rotation triggers an asynchronous persist goroutine while the test also manipulates timing/timeNow and storage waiting, leading to concurrent access to shared state. The fix factors the rotation logic into a dedicated `rotate(now)` helper and updates the unit test to call `rotate()` directly (instead of relying on time mocking + a waitable mock storage), making the test deterministic and removing the racy async interaction.",
   "module": "module_unknown",
-  "fix_pattern": "stmtsummary: fix data race in test",
+  "fix_pattern": "Refactor rotation into a helper and make the test call it directly to avoid racing with async persist goroutines.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41287",
     "https://github.com/pingcap/tidb/pull/41287.patch"

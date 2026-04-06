@@ -13,19 +13,18 @@
     "name": "integration_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select * from t1 order by c2 limit 2;\").Check(testkit.Rows(\"a a\", \"a a\")) (planner/core/integration_test.go)"
+    "In TestIssue41355 (planner/core/integration_test.go), `select * from t1 order by c2 limit 2` can return incorrect rows when the optimizer incorrectly pushes TopN down while the ORDER BY expression references a virtual generated column."
   ],
-  "failure_signature": "tk.MustQuery(\"select * from t1 order by c2 limit 2;\").Check(testkit.Rows(\"a a\", \"a a\")) (planner/core/integration_test.go)",
+  "failure_signature": "TestIssue41355: tk.MustQuery(\"select * from t1 order by c2 limit 2\").Check(testkit.Rows(\"a a\", \"a a\")) fails (planner/core/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "unclassified"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(\"select * from t1 order by c2 limit 2;\").Check(testkit.Rows(\"a a\", \"a a\")) (planner/core/integration_test.go).",
+  "root_cause_explanation": "The flakiness was caused by an invalid/unstable plan choice: TopN should not be pushed down to TiKV/TiFlash when `TopN.ByItems` contains a virtual generated column, because virtual columns are not supported for pushdown in this context. Without the extra checks, the optimizer could push TopN down and produce incorrect results for `ORDER BY` on the virtual column. The fix adds checks to detect virtual generated columns in TopN.ByItems and prevents TopN pushdown accordingly, with regression tests covering both TiKV and TiFlash execution paths (Issue 41355).",
   "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"select * from t1 order by c2 limit 2;\").Check(testkit.Rows(\"a a\", \"a a\")) (planner/core/integration_test.go)",
+  "fix_pattern": "Prevent TopN pushdown when ORDER BY expressions reference virtual generated columns; add regression tests for TiKV/TiFlash.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41370",
     "https://github.com/pingcap/tidb/pull/41370.patch"

@@ -13,18 +13,18 @@
     "name": "bazel: set --test_keep_going false"
   },
   "symptoms": [
-    "@@ -19,7 +19,7 @@ build:race --config=ci"
+    "CI/build-only change: Bazel config toggles `--test_keep_going=false` (or moves it between `.bazelrc` and Makefile), without a concrete flaky test failure signature."
   ],
-  "failure_signature": "@@ -19,7 +19,7 @@ build:race --config=ci",
+  "failure_signature": "No concrete flaky failure signature in PR; only `.bazelrc`/Makefile flag changes (`--test_keep_going=false`)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: @@ -19,7 +19,7 @@ build:race --config=ci.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR only adjusts Bazel/CI flags (`--test_keep_going=false`) and does not contain any targeted fix tied to a specific flaky failure signature. Without CI logs or a root-cause explanation, we cannot determine what underlying flakiness is being addressed (if any).",
   "module": "test_infra",
-  "fix_pattern": "@@ -19,7 +19,7 @@ build:race --config=ci",
+  "fix_pattern": "Adjusted Bazel/CI flag `--test_keep_going=false`; no code-level stabilization fix in the patch.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41247",
     "https://github.com/pingcap/tidb/pull/41247.patch"

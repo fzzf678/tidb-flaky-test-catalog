@@ -9,24 +9,22 @@
   "pr_merged_at": "2023-02-22T16:01:07+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/distsqltest/distsql_test.go",
-    "name": "distsql_test"
+    "path": "planner/core/partition_pruner_test.go",
+    "name": "TestIssue22635"
   },
   "symptoms": [
-    "+ race = \"on\", | tk.MustQuery(\"SELECT (SELECT tt.a FROM t1 tt ORDER BY a ASC LIMIT 1) aa, COUNT(DISTINCT b) FROM t1 GROUP BY aa\").Check(testkit.Rows()) // work fine without any error (planner/core/partition_pruner_test.go)"
+    "In TestIssue22635 (planner/core/partition_pruner_test.go), a scalar subquery with `LIMIT 1` but without `ORDER BY` returns a non-deterministic row, causing unstable GROUP BY results/assertions."
   ],
-  "failure_signature": "+ race = \"on\", | tk.MustQuery(\"SELECT (SELECT tt.a FROM t1 tt ORDER BY a ASC LIMIT 1) aa, COUNT(DISTINCT b) FROM t1 GROUP BY aa\").Check(testkit.Rows()) // work fine without any error (planner/core/partition_pruner_test.go)",
+  "failure_signature": "TestIssue22635: query result varies because `(SELECT tt.a FROM t1 tt LIMIT 1)` has no ORDER BY (planner/core/partition_pruner_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "concurrency_data_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: + race = \"on\", | tk.MustQuery(\"SELECT (SELECT tt.a FROM t1 tt ORDER BY a ASC LIMIT 1) aa, COUNT(DISTINCT b) FROM t1 GROUP BY aa\").Check(testkit.Rows()) // work fine without any error (planner/core/partition_pruner_test.g….",
-  "module": "kv",
-  "fix_pattern": "+ race = \"on\", | tk.MustQuery(\"SELECT (SELECT tt.a FROM t1 tt ORDER BY a ASC LIMIT 1) aa, COUNT(DISTINCT b) FROM t1 GROUP BY aa\").Check(testkit.Rows()) // work fine without any error (planner/core/partition_pruner_test.go)",
+  "root_cause_explanation": "The flakiness was caused by relying on an unordered `LIMIT 1` subquery: `(SELECT tt.a FROM t1 tt LIMIT 1)` has no deterministic row order, so the chosen `aa` value can change across runs/engines and the GROUP BY result becomes unstable. The fix adds an explicit `ORDER BY a ASC/DESC` to the subquery so the selected row is deterministic and the test assertions become stable.",
+  "module": "planner",
+  "fix_pattern": "Add explicit ORDER BY to scalar subqueries with LIMIT in tests to avoid non-deterministic row selection.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41615",
     "https://github.com/pingcap/tidb/pull/41615.patch"

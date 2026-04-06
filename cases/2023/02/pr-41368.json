@@ -13,18 +13,18 @@
     "name": "executor_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Queries reading JSON/TEXT/BLOB (or very long VARCHAR) columns can behave unstably when chunk reuse is enabled; tests observe unexpected `@@last_sql_use_alloc` or wrong results due to reused backing buffers."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "executor tests: `@@last_sql_use_alloc` expected 0 for long varlen columns but got 1 (chunk reuse enabled), risking incorrect results due to buffer reuse",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "unsafe_zero_copy_alias"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
-  "module": "planner",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "The flakiness was caused by unsafe reuse of chunk memory (mutable backing buffer aliasing): when `tidb_enable_reuse_chunk` is on, reading long varlen types (JSON/TEXT/BLOB or very long VARCHAR) can lead to values being backed by reused buffers and becoming incorrect/unstable. The fix makes the optimizer detect plans that read such types and disables chunk reuse by clearing the allocator, and adds/updates regression tests that assert `@@last_sql_use_alloc=0` for these cases while keeping reuse for safe column types.",
+  "module": "executor",
+  "fix_pattern": "Detect long varlen column reads in the physical plan and disable chunk reuse (clear allocator); add regression tests asserting `@@last_sql_use_alloc` and stable results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41368",
     "https://github.com/pingcap/tidb/pull/41368.patch"

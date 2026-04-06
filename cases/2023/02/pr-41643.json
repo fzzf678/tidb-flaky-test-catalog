@@ -13,18 +13,18 @@
     "name": "TestCreateBindingRepeatedly"
   },
   "symptoms": [
-    "planner: fix unstable test TestCreateBindingRepeatedly"
+    "TestCreateBindingRepeatedly is unstable because `create session binding ...` updates binding metadata asynchronously; immediately querying `show bindings` can observe stale create/update times."
   ],
-  "failure_signature": "planner: fix unstable test TestCreateBindingRepeatedly",
+  "failure_signature": "TestCreateBindingRepeatedly: assertions on binding create_time/update_time fail because `show bindings` sees stale state right after creating/updating bindings (infoschema/cluster_tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix unstable test TestCreateBindingRepeatedly.",
+  "root_cause_explanation": "The flakiness was caused by timing-sensitive async state propagation: after creating/updating session bindings from history, the binding information (including timestamps) may not be immediately visible to `show bindings`. The test queried bindings right away and asserted on create/update times, which could intermittently read stale values. The fix adds small sleeps (10ms) between binding writes and `show bindings` reads to allow the state to settle.",
   "module": "planner",
-  "fix_pattern": "planner: fix unstable test TestCreateBindingRepeatedly",
+  "fix_pattern": "Add a short delay after creating/updating bindings before asserting via `show bindings` (sleep-based sync).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41643",
     "https://github.com/pingcap/tidb/pull/41643.patch"

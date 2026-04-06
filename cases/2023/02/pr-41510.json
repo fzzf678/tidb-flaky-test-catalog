@@ -13,18 +13,18 @@
     "name": "server_test"
   },
   "symptoms": [
-    "server: fix skip test when to enable race"
+    "Server unit tests were skipped entirely when running with the race detector due to `//go:build !race` build tags."
   ],
-  "failure_signature": "server: fix skip test when to enable race",
+  "failure_signature": "Race-enabled test runs: server tests excluded by build tags (`//go:build !race`) instead of executing",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "test_suite_setup_issue"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: server: fix skip test when to enable race.",
+  "root_cause_explanation": "The issue was caused by test-suite configuration/build tags: some server test files were guarded by `//go:build !race`, so enabling the race detector would silently skip those tests. The fix removes the `!race` build tags and makes the suite compatible with race-enabled runs (including minor assertion updates and Bazel/build adjustments) so tests execute instead of being skipped.",
   "module": "server",
-  "fix_pattern": "server: fix skip test when to enable race",
+  "fix_pattern": "Remove `//go:build !race` guards so race-enabled CI runs execute the server tests; adjust related test/build configuration for compatibility.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41510",
     "https://github.com/pingcap/tidb/pull/41510.patch"

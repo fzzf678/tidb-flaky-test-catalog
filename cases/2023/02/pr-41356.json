@@ -13,18 +13,20 @@
     "name": "TestTooLongBinaryPlan"
   },
   "symptoms": [
-    "planner: stabilize tests in `binary_plan_test.go`"
+    "Tests in planner/core/binary_plan_test.go are unstable due to cross-test interference from global sysvars (stmt summary/binary plan/slow log threshold) and overly strict assertions on binary plan characteristics (e.g. encoded plan size thresholds)."
   ],
-  "failure_signature": "planner: stabilize tests in `binary_plan_test.go`",
+  "failure_signature": "binary_plan_test: assertions fail intermittently due to global sysvar state leakage (tidb_enable_stmt_summary/tidb_generate_binary_plan/tidb_slow_log_threshold) and brittle size-based checks",
   "root_cause_categories": [
+    "shared_state_pollution",
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
+    "global_variable_mutation",
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: stabilize tests in `binary_plan_test.go`.",
+  "root_cause_explanation": "The flakiness was caused by (1) shared global state: several tests mutate global sysvars (tidb_generate_binary_plan, tidb_enable_stmt_summary, tidb_slow_log_threshold) without reliably restoring them, so other tests can affect outcomes; and (2) brittle assertions tied to exact/borderline binary plan properties (e.g. size thresholds) that can change with small planner/encoding differences. The fix restores the mutated global sysvars via `defer`, explicitly clears stmt summary state in TestTooLongBinaryPlan, and relaxes overly strict checks / adjusts the test input size (partition count) to reduce sensitivity.",
   "module": "planner",
-  "fix_pattern": "planner: stabilize tests in `binary_plan_test.go`",
+  "fix_pattern": "Restore global sysvars after tests and relax brittle binary-plan assertions (avoid borderline size thresholds / adjust input size) to reduce cross-test interference and plan variability.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41356",
     "https://github.com/pingcap/tidb/pull/41356.patch"

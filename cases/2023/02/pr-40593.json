@@ -13,19 +13,18 @@
     "name": "plan_test"
   },
   "symptoms": [
-    "tk.MustExec(\"(select /*+ agg_to_cop()*/ locate(t1.c3, t1.c3) as r0, t1.c3 as r1 from t1 where not( IsNull(t1.c1)) order by r0,r1) union all (select concat_ws(',', t2.c2, t2.c1) as r0, t2.c1 as r1 from t2 order by r0, r1) order by 1 limit 273;\") (planner/core/plan_test.go)"
+    "A query involving UNION ALL + ORDER BY + LIMIT could trigger a planner crash when TopN was pushed down below Projection while TopN.ByItems referenced a projection-generated column."
   ],
-  "failure_signature": "tk.MustExec(\"(select /*+ agg_to_cop()*/ locate(t1.c3, t1.c3) as r0, t1.c3 as r1 from t1 where not( IsNull(t1.c1)) order by r0,r1) union all (select concat_ws(',', t2.c2, t2.c1) as r0, t2.c1 as r1 from t2 order by r0, r1) order by 1 limit 273;\") (planner/core/plan_test.go)",
+  "failure_signature": "panic: nil pointer dereference in planner PhysicalTopN.attach2Task when TopN.ByItems contains a projection-generated column (ID=0).",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "unclassified"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustExec(\"(select /*+ agg_to_cop()*/ locate(t1.c3, t1.c3) as r0, t1.c3 as r1 from t1 where not( IsNull(t1.c1)) order by r0,r1) union all (select concat_ws(',', t2.c2, t2.c1) as r0, t2.c1 as r1 from t2 order by r0, r1)….",
+  "root_cause_explanation": "The failure was caused by an invalid optimizer transformation: when pushing TopN down below a Projection, TopN.ByItems could reference a column produced by the projection (unresolved by the underlying data source, with column ID=0). That made the physical planning path choose an invalid cop-task plan and led to a nil pointer dereference. This PR fixes the issue by checking whether TopN.ByItems contains projection-generated columns (or the projection cannot be eliminated) and preventing the TopN pushdown in that case.",
   "module": "planner",
-  "fix_pattern": "tk.MustExec(\"(select /*+ agg_to_cop()*/ locate(t1.c3, t1.c3) as r0, t1.c3 as r1 from t1 where not( IsNull(t1.c1)) order by r0,r1) union all (select concat_ws(',', t2.c2, t2.c1) as r0, t2.c1 as r1 from t2 order by r0, r1) order by 1 limit 273;\") (planner/core/plan_test.go)",
+  "fix_pattern": "Guard TopN pushdown below Projection: if TopN.ByItems references projection columns (ID=0/unresolved), keep Projection above TopN to avoid generating an invalid physical plan.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40593",
     "https://github.com/pingcap/tidb/pull/40593.patch"

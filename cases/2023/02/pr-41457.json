@@ -13,18 +13,18 @@
     "name": "*: update bazel config for copr"
   },
   "symptoms": [
-    "race = \"on\","
+    "Bazel-only change: adjust sharding configuration for store/copr go_test target (no concrete flaky failure signature)."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "No concrete flaky failure signature in PR; only shard_count change in store/copr/BUILD.bazel",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
-  "module": "module_unknown",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch only changes Bazel test sharding (adds `shard_count`) for the coprocessor store tests and does not provide a flaky failure signature or a root-cause explanation for a deterministic issue. Treat as needs-more-evidence until concrete logs justify the configuration.",
+  "module": "test_infra",
+  "fix_pattern": "Adjusted Bazel shard_count for copr tests; no code-level stabilization fix in this PR.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41457",
     "https://github.com/pingcap/tidb/pull/41457.patch"

@@ -13,18 +13,18 @@
     "name": "ttl: fix data race in TTL manager and test"
   },
   "symptoms": [
-    "ttl: fix data race in TTL manager and test"
+    "Race detector reports a data race between TTL job manager initialization and reads (Domain.StartTTLJobManager vs Domain.TTLJobManager)."
   ],
-  "failure_signature": "ttl: fix data race in TTL manager and test",
+  "failure_signature": "DATA RACE on Domain.ttlJobManager (concurrent Store/Load without synchronization)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: ttl: fix data race in TTL manager and test.",
+  "root_cause_explanation": "The flakiness was caused by a real data race: the TTL job manager pointer on Domain could be initialized in StartTTLJobManager while other goroutines read it via TTLJobManager() without synchronization. This PR fixes the race by storing the JobManager in an atomic.Pointer and using Store/Load for safe concurrent access.",
   "module": "domain",
-  "fix_pattern": "ttl: fix data race in TTL manager and test",
+  "fix_pattern": "Replace the raw Domain.ttlJobManager pointer with atomic.Pointer and use Store/Load to synchronize concurrent initialization and reads.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40976",
     "https://github.com/pingcap/tidb/pull/40976.patch"

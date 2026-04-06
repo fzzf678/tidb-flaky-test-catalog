@@ -13,19 +13,18 @@
     "name": "index_merge_reader_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select /*+ use_index_merge(t1, primary, t1a) */ * from t1 where id < 2 or a > 4 order by id\").Check(testkit.Rows(\"1 1 1 1 1\", (executor/index_merge_reader_test.go)"
+    "IndexMerge table-scan worker could crash in the panic-recovery path: the panic handler captured a nil task pointer and could not report the error via task.doneCh."
   ],
-  "failure_signature": "tk.MustQuery(\"select /*+ use_index_merge(t1, primary, t1a) */ * from t1 where id < 2 or a > 4 order by id\").Check(testkit.Rows(\"1 1 1 1 1\", (executor/index_merge_reader_test.go)",
+  "failure_signature": "panic in IndexMergeReaderExecutor indexMergeTableWorker / nil task in handlePickAndExecTaskPanic (cannot send error to task.doneCh)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select /*+ use_index_merge(t1, primary, t1a) */ * from t1 where id < 2 or a > 4 order by id\").Check(testkit.Rows(\"1 1 1 1 1\", (executor/index_merge_reader_test.go).",
+  "root_cause_explanation": "The crash was caused by a bug in async worker recovery: `pickAndExecTask` assigns the `task` pointer after it receives a work item, but the panic handler previously received `task` as a value argument (Golang pass-by-value). If a panic occurred, the handler could still see a nil task and crash/lose the chance to send the panic error to `task.doneCh`. This PR fixes it by passing the address of `task` into both `pickAndExecTask` and `handlePickAndExecTaskPanic` (so the assignment is visible) and guarding against nil before sending the error, with a failpoint-based regression test.",
   "module": "executor",
-  "fix_pattern": "tk.MustQuery(\"select /*+ use_index_merge(t1, primary, t1a) */ * from t1 where id < 2 or a > 4 order by id\").Check(testkit.Rows(\"1 1 1 1 1\", (executor/index_merge_reader_test.go)",
+  "fix_pattern": "Pass &task (pointer-to-pointer) into pickAndExecTask and the panic handler so the assigned task is visible during recovery; guard nil before sending to doneCh; add failpoint regression test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40904",
     "https://github.com/pingcap/tidb/pull/40904.patch"

@@ -13,20 +13,18 @@
     "name": "plan_cache_test"
   },
   "symptoms": [
-    "tk.MustExec(`prepare stmt from 'SELECT *, rank() OVER (PARTITION BY col2 ORDER BY COL1) FROM PK_LP9463 WHERE col1 != ? AND col1 < ?'`) (planner/core/plan_cache_test.go)"
+    "In TestIssue38335 (planner/core/plan_cache_test.go), executing a prepared statement can unexpectedly hit the plan cache (@@last_plan_from_cache=1) when the chosen plan contains Shuffle operators, leading to unstable behavior/assertions."
   ],
-  "failure_signature": "tk.MustExec(`prepare stmt from 'SELECT *, rank() OVER (PARTITION BY col2 ORDER BY COL1) FROM PK_LP9463 WHERE col1 != ? AND col1 < ?'`) (planner/core/plan_cache_test.go)",
+  "failure_signature": "TestIssue38335: @@last_plan_from_cache expected 0 but got 1 after executing a prepared statement whose plan contains Shuffle operators (planner/core/plan_cache_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "plan_cache_dependency",
-    "assert_exact_plan_or_cost"
+    "plan_cache_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: tk.MustExec(`prepare stmt from 'SELECT *, rank() OVER (PARTITION BY col2 ORDER BY COL1) FROM PK_LP9463 WHERE col1 != ?.",
+  "root_cause_explanation": "The flakiness was caused by a plan-cache dependency: the prepared statement could produce a plan containing Shuffle operators, which should not be cached/reused. Whether the execution hit the plan cache (and thus the observed behavior/assertions) could vary. The fix makes plan-cacheability checks detect PhysicalShuffle / PhysicalShuffleReceiverStub and skip plan cache for such plans, and adds a regression test that asserts @@last_plan_from_cache=0 and compares results to a non-prepared query.",
   "module": "planner",
-  "fix_pattern": "tk.MustExec(`prepare stmt from 'SELECT *, rank() OVER (PARTITION BY col2 ORDER BY COL1) FROM PK_LP9463 WHERE col1 != ? AND col1 < ?'`) (planner/core/plan_cache_test.go)",
+  "fix_pattern": "Skip plan cache when the physical plan contains Shuffle operators (MPP shuffle), and add a regression test asserting @@last_plan_from_cache=0 for the prepared statement.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41185",
     "https://github.com/pingcap/tidb/pull/41185.patch"
