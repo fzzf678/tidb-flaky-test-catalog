@@ -13,18 +13,18 @@
     "name": "conn_stmt_test"
   },
   "symptoms": [
-    "stmt, _, _, err := c.Context().Prepare(\"select * from (select 1 as id union all select 2 as id union all select 3 as id) t order by id\") (server/conn_stmt_test.go)"
+    "The patch mainly adds more unit/integration tests for cursor fetch behavior; the case does not capture a concrete flaky failure signature tied to nondeterministic ordering (server/conn_stmt_test.go)."
   ],
-  "failure_signature": "stmt, _, _, err := c.Context().Prepare(\"select * from (select 1 as id union all select 2 as id union all select 3 as id) t order by id\") (server/conn_stmt_test.go)",
+  "failure_signature": "No concrete failure signature captured (PR adds cursor-fetch tests).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: stmt, _, _, err := c.Context().Prepare(\"select * from (select 1 as id union all select 2 as id union all select 3 as id) t order by id\") (server/conn_stmt_test.go).",
+  "root_cause_explanation": "The referenced query already enforces ordering (`ORDER BY id`) and the patch is primarily adding tests for cursor fetch. Without a recorded flaky signature or a targeted stabilization for nondeterministic ordering/timing, classify this case as insufficient evidence rather than guessing a nondeterministic result ordering root cause.",
   "module": "server",
-  "fix_pattern": "stmt, _, _, err := c.Context().Prepare(\"select * from (select 1 as id union all select 2 as id union all select 3 as id) t order by id\") (server/conn_stmt_test.go)",
+  "fix_pattern": "Add test coverage for cursor fetch behavior; no clearly evidenced targeted flaky stabilization change in the case.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45232",
     "https://github.com/pingcap/tidb/pull/45232.patch"

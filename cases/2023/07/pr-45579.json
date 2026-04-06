@@ -13,18 +13,19 @@
     "name": "TestSetLabelsConcurrentWithGetLabel"
   },
   "symptoms": [
-    "*: Fix data race in TestSetLabelsConcurrentWithGetLabel"
+    "Go race detector reported a data race in concurrent label updates vs global config reads, and the regression test itself required stable goroutine termination (server/http_handler.go, server/http_handler_test.go)."
   ],
-  "failure_signature": "*: Fix data race in TestSetLabelsConcurrentWithGetLabel",
+  "failure_signature": "DATA RACE: concurrent reads of global config and in-place mutation of `cfg.Labels` map during label updates; plus potential instability in the test's background goroutine stop signal.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
+    "global_variable_mutation",
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: Fix data race in TestSetLabelsConcurrentWithGetLabel.",
-  "module": "module_unknown",
-  "fix_pattern": "*: Fix data race in TestSetLabelsConcurrentWithGetLabel",
+  "root_cause_explanation": "The race comes from updating the global config labels map in-place while other goroutines read config concurrently (maps are not safe for concurrent mutation). The fix avoids mutating the existing `cfg.Labels` map: it merges old labels into a new map and then replaces `cfg.Labels` atomically with the new map before storing the global config. The regression test exercises concurrent POST /labels and config reads, and it also tightens the stop signaling for the background goroutine to keep the test itself stable (server/http_handler.go, server/http_handler_test.go).",
+  "module": "server",
+  "fix_pattern": "Avoid in-place mutation of shared global maps; replace `cfg.Labels` atomically, and make concurrency tests use a robust goroutine stop signal to avoid test-level races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45579",
     "https://github.com/pingcap/tidb/pull/45579.patch"

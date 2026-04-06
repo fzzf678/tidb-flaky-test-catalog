@@ -13,18 +13,19 @@
     "name": "lfu_cache_test"
   },
   "symptoms": [
-    "*: fix unstable test for lfu and index merge"
+    "The LFU cache test asserted memory cost immediately after `Put(...)`, but internal updates could be asynchronous; assertions could run before the cost accounting stabilized. Separately, an index merge test target sometimes needed a longer timeout (executor/test/indexmergereadtest, statistics/handle/cache/internal/lfu/lfu_cache_test.go)."
   ],
-  "failure_signature": "*: fix unstable test for lfu and index merge",
+  "failure_signature": "Intermittent cost assertion mismatch in LFU cache tests due to async updates; and occasional timeouts in index merge tests under a too-short timeout setting.",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "async_wait_without_backoff",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: *: fix unstable test for lfu and index merge.",
-  "module": "kv",
-  "fix_pattern": "*: fix unstable test for lfu and index merge",
+  "root_cause_explanation": "The instability is timing-related: LFU cache cost accounting can lag behind `Put(...)` operations, so checking `Cost()` immediately can be flaky. The fix adds explicit waits (`lfu.wait()`) between updates and assertions so the internal state converges before checking. In addition, the index merge test target's timeout is increased from short to moderate to reduce timeout flakes (statistics/handle/cache/internal/lfu/lfu_cache_test.go, executor/test/indexmergereadtest/BUILD.bazel).",
+  "module": "statistics",
+  "fix_pattern": "Add explicit synchronization/waiting before asserting async-updated state, and increase too-short test timeouts when needed.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45648",
     "https://github.com/pingcap/tidb/pull/45648.patch"

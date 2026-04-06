@@ -13,18 +13,19 @@
     "name": "import_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "The tests previously modified a global Lightning/ImportInto configuration (`config.DefaultBatchSize`) to force specific engine-splitting behavior, which can leak across tests and cause instability when tests run concurrently (tests/realtikvtest/importintotest/import_into_test.go)."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Test instability due to global config mutation (`config.DefaultBatchSize`) affecting other tests/executions.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
   "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
   "module": "executor",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "The flakiness risk comes from shared state pollution: the test suite temporarily changed the global Lightning config (`config.DefaultBatchSize`) to influence engine splitting, which can interfere with other tests or concurrent runs even with cleanup. The fix introduces a test-only per-statement option (`__max_engine_size`) so the test can control engine/subtask size without mutating global process-wide configuration, improving isolation and stability.",
+  "fix_pattern": "Avoid mutating global config in tests; use a per-test/per-statement option (e.g., `__max_engine_size`) to achieve the same behavior without shared-state leakage.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45488",
     "https://github.com/pingcap/tidb/pull/45488.patch"

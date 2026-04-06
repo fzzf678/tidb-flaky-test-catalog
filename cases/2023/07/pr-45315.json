@@ -13,19 +13,18 @@
     "name": "union_scan_test"
   },
   "symptoms": [
-    "tk.HasPlan(\"select b from t use index(k) where b > 50 order by b desc\", \"IndexReader\") (executor/union_scan_test.go)"
+    "The case does not include a concrete flaky failure signature. The referenced `HasPlan(...)` checks are used for benchmarks/tests, and the PR is mainly a UnionScan feature/performance change (executor/union_scan_test.go)."
   ],
-  "failure_signature": "tk.HasPlan(\"select b from t use index(k) where b > 50 order by b desc\", \"IndexReader\") (executor/union_scan_test.go)",
+  "failure_signature": "No concrete failure signature captured (PR mainly adds/optimizes UnionScan behavior and adds benchmark plan checks).",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.HasPlan(\"select b from t use index(k) where b > 50 order by b desc\", \"IndexReader\") (executor/union_scan_test.go).",
-  "module": "module_unknown",
-  "fix_pattern": "tk.HasPlan(\"select b from t use index(k) where b > 50 order by b desc\", \"IndexReader\") (executor/union_scan_test.go)",
+  "root_cause_explanation": "The patch introduces/optimizes UnionScan behavior (lowerBound / iterator reserve) and adds benchmark/test plan checks, but the case does not capture an actual flaky failure signature or a targeted stabilization for a flaky mechanism. Classify as insufficient evidence rather than guessing nondeterministic ordering or plan-selection causes.",
+  "module": "executor",
+  "fix_pattern": "Feature/performance change to UnionScan; no clearly evidenced targeted flaky stabilization change in the case.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45315",
     "https://github.com/pingcap/tidb/pull/45315.patch"

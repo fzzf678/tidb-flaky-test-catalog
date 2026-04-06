@@ -13,18 +13,18 @@
     "name": "lru_cache_test"
   },
   "symptoms": [
-    "- t.Skip(\"exhaustive types test, skip race test\")"
+    "The change skips an exhaustive types test under the race detector (\"skip race test\"), which is a mitigation/quarantine rather than a documented flaky root-cause fix."
   ],
-  "failure_signature": "- t.Skip(\"exhaustive types test, skip race test\")",
+  "failure_signature": "No concrete failure signature captured (test is skipped under -race as a mitigation).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: - t.Skip(\"exhaustive types test, skip race test\").",
+  "root_cause_explanation": "This change mitigates instability by skipping an exhaustive types test when running under the race detector. Without a concrete flaky signature and a targeted fix explaining the underlying flakiness, classify as insufficient evidence rather than asserting a confirmed data-race root cause.",
   "module": "statistics",
-  "fix_pattern": "- t.Skip(\"exhaustive types test, skip race test\")",
+  "fix_pattern": "Quarantine/mitigate by skipping the test under `-race`; no clear root cause fix evidenced in the case.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45581",
     "https://github.com/pingcap/tidb/pull/45581.patch"

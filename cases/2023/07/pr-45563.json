@@ -13,18 +13,19 @@
     "name": "http_handler_test"
   },
   "symptoms": [
-    "*: Fix data race between getting labels and setting labels in config"
+    "Go race detector reported a data race when updating server labels via HTTP while other goroutines read global config (server/http_handler.go, server/http_handler_test.go)."
   ],
-  "failure_signature": "*: Fix data race between getting labels and setting labels in config",
+  "failure_signature": "DATA RACE: concurrent reads of global config and in-place mutation of `cfg.Labels` map during label updates.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
+    "global_variable_mutation",
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: Fix data race between getting labels and setting labels in config.",
-  "module": "module_unknown",
-  "fix_pattern": "*: Fix data race between getting labels and setting labels in config",
+  "root_cause_explanation": "The race comes from updating the global config labels map in-place while other goroutines read config concurrently (maps are not safe for concurrent mutation). The fix avoids mutating the existing `cfg.Labels` map: it merges old labels into a new map and then replaces `cfg.Labels` atomically with the new map before storing the global config. A regression test runs label updates concurrently with config reads to reproduce the issue under `-race` (server/http_handler.go, server/http_handler_test.go).",
+  "module": "server",
+  "fix_pattern": "Avoid in-place mutation of shared global maps; build a new labels map and replace `cfg.Labels` atomically before storing global config.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45563",
     "https://github.com/pingcap/tidb/pull/45563.patch"
