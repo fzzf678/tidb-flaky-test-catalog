@@ -17,14 +17,14 @@
   ],
   "failure_signature": "stmtID, _, _, err := tk.Session().PrepareStmt(\"select * from t as of timestamp now(3) - interval 1000 microsecond order by id asc\") (executor/stale_txn_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by"
+    "plan_cache_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: stmtID, _, _, err := tk.Session().PrepareStmt(\"select * from t as of timestamp now(3) - interval 1000 microsecond order by id asc\") (executor/stale_txn_test.go).",
-  "module": "planner",
-  "fix_pattern": "stmtID, _, _, err := tk.Session().PrepareStmt(\"select * from t as of timestamp now(3) - interval 1000 microsecond order by id asc\") (executor/stale_txn_test.go)",
+  "root_cause_explanation": "The prepared STALE READ statement is time-sensitive: it uses `AS OF TIMESTAMP now(3) - interval ...` and is executed via prepared statement / plan cache. Previously, the as-of timestamp could be evaluated once and then reused when the statement plan was cached, making the snapshot ts effectively stale and causing intermittent failures depending on timing (e.g., snapshot ts not properly reflecting subsequent commits). This PR stabilizes the behavior by recalculating the stale-read snapshot ts when executing a cached statement, and the test also adds a small delay to ensure the evaluated stale-read ts is safely greater than the commit ts.",
+  "module": "txn",
+  "fix_pattern": "For time-dependent STALE READ prepared statements, avoid caching a single snapshot timestamp across executions; re-evaluate the staleness timestamp at execution time (especially under plan cache) and add explicit waiting/interval slack in tests so `staleread_ts > commit_ts` is reliably satisfied.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43204",
     "https://github.com/pingcap/tidb/pull/43204.patch"

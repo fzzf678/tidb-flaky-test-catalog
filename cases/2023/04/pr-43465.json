@@ -13,19 +13,18 @@
     "name": "physical_plan_test"
   },
   "symptoms": [
-    "+ race = \"on\", | tk.MustExec(\"explain select /*+ use_index_merge( `aa311c3c` ) */ `aa311c3c`.`43b06e99` as r0 , `aa311c3c`.`6302d8ac` as r1 from `aa311c3c` where IsNull( `aa311c3c`.`b80b3746` ) or not( `aa311c3c`.`57fd8d09` >= '2008' ) order by r0,r1 limit 95\") (planner/core/casetest/physical_plan_test.go)"
+    "panic: out-of-bound slice access in index-merge order property pushdown (planner/core/task.go)"
   ],
-  "failure_signature": "+ race = \"on\", | tk.MustExec(\"explain select /*+ use_index_merge( `aa311c3c` ) */ `aa311c3c`.`43b06e99` as r0 , `aa311c3c`.`6302d8ac` as r1 from `aa311c3c` where IsNull( `aa311c3c`.`b80b3746` ) or not( `aa311c3c`.`57fd8d09` >= '2008' ) order by r0,r1 limit 95\") (planner/core/casetest/physical_plan_test.go)",
+  "failure_signature": "panic: index out of range in `PhysicalTopN.checkOrderPropForSubIndexScan` (planner/core/task.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: + race = \"on\", | tk.MustExec(\"explain select /*+ use_index_merge( `aa311c3c` ) */ `aa311c3c`.`43b06e99` as r0 , `aa311c3c`.`6302d8ac` as r1 from `aa311c3c` where IsNull( `aa311c3c`.`b80b3746` ) or not( `aa311c3c`.`57fd8d….",
+  "root_cause_explanation": "A planner bug could cause an out-of-bound panic while pushing down order properties for IndexMerge plans. Specifically, `checkOrderPropForSubIndexScan` used an incorrect slice-bound check and could index `constColsByCond[idxPos]` when `idxPos == len(constColsByCond)`, triggering `panic: index out of range` during planning/explain for certain queries. This PR fixes the boundary condition (`idxPos >= len(...)`) and adds a regression issue test to ensure the `EXPLAIN ... use_index_merge ... ORDER BY ... LIMIT ...` case does not panic.",
   "module": "planner",
-  "fix_pattern": "+ race = \"on\", | tk.MustExec(\"explain select /*+ use_index_merge( `aa311c3c` ) */ `aa311c3c`.`43b06e99` as r0 , `aa311c3c`.`6302d8ac` as r1 from `aa311c3c` where IsNull( `aa311c3c`.`b80b3746` ) or not( `aa311c3c`.`57fd8d09` >= '2008' ) order by r0,r1 limit 95\") (planner/core/casetest/physical_plan_test.go)",
+  "fix_pattern": "Fix slice bounds checks in planner property propagation (e.g., use `idxPos >= len(slice)` before indexing) and add a regression test that executes the problematic `EXPLAIN` query to ensure no panic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43465",
     "https://github.com/pingcap/tidb/pull/43465.patch"

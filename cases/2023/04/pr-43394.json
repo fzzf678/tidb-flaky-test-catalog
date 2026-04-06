@@ -17,16 +17,14 @@
   ],
   "failure_signature": "rows := dbt.MustQuery(\"select plan from information_schema.slow_query where query like 'load data local infile % into table t_slow with thread=1;' order by time desc limit 1\") (server/server_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "external_dependency"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "real_tikv_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: rows := dbt.MustQuery(\"select plan from information_schema.slow_query where query like 'load data local infile % into table t_slow with thread=1;' order by time desc limit 1\") (server/server_test.go).",
-  "module": "module_unknown",
-  "fix_pattern": "rows := dbt.MustQuery(\"select plan from information_schema.slow_query where query like 'load data local infile % into table t_slow with thread=1;' order by time desc limit 1\") (server/server_test.go)",
+  "root_cause_explanation": "These real-tikv LOAD DATA tests were sensitive to environment-specific concurrency: the number of LOAD DATA worker threads was implicitly determined (via `ignoreInTest`) rather than being explicitly controlled in the test SQL. That can make behavior and performance vary across CI environments and lead to unstable results (including difficulty matching the intended slow-query record). This PR stabilizes the tests by making the concurrency explicit—adding `WITH thread=1` to the relevant LOAD DATA statements and updating the slow_query filter to match the thread=1 variant—reducing non-determinism from parallel execution and resource contention.",
+  "module": "lightning",
+  "fix_pattern": "For real-tikv LOAD DATA tests, avoid environment-dependent implicit parallelism; set `WITH thread=1` (and other options) explicitly and make any slow_query/system-table assertions match a unique, deterministic query signature.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43394",
     "https://github.com/pingcap/tidb/pull/43394.patch"

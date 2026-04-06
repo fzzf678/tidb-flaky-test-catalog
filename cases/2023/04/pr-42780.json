@@ -13,18 +13,18 @@
     "name": "local_test"
   },
   "symptoms": [
-    "+ // race with retryer.push(job)"
+    "Potential race between closing the region-job retryer and pushing jobs back can cause hangs/flaky behavior."
   ],
-  "failure_signature": "+ // race with retryer.push(job)",
+  "failure_signature": "race between retryer.close() and retryer.push(job) leading to job accounting mismatch/hang",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + // race with retryer.push(job).",
+  "root_cause_explanation": "The flakiness risk comes from a concurrency race in the region-job retry loop: the retryer can be closed (e.g., due to worker error) while other goroutines still attempt to `push(job)` back for retry. Without handling this close-vs-push race, job accounting (e.g., `WaitGroup`/completion signals) can be inconsistent and lead to hangs or intermittent failures in tests. This PR mitigates it by making `retryer.push` return a boolean and explicitly handling the \"closed\" case (calling `jobWg.Done()` when a job cannot be enqueued because the retryer is closed).",
   "module": "lightning",
-  "fix_pattern": "+ // race with retryer.push(job)",
+  "fix_pattern": "When producer goroutines may enqueue work into a component that can be concurrently closed, make enqueue operations report failure and ensure the close path cleans up job accounting (e.g., `WaitGroup.Done`) to avoid hangs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42780",
     "https://github.com/pingcap/tidb/pull/42780.patch"

@@ -13,18 +13,18 @@
     "name": "engine_process_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Bazel test metadata: flaky = True, race = \"on\""
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Bazel test metadata: flaky = True, race = \"on\"",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "The LOAD DATA importer pipeline runs multiple goroutines (encode + deliver) that need correct cancellation and error propagation. The previous implementation used custom goroutine/channel coordination, which can lead to subtle race/hang/leak scenarios under early-return or context cancellation (and race-enabled tests tend to surface these issues). This PR stabilizes the concurrency behavior by refactoring the chunk processing loop to use `errgroup.WithContext`, ensuring encode/deliver loops share the same context, propagate errors consistently, and exit cleanly. It also updates the Bazel `importer_test` target (e.g., removing a problematic test file and adjusting `shard_count`) to reduce instability under `race = \"on\"`.",
   "module": "executor",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "For coupled goroutines in a pipeline, use `errgroup.WithContext` (or equivalent) instead of ad-hoc channels so cancellation and errors reliably stop all goroutines; keep race-enabled Bazel targets stable by isolating/removing flaky tests and tuning shard count when needed.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43245",
     "https://github.com/pingcap/tidb/pull/43245.patch"

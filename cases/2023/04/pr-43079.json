@@ -13,18 +13,18 @@
     "name": "local_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Intermittent NotLeader / stale region info during ingest can cause failures like \"write to tikv with no leader returned\"."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "panic: write to tikv with no leader returned (NotLeader / stale region info)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "The ingest workflow can hit transient TiKV region/leader changes: a NotLeader error may indicate the region's leader/peers have changed, and stale region info can lead to failures like \"no leader returned\". Previously, the code attempted to continue ingest with partially updated information, which could fail when the region metadata was fully updated but the error surface was still just NotLeader. This PR stabilizes the process by always converting the job back to `needRescan` on NotLeader, forcing a full region-info refresh before retrying.",
   "module": "lightning",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "On transient NotLeader/stale-region errors, rescan/refresh the full region info and retry from a safe stage (e.g., `needRescan`) instead of proceeding with stale leader/peer metadata.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43079",
     "https://github.com/pingcap/tidb/pull/43079.patch"

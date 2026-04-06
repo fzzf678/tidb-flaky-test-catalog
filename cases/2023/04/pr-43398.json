@@ -13,18 +13,18 @@
     "name": "oom_test"
   },
   "symptoms": [
-    "oomtest: fix data race in the oomtest"
+    "Data race in oomtest log capture hook (`oomCapture.Write`) due to concurrent access to shared fields."
   ],
-  "failure_signature": "oomtest: fix data race in the oomtest",
+  "failure_signature": "Lock `oomCapture.Write` around `messageFilter`/`tracker` access (executor/oomtest/oom_test.go)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: oomtest: fix data race in the oomtest.",
-  "module": "module_unknown",
-  "fix_pattern": "oomtest: fix data race in the oomtest",
+  "root_cause_explanation": "The OOM test installs a capture hook that is invoked from zap logging and may be called concurrently. In `oomCapture.Write`, the code accessed shared fields (`messageFilter` and `tracker`) with inconsistent locking, which can trigger a data race under concurrent log writes. This PR fixes the race by acquiring the mutex before the filter check and holding it through the `tracker` update (using a `defer` unlock), making the hook thread-safe.",
+  "module": "executor",
+  "fix_pattern": "For callbacks/hooks that may be invoked concurrently (e.g., zap log hooks), protect all shared state reads/writes with a mutex and keep the critical section consistent (lock before checks and updates).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43398",
     "https://github.com/pingcap/tidb/pull/43398.patch"

@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "assert_exact_error_message"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustMatchErrMsg(\"insert into t select a from t1 order by a desc;\", memory.PanicMemoryExceedWarnMsg) (executor/executor_test.go).",
-  "module": "server",
-  "fix_pattern": "tk.MustMatchErrMsg(\"insert into t select a from t1 order by a desc;\", memory.PanicMemoryExceedWarnMsg) (executor/executor_test.go)",
+  "root_cause_explanation": "The tests were unstable because they asserted on the exact/regex error message for out-of-memory quota failures, while the message format could vary across code paths (single-query quota vs instance quota) and include different suffixes/details. This PR stabilizes the behavior by standardizing the memory-quota error messages (e.g., introducing/reusing `memory.PanicMemoryExceedWarnMsg` and consistent suffixes) and updating tests to match the stable constant/prefix/contains checks instead of brittle patterns.",
+  "module": "executor",
+  "fix_pattern": "Avoid brittle full-string error message assertions when the message may vary by code path; standardize the error message format and assert using stable constants/prefix/contains checks (e.g., `memory.PanicMemoryExceedWarnMsg`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43182",
     "https://github.com/pingcap/tidb/pull/43182.patch"

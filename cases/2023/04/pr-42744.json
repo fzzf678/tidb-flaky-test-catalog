@@ -17,14 +17,14 @@
   ],
   "failure_signature": "*: fix unstable test TestPoolTuneScaleUpAndDown",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: *: fix unstable test TestPoolTuneScaleUpAndDown.",
-  "module": "kv",
-  "fix_pattern": "*: fix unstable test TestPoolTuneScaleUpAndDown",
+  "root_cause_explanation": "The test was flaky because it relied on fixed `time.Sleep(...)` delays to wait for asynchronous worker pool state transitions (`p.Running()` and a counter) to converge. Depending on scheduling/CPU load, those fixed sleeps can be too short, causing intermittent assertion failures. This PR stabilizes the test by replacing sleeps with `require.Eventually(...)` with a bounded timeout, waiting until the expected state is observed.",
+  "module": "module_unknown",
+  "fix_pattern": "Replace fixed sleeps used for async coordination with bounded polling (`Eventually`) when asserting asynchronous state transitions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42744",
     "https://github.com/pingcap/tidb/pull/42744.patch"

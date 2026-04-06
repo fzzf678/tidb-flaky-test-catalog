@@ -17,14 +17,14 @@
   ],
   "failure_signature": "server: skip unstable test TestDBStmtCount",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: server: skip unstable test TestDBStmtCount.",
+  "root_cause_explanation": "The test was unstable because it asserts deltas on global statement-count metrics collected before/after the test. When other tests run concurrently, their statements pollute these shared metrics, making the expected deltas nondeterministic. This PR mitigates the flakiness by skipping the test (`t.Skip(\"unstable test\")`) and documenting the shared-metrics pollution as the root cause.",
   "module": "server",
-  "fix_pattern": "server: skip unstable test TestDBStmtCount",
+  "fix_pattern": "Avoid asserting exact deltas on shared/global metrics that can be polluted by other tests; isolate/reset the metric source or, as a last resort, skip the unstable test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43139",
     "https://github.com/pingcap/tidb/pull/43139.patch"

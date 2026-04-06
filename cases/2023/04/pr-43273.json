@@ -13,18 +13,18 @@
     "name": "TestIndexMergeReaderClose"
   },
   "symptoms": [
-    "*: fix unstable test TestIndexMergeReaderClose"
+    "Goroutine cleanup after closing IndexMergeReader is asynchronous; immediate `checkGoroutineExists(...)` assertions can fail intermittently."
   ],
-  "failure_signature": "*: fix unstable test TestIndexMergeReaderClose",
+  "failure_signature": "`checkGoroutineExists(\"fetchLoop\"/\"fetchHandles\"/...)` needs eventual waiting (executor/seqtest/seq_executor_test.go)",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: *: fix unstable test TestIndexMergeReaderClose.",
-  "module": "kv",
-  "fix_pattern": "*: fix unstable test TestIndexMergeReaderClose",
+  "root_cause_explanation": "The test was timing-sensitive: it injected an error path and then immediately asserted that several internal goroutines (`fetchLoop`, `fetchHandles`, `waitPartialWorkersAndCloseFetchChan`) no longer existed. Goroutine shutdown after cancellation/close is not instantaneous, so the check can fail depending on scheduling and load. This PR stabilizes the test by using `require.Eventually` to wait (with a bounded timeout) until the goroutines have exited before asserting success.",
+  "module": "executor",
+  "fix_pattern": "When verifying goroutine shutdown/cleanup, avoid immediate assertions; use `require.Eventually` (or a similar retry-with-timeout) to wait for async goroutines to exit after close/cancel.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43273",
     "https://github.com/pingcap/tidb/pull/43273.patch"

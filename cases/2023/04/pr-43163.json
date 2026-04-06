@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: sort.Sort(data) (table/tables/tables_test.go).",
+  "root_cause_explanation": "The checksum-related logic could behave non-deterministically when the row/column data used for checksum calculation was not in a stable order. That can lead to different encoded row bytes / checksum values across runs and cause intermittent checksum assertion failures. This PR stabilizes the behavior by sorting the row data before computing/validating checksums (e.g., `sort.Sort(data)` / sorting `rowcodec.RowData`), making checksum generation deterministic.",
   "module": "ddl",
-  "fix_pattern": "sort.Sort(data) (table/tables/tables_test.go)",
+  "fix_pattern": "When computing/validating row-level checksums, ensure the row/column data is in a deterministic order (e.g., sort `rowcodec.RowData` by column ID) before encoding/checksum calculation and before assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43163",
     "https://github.com/pingcap/tidb/pull/43163.patch"

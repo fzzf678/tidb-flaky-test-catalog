@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: oomtest: fix data race at the oomCapture.",
-  "module": "module_unknown",
-  "fix_pattern": "oomtest: fix data race at the oomCapture",
+  "root_cause_explanation": "The OOM test hook (`oomCapture`) maintains shared mutable state (`messageFilter` and `tracker`) that can be accessed by the zap logging pipeline concurrently. Without synchronization, `ClearMessageFilter()` and `Write()` can race, causing `-race` failures and flaky behavior. This PR stabilizes it by adding a mutex lock around `messageFilter.Clear()` and around updates to `h.tracker`.",
+  "module": "executor",
+  "fix_pattern": "Protect shared state used by concurrent log hooks with a mutex (lock around both reads/writes and mutations such as `Clear()`), so `-race` does not report data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43121",
     "https://github.com/pingcap/tidb/pull/43121.patch"

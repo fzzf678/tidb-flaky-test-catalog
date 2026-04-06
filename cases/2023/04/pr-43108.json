@@ -9,22 +9,22 @@
   "pr_merged_at": "2023-04-20T12:27:20+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/loaddatatest/load_data_test.go",
-    "name": "load_data_test"
+    "path": "server/server_test.go",
+    "name": "DBStatementCount"
   },
   "symptoms": [
-    "fix a unstable test"
+    "Statement-count metrics assertions were unstable (e.g., `USE` counts can vary due to background/session behavior)."
   ],
-  "failure_signature": "fix a unstable test",
+  "failure_signature": "unstable statement-count assertions (DBStatementCount / USE count)",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: fix a unstable test.",
-  "module": "module_unknown",
-  "fix_pattern": "fix a unstable test",
+  "root_cause_explanation": "The DB statement-count test was flaky because it asserted exact deltas on global statement metrics, which can be affected by additional background/session statements (notably `USE`). Such shared/global metrics are sensitive to unrelated activity and can vary across runs. This PR mitigates the instability by adjusting the expected deltas and removing the unstable `Use` statement-count assertion.",
+  "module": "server",
+  "fix_pattern": "Avoid asserting exact deltas on shared/global metrics that can be affected by unrelated background statements; either reset/isolate the metric source or relax/remove unstable assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43108",
     "https://github.com/pingcap/tidb/pull/43108.patch"
@@ -34,6 +34,7 @@
     "executor/importer/import.go",
     "executor/load_data.go",
     "executor/loadremotetest/one_csv_test.go",
+    "server/server_test.go",
     "go.mod"
   ],
   "triage": {

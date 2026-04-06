@@ -20,11 +20,11 @@
     "external_dependency"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: EE team set too many concurrencies for tidb UT.",
-  "module": "kv",
-  "fix_pattern": "EE team set too many concurrencies for tidb UT. so that many UT are very easy to become the unstable test for high CPU usage.",
+  "root_cause_explanation": "Some tests were unstable under CI load because the test runner was spawning too many concurrent jobs, causing CPU/resource contention and increasing the likelihood of timeouts or timing-sensitive failures. This PR reduces that environment-driven flakiness by capping Bazel coverage test concurrency via `--jobs=35` in the Makefile.",
+  "module": "test_infra",
+  "fix_pattern": "When CI flakiness is dominated by resource contention, cap the test runner's parallelism (e.g., Bazel `--jobs`) to reduce load and stabilize timings.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43023",
     "https://github.com/pingcap/tidb/pull/43023.patch"
