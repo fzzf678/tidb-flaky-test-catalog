@@ -13,18 +13,18 @@
     "name": "*: update bazel config"
   },
   "symptoms": [
-    "build:race --config=ci"
+    "Bazel tests were unstable due to test configuration/timeouts (e.g. tests marked timeout=short but exceeding the short timeout range)."
   ],
-  "failure_signature": "build:race --config=ci",
+  "failure_signature": "Bazel reports tests are outside of range for SHORT tests / timeouts; suggests setting timeout=\"moderate\" or size=\"medium\"",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: build:race --config=ci.",
+  "root_cause_explanation": "The flakiness came from test infrastructure configuration: some Bazel go_test targets were configured with too-short timeouts (timeout=short) and would intermittently exceed them, triggering Bazel warnings/errors about being outside the SHORT range. This PR stabilizes CI by increasing affected targets' timeouts to moderate and adjusting sharding-related settings (e.g. shard_count), plus minor bazelrc tweaks for output/logging.",
   "module": "test_infra",
-  "fix_pattern": "build:race --config=ci",
+  "fix_pattern": "Increase Bazel go_test timeouts from short to moderate (and tune shard_count / bazelrc settings) to avoid flaky timeout failures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41127",
     "https://github.com/pingcap/tidb/pull/41127.patch"

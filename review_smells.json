@@ -560,6 +560,46 @@
       "applies_to": ["unit", "integration", "realtikv"],
       "severity": 2,
       "status": "active"
+    },
+    {
+      "key": "unsupported_pushdown",
+      "title": "Unsupported pushdown (virtual/generated columns or unsupported expressions)",
+      "description": "The optimizer pushes down operators (e.g. TopN/Sort) to TiKV/TiFlash when ORDER BY / filter expressions reference virtual/generated columns or expressions not supported for pushdown.",
+      "why_risky": "Unsupported pushdown can lead to incorrect results or panics, and the behavior may vary across engines (TiKV vs TiFlash) or plan choices, making tests intermittently fail.",
+      "review_questions": [
+        "Does the plan push down TopN/Sort/filters to coprocessor while using virtual/generated columns in the expressions?",
+        "Are there engine-specific limitations (TiKV/TiFlash) for the pushed-down expressions/operators?",
+        "Would a different plan choice change whether the operator is pushed down?"
+      ],
+      "suggested_fixes": [
+        "Add capability checks to prevent pushdown when expressions/operators are not supported",
+        "Materialize virtual/generated expressions at the right layer (keep TopN/Sort on root when needed)",
+        "Add regression tests to assert correctness across TiKV/TiFlash paths"
+      ],
+      "related_root_causes": ["nondeterministic_plan_selection"],
+      "applies_to": ["unit", "integration", "realtikv"],
+      "severity": 2,
+      "status": "active"
+    },
+    {
+      "key": "finalizer_timing_dependency",
+      "title": "Relying on GC/finalizer timing",
+      "description": "Tests rely on Go GC/finalizer scheduling to trigger cleanup or callbacks, and assert on behavior that depends on when finalizers run.",
+      "why_risky": "Finalizers run asynchronously and are not guaranteed to execute at a specific time (or at all before process exit). This makes tests timing-sensitive and flaky under CI load or different runtime behavior.",
+      "review_questions": [
+        "Does the test depend on a finalizer callback running within a time window?",
+        "Can the same assertion be done via an explicit Close/Stop API instead of finalizers?",
+        "Is the test asserting inside a finalizer, which may run after teardown?"
+      ],
+      "suggested_fixes": [
+        "Avoid finalizers in tests; use explicit lifecycle management (Close/Stop) and wait for completion",
+        "If finalizers must be used, guard callbacks during teardown and avoid fatal assertions in finalizers",
+        "Use deterministic synchronization (poll/Eventually) rather than relying on GC timing"
+      ],
+      "related_root_causes": ["async_timing_issue"],
+      "applies_to": ["unit", "integration", "realtikv"],
+      "severity": 2,
+      "status": "active"
     }
   ]
 }

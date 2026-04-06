@@ -13,18 +13,18 @@
     "name": "spmcpool_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "TaskController.Stop() did not reliably stop the producer loop in spmcpool, so tests could hang or keep producing tasks after Stop."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "TestStopPool / spmcpool tests can hang because producer goroutine doesn't exit after Stop()",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "The flaky behavior was caused by incomplete stop signaling in asynchronous code: calling TaskController.Stop() could stop the worker side but not reliably make the producer goroutine exit, leaving it running and causing hangs/timeouts in tests. This PR fixes it by introducing a dedicated producer-close channel (and related waitgroup/stop wiring) so Stop() can signal the producer loop to return and the controller can cleanly wait for completion.",
   "module": "module_unknown",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Wire Stop() to close a dedicated producer-close channel so producer goroutines exit, and wait for producer completion to avoid hangs/timeouts.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41016",
     "https://github.com/pingcap/tidb/pull/41016.patch"

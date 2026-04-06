@@ -13,19 +13,18 @@
     "name": "TestSelectClusterTable"
   },
   "symptoms": [
-    "infoschema: fix unstable test TestSelectClusterTable"
+    "TestSelectClusterTable is unstable because it relies on a slow-log file path configured via global config; using the default slow log file can conflict with other tests or not point to the prepared file."
   ],
-  "failure_signature": "infoschema: fix unstable test TestSelectClusterTable",
+  "failure_signature": "TestSelectClusterTable: slow log/cluster table assertions fail because the server is not using the prepared slow-log file (global SlowQueryFile mismatch)",
   "root_cause_categories": [
-    "schema_change_race",
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: infoschema: fix unstable test TestSelectClusterTable.",
+  "root_cause_explanation": "The flakiness was caused by shared global configuration/state: the test prepared a slow log file but did not ensure TiDB was configured to write/read slow queries from that file (and the default slow-log filename can be shared across tests). The fix uses a unique slow log filename and updates the global config (Log.SlowQueryFile) to point to it, ensuring the cluster table query reads the intended slow log data deterministically.",
   "module": "domain",
-  "fix_pattern": "infoschema: fix unstable test TestSelectClusterTable",
+  "fix_pattern": "Use a unique slow-log filename and update global config to point SlowQueryFile at it to avoid cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41321",
     "https://github.com/pingcap/tidb/pull/41321.patch"

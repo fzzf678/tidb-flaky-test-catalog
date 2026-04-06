@@ -13,18 +13,18 @@
     "name": "metrics: add tidb_rm_pool_concurrency"
   },
   "symptoms": [
-    "@@ -20,7 +20,7 @@ build:race --@io_bazel_rules_go//go/config:race --test_env=GORACE=halt_on_error="
+    "This PR adds a resource-manager pool concurrency metric and adjusts related wiring; the patch does not contain a concrete flaky failure signature for this case."
   ],
-  "failure_signature": "@@ -20,7 +20,7 @@ build:race --@io_bazel_rules_go//go/config:race --test_env=GORACE=halt_on_error=",
+  "failure_signature": "No concrete flaky failure signature found (metrics addition + build/race config changes).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: @@ -20,7 +20,7 @@ build:race --@io_bazel_rules_go//go/config:race --test_env=GORACE=halt_on_error=.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch primarily adds a metric (`tidb_rm_pool_concurrency`) and adjusts related resource-manager/gpool wiring and build settings. It does not show a specific flaky failure signature or a targeted stabilization fix, so CI logs or a stable repro are needed to determine any underlying flaky root cause.",
   "module": "server",
-  "fix_pattern": "@@ -20,7 +20,7 @@ build:race --@io_bazel_rules_go//go/config:race --test_env=GORACE=halt_on_error=",
+  "fix_pattern": "Add `tidb_rm_pool_concurrency` metric for resource manager pools and update related wiring/build settings (no concrete flaky stabilization identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41113",
     "https://github.com/pingcap/tidb/pull/41113.patch"

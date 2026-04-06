@@ -13,18 +13,18 @@
     "name": "session_states_test"
   },
   "symptoms": [
-    "fix another data race"
+    "Race detector reports a data race when encoding/decoding session states concurrently with user-var Set/Get (SessionVars.userVars values/types maps)."
   ],
-  "failure_signature": "fix another data race",
+  "failure_signature": "DATA RACE in SessionVars user vars map during concurrent EncodeSessionStates/DecodeSessionStates and SetUserVarVal/GetUserVarVal",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix another data race.",
+  "root_cause_explanation": "The flaky failures were caused by a real data race: DecodeSessionStates directly replaced the internal user-vars maps while other goroutines could concurrently read/write user vars. This PR fixes the race by removing the direct map replacements and using SetUserVarVal/SetUserVarType (which handle locking), and it adds a concurrent test that repeatedly Set/Get user vars while Encode/Decode runs in another goroutine.",
   "module": "session",
-  "fix_pattern": "fix another data race",
+  "fix_pattern": "Avoid unsafely replacing SessionVars.userVars maps during DecodeSessionStates; use the locked SetUserVarVal/SetUserVarType APIs and add a concurrency regression test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40754",
     "https://github.com/pingcap/tidb/pull/40754.patch"

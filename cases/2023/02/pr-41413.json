@@ -9,22 +9,22 @@
   "pr_merged_at": "2023-02-15T13:06:01+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/index_lookup_merge_join_test.go",
+    "path": "executor/issuetest/executor_issue_test.go",
     "name": "TestIssueRaceWhenBuildingExecutorConcurrently"
   },
   "symptoms": [
-    "executor: fix race when collecting telemetry info of batch copr"
+    "`go test -race` reports a data race when building executors concurrently (probe side) while collecting batch coprocessor telemetry info (UseTableLookUp flag)."
   ],
-  "failure_signature": "executor: fix race when collecting telemetry info of batch copr",
+  "failure_signature": "DATA RACE: concurrent read/write of TelemetryInfo.UseTableLookUp in executor builder / session telemetry update path",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix race when collecting telemetry info of batch copr.",
+  "root_cause_explanation": "The flakiness was caused by a data race in async executor building: the build function can be called concurrently when building executors on the probe side, and it was writing a plain `bool` flag (TelemetryInfo.UseTableLookUp) while another goroutine could read it when updating telemetry metrics. The fix changes the flag to `atomic.Bool` and uses Store/Load to avoid the race, and adds a regression test runnable under `go test -race` (TestIssueRaceWhenBuildingExecutorConcurrently).",
   "module": "executor",
-  "fix_pattern": "executor: fix race when collecting telemetry info of batch copr",
+  "fix_pattern": "Replace racy shared bool flag with `atomic.Bool` (Store/Load) and add a -race regression test for concurrent executor building.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41413",
     "https://github.com/pingcap/tidb/pull/41413.patch"

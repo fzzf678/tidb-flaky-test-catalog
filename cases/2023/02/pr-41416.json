@@ -9,24 +9,23 @@
   "pr_merged_at": "2023-02-16T00:34:02+08:00",
   "test": {
     "type": "unit",
-    "path": "planner/core/binary_plan_test.go",
-    "name": "binary_plan_test"
+    "path": "planner/core/logical_plans_test.go",
+    "name": "logical_plans_test"
   },
   "symptoms": [
-    "+ // Default RPC encoding may cause statistics explain result differ and then the test unstable. | sql: \"select a, b, c from t order by 0\", (planner/core/logical_plans_test.go)"
+    "Planner/core tests that compare `EXPLAIN` output can be unstable because the default RPC encoding (chunk RPC on/off) changes statistics/explain output, causing snapshot/testdata mismatches."
   ],
-  "failure_signature": "+ // Default RPC encoding may cause statistics explain result differ and then the test unstable. | sql: \"select a, b, c from t order by 0\", (planner/core/logical_plans_test.go)",
+  "failure_signature": "EXPLAIN output mismatch in planner/core tests (e.g. logical_plans_test.go) due to `@@tidb_enable_chunk_rpc` default affecting statistics/explain formatting",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "statistics_sensitive_test",
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: + // Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "root_cause_explanation": "The flakiness was caused by explain/statistics sensitivity: tests in planner/core compare exact `EXPLAIN` outputs, and the default RPC encoding (chunk RPC) can change the explain results (e.g. statistics-related fields), making snapshots unstable. The fix forces a consistent session setting (`set @@tidb_enable_chunk_rpc = on`) in the relevant test suites to make EXPLAIN output deterministic while the PR also refactors/splits planner/core tests to run faster.",
   "module": "planner",
-  "fix_pattern": "+ // Default RPC encoding may cause statistics explain result differ and then the test unstable. | sql: \"select a, b, c from t order by 0\", (planner/core/logical_plans_test.go)",
+  "fix_pattern": "Set a consistent `@@tidb_enable_chunk_rpc` value in EXPLAIN snapshot tests to avoid statistics/explain output drifting across runs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41416",
     "https://github.com/pingcap/tidb/pull/41416.patch"

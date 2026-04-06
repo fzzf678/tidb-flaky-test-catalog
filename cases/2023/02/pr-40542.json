@@ -13,18 +13,19 @@
     "name": "db_test"
   },
   "symptoms": [
-    "@@ -19,7 +19,7 @@ build:race --config=ci"
+    "Tests intermittently failed with a resource-manager pool registration error like \"pool is already exist\" due to shared global state across tests."
   ],
-  "failure_signature": "@@ -19,7 +19,7 @@ build:race --config=ci",
+  "failure_signature": "error: pool is already exist (resource manager pool map) during tests",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_cleanup_between_tests",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: @@ -19,7 +19,7 @@ build:race --config=ci.",
-  "module": "ddl",
-  "fix_pattern": "@@ -19,7 +19,7 @@ build:race --config=ci",
+  "root_cause_explanation": "The flaky failures were caused by shared global state in the resource manager: tests could register a pool key that was already present from a previous test run, triggering the \"pool is already exist\" error. This PR stabilizes tests by adding explicit cleanup/reset of `resourcemanager.GlobalResourceManager` in test cleanup paths and by introducing an `InTest` flag so tests can safely re-register pools without being blocked by leftover global state.",
+  "module": "br",
+  "fix_pattern": "Reset global resource manager state between tests (resourcemanager.GlobalResourceManager.Reset) and gate poolMap.Add behavior with an InTest flag so pool registration doesn't fail due to leftover global state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40542",
     "https://github.com/pingcap/tidb/pull/40542.patch"

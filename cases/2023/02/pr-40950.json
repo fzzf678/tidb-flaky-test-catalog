@@ -13,18 +13,18 @@
     "name": "cluster_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "During `flashback cluster`, BR backup could fail because Domain reload could not read schema at the current TS while flashback was in progress."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "error contains: \"is in flashback progress, FlashbackStartTS is <ts>\"",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "schema_version_race"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
-  "module": "br",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "The failure was caused by a transient cluster state: while a `flashback cluster` job is running, reading the latest schema by the current TS can fail. BR backup needs a schema snapshot that is consistent with the flashback start timestamp. This PR stabilizes the behavior by making Domain reload parse `FlashbackStartTS` from the flashback-in-progress error message and retry loading InfoSchema using that snapshot timestamp, so `br backup full` can succeed during flashback.",
+  "module": "domain",
+  "fix_pattern": "On flashback-in-progress schema load errors, extract FlashbackStartTS from the error message and retry loading InfoSchema using that snapshot TS (enables BR backup during flashback cluster).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40950",
     "https://github.com/pingcap/tidb/pull/40950.patch"

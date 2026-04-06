@@ -13,18 +13,18 @@
     "name": "ddl_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Intermittent panic/nil-pointer behavior in dist-reorg/owner code paths due to concurrent creation/removal of the same reorgCtx (reorgCtxMap) for a job."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "panic caused by concurrent removeReorgCtx/NewReorgCtx/setReorgCtxForBackfill on the same jobID (dist-reorg reorgCtxMap lifecycle)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "The flakiness/crash was caused by a race in async DDL reorg context management: the same jobID's reorgCtx could be created/used by multiple goroutines (e.g. backfill worker and reorg job) while another path removed it from reorgCtxMap, leading to invalid access/panic. The fix adds an atomic reference counter on reorgCtx, increments it on creation/reuse, and only deletes the map entry when the reference count drops to zero. A concurrent unit test (TestUsingReorgCtx) is added to exercise repeated SetReorgCtxForBackfill/NewReorgCtx/RemoveReorgCtx calls.",
   "module": "ddl",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Make reorgCtx lifecycle reference-counted (atomic Int32) so concurrent users cannot remove the context prematurely; add a concurrent regression test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41217",
     "https://github.com/pingcap/tidb/pull/41217.patch"

@@ -13,18 +13,18 @@
     "name": "executor_test"
   },
   "symptoms": [
-    "*: fix a timezone data race which may cause wrong row data"
+    "Race detector reports a data race in getColDefaultValue(): it temporarily mutates StatementContext.TimeZone while other goroutines can concurrently read/parse time values."
   ],
-  "failure_signature": "*: fix a timezone data race which may cause wrong row data",
+  "failure_signature": "DATA RACE on StatementContext.TimeZone / time parsing during getColDefaultValue (can lead to wrong row default values)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix a timezone data race which may cause wrong row data.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix a timezone data race which may cause wrong row data",
+  "root_cause_explanation": "The flaky behavior was caused by a real data race: getColDefaultValue changed `StmtCtx.TimeZone` as a side effect to interpret TIMESTAMP/DATETIME defaults, which is unsafe under concurrent use and could produce wrong row data. This PR fixes it by avoiding global/mutable timezone state: it passes an explicit timezone argument down to time parsing / GetTimeValue paths instead of mutating the shared statement context.",
+  "module": "expression",
+  "fix_pattern": "Avoid mutating shared StmtCtx.TimeZone in getColDefaultValue; pass an explicit timezone parameter through time parsing / GetTimeValue instead.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41146",
     "https://github.com/pingcap/tidb/pull/41146.patch"

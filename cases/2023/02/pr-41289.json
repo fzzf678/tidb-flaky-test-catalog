@@ -13,18 +13,18 @@
     "name": "domain: fix data race in the ttlJobManager"
   },
   "symptoms": [
-    "domain: fix data race in the ttlJobManager"
+    "Data race / unstable shutdown behavior when Domain is closing while the TTLJobManager goroutine is also reacting to the exit signal (ttl job manager stop/wait path)."
   ],
-  "failure_signature": "domain: fix data race in the ttlJobManager",
+  "failure_signature": "DATA RACE during Domain.Close/StartTTLJobManager shutdown path (ttlJobManager stop/wait sequencing)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: domain: fix data race in the ttlJobManager.",
+  "root_cause_explanation": "The flakiness was caused by a race in async shutdown sequencing: TTLJobManager was stopped/waited in a background goroutine after receiving `do.exit`, which could overlap with Domain.Close and lead to racy access to the TTLJobManager pointer/state. The fix moves the stop/wait logic into Domain.Close (before closing exit), guards against nil TTLJobManager, and uses a shorter wait timeout in tests via `intest.InTest` to avoid long/hanging shutdown in CI.",
   "module": "domain",
-  "fix_pattern": "domain: fix data race in the ttlJobManager",
+  "fix_pattern": "Perform TTLJobManager stop/wait in Domain.Close with nil guard and test-friendly timeout to avoid racy shutdown from a background goroutine.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41289",
     "https://github.com/pingcap/tidb/pull/41289.patch"
