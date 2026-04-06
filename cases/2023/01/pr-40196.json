@@ -13,20 +13,18 @@
     "name": "prepared_test"
   },
   "symptoms": [
-    "{\"prepare stmt from 'delete from t order by a limit ?'\", []int{1}}, (planner/core/plan_cache_test.go)"
+    "Prepared plan cache could incorrectly reuse a cached plan for statements with `LIMIT ?` / `LIMIT ?, ?` placeholders even when the limit/offset parameter values change, because the limit values were not encoded into the plan cache key."
   ],
-  "failure_signature": "{\"prepare stmt from 'delete from t order by a limit ?'\", []int{1}}, (planner/core/plan_cache_test.go)",
+  "failure_signature": "Incorrect plan-cache hit/miss for prepared statements with LIMIT placeholders (e.g. `@@last_plan_from_cache` stays 1 even after changing LIMIT/OFFSET parameter values).",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "plan_cache_dependency",
-    "assert_exact_plan_or_cost"
+    "plan_cache_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: {\"prepare stmt from 'delete from t order by a limit ?'\", []int{1}}, (planner/core/plan_cache_test.go).",
+  "root_cause_explanation": "The plan-cache key did not account for the `LIMIT`/`OFFSET` placeholder values extracted from the prepared statement AST, so different executions of the same prepared statement could share the same cache key even when the limit/offset values change. This can lead to an incorrect cache hit and reuse an unsuitable plan. The fix extracts limit offset/count values from the prepared AST and encodes them into the plan cache key, and adds unit tests (e.g. `TestPlanCacheWithLimit`) to verify cache hit/miss behavior when changing limit parameters.",
   "module": "planner",
-  "fix_pattern": "{\"prepare stmt from 'delete from t order by a limit ?'\", []int{1}}, (planner/core/plan_cache_test.go)",
+  "fix_pattern": "Include extracted LIMIT/OFFSET placeholder values in the prepared plan cache key so different limit parameters do not incorrectly share cached plans; add unit tests to verify `@@last_plan_from_cache` behavior.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40196",
     "https://github.com/pingcap/tidb/pull/40196.patch"

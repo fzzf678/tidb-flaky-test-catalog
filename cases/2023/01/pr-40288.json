@@ -13,18 +13,18 @@
     "name": "TestIssue28073"
   },
   "symptoms": [
-    "+// race detector."
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; the changes introduce go-deadlock-based mutex wrappers (under a build tag) and wire them into the codebase to help detect deadlocks."
   ],
-  "failure_signature": "+// race detector.",
+  "failure_signature": "No explicit flaky failure signature in patch (infrastructure change for deadlock detection).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: +// race detector.",
-  "module": "session",
-  "fix_pattern": "+// race detector.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds go-deadlock based `Mutex`/`RWMutex` wrappers (via build tags) and updates code/tests/build configuration to help surface deadlocks. The patch does not provide a concrete flaky failure signature nor a targeted stabilization fix for a specific flaky test, so keep this case as needs-more-evidence.",
+  "module": "domain",
+  "fix_pattern": "Introduce go-deadlock mutex wrappers under build tags and wire them into the codebase for deadlock detection; no targeted flaky stabilization evidence in patch.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40288",
     "https://github.com/pingcap/tidb/pull/40288.patch"

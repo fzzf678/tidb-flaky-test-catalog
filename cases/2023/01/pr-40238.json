@@ -13,19 +13,18 @@
     "name": "tiflash_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"explain select max( tbl_1.col_1 ) as r0 , sum( tbl_1.col_1 ) as r1 , sum( tbl_1.col_8 ) as r2 from tbl_1 where tbl_1.col_8 != 68 or tbl_1.col_3 between null and 939 order by r0,r1,r2 ;\") (executor/tiflashtest/tiflash_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; the changes add a disaggregated TiFlash regression test and refine planner task/selection handling for disaggregated TiFlash mode."
   ],
-  "failure_signature": "tk.MustQuery(\"explain select max( tbl_1.col_1 ) as r0 , sum( tbl_1.col_1 ) as r1 , sum( tbl_1.col_8 ) as r2 from tbl_1 where tbl_1.col_8 != 68 or tbl_1.col_3 between null and 939 order by r0,r1,r2 ;\") (executor/tiflashtest/tiflash_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (bug fix + regression test for disaggregated TiFlash).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"explain select max( tbl_1.col_1 ) as r0 , sum( tbl_1.col_1 ) as r1 , sum( tbl_1.col_8 ) as r2 from tbl_1 where tbl_1.col_8 != 68 or tbl_1.col_3 between null and 939 order by r0,r1,r2 ;\") (executor/tiflashte….",
-  "module": "module_unknown",
-  "fix_pattern": "tk.MustQuery(\"explain select max( tbl_1.col_1 ) as r0 , sum( tbl_1.col_1 ) as r1 , sum( tbl_1.col_8 ) as r2 from tbl_1 where tbl_1.col_8 != 68 or tbl_1.col_3 between null and 939 order by r0,r1,r2 ;\") (executor/tiflashtest/tiflash_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes planner behavior for disaggregated TiFlash mode and adds a regression test. However, the patch does not provide a concrete flaky failure signature nor evidence that this was an intermittent ordering issue (the test query already uses `ORDER BY`), so keep this case as needs-more-evidence rather than guessing a flaky root cause.",
+  "module": "planner",
+  "fix_pattern": "Refine planner task/selection handling for disaggregated TiFlash mode and add a regression test; no explicit flaky failure signature in patch.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40238",
     "https://github.com/pingcap/tidb/pull/40238.patch"

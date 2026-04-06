@@ -13,18 +13,18 @@
     "name": "interface_mock_test"
   },
   "symptoms": [
-    "session: fix data race in the LazyTxn.LockKeys"
+    "Race detector reports a data race in `LazyTxn.LockKeys` when transaction lock acquisition updates `TxnInfo` fields while other goroutines read transaction state."
   ],
-  "failure_signature": "session: fix data race in the LazyTxn.LockKeys",
+  "failure_signature": "DATA RACE in session/txn.go: `LazyTxn.LockKeys` concurrent access to `txn.mu.TxnInfo` during lock acquisition.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: session: fix data race in the LazyTxn.LockKeys.",
-  "module": "session",
-  "fix_pattern": "session: fix data race in the LazyTxn.LockKeys",
+  "root_cause_explanation": "`LazyTxn.LockKeys` updates transaction runtime metadata (`TxnInfo` state, block start time, entries count) around the potentially blocking `LockKeys` call. The previous implementation performed part of the state update outside a safe synchronization boundary, which could race with concurrent reads of transaction state. The fix restructures the lock acquisition flow by introducing a `LockKeysFunc` callback on the transaction interface so the post-lock state update runs under `txn.mu` at the right time, avoiding concurrent unsynchronized access.",
+  "module": "txn",
+  "fix_pattern": "Restructure `LazyTxn.LockKeys` to avoid racy `TxnInfo` updates around lock acquisition (introduce `LockKeysFunc` and update/reset state under `txn.mu`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40350",
     "https://github.com/pingcap/tidb/pull/40350.patch"

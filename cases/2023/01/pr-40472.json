@@ -13,18 +13,18 @@
     "name": "selectivity_test"
   },
   "symptoms": [
-    "slices.Sort(idxIDs) (statistics/selectivity_test.go)"
+    "Statistics/selectivity related tests can behave inconsistently because index ID lists are built from map iteration and may have non-deterministic ordering (e.g., `ColID2IdxIDs` slices)."
   ],
-  "failure_signature": "slices.Sort(idxIDs) (statistics/selectivity_test.go)",
+  "failure_signature": "Non-deterministic ordering from map iteration when collecting index IDs (stabilized by sorting `idxIDs`).",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: slices.Sort(idxIDs) (statistics/selectivity_test.go).",
+  "root_cause_explanation": "When generating derived statistics mappings (e.g. `ColID2IdxIDs`), index IDs were appended in the iteration order of a Go map (`statsTbl.Indices`), which is not deterministic. Downstream logic/tests that iterate or compare these slices can therefore behave non-deterministically across runs. The fix sorts the collected `idxIDs` (`slices.Sort(idxIDs)`) to make the ordering deterministic.",
   "module": "statistics",
-  "fix_pattern": "slices.Sort(idxIDs) (statistics/selectivity_test.go)",
+  "fix_pattern": "Sort index ID slices built from map iteration (e.g. `slices.Sort(idxIDs)`) before using them in statistics mappings.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40472",
     "https://github.com/pingcap/tidb/pull/40472.patch"

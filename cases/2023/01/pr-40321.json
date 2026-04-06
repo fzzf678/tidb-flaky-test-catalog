@@ -13,19 +13,18 @@
     "name": "misc_test"
   },
   "symptoms": [
-    "tk.MustExec(\"create definer='root'@'localhost' view v as select * from t1 where a<10 order by a limit 1;\") (planner/core/integration_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; the changes add support and tests for `KEEP_ORDER` / `NO_KEEP_ORDER` optimizer hints."
   ],
-  "failure_signature": "tk.MustExec(\"create definer='root'@'localhost' view v as select * from t1 where a<10 order by a limit 1;\") (planner/core/integration_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (feature/tests change for optimizer hints).",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustExec(\"create definer='root'@'localhost' view v as select * from t1 where a<10 order by a limit 1;\") (planner/core/integration_test.go).",
-  "module": "planner",
-  "fix_pattern": "tk.MustExec(\"create definer='root'@'localhost' view v as select * from t1 where a<10 order by a limit 1;\") (planner/core/integration_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds parser/planner support and tests for `KEEP_ORDER` and `NO_KEEP_ORDER` hints. The patch does not provide a concrete flaky failure signature nor a targeted stabilization fix for an intermittent test failure, so keep this case as needs-more-evidence.",
+  "module": "parser",
+  "fix_pattern": "Add `KEEP_ORDER` / `NO_KEEP_ORDER` optimizer hint support and corresponding tests; no targeted flaky stabilization evidence in patch.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40321",
     "https://github.com/pingcap/tidb/pull/40321.patch"
