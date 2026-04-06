@@ -20,7 +20,7 @@
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "unclassified"
+    "unsupported_pushdown"
   ],
   "root_cause_explanation": "The flakiness was caused by an invalid/unstable plan choice: TopN should not be pushed down to TiKV/TiFlash when `TopN.ByItems` contains a virtual generated column, because virtual columns are not supported for pushdown in this context. Without the extra checks, the optimizer could push TopN down and produce incorrect results for `ORDER BY` on the virtual column. The fix adds checks to detect virtual generated columns in TopN.ByItems and prevents TopN pushdown accordingly, with regression tests covering both TiKV and TiFlash execution paths (Issue 41355).",
   "module": "planner",

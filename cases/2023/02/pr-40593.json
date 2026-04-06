@@ -20,7 +20,7 @@
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "unclassified"
+    "unsupported_pushdown"
   ],
   "root_cause_explanation": "The failure was caused by an invalid optimizer transformation: when pushing TopN down below a Projection, TopN.ByItems could reference a column produced by the projection (unresolved by the underlying data source, with column ID=0). That made the physical planning path choose an invalid cop-task plan and led to a nil pointer dereference. This PR fixes the issue by checking whether TopN.ByItems contains projection-generated columns (or the projection cannot be eliminated) and preventing the TopN pushdown in that case.",
   "module": "planner",

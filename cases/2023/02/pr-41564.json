@@ -20,7 +20,7 @@
     "async_timing_issue"
   ],
   "review_smells": [
-    "unclassified"
+    "finalizer_timing_dependency"
   ],
   "root_cause_explanation": "The flakiness was caused by timing-sensitive runtime behavior: Go finalizers and garbage collection run asynchronously and can be scheduled unpredictably in CI, so the finalizer callback could still run and trip the test's fatal check. The fix adjusts GC settings (SetGCPercent) and adds an atomic stop flag to prevent the callback from failing the test after teardown, making the test robust against finalizer timing.",
   "module": "gc",

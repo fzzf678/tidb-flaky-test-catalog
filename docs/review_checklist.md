@@ -10,6 +10,7 @@ Each item includes: what to look for → why it is risky → what questions to a
 - [ ] **Insufficient timeout value** (`insufficient_timeout`)
 - [ ] **Async wait without backoff/retry** (`async_wait_without_backoff`)
 - [ ] **Clock skew dependency** (`clock_skew_dependency`)
+- [ ] **Relying on GC/finalizer timing** (`finalizer_timing_dependency`)
 
 ### concurrency_data_race
 - [ ] **t.Parallel() with shared state** (`t_parallel_with_shared_state`)
@@ -29,6 +30,7 @@ Each item includes: what to look for → why it is risky → what questions to a
 - [ ] **Asserting on exact error message/constraint** (`assert_exact_error_message`)
 - [ ] **Plan cache dependency** (`plan_cache_dependency`)
 - [ ] **Statistics-sensitive test** (`statistics_sensitive_test`)
+- [ ] **Unsupported pushdown (virtual/generated columns or unsupported expressions)** (`unsupported_pushdown`)
 
 ### nondeterministic_result_order
 - [ ] **Missing ORDER BY in SELECT queries** (`missing_order_by`)
@@ -600,3 +602,43 @@ Each item includes: what to look for → why it is risky → what questions to a
 - Use unique table names per test
 - Drop tables in defer/t.Cleanup()
 - Use transactions and rollback
+
+### Unsupported pushdown (virtual/generated columns or unsupported expressions)
+
+**Key:** `unsupported_pushdown`
+
+**Related Root Causes:** nondeterministic_plan_selection
+
+**Description:** The optimizer pushes down operators (e.g. TopN/Sort) to TiKV/TiFlash when ORDER BY / filter expressions reference virtual/generated columns or expressions not supported for pushdown.
+
+**Why Risky:** Unsupported pushdown can lead to incorrect results or panics, and the behavior may vary across engines (TiKV vs TiFlash) or plan choices, making tests intermittently fail.
+
+**Review Questions:**
+- Does the plan push down TopN/Sort/filters to coprocessor while using virtual/generated columns in the expressions?
+- Are there engine-specific limitations (TiKV/TiFlash) for the pushed-down expressions/operators?
+- Would a different plan choice change whether the operator is pushed down?
+
+**Suggested Fixes:**
+- Add capability checks to prevent pushdown when expressions/operators are not supported
+- Materialize virtual/generated expressions at the right layer (keep TopN/Sort on root when needed)
+- Add regression tests to assert correctness across TiKV/TiFlash paths
+
+### Relying on GC/finalizer timing
+
+**Key:** `finalizer_timing_dependency`
+
+**Related Root Causes:** async_timing_issue
+
+**Description:** Tests rely on Go GC/finalizer scheduling to trigger cleanup or callbacks, and assert on behavior that depends on when finalizers run.
+
+**Why Risky:** Finalizers run asynchronously and are not guaranteed to execute at a specific time (or at all before process exit). This makes tests timing-sensitive and flaky under CI load or different runtime behavior.
+
+**Review Questions:**
+- Does the test depend on a finalizer callback running within a time window?
+- Can the same assertion be done via an explicit Close/Stop API instead of finalizers?
+- Is the test asserting inside a finalizer, which may run after teardown?
+
+**Suggested Fixes:**
+- Avoid finalizers in tests; use explicit lifecycle management (Close/Stop) and wait for completion
+- If finalizers must be used, guard callbacks during teardown and avoid fatal assertions in finalizers
+- Use deterministic synchronization (poll/Eventually) rather than relying on GC timing
