@@ -13,18 +13,18 @@
     "name": "db_integration_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "No concrete flaky failure signature is captured in this case. The PR mainly adds a user-visible warning after `ALTER TABLE ... REORGANIZE PARTITION` and also tweaks Bazel test configuration (e.g., shard_count/timeout/race) as mitigations."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "No concrete failure signature (PR is feature change + Bazel config tweaks; no specific flaky log captured)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a functional change (append a warning after successfully reorganizing partitions) plus some Bazel test configuration adjustments (shard_count/timeout/race). The case evidence here only points to metadata like `race = \"on\"`, which is not a root cause explanation by itself. Without the actual flaky failure signature (CI logs) showing what was unstable and why these changes address it, we should not guess a concrete root cause; keep it as insufficient evidence until flaky logs/issues are linked.",
   "module": "ddl",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Feature PR plus test-metadata tweaks without a concrete flaky signature; keep as insufficient evidence until failing logs/issues are provided and the stabilization mechanism is clear.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42367",
     "https://github.com/pingcap/tidb/pull/42367.patch"

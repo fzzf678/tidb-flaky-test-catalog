@@ -13,18 +13,18 @@
     "name": "spool: fix data race when to exit"
   },
   "symptoms": [
-    "spool: fix data race when to exit"
+    "A shutdown/exit race in the spool goroutine pool: tasks could still start and call `WaitGroup.Add` while `ReleaseAndWait` was concurrently calling `WaitGroup.Wait`."
   ],
-  "failure_signature": "spool: fix data race when to exit",
+  "failure_signature": "Go data race / misuse of `sync.WaitGroup`: `Add` can race with `Wait` during pool shutdown",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: spool: fix data race when to exit.",
-  "module": "module_unknown",
-  "fix_pattern": "spool: fix data race when to exit",
+  "root_cause_explanation": "The flake was caused by a shutdown race in the spool pool: when entering exit mode, the code could still start new goroutines and call `wg.Add(...)` while `ReleaseAndWait` concurrently called `wg.Wait()`, triggering race-detector warnings and/or `WaitGroup` misuse. This PR stabilizes shutdown by checking `isStop` before scheduling, tracking pending/waiting tasks, and ensuring all code paths that might call `Add` have exited before calling `wg.Wait()`.",
+  "module": "server",
+  "fix_pattern": "During shutdown, prevent new work from being scheduled and ensure no `WaitGroup.Add` can happen after `Wait` begins (check stop flags early, track pending tasks, and wait for them to exit before `wg.Wait()`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42129",
     "https://github.com/pingcap/tidb/pull/42129.patch"

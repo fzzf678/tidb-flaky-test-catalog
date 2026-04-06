@@ -13,19 +13,18 @@
     "name": "*: enable more race and set timeout for test"
   },
   "symptoms": [
-    "*: enable more race and set timeout for test"
+    "Quarantine/mitigation-only change: adjust Bazel test metadata across multiple packages (enable `race = \"on\"`, set `timeout = \"short\"`, tweak `flaky` flags) without a concrete flaky failure signature."
   ],
-  "failure_signature": "*: enable more race and set timeout for test",
+  "failure_signature": "Bazel metadata-only adjustments (race/timeout/flaky) with no specific flaky stack/log captured in this case",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "async_timing_issue"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: enable more race and set timeout for test.",
-  "module": "module_unknown",
-  "fix_pattern": "*: enable more race and set timeout for test",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR only changes Bazel test configuration (enabling race detector, setting timeouts, marking targets flaky) across multiple packages. These are quarantine/mitigation actions and do not provide the underlying failure signature or root-cause fix. Keep this as insufficient evidence until we have the concrete flaky logs (race output / timeout stack) and a focused PR that fixes the real issue.",
+  "module": "test_infra",
+  "fix_pattern": "Quarantine via Bazel metadata tweaks (`race`/`timeout`/`flaky`) without a concrete failure signature; keep as insufficient evidence until failing logs and a root-cause fix are available.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42371",
     "https://github.com/pingcap/tidb/pull/42371.patch"

@@ -13,19 +13,18 @@
     "name": "db_partition_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select * from test_global use index(idx_b) order by a\").Check(testkit.Rows(\"9 9 9\", \"11 11 11\", \"12 12 12\")) (ddl/db_partition_test.go)"
+    "Incorrect/unstable behavior of global indexes during partition DDL (e.g., drop partition / reorganize partition) when DML happens in intermediate schema states, potentially leading to wrong global-index entries or duplicate-key-like behavior."
   ],
-  "failure_signature": "tk.MustQuery(\"select * from test_global use index(idx_b) order by a\").Check(testkit.Rows(\"9 9 9\", \"11 11 11\", \"12 12 12\")) (ddl/db_partition_test.go)",
+  "failure_signature": "Global index inconsistency during partition DDL (DML in DeleteOnly / intermediate states can produce incorrect global-index entries)",
   "root_cause_categories": [
-    "shared_state_pollution",
     "schema_change_race"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "unclassified"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: tk.MustQuery(\"select * from test_global use index(idx_b) order by a\").Check(testkit.Rows(\"9 9 9\", \"11 11 11\", \"12 12 12\")) (ddl/db_partition_test.go).",
-  "module": "executor",
-  "fix_pattern": "tk.MustQuery(\"select * from test_global use index(idx_b) order by a\").Check(testkit.Rows(\"9 9 9\", \"11 11 11\", \"12 12 12\")) (ddl/db_partition_test.go)",
+  "root_cause_explanation": "The issue happens during partition DDL when global indexes are involved (e.g., dropping a partition while concurrent DML runs in `StateDeleteOnly`). The global index key can already exist in the txn mem-buffer with a different value (belonging to another partition), and the old code would not reconcile the mismatch; similarly, deletes could target the wrong partition's entry. This PR fixes the intermediate-DDL-state behavior by (1) overwriting the mem-buffer entry when a global index key exists but the stored value differs, and (2) decoding the partition ID from the existing value on delete and only deleting the entry when it belongs to the current physical partition.",
+  "module": "ddl",
+  "fix_pattern": "For global indexes during partition DDL, make index KV updates idempotent and partition-aware: overwrite mismatched in-txn index values and only delete entries that belong to the current partition ID (decode/compare pid).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42311",
     "https://github.com/pingcap/tidb/pull/42311.patch"

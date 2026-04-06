@@ -13,18 +13,18 @@
     "name": "TestInternalSessionTxnStartTS"
   },
   "symptoms": [
-    "server: fix unstable test-case TestInternalSessionTxnStartTS"
+    "Test relied on injected delays (`mockDelayInnerSessionExecute` failpoint + `time.Sleep`) and asserted an exact internal-session tracking length, which is timing-sensitive under concurrent execution."
   ],
-  "failure_signature": "server: fix unstable test-case TestInternalSessionTxnStartTS",
+  "failure_signature": "Flaky assertion: `require.Equal(t, len(lst), 10)` in `TestInternalSessionTxnStartTS` (timing-dependent internal session start TS tracking)",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: server: fix unstable test-case TestInternalSessionTxnStartTS.",
+  "root_cause_explanation": "`TestInternalSessionTxnStartTS` was flaky due to timing assumptions: it enabled a failpoint that deliberately delayed internal-session execution and then used sleeps plus an exact-length assertion on `GetInternalSessionStartTSList()`. The internal session list is inherently concurrent and timing-dependent, so the exact count could vary. This PR stabilizes the test by removing the artificial delay/sleeps and dropping the brittle exact-count assertion, keeping the test focused on the original goroutine-leak intent and simply waiting for the concurrent tasks to finish.",
   "module": "server",
-  "fix_pattern": "server: fix unstable test-case TestInternalSessionTxnStartTS",
+  "fix_pattern": "Avoid fixed sleeps and exact-count assertions on concurrently-updated internal state; remove artificial delays/failpoints and instead wait for goroutines to complete, keeping tests focused on the actual invariant being validated (e.g., no goroutine leaks).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42392",
     "https://github.com/pingcap/tidb/pull/42392.patch"

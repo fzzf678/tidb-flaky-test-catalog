@@ -13,18 +13,18 @@
     "name": "extract_test"
   },
   "symptoms": [
-    "domain: fix data race in test with stmtsummary"
+    "Data race in tests involving statement summary: the test cleanup set the global `stmtsummaryv2.GlobalStmtSummary` pointer to `nil` while it could still be accessed."
   ],
-  "failure_signature": "domain: fix data race in test with stmtsummary",
+  "failure_signature": "Go data race / concurrent access to `stmtsummaryv2.GlobalStmtSummary` after being set to `nil` in test cleanup",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: domain: fix data race in test with stmtsummary.",
+  "root_cause_explanation": "The flake was caused by unsafe mutation of a global pointer in test cleanup: `closeStmtSummary()` called `GlobalStmtSummary.Close()` and then assigned `stmtsummaryv2.GlobalStmtSummary = nil`, which could race with other goroutines/tests still referencing it. This PR fixes the data race by removing the `= nil` assignment (closing is enough), avoiding concurrent use-after-nil of the global stmt summary instance.",
   "module": "domain",
-  "fix_pattern": "domain: fix data race in test with stmtsummary",
+  "fix_pattern": "Avoid mutating shared global pointers during cleanup (especially setting to `nil`) when other goroutines may still access them; prefer `Close()`/reset APIs that are concurrency-safe.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42133",
     "https://github.com/pingcap/tidb/pull/42133.patch"

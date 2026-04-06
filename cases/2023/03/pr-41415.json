@@ -13,18 +13,18 @@
     "name": "placement_sql_test"
   },
   "symptoms": [
-    "fix race of attachAPICtx"
+    "Data race in TiKV client-go `attachAPICtx` (fixed via dependency upgrade)."
   ],
-  "failure_signature": "fix race of attachAPICtx",
+  "failure_signature": "race in client-go `attachAPICtx` (dependency upgrade in go.mod/go.sum)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix race of attachAPICtx.",
+  "root_cause_explanation": "The flakiness/race came from `attachAPICtx` in the TiKV client-go dependency, which could trigger race-enabled test failures. This PR addresses it by upgrading the `github.com/tikv/client-go/v2` replacement version (and related Bazel deps) to a revision that fixes the race, removing the underlying concurrency issue without changing TiDB test logic.",
   "module": "ddl",
-  "fix_pattern": "fix race of attachAPICtx",
+  "fix_pattern": "If a flaky/race failure is rooted in an external dependency (e.g., TiKV client-go), upgrade/pin the dependency to a revision containing the race fix rather than papering over it in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41415",
     "https://github.com/pingcap/tidb/pull/41415.patch"

@@ -13,18 +13,18 @@
     "name": "load_data_test"
   },
   "symptoms": [
-    "*: fix data race in the IgnoreTruncate"
+    "DATA RACE on `StmtCtx.IgnoreTruncate`: a statement-context flag was a plain bool accessed concurrently by multiple goroutines/tests."
   ],
-  "failure_signature": "*: fix data race in the IgnoreTruncate",
+  "failure_signature": "DATA RACE (race detector): concurrent access to `StmtCtx.IgnoreTruncate`",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix data race in the IgnoreTruncate.",
-  "module": "test_infra",
-  "fix_pattern": "*: fix data race in the IgnoreTruncate",
+  "root_cause_explanation": "The flake was caused by a data race on `StmtCtx.IgnoreTruncate`: the flag was a plain bool but was read/written across different code paths (and tests) that can run concurrently. This PR fixes the race by changing `IgnoreTruncate` to an `atomic.Bool` and updating all reads/writes to use `Load()`/`Store()` (with proper save/restore via `defer` in call sites).",
+  "module": "session",
+  "fix_pattern": "For statement/session context flags that may be accessed concurrently, use atomic/mutex-protected state (`atomic.Bool` + `Load`/`Store`) instead of plain booleans; always restore the original value in `defer` when tests temporarily override it.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42449",
     "https://github.com/pingcap/tidb/pull/42449.patch"

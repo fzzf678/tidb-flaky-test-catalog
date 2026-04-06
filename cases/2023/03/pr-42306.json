@@ -13,18 +13,18 @@
     "name": "main_test"
   },
   "symptoms": [
-    "test: fix data race"
+    "Race detector reports a data race involving `SessionVars.PlanColumnID` / `AllocPlanColumnID` when tests or concurrent plan-building paths reset/increment the counter without synchronization."
   ],
-  "failure_signature": "test: fix data race",
+  "failure_signature": "DATA RACE: concurrent access to `SessionVars.PlanColumnID` (plan column ID allocator)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix data race.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix data race",
+  "root_cause_explanation": "The flake was caused by a data race on the plan column ID allocator: `SessionVars.PlanColumnID` was an `int64` that multiple code paths/tests reset to 0 and incremented via `AllocPlanColumnID()` without synchronization. Under concurrent execution (e.g., parallel tests / concurrent plan building), this led to race-detector warnings and unstable behavior. This PR fixes it by making `PlanColumnID` an atomic integer and switching reset/increment operations to `Store`/`Add`/`Load`.",
+  "module": "session",
+  "fix_pattern": "Make shared counters used across goroutines concurrency-safe (use atomic `Store`/`Add`/`Load` for `PlanColumnID`) instead of unsynchronized `int64` reads/writes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42306",
     "https://github.com/pingcap/tidb/pull/42306.patch"

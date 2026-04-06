@@ -13,20 +13,18 @@
     "name": "slow_query_sql_test"
   },
   "symptoms": [
-    "tk.MustQuery(`select prepared, plan_from_cache, query from information_schema.slow_query where query like '%select * from t where a%' order by query`).Check(testkit.Rows( (executor/slow_query_sql_test.go)"
+    "Non-prepared plan-cache/slow-query test coverage change; no concrete flaky failure signature is captured."
   ],
-  "failure_signature": "tk.MustQuery(`select prepared, plan_from_cache, query from information_schema.slow_query where query like '%select * from t where a%' order by query`).Check(testkit.Rows( (executor/slow_query_sql_test.go)",
+  "failure_signature": "No concrete flaky failure signature captured (test addition/coverage)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost",
-    "plan_cache_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(`select prepared, plan_from_cache, query from information_schema.slow_query where query like '%select * from t where a%' order by query`).Check(testkit.Rows( (executor/slow_query_sql_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily adds/extends tests for non-prepared plan cache and slow-query/statement-summary related output. The case data does not provide a concrete intermittent failure signature (logs/timeout/panic) nor a targeted stabilization mechanism for a specific flaky symptom. Keep this as insufficient evidence until we have failing CI logs or an explicit flaky-fix change tied to an unstable behavior.",
   "module": "planner",
-  "fix_pattern": "tk.MustQuery(`select prepared, plan_from_cache, query from information_schema.slow_query where query like '%select * from t where a%' order by query`).Check(testkit.Rows( (executor/slow_query_sql_test.go)",
+  "fix_pattern": "Test-only PR / coverage improvement without a concrete flaky failure signature; keep as insufficient evidence.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41822",
     "https://github.com/pingcap/tidb/pull/41822.patch"

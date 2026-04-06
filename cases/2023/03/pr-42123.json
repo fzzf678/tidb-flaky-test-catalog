@@ -13,18 +13,18 @@
     "name": "TestInitStatsVer2"
   },
   "symptoms": [
-    "statistics: fix DATA RACE in the TestInitStatsVer2"
+    "Race detector reports a DATA RACE in/around `TestInitStatsVer2` involving the `distsql/select_result.go` deferred stats/telemetry reporting path."
   ],
-  "failure_signature": "statistics: fix DATA RACE in the TestInitStatsVer2",
+  "failure_signature": "DATA RACE (race detector) in `TestInitStatsVer2` / `distsql/select_result.go`",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: statistics: fix DATA RACE in the TestInitStatsVer2.",
+  "root_cause_explanation": "The flake was caused by a concurrency data race triggered in `TestInitStatsVer2`. The PR fixes the relevant shared-state access in `selectResult.fetchResp` by gating the deferred stats/telemetry reporting logic behind `telemetry.IsTelemetryEnabled(...)` (returning early when telemetry is disabled or errors), reducing the concurrent access surface. It also enables Bazel `race = \"on\"` for the statistics handle tests to ensure the race is detected/prevented in CI.",
   "module": "statistics",
-  "fix_pattern": "statistics: fix DATA RACE in the TestInitStatsVer2",
+  "fix_pattern": "Make shared-state reporting code concurrency-safe and minimize side effects: only run telemetry/stats reporting when telemetry is enabled; enable `race = \"on\"` in Bazel tests to catch regressions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42123",
     "https://github.com/pingcap/tidb/pull/42123.patch"

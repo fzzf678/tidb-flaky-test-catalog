@@ -13,34 +13,39 @@
     "name": "infoschema_test"
   },
   "symptoms": [
-    "infoschema: fix data race in the SessionExtendedInfoSchema"
+    "Race detector reports a data race around SessionExtendedInfoSchema local temporary tables (SessionExtendedInfoSchema.LocalTemporaryTables)."
   ],
-  "failure_signature": "infoschema: fix data race in the SessionExtendedInfoSchema",
+  "failure_signature": "DATA RACE in infoschema.SessionExtendedInfoSchema.LocalTemporaryTables (race detector).",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: infoschema: fix data race in the SessionExtendedInfoSchema.",
+  "root_cause_explanation": "The flaky behavior comes from a real data race: SessionExtendedInfoSchema stores a pointer to local temporary tables that can be attached/detached while other goroutines read it (TableByName/TableByID/SchemaByTable/HasTemporaryTable). This PR fixes the race by replacing the raw pointer with an atomic.Pointer and using Load/Store (including storing nil on detach).",
   "module": "domain",
-  "fix_pattern": "infoschema: fix data race in the SessionExtendedInfoSchema",
+  "fix_pattern": "Use atomic.Pointer for SessionExtendedInfoSchema.LocalTemporaryTables (Load/Store, store nil on detach) to remove concurrent read/write races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42527",
     "https://github.com/pingcap/tidb/pull/42527.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/42527.patch",
   "changed_files": [
+    "executor/infoschema_reader.go",
     "executor/seqtest/BUILD.bazel",
     "executor/showtest/BUILD.bazel",
     "executor/splittest/BUILD.bazel",
+    "infoschema/infoschema.go",
+    "infoschema/infoschema_test.go",
     "session/BUILD.bazel",
     "session/bootstrap_test.go",
     "session/bootstraptest/BUILD.bazel",
     "session/bootstraptest/bootstrap_upgrade_test.go",
     "session/main_test.go",
-    "session/testutil.go"
+    "session/testutil.go",
+    "sessionctx/variable/tidb_vars.go",
+    "sessiontxn/failpoint.go",
+    "table/temptable/infoschema.go"
   ],
   "triage": {
     "sources": [

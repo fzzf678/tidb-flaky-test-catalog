@@ -13,18 +13,18 @@
     "name": "TestPoolTuneScaleUpAndDown"
   },
   "symptoms": [
-    "spool: fix unstable test TestPoolTuneScaleUpAndDown"
+    "The test used `time.Sleep(...)` to wait for workers/tasks after `p.Tune(...)`, which is timing-sensitive and can intermittently observe the wrong `p.Running()` value."
   ],
-  "failure_signature": "spool: fix unstable test TestPoolTuneScaleUpAndDown",
+  "failure_signature": "expect 8 workers running, but got <n> (timing-dependent after `Tune` without deterministic wait)",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: spool: fix unstable test TestPoolTuneScaleUpAndDown.",
-  "module": "kv",
-  "fix_pattern": "spool: fix unstable test TestPoolTuneScaleUpAndDown",
+  "root_cause_explanation": "`TestPoolTuneScaleUpAndDown` was flaky because it relied on a fixed sleep to wait for goroutines to start/finish after calling `Tune`, and the sleep duration was not deterministic under CI load. This PR stabilizes the test by replacing `time.Sleep(500ms)` with `wg.Wait()` so the test waits for the goroutines/tasks to complete before asserting on `p.Running()`.",
+  "module": "server",
+  "fix_pattern": "Replace fixed sleeps used for synchronization with deterministic coordination (`WaitGroup.Wait`, channels, or Eventually with a condition) before asserting on concurrent state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42187",
     "https://github.com/pingcap/tidb/pull/42187.patch"

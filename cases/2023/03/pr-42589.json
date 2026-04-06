@@ -13,19 +13,19 @@
     "name": "TestAddIndexUniqueFailOnDuplicate"
   },
   "symptoms": [
-    "ddl: fix unstable test TestAddIndexUniqueFailOnDuplicate"
+    "TestAddIndexUniqueFailOnDuplicate was unstable when DDL ran in distributed-reorg(dist task) mode where subtask execution order is not guaranteed."
   ],
-  "failure_signature": "ddl: fix unstable test TestAddIndexUniqueFailOnDuplicate",
+  "failure_signature": "require.Less(ResultCounterForTest.Load(), 6) can fail due to nondeterministic distributed reorg subtask execution order.",
   "root_cause_categories": [
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "test_suite_setup_issue",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix unstable test TestAddIndexUniqueFailOnDuplicate.",
+  "root_cause_explanation": "The test relied on deterministic behavior from DDL reorg subtasks, but in distributed reorg (dist task) mode the subtask execution order is not guaranteed and the ResultCounterForTest-based assertion can become unstable. This PR stabilizes the test by explicitly disabling dist task mode via a @@global variable before running the ALTER TABLE and by initializing ResultCounterForTest at the right point in the test.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix unstable test TestAddIndexUniqueFailOnDuplicate",
+  "fix_pattern": "Explicitly disable dist task mode (set @@global.tidb_enable_dist_task=0) for this test to avoid nondeterministic distributed reorg subtask ordering, and set ResultCounterForTest after the split step.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42589",
     "https://github.com/pingcap/tidb/pull/42589.patch"

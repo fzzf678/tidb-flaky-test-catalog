@@ -13,18 +13,18 @@
     "name": "local_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "No concrete flaky failure signature is captured in this case; the PR is primarily a Lightning local-backend behavior change (splitting large jobs/ranges when dynamic region is enabled). The only explicit flaky-related signal captured here is a Bazel `race = \"on\"` metadata change."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Bazel metadata-only signal (`race = \"on\"`) with no concrete race report/log captured here",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
-  "module": "kv",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is mainly a refactor/behavior change in Lightning local backend job splitting (dynamic region handling). The case evidence here points to enabling Bazel `race = \"on\"`, which by itself is not a root-cause explanation unless accompanied by the actual race report and a focused fix. Keep this as insufficient evidence until the flaky signature (race output/CI log) is linked and the underlying concurrency issue is identified.",
+  "module": "lightning",
+  "fix_pattern": "Bazel metadata tweak (`race = \"on\"`) without a concrete race report/fix in the case evidence; keep as insufficient evidence until failing logs and a targeted fix are available.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42485",
     "https://github.com/pingcap/tidb/pull/42485.patch"
