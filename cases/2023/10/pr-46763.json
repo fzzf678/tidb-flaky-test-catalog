@@ -13,18 +13,18 @@
     "name": "errormanager_test"
   },
   "symptoms": [
-    "mockDB.ExpectQuery(\"\\\\QSELECT raw_key, index_name, raw_value, raw_handle FROM `lightning_task_info`.conflict_error_v1 WHERE table_name = ? AND index_name <> 'PRIMARY' ORDER BY raw_key\\\\E\"). (br/pkg/lightning/errormanager/errormanager_test.go)"
+    "mockDB.ExpectQuery(\"\\\\QSELECT raw_key FROM `lightning_task_info`.conflict_error_v1 WHERE table_name = ? AND index_name = 'PRIMARY' GROUP BY raw_key\\\\E\"). (br/pkg/lightning/errormanager/errormanager_test.go)"
   ],
-  "failure_signature": "mockDB.ExpectQuery(\"\\\\QSELECT raw_key, index_name, raw_value, raw_handle FROM `lightning_task_info`.conflict_error_v1 WHERE table_name = ? AND index_name <> 'PRIMARY' ORDER BY raw_key\\\\E\"). (br/pkg/lightning/errormanager/errormanager_test.go)",
+  "failure_signature": "mockDB.ExpectQuery(\"\\\\QSELECT raw_key FROM `lightning_task_info`.conflict_error_v1 WHERE table_name = ? AND index_name = 'PRIMARY' GROUP BY raw_key\\\\E\"). (br/pkg/lightning/errormanager/errormanager_test.go)",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
     "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: mockDB.ExpectQuery(\"\\\\QSELECT raw_key, index_name, raw_value, raw_handle FROM `lightning_task_info`.conflict_error_v1 WHERE table_name = ?.",
+  "root_cause_explanation": "This case is flaky because the test queries primary-key conflict rows using `GROUP BY raw_key` without an explicit `ORDER BY`, which does not guarantee a stable output order. Downstream logic/tests that iterate over the returned keys can become order-dependent and fail intermittently. The fix makes the query order-deterministic by switching to an `ORDER BY raw_key` query (and returning the needed columns in one query), avoiding nondeterministic grouping order.",
   "module": "lightning",
-  "fix_pattern": "mockDB.ExpectQuery(\"\\\\QSELECT raw_key, index_name, raw_value, raw_handle FROM `lightning_task_info`.conflict_error_v1 WHERE table_name = ? AND index_name <> 'PRIMARY' ORDER BY raw_key\\\\E\"). (br/pkg/lightning/errormanager/errormanager_test.go)",
+  "fix_pattern": "Avoid nondeterministic grouping order in tests: replace `SELECT raw_key ... GROUP BY raw_key` with an order-stable query (`... ORDER BY raw_key`) and fetch the required columns in the same query to make iteration deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46763",
     "https://github.com/pingcap/tidb/pull/46763.patch"
@@ -44,9 +44,9 @@
       "determinism_stabilization"
     ],
     "evidence": [
-      "evidence: mockDB.ExpectQuery(\"\\\\QSELECT raw_key, index_name, raw_value, raw_handle FROM `lightning_task_info`.conflict_error_v1 WHERE table_name = ? AND index_name <> 'PRIMARY' ORDER BY raw_key\\\\E\"). (br/pkg/lightning/errormanager/errormanager_test.go)",
+      "evidence: mockDB.ExpectQuery(\"\\\\QSELECT raw_key FROM `lightning_task_info`.conflict_error_v1 WHERE table_name = ? AND index_name = 'PRIMARY' GROUP BY raw_key\\\\E\"). (br/pkg/lightning/errormanager/errormanager_test.go)",
       "files: br/pkg/lightning/backend/local/duplicate.go, br/pkg/lightning/errormanager/BUILD.bazel, br/pkg/lightning/errormanager/errormanager.go, br/pkg/lightning/errormanager/errormanager_test.go, br/tests/_utils/run_lightning, br/tests/lightning_duplicate_resolution_replace/data/dup_resolve.a.1.csv, br/tidb-lightning.toml"
     ]
   },
-  "analysis": "PR title: lightning: support data KV checking of 'replace' mode for lightning post-import conflict detection\nPR url: https://github.com/pingcap/tidb/pull/46763\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: mockDB.ExpectQuery(\"\\\\QSELECT raw_key, index_name, raw_value, raw_handle FROM `lightning_task_info`.conflict_error_v1 WHERE table_name = ? AND index_name <> 'PRIMARY' ORDER BY raw_key\\\\E\"). (br/pkg/lightning/errormanager/errormanager_test.go)\nChanged files (6): br/pkg/lightning/backend/local/duplicate.go, br/pkg/lightning/errormanager/BUILD.bazel, br/pkg/lightning/errormanager/errormanager.go, br/pkg/lightning/errormanager/errormanager_test.go, br/tests/lightning_duplicate_resolution_replace/data/dup_resolve.a.1.csv, br/tidb-lightning.toml\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: lightning: support data KV checking of 'replace' mode for lightning post-import conflict detection\nPR url: https://github.com/pingcap/tidb/pull/46763\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: mockDB.ExpectQuery(\"\\\\QSELECT raw_key FROM `lightning_task_info`.conflict_error_v1 WHERE table_name = ? AND index_name = 'PRIMARY' GROUP BY raw_key\\\\E\"). (br/pkg/lightning/errormanager/errormanager_test.go)\nChanged files (6): br/pkg/lightning/backend/local/duplicate.go, br/pkg/lightning/errormanager/BUILD.bazel, br/pkg/lightning/errormanager/errormanager.go, br/pkg/lightning/errormanager/errormanager_test.go, br/tests/lightning_duplicate_resolution_replace/data/dup_resolve.a.1.csv, br/tidb-lightning.toml\nPatch series analyzed; see patch_url."
 }

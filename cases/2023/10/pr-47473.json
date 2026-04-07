@@ -13,19 +13,18 @@
     "name": "globalstats_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"SELECT b FROM t use index(idx) WHERE b < 16 ORDER BY b\"). (statistics/handle/handletest/globalstats/globalstats_test.go)"
+    "statistics: move tests into GlobalStats test (test refactor; no concrete flaky signature in patch)"
   ],
-  "failure_signature": "tk.MustQuery(\"SELECT b FROM t use index(idx) WHERE b < 16 ORDER BY b\"). (statistics/handle/handletest/globalstats/globalstats_test.go)",
+  "failure_signature": "move stats tests into GlobalStats test suite (no single flaky signature isolated)",
   "root_cause_categories": [
-    "shared_state_pollution",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: tk.MustQuery(\"SELECT b FROM t use index(idx) WHERE b < 16 ORDER BY b\").",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily reorganizes/moves statistics tests into the GlobalStats test suite. It changes test layout and harness code, but does not provide a concrete flaky failure signature or a targeted stabilization change tied to a specific nondeterministic mechanism. We keep the conservative fallback classification rather than guessing a root cause from a single query snippet inside the moved tests.",
   "module": "statistics",
-  "fix_pattern": "tk.MustQuery(\"SELECT b FROM t use index(idx) WHERE b < 16 ORDER BY b\"). (statistics/handle/handletest/globalstats/globalstats_test.go)",
+  "fix_pattern": "Test refactor: consolidate/move statistics tests into the GlobalStats test suite and adjust related test harness/build configs accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47473",
     "https://github.com/pingcap/tidb/pull/47473.patch"
@@ -43,9 +42,9 @@
       "determinism_stabilization"
     ],
     "evidence": [
-      "evidence: tk.MustQuery(\"SELECT b FROM t use index(idx) WHERE b < 16 ORDER BY b\"). (statistics/handle/handletest/globalstats/globalstats_test.go)",
+      "evidence: move tests into GlobalStats test suite (test refactor)",
       "files: statistics/BUILD.bazel, statistics/handle/handletest/globalstats/BUILD.bazel, statistics/handle/handletest/globalstats/globalstats_test.go, statistics/integration_test.go"
     ]
   },
-  "analysis": "PR title: statistics: move tests into GlobalStats test\nPR url: https://github.com/pingcap/tidb/pull/47473\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"SELECT b FROM t use index(idx) WHERE b < 16 ORDER BY b\"). (statistics/handle/handletest/globalstats/globalstats_test.go)\nChanged files (4): statistics/BUILD.bazel, statistics/handle/handletest/globalstats/BUILD.bazel, statistics/handle/handletest/globalstats/globalstats_test.go, statistics/integration_test.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: statistics: move tests into GlobalStats test\nPR url: https://github.com/pingcap/tidb/pull/47473\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: move tests into GlobalStats test suite (test refactor)\nChanged files (4): statistics/BUILD.bazel, statistics/handle/handletest/globalstats/BUILD.bazel, statistics/handle/handletest/globalstats/globalstats_test.go, statistics/integration_test.go\nPatch series analyzed; see patch_url."
 }

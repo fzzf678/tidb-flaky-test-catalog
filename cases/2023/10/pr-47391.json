@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + // GetStatsInfo will return the copy of the statsInfo, so we don't need to worry about the data race.",
+  "root_cause_explanation": "This case is flaky because the global-stats merge logic was refactored to run asynchronously (I/O + CPU workers) and therefore reads statistics state concurrently across goroutines. If the merge reads shared `statsInfo` objects directly while other code may also access/mutate them, it can trigger Go data race reports and nondeterministic behavior in the stats tests. The fix makes the merge path read a defensive copy (`GetStatsInfo` returns a copied snapshot) so concurrent workers do not share mutable stats structures, eliminating the race.",
   "module": "statistics",
-  "fix_pattern": "+ // GetStatsInfo will return the copy of the statsInfo, so we don't need to worry about the data race.",
+  "fix_pattern": "When merging statistics asynchronously, avoid sharing mutable `statsInfo` across goroutines: use `GetStatsInfo` to obtain a copied snapshot before processing in worker goroutines, so merge workers operate on thread-safe copies instead of shared state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47391",
     "https://github.com/pingcap/tidb/pull/47391.patch"

@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: Now, subscription tick will lock the subscription manager.",
+  "root_cause_explanation": "This case is flaky due to a concurrency race during log-backup owner transfer: losing ownership can rarely race with the periodic subscription tick, leading to unsafe concurrent access and even panic. The fix serializes these asynchronous state transitions by taking a lock on the subscription manager during the tick path, preventing the owner-loss/transfer path from racing with tick processing.",
   "module": "br",
-  "fix_pattern": "Now, subscription tick will lock the subscription manager. So there won't be a race.",
+  "fix_pattern": "Prevent owner-transfer/tick races in log backup: guard subscription tick processing with a subscription-manager lock so ownership loss/transfer and tick callbacks cannot concurrently touch shared state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47537",
     "https://github.com/pingcap/tidb/pull/47537.patch"

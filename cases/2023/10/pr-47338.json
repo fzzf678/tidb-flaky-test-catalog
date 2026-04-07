@@ -13,18 +13,18 @@
     "name": "pause_cancel_test"
   },
   "symptoms": [
-    "- race = \"on\","
+    "Slow admin pause/resume/cancel DDL tests under CI (especially with race enabled): large `generateTblUser(...)` workloads caused timeouts/flakiness."
   ],
-  "failure_signature": "- race = \"on\",",
+  "failure_signature": "slow/timeout-prone DDL admin pause/resume/cancel tests under race/CI timing variance",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: - race = \"on\",.",
+  "root_cause_explanation": "This case is flaky because the admin pause/resume/cancel DDL tests were too slow and timing-sensitive under CI (especially when running under the race detector). Large test data generation (`generateTblUser(...)` with hundreds of rows) made the tests prone to exceeding CI time budgets or hitting timing windows. The fix reduces the workload to make the tests complete reliably and also removes running this suite with `race = \"on\"` in the Bazel test rule.",
   "module": "ddl",
-  "fix_pattern": "- race = \"on\",",
+  "fix_pattern": "Reduce the test workload (shrink `generateTblUser(...)` size) so pause/resume/cancel DDL tests complete within CI time budgets; remove `race = \"on\"` for this flaky test suite in Bazel to avoid race-mode timeouts.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47338",
     "https://github.com/pingcap/tidb/pull/47338.patch"
@@ -41,9 +41,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: - race = \"on\",",
+      "evidence: shrink generateTblUser workload (e.g. 500→10) and remove `race = \"on\"` for this flaky test suite",
       "files: ddl/tests/adminpause/BUILD.bazel, ddl/tests/adminpause/pause_cancel_test.go, ddl/tests/adminpause/pause_resume_test.go, tests/realtikvtest/addindextest/BUILD.bazel, tests/realtikvtest/addindextest/add_index_test.go"
     ]
   },
-  "analysis": "PR title: ddl: faster admin pause/resume/cancel test\nPR url: https://github.com/pingcap/tidb/pull/47338\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - race = \"on\",\nChanged files (3): ddl/tests/adminpause/BUILD.bazel, ddl/tests/adminpause/pause_cancel_test.go, ddl/tests/adminpause/pause_resume_test.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: ddl: faster admin pause/resume/cancel test\nPR url: https://github.com/pingcap/tidb/pull/47338\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: shrink generateTblUser workload (e.g. 500→10) and remove `race = \"on\"` for this flaky test suite\nChanged files (3): ddl/tests/adminpause/BUILD.bazel, ddl/tests/adminpause/pause_cancel_test.go, ddl/tests/adminpause/pause_resume_test.go\nPatch series analyzed; see patch_url."
 }

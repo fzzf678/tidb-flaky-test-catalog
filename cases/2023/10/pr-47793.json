@@ -17,14 +17,14 @@
   ],
   "failure_signature": "race = \"on\",",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
-  "module": "gc",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a performance/memory optimization for lightning external writer/buffer structures (pre-alloc aligned blocks, store KV in a compact location/offset representation to reduce GC overhead). The captured evidence is a Bazel flag (`race = \"on\"`), not a concrete flaky failure signature nor a targeted stabilization of a known flaky mechanism in this catalog, so we keep the conservative fallback classification.",
+  "module": "lightning",
+  "fix_pattern": "Performance optimization: pre-allocate writer buffers aligned to block size and use offsets/compact locations instead of Go slices to reduce object overhead and GC pressure in lightning external writer/merge paths (no explicit flaky signature proven in patch).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47793",
     "https://github.com/pingcap/tidb/pull/47793.patch"

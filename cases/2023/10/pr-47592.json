@@ -17,14 +17,14 @@
   ],
   "failure_signature": "t.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\")",
   "root_cause_categories": [
-    "external_dependency"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: t.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\").",
-  "module": "kv",
-  "fix_pattern": "t.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\")",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a broad refactor around `stmtctx.StatementContext` / `TypeCtx` timezone handling (constructor APIs, field removal, and widespread call-site updates). While it touches many components, the only explicit flaky signal captured here is an old `t.Skip(\"Skip this unstable test temporarily ...\")` marker, which is not a root-cause explanation nor a targeted stabilization fix. To avoid guessing, we keep the conservative fallback classification.",
+  "module": "session",
+  "fix_pattern": "Refactor StatementContext timezone handling by moving location into `TypeCtx` and introducing constructors/reset APIs; update call sites to avoid unsafe struct literals (no targeted flaky stabilization shown besides an existing `t.Skip`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47592",
     "https://github.com/pingcap/tidb/pull/47592.patch"

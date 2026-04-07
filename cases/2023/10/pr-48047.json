@@ -17,14 +17,14 @@
   ],
   "failure_signature": "race = \"on\",",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
-  "module": "executor",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR focuses on performance/memory optimizations for import-into global sort / write&ingest (reduce peak memory, adjust concurrency to avoid OOM, refine readers, and improve logging). While such changes can improve stability under resource pressure, the captured evidence here is only a Bazel flag (`race = \"on\"`) and the patch does not provide a concrete flaky failure signature in this catalog, so we keep the conservative fallback classification.",
+  "module": "lightning",
+  "fix_pattern": "Optimize import-into write&ingest/global-sort to reduce memory usage and avoid OOM: stream loaded ingest data earlier, tune concurrency based on file counts/thread count, and refine reader/hotspot options (no explicit flaky signature proven in patch).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48047",
     "https://github.com/pingcap/tidb/pull/48047.patch"

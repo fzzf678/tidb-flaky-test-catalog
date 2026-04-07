@@ -17,14 +17,14 @@
   ],
   "failure_signature": "race = \"on\",",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
-  "module": "kv",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adjusts importinto's TiKV mode switching logic (treating both `StepImport` and `StepWriteAndIngest` as importing-to-TiKV steps) and adds a small unit test for the helper predicate. The captured evidence here is a Bazel flag (`race = \"on\"`), not a concrete flaky failure signature or a targeted stabilization tied to a known flaky mechanism in this catalog, so we keep the conservative fallback classification.",
+  "module": "executor",
+  "fix_pattern": "Adjust importinto TiKV-mode switching condition to cover `StepWriteAndIngest` in addition to `StepImport`, and add a unit test for the step predicate (no explicit flaky signature proven in patch).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47547",
     "https://github.com/pingcap/tidb/pull/47547.patch"
@@ -41,9 +41,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: race = \"on\",",
+      "evidence: treat `StepWriteAndIngest` as importing-to-TiKV for mode switching",
       "files: disttask/importinto/BUILD.bazel, disttask/importinto/dispatcher.go, disttask/importinto/dispatcher_test.go"
     ]
   },
-  "analysis": "PR title: importinto: switch tikv mode on write&ingest step\nPR url: https://github.com/pingcap/tidb/pull/47547\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"on\",\nChanged files (3): disttask/importinto/BUILD.bazel, disttask/importinto/dispatcher.go, disttask/importinto/dispatcher_test.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: importinto: switch tikv mode on write&ingest step\nPR url: https://github.com/pingcap/tidb/pull/47547\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: treat `StepWriteAndIngest` as importing-to-TiKV for mode switching\nChanged files (3): disttask/importinto/BUILD.bazel, disttask/importinto/dispatcher.go, disttask/importinto/dispatcher_test.go\nPatch series analyzed; see patch_url."
 }

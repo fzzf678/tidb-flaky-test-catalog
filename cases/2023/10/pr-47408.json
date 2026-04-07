@@ -17,15 +17,14 @@
   ],
   "failure_signature": "_, err := tk.Exec(\"EXPLAIN FORMAT = TRADITIONAL ((VALUES ROW ()) ORDER BY 1)\") (planner/core/plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: _, err := tk.Exec(\"EXPLAIN FORMAT = TRADITIONAL ((VALUES ROW ()) ORDER BY 1)\") (planner/core/plan_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic panic in `EXPLAIN` when used with a `VALUES` statement (and adds/adjusts a regression test). That is a correctness/robustness bug rather than a flaky/non-deterministic behavior, and the patch does not provide evidence of intermittent CI-only failures. We keep the conservative fallback classification instead of forcing it into an unrelated flakiness taxonomy bucket.",
   "module": "planner",
-  "fix_pattern": "_, err := tk.Exec(\"EXPLAIN FORMAT = TRADITIONAL ((VALUES ROW ()) ORDER BY 1)\") (planner/core/plan_test.go)",
+  "fix_pattern": "Fix planner/explain to handle `VALUES` statements without panicking (issue #45957) and add/adjust a regression test in `plan_test.go` to cover `EXPLAIN ... (VALUES ...)`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47408",
     "https://github.com/pingcap/tidb/pull/47408.patch"

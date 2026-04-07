@@ -13,20 +13,18 @@
     "name": "encode_and_sort_operator_test"
   },
   "symptoms": [
-    "race = \"on\", | slices.Sort(allData) (tests/realtikvtest/importintotest4/global_sort_test.go)"
+    "Revert of PR #47185 due to severe global-sort import performance regression (not a clear flaky signature)."
   ],
-  "failure_signature": "race = \"on\", | slices.Sort(allData) (tests/realtikvtest/importintotest4/global_sort_test.go)",
+  "failure_signature": "global-sort import performance regression after writer/concurrency change (revert)",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "global_variable_mutation",
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Global state must be reset/restored between tests. This PR stabilizes it by: race = \"on\", | slices.Sort(allData) (tests/realtikvtest/importintotest4/global_sort_test.go).",
-  "module": "module_unknown",
-  "fix_pattern": "race = \"on\", | slices.Sort(allData) (tests/realtikvtest/importintotest4/global_sort_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a revert motivated by a large performance regression in global sort import (mixing KV groups into the same sorted file caused external engine to switch files frequently and become extremely slow). While the catalog captured a `race = \"on\"` / sorting-related snippet, the patch itself is not a targeted stabilization of a specific flaky test behavior. To avoid misclassification, we keep the conservative fallback category.",
+  "module": "lightning",
+  "fix_pattern": "Revert the \"one writer per KV group for all concurrent encoders\" change to avoid mixing disjoint KV ranges into the same sorted file (which caused external engine file-switch thrashing and massive import slowdowns).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47666",
     "https://github.com/pingcap/tidb/pull/47666.patch"

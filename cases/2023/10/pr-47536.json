@@ -13,18 +13,18 @@
     "name": "dispatcher_manager_test"
   },
   "symptoms": [
-    "race = \"off\","
+    "`mysql.dist_framework_meta` can contain legacy/stale node rows after a TiDB node shuts down, causing nondeterministic behavior in disttask framework cleanup routines."
   ],
-  "failure_signature": "race = \"off\",",
+  "failure_signature": "stale disttask framework meta rows after node shutdown (dist_framework_meta not cleaned)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"off\",.",
+  "root_cause_explanation": "This case is flaky because disttask framework state is persisted in shared system tables (e.g. `mysql.dist_framework_meta`). When a TiDB node goes down, legacy node metadata can remain, and cleanup routines that compare infosync nodes vs meta table can observe inconsistent/stale state depending on timing and previous runs. The fix adds explicit cleanup of outdated meta rows when replacing dead nodes and introduces `CleanUpMeta(...)` support in the task manager to delete legacy node entries, making the cleanup behavior deterministic.",
   "module": "domain",
-  "fix_pattern": "race = \"off\",",
+  "fix_pattern": "Clean up shared disttask meta state when nodes shut down: compare infosync nodes vs `dist_framework_meta`, delete legacy node rows via `TaskManager.CleanUpMeta(...)`, and ensure dead-node replacement also removes stale metadata so subsequent cleanup logic/tests do not depend on leftover shared state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47536",
     "https://github.com/pingcap/tidb/pull/47536.patch"
@@ -53,9 +53,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: race = \"off\",",
+      "evidence: stale rows in `mysql.dist_framework_meta` after node shutdown (shared state cleanup)",
       "files: Makefile, ddl/backfilling_dispatcher.go, ddl/ddl.go, disttask/framework/dispatcher/BUILD.bazel, disttask/framework/dispatcher/dispatcher.go, disttask/framework/dispatcher/dispatcher_manager.go, disttask/framework/dispatcher/dispatcher_manager_test.go, disttask/framework/dispatcher/dispatcher_test.go, disttask/framework/dispatcher/interface.go, disttask/framework/framework_test.go, disttask/framework/mock/BUILD.bazel, disttask/framework/mock/dispatcher_mock.go, disttask/framework/storage/table_test.go, disttask/framework/storage/task_table.go, disttask/importinto/dispatcher.go, pkg/ddl/backfilling_dispatcher.go, pkg/ddl/ddl.go, pkg/disttask/framework/dispatcher/BUILD.bazel, pkg/disttask/framework/dispatcher/dispatcher.go, pkg/disttask/framework/dispatcher/dispatcher_manager.go, pkg/disttask/framework/dispatcher/dispatcher_manager_test.go, pkg/disttask/framework/dispatcher/dispatcher_test.go, pkg/disttask/framework/dispatcher/interface.go, pkg/disttask/framework/framework_test.go, pkg/disttask/framework/mock/BUILD.bazel, pkg/disttask/framework/mock/dispatcher_mock.go, pkg/disttask/framework/storage/table_test.go, pkg/disttask/framework/storage/task_table.go, pkg/disttask/importinto/dispatcher.go"
     ]
   },
-  "analysis": "PR title: disttask: cleanup framework meta when nodes shutdown\nPR url: https://github.com/pingcap/tidb/pull/47536\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: race = \"off\",\nChanged files (15): Makefile, pkg/ddl/backfilling_dispatcher.go, pkg/ddl/ddl.go, pkg/disttask/framework/dispatcher/BUILD.bazel, pkg/disttask/framework/dispatcher/dispatcher.go, pkg/disttask/framework/dispatcher/dispatcher_manager.go, pkg/disttask/framework/dispatcher/dispatcher_manager_test.go, pkg/disttask/framework/dispatcher/dispatcher_test.go, pkg/disttask/framework/dispatcher/interface.go, pkg/disttask/framework/framework_test.go, pkg/disttask/framework/mock/BUILD.bazel, pkg/disttask/framework/mock/dispatcher_mock.go, pkg/disttask/framework/storage/table_test.go, pkg/disttask/framework/storage/task_table.go, pkg/disttask/importinto/dispatcher.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: disttask: cleanup framework meta when nodes shutdown\nPR url: https://github.com/pingcap/tidb/pull/47536\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: stale rows in `mysql.dist_framework_meta` after node shutdown (shared state cleanup)\nChanged files (15): Makefile, pkg/ddl/backfilling_dispatcher.go, pkg/ddl/ddl.go, pkg/disttask/framework/dispatcher/BUILD.bazel, pkg/disttask/framework/dispatcher/dispatcher.go, pkg/disttask/framework/dispatcher/dispatcher_manager.go, pkg/disttask/framework/dispatcher/dispatcher_manager_test.go, pkg/disttask/framework/dispatcher/dispatcher_test.go, pkg/disttask/framework/dispatcher/interface.go, pkg/disttask/framework/framework_test.go, pkg/disttask/framework/mock/BUILD.bazel, pkg/disttask/framework/mock/dispatcher_mock.go, pkg/disttask/framework/storage/table_test.go, pkg/disttask/framework/storage/task_table.go, pkg/disttask/importinto/dispatcher.go\nPatch series analyzed; see patch_url."
 }
