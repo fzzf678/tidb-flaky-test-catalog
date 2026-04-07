@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: topsql: fix race in test.",
+  "root_cause_explanation": "The flakiness was caused by unsynchronized shared state in an async test: a background collector callback merges into a shared map while the test thread reads/asserts on it, triggering data races under concurrency. This PR stabilizes the test by protecting the shared map with a mutex in both the callback and assertions.",
   "module": "server",
-  "fix_pattern": "topsql: fix race in test",
+  "fix_pattern": "Synchronize shared state accessed by background goroutines in tests (e.g., mutex around shared map/slice).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31714",
     "https://github.com/pingcap/tidb/pull/31714.patch"

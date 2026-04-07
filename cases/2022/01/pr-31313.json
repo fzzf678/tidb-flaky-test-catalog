@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// this test file include some test that will cause data race, mainly because restartWorkers modify d.ctx",
   "root_cause_categories": [
-    "schema_change_race"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl, tools, util: migrate pingcap check to testify.",
+  "root_cause_explanation": "The flakiness risk here is driven by legacy test infrastructure: this change migrates a large set of DDL/tools/util tests from pingcap check (gocheck) to testify, which is a common stabilization step when the old framework/suite patterns contribute to brittle or flaky tests.",
   "module": "ddl",
-  "fix_pattern": "ddl, tools, util: migrate pingcap check to testify.",
+  "fix_pattern": "Migrate legacy pingcap check (gocheck) tests to testify (Go testing) to improve test stability.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31313",
     "https://github.com/pingcap/tidb/pull/31313.patch"

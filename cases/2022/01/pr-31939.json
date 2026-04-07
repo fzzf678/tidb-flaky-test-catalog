@@ -17,15 +17,14 @@
   ],
   "failure_signature": "- c.Skip(\"skip race test\") | tk.MustQuery(\"explain format='brief' select * from t force index(i) where id <= 1024 and c1 >= 0 and c1 <= 1024 and c2 in (2, 4, 6, 8) order by c1 limit 960\").Check(testkit.Rows( (planner/core/plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The flakiness risk here is driven by legacy test infrastructure: this PR migrates `planner/core/plan_test.go` from the old pingcap check (gocheck) style to testify-based tests. Such migrations commonly reduce brittle suite behavior and improve isolation/stability under modern Go test execution.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Migrate legacy pingcap check (gocheck) tests to testify (Go testing) to improve test stability.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31939",
     "https://github.com/pingcap/tidb/pull/31939.patch"

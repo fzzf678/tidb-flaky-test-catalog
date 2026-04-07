@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix data races in from MockTiFlash.",
-  "module": "txn",
-  "fix_pattern": "*: fix data races in from MockTiFlash",
+  "root_cause_explanation": "The flakiness was caused by data races in the MockTiFlash implementation: multiple goroutines (e.g., test logic and mocked HTTP handlers) could access and mutate MockTiFlash internal state concurrently without synchronization. This PR stabilizes it by adding locking around MockTiFlash state access/mutation to make the mock concurrency-safe under tests.",
+  "module": "domain",
+  "fix_pattern": "Synchronize shared mock state accessed concurrently (add locks/guards around MockTiFlash internals).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31836",
     "https://github.com/pingcap/tidb/pull/31836.patch"

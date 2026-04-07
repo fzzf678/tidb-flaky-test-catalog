@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sort.Strings(ll) (planner/core/physical_plan_trace_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test built lists by iterating over `otrace.State` (a Go map), so the collected logical/physical plan names had nondeterministic ordering due to random map iteration order. This PR stabilizes the assertions by sorting the collected lists (`ll`/`pl`/`bests`) before checking expected contents.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "When assertions depend on data collected from map iteration, sort the collected slice (or otherwise canonicalize order) before comparing to expected results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30335",
     "https://github.com/pingcap/tidb/pull/30335.patch"

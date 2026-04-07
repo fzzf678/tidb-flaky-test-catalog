@@ -17,14 +17,14 @@
   ],
   "failure_signature": "require.Equal(t, \"ORDER BY `id`\", orderByClause) (dumpling/export/sql_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "external_dependency"
   ],
   "review_smells": [
-    "missing_order_by"
+    "network_without_retry"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The dumpling meta-connection SQL operations could fail transiently (e.g., network/connection issues). Without robust retry/reconnect logic, these intermittent errors can surface as flaky failures. This PR stabilizes the behavior by introducing a retry-aware `BaseConn` wrapper (with `WithRetry` and optional connection rebuild) and ensuring per-query state is reset on retry (e.g., clearing partially collected results) to avoid inconsistent outputs across retries.",
   "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Wrap network/DB operations with retry + backoff (and reconnect when needed), and reset per-attempt accumulators/state on retry to avoid duplicate/partial results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30673",
     "https://github.com/pingcap/tidb/pull/30673.patch"

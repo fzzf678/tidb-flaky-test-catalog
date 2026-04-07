@@ -17,14 +17,14 @@
   ],
   "failure_signature": "dumpling: fix unstable test TestDumpBlock",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: dumpling: fix unstable test TestDumpBlock.",
-  "module": "kv",
-  "fix_pattern": "dumpling: fix unstable test TestDumpBlock",
+  "root_cause_explanation": "The test was flaky due to async timing/order: a background writer goroutine cancels the context after a sleep, and the test was asserting `dumpDatabases(...)` returns `sqlmock.ErrCancelled` without ensuring the cancellation had happened yet. Depending on timing, `dumpDatabases` could run before the context is canceled. This PR stabilizes it by waiting for the writer goroutine (and thus cancellation) to complete before asserting the expected canceled error from `dumpDatabases`.",
+  "module": "br",
+  "fix_pattern": "Wait for async cancellation/completion (e.g., waitgroup/Eventually) before asserting on cancellation-dependent errors.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32009",
     "https://github.com/pingcap/tidb/pull/32009.patch"

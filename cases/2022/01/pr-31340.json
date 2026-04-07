@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: topsql: fix data race in reporter test.",
+  "root_cause_explanation": "The flakiness was caused by a data race in the TopSQL reporter tests: a background goroutine can call into the mock data-sink stream while the test also observes/mutates the same in-memory state, and the mock was not synchronized. This PR stabilizes the tests by adding proper synchronization (e.g., mutex protection) around the mock stream's internal records/metadata collections.",
   "module": "server",
-  "fix_pattern": "topsql: fix data race in reporter test",
+  "fix_pattern": "Make test mocks concurrency-safe (add synchronization around shared state used by background goroutines).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31340",
     "https://github.com/pingcap/tidb/pull/31340.patch"

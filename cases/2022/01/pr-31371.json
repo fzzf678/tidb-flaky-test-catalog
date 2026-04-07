@@ -17,14 +17,14 @@
   ],
   "failure_signature": "statistics/handle: fix some unstable test cases",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "statistics_sensitive_test"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: statistics/handle: fix some unstable test cases.",
+  "root_cause_explanation": "The instability came from tests implicitly depending on the ambient `tidb_analyze_version` setting (query feedback/behavior differs across versions). When the session variable is left in a different state by other tests, these cases can fail in suite but pass in isolation. This PR stabilizes them by explicitly setting `@@session.tidb_analyze_version` inside the affected tests so they run independently of prior state.",
   "module": "statistics",
-  "fix_pattern": "statistics/handle: fix some unstable test cases",
+  "fix_pattern": "Set/restore relevant session variables explicitly in tests to avoid cross-test state dependency.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31371",
     "https://github.com/pingcap/tidb/pull/31371.patch"

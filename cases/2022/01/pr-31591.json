@@ -17,16 +17,14 @@
   ],
   "failure_signature": "test: stabilize `testDDLSuite.TestParallelDDL`",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: stabilize `testDDLSuite.TestParallelDDL`.",
-  "module": "test_infra",
-  "fix_pattern": "test: stabilize `testDDLSuite.TestParallelDDL`",
+  "root_cause_explanation": "The test became flaky because it assumed a deterministic completion order across multiple concurrent DDL jobs. After internal queue changes, the relative execution order of add-index vs modify-column jobs was no longer guaranteed, so the test's history-order assertions could fail intermittently. This PR stabilizes the test by removing the nondeterministic modify-column job from `TestParallelDDL` and adjusting the expected job count/order checks accordingly.",
+  "module": "ddl",
+  "fix_pattern": "Avoid asserting on nondeterministic concurrent DDL job ordering (remove/serialize conflicting DDLs or relax ordering assertions).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31591",
     "https://github.com/pingcap/tidb/pull/31591.patch"

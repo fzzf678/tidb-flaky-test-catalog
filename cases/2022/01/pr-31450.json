@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: topsql: fix data race in cpuprofile test.",
+  "root_cause_explanation": "The flakiness was caused by a data race in the cpuprofile HTTP handler test: the same `err` variable was written/read across a background goroutine (server.Serve) and a deferred cleanup closure. This PR stabilizes the test by using goroutine-local variables (`:=`) so concurrent execution no longer races on shared state.",
   "module": "server",
-  "fix_pattern": "topsql: fix data race in cpuprofile test",
+  "fix_pattern": "Avoid sharing mutable variables across goroutines (use local variables or synchronization).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31450",
     "https://github.com/pingcap/tidb/pull/31450.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "*: fix data race on the SchemaOutOfDateRetryTimes/SchemaOutOfDateRetryInterval",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: *: fix data race on the SchemaOutOfDateRetryTimes/SchemaOutOfDateRetryInterval.",
+  "root_cause_explanation": "The flakiness was caused by a data race on shared global retry settings (`SchemaOutOfDateRetryTimes` / `SchemaOutOfDateRetryInterval`): tests and runtime code could read/write these values concurrently without synchronization. This PR stabilizes it by switching the shared settings to atomic types (Load/Store) and updating tests to use atomic access patterns (and restore original values) to avoid concurrent races.",
   "module": "domain",
-  "fix_pattern": "*: fix data race on the SchemaOutOfDateRetryTimes/SchemaOutOfDateRetryInterval",
+  "fix_pattern": "Protect shared mutable globals with atomic access (Load/Store) and restore defaults in tests to prevent races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31815",
     "https://github.com/pingcap/tidb/pull/31815.patch"

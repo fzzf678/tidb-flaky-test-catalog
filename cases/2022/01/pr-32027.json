@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix data race in status server.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix data race in status server",
+  "root_cause_explanation": "The flakiness was caused by a data race in the status server startup: goroutines serving HTTP/GRPC were referencing mutable `s.statusServer` / `s.grpcServer` fields, which can be reassigned during initialization, triggering races under concurrent execution (e.g., -race). This PR stabilizes it by using local server variables for the goroutines and only then assigning them to the struct fields, avoiding racy field access inside goroutines.",
+  "module": "server",
+  "fix_pattern": "Avoid capturing mutable struct fields in goroutines (use local variables and assign once) to prevent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32027",
     "https://github.com/pingcap/tidb/pull/32027.patch"

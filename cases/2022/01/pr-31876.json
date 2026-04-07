@@ -20,11 +20,11 @@
     "external_dependency"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: server: fix several unstable test cases when using 'make ut'.",
+  "root_cause_explanation": "The flakiness was caused by hardcoded filesystem resources in tests (e.g., using a fixed \"/tmp/load_data_...\" path). Under the newer unit-test framework where multiple test functions may run in parallel and in separate OS processes, these hardcoded paths can conflict and cause intermittent failures. This PR stabilizes the tests by switching to real per-test temporary files/paths instead of fixed \"/tmp/xxx\" paths.",
   "module": "server",
-  "fix_pattern": "server: fix several unstable test cases when using 'make ut'",
+  "fix_pattern": "Avoid hardcoded shared resources in tests (use per-test temporary files/directories to prevent conflicts).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31876",
     "https://github.com/pingcap/tidb/pull/31876.patch"

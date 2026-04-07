@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: topsql: fix data race in reporter test.",
+  "root_cause_explanation": "The flakiness was caused by a race between the reporter's background worker and the test assertion: the test was reading shared in-memory state (mock sink data) that could be written concurrently, leading to data races and intermittent failures. This PR stabilizes it by switching the mock sink to communicate via a channel and waiting with a bounded timeout before asserting on the reported data.",
   "module": "server",
-  "fix_pattern": "topsql: fix data race in reporter test",
+  "fix_pattern": "Avoid unsynchronized shared state in async tests (use channels + bounded waits to observe background output safely).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31440",
     "https://github.com/pingcap/tidb/pull/31440.patch"

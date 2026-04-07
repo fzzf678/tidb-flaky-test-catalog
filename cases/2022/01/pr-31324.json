@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from t1 order by c2 + 10;\").Check(testkit.Rows(\"眐 -962541614831459.7458\")) (planner/core/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic planner bug (wrong column index resolution in NominalSort leading to a panic) and updates/adds an integration test. The patch does not provide a clear flaky-test signature or targeted stabilization behavior; classify conservatively to avoid guessing a flaky root cause.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31324",
     "https://github.com/pingcap/tidb/pull/31324.patch"

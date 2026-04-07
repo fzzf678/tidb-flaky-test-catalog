@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ddl: fix unstable test in the TestDomain",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix unstable test in the TestDomain.",
+  "root_cause_explanation": "The instability was caused by unsafe concurrency around a background DDL routine: `PollTiFlashRoutine` was started as a bare goroutine, and restart/stop test flows (e.g., TestDomain/restart_test) could race with it, leading to flaky behavior/data races. This PR stabilizes it by running the routine under a tracked WaitGroup wrapper and by making the polling loop respect cancellation deterministically.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix unstable test in the TestDomain",
+  "fix_pattern": "Manage background goroutines with proper lifecycle tracking (WaitGroup wrapper + cancellation) to avoid races in restart/stop tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31976",
     "https://github.com/pingcap/tidb/pull/31976.patch"
