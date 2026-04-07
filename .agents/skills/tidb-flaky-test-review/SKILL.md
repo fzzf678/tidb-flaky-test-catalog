@@ -9,7 +9,7 @@ description: Help an AI agent review TiDB (Go) PRs/diffs for flaky-test risk usi
 
 Audience: **AI agents**. Use this skill to generate actionable review comments.
 
-Before reviewing, **read the dictionaries from repo root** so you use the latest keys/definitions:
+Before reviewing, **you must read the full dictionaries from repo root** so you are aware of the complete set of keys and definitions. Do not rely solely on the examples in this document:
 - `review_smells.json`
 - `taxonomy.json`
 
@@ -75,11 +75,13 @@ When you have the repo locally, systematically analyze these tokens to trace exe
 - Cleanup: `defer`, `t.Cleanup`, `Close()`, `Stop()`, `Disable`, `Drop`, `Remove`
 - Plan/stats: `EXPLAIN`, `ANALYZE`, `GetTableStats`, `statsHandle`, `plan_cache`, `SetVariable`, `tidb_opt_`
 
-### 3) Map findings to stable keys
+### 3) Comprehensive Dictionary Mapping (Strict)
+
+You must exhaustively map your structural findings to the **full set of keys** defined in the repository dictionaries. Do not limit yourself to the common examples listed in this document.
 
 For each issue you find:
-1. Choose **review smell key(s)** from `review_smells.json` (repo root).
-2. Choose **root-cause category key(s)** from `taxonomy.json` (repo root).
+1. **Search the full `review_smells.json` (repo root)**: Read through the complete dictionary. Do not just pick the first one that sounds related. Choose the most precise `review_smell` key(s) that match your structural findings.
+2. **Search the full `taxonomy.json` (repo root)**: Evaluate the comprehensive list of root cause categories and assign the appropriate `taxonomy` key(s).
 3. Prefer actionable, deterministic fixes (not “make it pass” band-aids).
 4. Never invent keys. If nothing matches well, use `unclassified` and explain the symptom.
 
@@ -118,9 +120,9 @@ Confidence guidance (agent):
 - **medium**: plausible smell but needs context to confirm (e.g. missing `ORDER BY` but assertion might sort elsewhere; timeout might be fine; async wait might already have backoff).
 - **low**: weak or indirect evidence; use `needs_more_evidence` / `insufficient_evidence` and ask for CI logs / failure signature / repro hints.
 
-## Common High-Signal Smells (start here)
+## Common High-Signal Smells (Representative Examples)
 
-These catch a large portion of flaky test regressions. Use `review_smells.json` to get: description → why risky → review questions → suggested fixes → related root causes.
+These catch a large portion of flaky test regressions, but **they are not exhaustive**. You must still consult the full `review_smells.json` for precise mapping. Use `review_smells.json` to get: description → why risky → review questions → suggested fixes → related root causes.
 
 - Determinism / ordering:
   - `missing_order_by`, `unsorted_result_assertion`, `relying_on_map_iteration_order`
