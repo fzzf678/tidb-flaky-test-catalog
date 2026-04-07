@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: upgrade gomod to fix data race.",
-  "module": "module_unknown",
-  "fix_pattern": "*: upgrade gomod to fix data race",
+  "root_cause_explanation": "The tests were flaky under `-race` due to a data race in the transaction backoff variable (`transaction.PrewriteMaxBackoff`). This PR stabilizes it by upgrading `tikv/client-go` to a version where the variable becomes atomic and updating the test to use atomic `Store` when setting/resetting it.",
+  "module": "txn",
+  "fix_pattern": "Upgrade `tikv/client-go` to the race-fixed version and use atomic `Store` for `transaction.PrewriteMaxBackoff` in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34512",
     "https://github.com/pingcap/tidb/pull/34512.patch"

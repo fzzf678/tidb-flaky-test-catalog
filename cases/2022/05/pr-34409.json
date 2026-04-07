@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it compared results without enforcing a deterministic order (the `fakeRawkvClient.kvs` slice order can vary). This PR stabilizes it by sorting the slice before assertions.",
   "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort `fakeRawkvClient.kvs` with `sort.Slice` before assertions to enforce deterministic ordering.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34409",
     "https://github.com/pingcap/tidb/pull/34409.patch"

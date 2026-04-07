@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ut: add timeout for race",
   "root_cause_categories": [
-    "concurrency_data_race",
     "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: ut: add timeout for race.",
-  "module": "module_unknown",
-  "fix_pattern": "ut: add timeout for race",
+  "root_cause_explanation": "Unit tests under `-race` can take significantly longer and were hitting an insufficient timeout. This PR stabilizes them by setting a much larger `-test.timeout` value when running with race enabled.",
+  "module": "test_infra",
+  "fix_pattern": "Increase `go test` `-test.timeout` when `-race` is enabled (e.g., 2m → 30m) to avoid timeout flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34893",
     "https://github.com/pingcap/tidb/pull/34893.patch"
