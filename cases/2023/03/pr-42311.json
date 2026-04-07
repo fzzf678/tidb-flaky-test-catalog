@@ -20,7 +20,7 @@
     "schema_change_race"
   ],
   "review_smells": [
-    "unclassified"
+    "ddl_without_wait"
   ],
   "root_cause_explanation": "The issue happens during partition DDL when global indexes are involved (e.g., dropping a partition while concurrent DML runs in `StateDeleteOnly`). The global index key can already exist in the txn mem-buffer with a different value (belonging to another partition), and the old code would not reconcile the mismatch; similarly, deletes could target the wrong partition's entry. This PR fixes the intermediate-DDL-state behavior by (1) overwriting the mem-buffer entry when a global index key exists but the stored value differs, and (2) decoding the partition ID from the existing value on delete and only deleting the entry when it belongs to the current physical partition.",
   "module": "ddl",

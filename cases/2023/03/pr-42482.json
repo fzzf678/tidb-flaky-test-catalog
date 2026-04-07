@@ -20,7 +20,7 @@
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "unclassified"
+    "statistics_sensitive_test"
   ],
   "root_cause_explanation": "The flake was caused by a plan-dependent executor bug in the NAAJ (null-aware anti join) hash join implementation: when building the lists of join-key column positions to re-check (for probe keys containing NULLs), the code mixed up the field-type slices and positions, which could lead to mismatched lengths and an out-of-range access during `codec.EqualChunkRow(...)` checks in the probe worker. This PR fixes the panic by keeping the \"needCheck\" column positions and their corresponding field types aligned, and adds a regression test (`TestTiDBNAAJ`) covering the problematic `NOT IN` tuple case.",
   "module": "executor",
