@@ -13,20 +13,18 @@
     "name": "TestGlobalVariablesOnFlashback"
   },
   "symptoms": [
-    "ddl: fix flaky test TestGlobalVariablesOnFlashback"
+    "Flashback-related tests (including `TestGlobalVariablesOnFlashback`) intermittently fail when they obtain an oracle timestamp immediately after DDL/setup and then use it as a flashback target; the timestamp can be too close to the preceding operations."
   ],
-  "failure_signature": "ddl: fix flaky test TestGlobalVariablesOnFlashback",
+  "failure_signature": "Flaky flashback tests due to timing dependence on oracle TSO (mitigated by inserting a short `time.Sleep` before `GetTimestamp`).",
   "root_cause_categories": [
-    "schema_change_race",
-    "shared_state_pollution"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix flaky test TestGlobalVariablesOnFlashback.",
+  "root_cause_explanation": "These flashback tests depend on the relative ordering of operations and the oracle timestamp used as the flashback point. When the test runs quickly, calling `GetTimestamp` immediately after setup/DDL can produce a timestamp that is too close to the preceding operations, leading to timing-dependent behavior. The fix inserts a small `time.Sleep(10 * time.Millisecond)` before fetching the timestamp so the flashback point is safely after the prior actions.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix flaky test TestGlobalVariablesOnFlashback",
+  "fix_pattern": "Add a short `time.Sleep` before fetching the oracle timestamp in flashback-related tests to avoid timing-dependent TSO edge cases.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40291",
     "https://github.com/pingcap/tidb/pull/40291.patch"

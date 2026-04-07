@@ -13,9 +13,9 @@
     "name": "autoid_test"
   },
   "symptoms": [
-    "+ // call allocator.Alloc and allocator.Base in parallel for 3 seconds to detect data race"
+    "Race detector reports a data race when `autoid.(*allocator).Alloc` runs concurrently with read-only getters like `Base()` / `End()` that access shared fields without locking."
   ],
-  "failure_signature": "+ // call allocator.Alloc and allocator.Base in parallel for 3 seconds to detect data race",
+  "failure_signature": "DATA RACE in meta/autoid/autoid.go: concurrent `Alloc()` writes vs `Base()`/`End()` reads of `alloc.base`/`alloc.end` without mutex.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
@@ -23,9 +23,9 @@
     "t_parallel_with_shared_state",
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: + // call allocator.Alloc and allocator.Base in parallel for 3 seconds to detect data race.",
+  "root_cause_explanation": "The flakiness was caused by a data race: `autoid.(*allocator).Base()` / `End()` read `alloc.base` / `alloc.end` without holding `alloc.mu`, while `Alloc()` updates those fields concurrently. The fix adds mutex locking to `Base()` and `End()` and adds a unit test that runs `Alloc()` and `Base()` concurrently to reproduce and validate the fix under the race detector.",
   "module": "txn",
-  "fix_pattern": "+ // call allocator.Alloc and allocator.Base in parallel for 3 seconds to detect data race",
+  "fix_pattern": "Protect `autoid.(*allocator).Base()` / `End()` with `alloc.mu` to avoid races with concurrent `Alloc()` updates; add a race-reproducing unit test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40588",
     "https://github.com/pingcap/tidb/pull/40588.patch"

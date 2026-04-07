@@ -13,19 +13,18 @@
     "name": "column_modify_test"
   },
   "symptoms": [
-    "t.Skip(\"This test is unstable as depending on time.Sleep\")"
+    "The test is explicitly skipped with a note that it is unstable due to `time.Sleep`-based timing dependence (`t.Skip(\"This test is unstable as depending on time.Sleep\")`)."
   ],
-  "failure_signature": "t.Skip(\"This test is unstable as depending on time.Sleep\")",
+  "failure_signature": "Quarantine/skip only: `t.Skip(\"This test is unstable as depending on time.Sleep\")`",
   "root_cause_categories": [
-    "async_timing_issue"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "time_sleep_for_sync",
-    "clock_skew_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). Fixed sleeps are brittle under CI timing jitter. This PR stabilizes it by: t.Skip(\"This test is unstable as depending on time.Sleep\").",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch does not provide a targeted stabilization fix; it only contains a skip/quarantine note indicating the test is unstable due to `time.Sleep` timing dependence. Without a concrete flaky failure signature and a root-cause explanation of what races/timing conditions are being hit, keep this as needs-more-evidence.",
   "module": "txn",
-  "fix_pattern": "t.Skip(\"This test is unstable as depending on time.Sleep\")",
+  "fix_pattern": "Quarantine: skip the unstable test due to `time.Sleep`-based timing dependence.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39714",
     "https://github.com/pingcap/tidb/pull/39714.patch"

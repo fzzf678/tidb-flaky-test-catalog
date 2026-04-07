@@ -13,20 +13,18 @@
     "name": "ddl_workerpool_test"
   },
   "symptoms": [
-    "condition := fmt.Sprintf(\"exec_ID = '' or exec_lease < '%v' and ddl_job_id = %d order by ddl_job_id\", currTime.Add(-instanceLease), jobID2) (ddl/job_table_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; the changes are primarily a DDL backfill job refactor (splitting backfill jobs / updating job table APIs) plus test expectation updates."
   ],
-  "failure_signature": "condition := fmt.Sprintf(\"exec_ID = '' or exec_lease < '%v' and ddl_job_id = %d order by ddl_job_id\", currTime.Add(-instanceLease), jobID2) (ddl/job_table_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (feature/refactor + test updates).",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: condition := fmt.Sprintf(\"exec_ID = '' or exec_lease < '%v' and ddl_job_id = %d order by ddl_job_id\", currTime.Add(-instanceLease), jobID2) (ddl/job_table_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a broad DDL refactor (split backfill jobs / reorg task handling) that updates job table logic and adjusts multiple tests accordingly. The patch does not contain a concrete flaky failure signature nor a targeted stabilization change that can be confidently tied to a specific flaky symptom, so keep this case as needs-more-evidence.",
   "module": "ddl",
-  "fix_pattern": "condition := fmt.Sprintf(\"exec_ID = '' or exec_lease < '%v' and ddl_job_id = %d order by ddl_job_id\", currTime.Add(-instanceLease), jobID2) (ddl/job_table_test.go)",
+  "fix_pattern": "Refactor DDL backfill job/task handling and update tests; no targeted flaky stabilization evidence in patch.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39982",
     "https://github.com/pingcap/tidb/pull/39982.patch"

@@ -13,18 +13,18 @@
     "name": "test: fix data race in cast as array"
   },
   "symptoms": [
-    "test: fix data race in cast as array"
+    "Race detector reports a data race when evaluating `CAST(... AS ARRAY)` because `castJSONAsArrayFunctionSig.evalJSON` temporarily mutates shared `StmtCtx` flags during expression evaluation."
   ],
-  "failure_signature": "test: fix data race in cast as array",
+  "failure_signature": "DATA RACE in expression/builtin_cast.go: concurrent access to session `StmtCtx` while `CAST AS ARRAY` toggles statement context flags.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix data race in cast as array.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix data race in cast as array",
+  "root_cause_explanation": "`CAST(... AS ARRAY)` evaluation used to flip multiple flags on the shared session `StmtCtx` (e.g., overflow/truncate handling) and then restore them via `defer`. Under concurrent execution this can race with other goroutines reading or mutating the same `StmtCtx`. The fix avoids mutating the shared `StmtCtx` and instead uses a dedicated `StatementContext` (`fakeSctx`) when casting array elements, eliminating the concurrent mutation.",
+  "module": "expression",
+  "fix_pattern": "Avoid mutating shared session `StmtCtx` during `CAST AS ARRAY`; use an isolated `StatementContext` for casting array elements.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40277",
     "https://github.com/pingcap/tidb/pull/40277.patch"

@@ -9,22 +9,22 @@
   "pr_merged_at": "2023-01-17T09:13:49+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/analyze.go",
-    "name": "statistics: fix data race in the Handle.IsTableLocked"
+    "path": "statistics/handle/handle.go",
+    "name": "Handle.IsTableLocked (race detector)"
   },
   "symptoms": [
-    "statistics: fix data race in the Handle.IsTableLocked"
+    "Race detector reports a data race because `Handle.IsTableLocked` reads `h.tableLocked` without holding `h.mu`, while other goroutines may update the same state under the mutex."
   ],
-  "failure_signature": "statistics: fix data race in the Handle.IsTableLocked",
+  "failure_signature": "DATA RACE in statistics/handle/handle.go: concurrent access to `Handle.tableLocked` via `IsTableLocked` without RLock.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: statistics: fix data race in the Handle.IsTableLocked.",
+  "root_cause_explanation": "`Handle.IsTableLocked` accessed shared state (`tableLocked`) without taking the handle's RWMutex, which can race with concurrent updates/removals of locked-table state. The fix adds an `RLock`/`RUnlock` around the read path (and updates call sites to optionally skip locking when the caller already holds the lock), eliminating the data race detected by the race detector.",
   "module": "statistics",
-  "fix_pattern": "statistics: fix data race in the Handle.IsTableLocked",
+  "fix_pattern": "Protect `Handle.IsTableLocked` with `RLock`/`RUnlock` (or explicitly skip locking when already held) to avoid concurrent access races on `tableLocked`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40572",
     "https://github.com/pingcap/tidb/pull/40572.patch"

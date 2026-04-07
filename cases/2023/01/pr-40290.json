@@ -13,19 +13,18 @@
     "name": "partition_table_test"
   },
   "symptoms": [
-    "queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from thash use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; the changes primarily add LIST partition coverage to the `ORDER BY ... LIMIT` pushdown tests and adjust planner task behavior accordingly."
   ],
-  "failure_signature": "queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from thash use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (feature/tests change for LIST partition order property pushdown).",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from thash use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.g….",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR enables partial order-property pushdown for LIST partitions and expands unit tests (e.g. `TestOrderByAndLimit`) to cover LIST-partitioned tables. The patch does not provide a concrete flaky failure signature nor a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence.",
   "module": "planner",
-  "fix_pattern": "queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from thash use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.go)",
+  "fix_pattern": "Enable partial order-property pushdown for LIST partitions and expand unit tests; no targeted flaky stabilization evidence in patch.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40290",
     "https://github.com/pingcap/tidb/pull/40290.patch"

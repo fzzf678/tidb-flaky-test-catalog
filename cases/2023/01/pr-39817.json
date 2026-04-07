@@ -13,18 +13,18 @@
     "name": "slice_test"
   },
   "symptoms": [
-    "executor: fix data race at the ShowExec"
+    "Race detector reports a data race when `ShowExec` fetches bind records concurrently with bind handle updates (executor/show.go fetchShowBind)."
   ],
-  "failure_signature": "executor: fix data race at the ShowExec",
+  "failure_signature": "DATA RACE in ShowExec.fetchShowBind: concurrent access to bind records slice returned by bind handle (executor/show.go)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race at the ShowExec.",
+  "root_cause_explanation": "The flakiness was caused by a data race: `GetAllBindRecord()` returns a slice of bind records that can be modified concurrently, and ShowExec iterated over it directly. The fix deep-copies the returned bind records (copying the slice and elements) before filtering/iterating, preventing concurrent mutation from racing with the read path.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race at the ShowExec",
+  "fix_pattern": "Deep-copy bind records returned by bind handle before iterating/filtering in ShowExec to avoid concurrent mutation races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39817",
     "https://github.com/pingcap/tidb/pull/39817.patch"
