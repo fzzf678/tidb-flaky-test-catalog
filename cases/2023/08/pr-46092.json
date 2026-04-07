@@ -13,18 +13,18 @@
     "name": "planner_issue_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Planner can panic on some DML queries when a CTE is present (CTE logical table lacks TableInfo)"
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Panic due to unexpected nil/missing TableInfo when CTE exists in DML",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic planner correctness issue (potential panic when processing DML with CTE because a CTE table does not have a real *model.TableInfo). The case data here does not capture a flaky failure signature beyond the general panic symptom, and mapping it to a flakiness taxonomy category would be speculative. Classify as insufficient evidence.",
   "module": "planner",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Skip/guard CTE logical tables when accessing TableInfo to avoid panic in DML planning.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46092",
     "https://github.com/pingcap/tidb/pull/46092.patch"

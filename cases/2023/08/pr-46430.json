@@ -13,19 +13,18 @@
     "name": "compress_test"
   },
   "symptoms": [
-    "add DecompressConfig to external storage to make code to have chance to avoid async decode(default behavior of https://github.com/klauspost/compress) of ZStd, async decode cause data race when decoding of lightning/import into, as it read reader fields too."
+    "Go race detector reported a data race during ZStd decompression: the decoder could read from the underlying reader asynchronously, causing concurrent access to reader fields in lightning/importinto paths."
   ],
-  "failure_signature": "add DecompressConfig to external storage to make code to have chance to avoid async decode(default behavior of https://github.com/klauspost/compress) of ZStd, async decode cause data race when decoding of lightning/import into, as it read reader fields too.",
+  "failure_signature": "DATA RACE in ZStd decompression (asynchronous decode reading underlying reader fields concurrently) affecting lightning/importinto readers.",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "async_timing_issue"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: add DecompressConfig to external storage to make code to have chance to avoid async decode(default behavior of https://github.com/klauspost/compress) of ZStd, async decode cause data race when decoding of lightning/impor….",
+  "root_cause_explanation": "The default ZStd decoder behavior can decode asynchronously (depending on decoder concurrency), which can lead to concurrent reads of the same underlying reader and trigger data races in lightning/importinto decompression paths. The fix introduces a `DecompressConfig` (propagated through external storage compression wrappers and reader constructors) and allows configuring ZStd decoder concurrency, including setting it to 1 to force synchronous decode and avoid the unsafe concurrent reader access.",
   "module": "br",
-  "fix_pattern": "add DecompressConfig to external storage to make code to have chance to avoid async decode(default behavior of https://github.com/klauspost/compress) of ZStd, async decode cause data race when decoding of lightning/import into, as it read reader fields too.",
+  "fix_pattern": "Make decompression configurable and disable asynchronous ZStd decode (e.g., decoder concurrency=1) to avoid concurrent access to underlying reader state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46430",
     "https://github.com/pingcap/tidb/pull/46430.patch"

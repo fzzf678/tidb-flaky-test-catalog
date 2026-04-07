@@ -20,11 +20,11 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: // Move this test to here to avoid race test.",
+  "root_cause_explanation": "The flakiness signal here is tied to `-race` runs: feedback/stats related tests mutate global variables/state (e.g., feedback probability/metrics) and can trigger race-detector failures or order-dependent behavior across packages. This PR removes feedback code and reorganizes tests (explicitly noting \"avoid race test\"), reducing shared mutable state that can cause intermittent failures under the race detector.",
   "module": "statistics",
-  "fix_pattern": "// Move this test to here to avoid race test.",
+  "fix_pattern": "Remove query feedback code and reduce shared global-state mutations in feedback-related tests to avoid race-detector failures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45969",
     "https://github.com/pingcap/tidb/pull/45969.patch"

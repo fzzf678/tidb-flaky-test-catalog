@@ -17,16 +17,14 @@
   ],
   "failure_signature": "race = \"on\", | \") t group by a order by a limit 10;\").Check(testkit.Rows(\"1 10\")) (executor/test/tiflashtest/tiflash_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: race = \"on\", | \") t group by a order by a limit 10;\").Check(testkit.Rows(\"1 10\")) (executor/test/tiflashtest/tiflash_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic correctness issue in MPP planning/execution (wrong results when pushing aggregation down through UNION). The referenced SQL includes ORDER BY, and the change is not an ordering flake or a race-backed stabilization. Since the case data here does not provide CI evidence of intermittent behavior that maps cleanly to the flakiness taxonomy, classify as insufficient evidence rather than forcing a nondeterminism label.",
   "module": "planner",
-  "fix_pattern": "race = \"on\", | \") t group by a order by a limit 10;\").Check(testkit.Rows(\"1 10\")) (executor/test/tiflashtest/tiflash_test.go)",
+  "fix_pattern": "Fix MPP aggregation pushdown through UNION to avoid wrong results and update related tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46310",
     "https://github.com/pingcap/tidb/pull/46310.patch"

@@ -13,18 +13,18 @@
     "name": "detector_test"
   },
   "symptoms": [
-    "- t.Skip(\"unstable, skip it and fix it before 20210618\") | slices.SortFunc(results, func(a, b result) int { (br/pkg/lightning/duplicate/detector_test.go)"
+    "- t.Skip(\"unstable, skip it and fix it before 20210618\") (quarantined test was skipped)"
   ],
-  "failure_signature": "- t.Skip(\"unstable, skip it and fix it before 20210618\") | slices.SortFunc(results, func(a, b result) int { (br/pkg/lightning/duplicate/detector_test.go)",
+  "failure_signature": "Skipped as unstable (t.Skip quarantine)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: - t.Skip(\"unstable, skip it and fix it before 20210618\") | slices.SortFunc(results, func(a, b result) int { (br/pkg/lightning/duplicate/detector_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily migrates from `golang.org/x/exp/slices` to the Go stdlib `slices` and also removes several `t.Skip(\"unstable...\")` quarantines. While unskipping indicates tests were previously flaky, the PR does not provide enough evidence here to attribute a specific root cause category beyond \"was unstable\". Classify as insufficient evidence rather than guessing an ordering issue.",
   "module": "br",
-  "fix_pattern": "- t.Skip(\"unstable, skip it and fix it before 20210618\") | slices.SortFunc(results, func(a, b result) int { (br/pkg/lightning/duplicate/detector_test.go)",
+  "fix_pattern": "Remove `t.Skip(\"unstable...\")` quarantines while migrating exp/slices usages to stdlib `slices` (no concrete flaky signature captured).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45986",
     "https://github.com/pingcap/tidb/pull/45986.patch"

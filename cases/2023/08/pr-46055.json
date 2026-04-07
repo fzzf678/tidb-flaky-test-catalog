@@ -13,18 +13,18 @@
     "name": "export_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Timestamp values can be encoded with the wrong time zone during ADD INDEX / index reorg (time zone name vs offset mismatch in buildDAGPB)"
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Wrong timestamp encoding during DDL add-index due to time zone name/offset parsing preference",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "During ADD INDEX, TiDB reads table records and re-encodes index keys/values via a DAG request. The PR describes a subtle time context issue: the datum is already in UTC, but encoding logic applies time zone conversion again, and the DAG PB time zone name/offset fields are set inconsistently (name wins over offset when decoding). This can lead to incorrect timestamp encoding depending on the effective time zone context. The fix leaves the time zone name empty and sets the correct offset so decoding uses the intended zone, avoiding double/incorrect conversion.",
   "module": "ddl",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Fix time zone context in buildDAGPB by leaving zone name empty and setting the correct offset, preventing double/wrong timestamp conversion during index reorg.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46055",
     "https://github.com/pingcap/tidb/pull/46055.patch"

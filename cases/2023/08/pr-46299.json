@@ -13,18 +13,18 @@
     "name": "dummy_test"
   },
   "symptoms": [
-    "+ race = \"on\","
+    "Real TiKV import-into test suite ran serially and could become too slow / hit timeouts when too many tests lived in one directory"
   ],
-  "failure_signature": "+ race = \"on\",",
+  "failure_signature": "Slow/timeout-prone serial realtikv tests (suite split to reduce timeout risk)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + race = \"on\",.",
-  "module": "kv",
-  "fix_pattern": "+ race = \"on\",",
+  "root_cause_explanation": "The PR describes test-suite instability from runtime/CI constraints: real-tikv tests in a single directory run serially, and accumulating too many cases makes the suite slow enough to delay merges or even timeout. The fix mitigates this by splitting the import-into realtikv tests into multiple separate test targets/packages so they can shard better and reduce timeout risk.",
+  "module": "test_infra",
+  "fix_pattern": "Split a slow serial realtikv test suite into multiple smaller targets/packages to improve sharding and reduce timeout risk under CI load.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46299",
     "https://github.com/pingcap/tidb/pull/46299.patch"

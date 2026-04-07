@@ -13,18 +13,18 @@
     "name": "br: fix unstable test br_300_small_tables"
   },
   "symptoms": [
-    "br: fix unstable test br_300_small_tables"
+    "The integration test script parsed backup/restore data sizes from BR logs using a regex that only matched floating-point numbers; when the size was an integer, the parse result could be empty (null) and the script exited unexpectedly (br/tests/br_300_small_tables/run.sh)."
   ],
-  "failure_signature": "br: fix unstable test br_300_small_tables",
+  "failure_signature": "Parsed `backup-data-size`/`restore-data-size` becomes empty due to overly strict float-only regex in the test script (br/tests/br_300_small_tables/run.sh).",
   "root_cause_categories": [
-    "external_dependency"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: br: fix unstable test br_300_small_tables.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The instability comes from brittle log parsing in the test script: it extracted `backup-data-size` / `restore-data-size` using a float-only regex (`\\d*\\.\\d+`). When the size happened to be an integer, the extraction returned empty, leading to a null/empty value and an unexpected script exit. The fix relaxes the regex to accept both integer and decimal formats (`\\d*\\.?\\d+`) so the size is always captured.",
   "module": "br",
-  "fix_pattern": "br: fix unstable test br_300_small_tables",
+  "fix_pattern": "Make test log parsing resilient by matching both integer and decimal numeric formats when extracting sizes from logs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46560",
     "https://github.com/pingcap/tidb/pull/46560.patch"

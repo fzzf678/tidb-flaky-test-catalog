@@ -13,18 +13,19 @@
     "name": "admin_test"
   },
   "symptoms": [
-    "rand := rand.New(rand.NewSource(seed)) (executor/test/admintest/admin_test.go)"
+    "ADMIN CHECK TABLE/INDEX could hit out-of-range errors when computing checksum grouping keys from CRC32/MD5 handle values.",
+    "The added unit tests also use randomness (seeded) to corrupt/recover index entries, but the case does not include the original CI failure log."
   ],
-  "failure_signature": "rand := rand.New(rand.NewSource(seed)) (executor/test/admintest/admin_test.go)",
+  "failure_signature": "out of range in ADMIN CHECK TABLE/INDEX checksum grouping key expression (CRC32/MD5 values)",
   "root_cause_categories": [
     "insufficient_evidence"
   ],
   "review_smells": [
     "needs_more_evidence"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch casts CRC32/MD5-derived values to signed integers when building the `whereKey`/`groupByKey` expressions for fast admin check, which avoids out-of-range arithmetic in the generated SQL. However, this case does not include the concrete flaky failure signature/CI logs that triggered the change, so keep it as insufficient evidence.",
   "module": "executor",
-  "fix_pattern": "rand := rand.New(rand.NewSource(seed)) (executor/test/admintest/admin_test.go)",
+  "fix_pattern": "Cast CRC32/MD5 handle values to signed in the generated checksum SQL (`cast(... as signed)`) to avoid out-of-range errors; add regression tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46243",
     "https://github.com/pingcap/tidb/pull/46243.patch"

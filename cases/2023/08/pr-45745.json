@@ -17,15 +17,14 @@
   ],
   "failure_signature": "err = tk.ExecToErr(\"explain format = 'brief' SELECT country, product, SUM(profit) AS profit FROM sales GROUP BY country, country, product with rollup order by grouping(year);\") (planner/core/casetest/enforcempp/enforce_mpp_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: err = tk.ExecToErr(\"explain format = 'brief' SELECT country, product, SUM(profit) AS profit FROM sales GROUP BY country, country, product with rollup order by grouping(year);\") (planner/core/casetest/enforcempp/enforce_m….",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes planner logic around resolving GROUPING() function arguments in GROUP BY with rollup and adds an explicit error-path test for coverage. The PR itself reads as a deterministic correctness fix, and this catalog entry does not provide a concrete flaky failure signature that can be confidently mapped to a flakiness taxonomy category. To avoid over-claiming (e.g., plan nondeterminism), classify as insufficient evidence.",
   "module": "planner",
-  "fix_pattern": "err = tk.ExecToErr(\"explain format = 'brief' SELECT country, product, SUM(profit) AS profit FROM sales GROUP BY country, country, product with rollup order by grouping(year);\") (planner/core/casetest/enforcempp/enforce_mpp_test.go)",
+  "fix_pattern": "Fix GROUPING() argument resolution for rollup/grouping-sets and add an explicit error-path test case.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45745",
     "https://github.com/pingcap/tidb/pull/45745.patch"

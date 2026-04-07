@@ -17,15 +17,14 @@
   ],
   "failure_signature": "race = \"on\", | tk.MustExec(\"select /*+ USE_INDEX_MERGE(t, idx1, idx2) */ * from t where a = 1 or b = 1 order by c limit 1025\") (executor/test/executor/executor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: race = \"on\", | tk.MustExec(\"select /*+ USE_INDEX_MERGE(t, idx1, idx2) */ * from t where a = 1 or b = 1 order by c limit 1025\") (executor/test/executor/executor_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a correctness bug in IndexMergeReader: when ORDER BY is involved, the partial worker collects an extra `retChk` chunk, but under pushed-limit early-break paths the chunk could remain nil or append too many rows, leading to panics or incorrect behavior. The fix pre-initializes `retChk` when ORDER BY items exist and appends only the processed rows, avoiding nil/incorrect chunk state. The catalog entry does not include CI logs to confirm the exact flaky signature; classify as insufficient evidence rather than forcing an ordering taxonomy bucket.",
   "module": "executor",
-  "fix_pattern": "race = \"on\", | tk.MustExec(\"select /*+ USE_INDEX_MERGE(t, idx1, idx2) */ * from t where a = 1 or b = 1 order by c limit 1025\") (executor/test/executor/executor_test.go)",
+  "fix_pattern": "Initialize/maintain the IndexMergeReader ORDER BY return chunk (`retChk`) correctly under pushed-limit early-break paths to avoid nil/incorrect chunk state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46111",
     "https://github.com/pingcap/tidb/pull/46111.patch"

@@ -13,18 +13,18 @@
     "name": "index_merge_reader_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "IndexMerge reader can hang/exit unexpectedly when context is cancelled mid-flight (failpoint-driven reproduction in executor/test/indexmergereadtest/index_merge_reader_test.go)"
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Context cancellation during IndexMerge worker loops (issue reproduction via failpoint `testCancelContext`)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "The executor's IndexMerge async worker loops had a race/ordering issue around channel sends and context cancellation (reproduced via failpoint-driven context cancel in a unit test). The fix adjusts the injection position and uses a dedicated cancel func for test to ensure cancellation is handled safely without hanging or exiting prematurely.",
   "module": "executor",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Handle context cancellation safely in async worker loops (reorder channel sends / failpoint injection to avoid hangs or premature exit).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45608",
     "https://github.com/pingcap/tidb/pull/45608.patch"

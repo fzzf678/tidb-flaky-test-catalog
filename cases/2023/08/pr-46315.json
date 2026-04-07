@@ -13,18 +13,18 @@
     "name": "common_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "After IMPORT INTO, the auto ID allocator base may not be rebased to the max ID used, causing subsequent writes to misbehave"
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "ID allocator base not rebased after import (write-after-import failures)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a correctness issue in IMPORT INTO: the ID allocator base should be rebased to the maximum ID consumed during import so that subsequent writes allocate IDs correctly. The change is not a typical flaky stabilization (the previous symptom could be deterministic depending on workload), and this catalog entry does not provide CI evidence of intermittency. Classify as insufficient evidence.",
   "module": "executor",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Rebase the ID allocator base to the max ID used after IMPORT INTO so new writes allocate IDs correctly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46315",
     "https://github.com/pingcap/tidb/pull/46315.patch"

@@ -13,18 +13,18 @@
     "name": "dispatcher_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Disttask global task state transitions can race under concurrent updates (dispatcher/manager), leading to invalid/out-of-order state changes"
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Concurrent task state update without guarding previous state (state-machine violation)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
-  "module": "module_unknown",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "The disttask framework updates global task state under concurrent dispatcher/manager activity. Without guarding the previous state, state transitions can be applied out of order or overwritten by another actor, causing intermittent failures. The fix restricts valid state-transform rules and adds an optimistic concurrency check by requiring `prevState` in the UPDATE WHERE clause, preventing illegal/racy state transitions.",
+  "module": "domain",
+  "fix_pattern": "Restrict task state-machine transitions and use an optimistic `prevState` check when updating global task state to avoid racy overwrites.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45932",
     "https://github.com/pingcap/tidb/pull/45932.patch"

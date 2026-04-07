@@ -13,18 +13,18 @@
     "name": "main_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "The case does not include a concrete flaky failure signature; the only available hints are a Bazel test setting change (`race = \"on\"`) and defensive panic-recovery logic in the timer runtime."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "No concrete failure signature captured (only Bazel `race = \"on\"` and panic-recovery related changes in timer runtime).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
-  "module": "module_unknown",
-  "fix_pattern": "race = \"on\",",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch mainly adds defensive panic recovery/restart behavior for timer runtime background loops and enables running the tests under the race detector. Without an actual failure log or a clear flaky signature tied to these changes, it is not safe to attribute the flakiness to a specific root cause category beyond needing more evidence.",
+  "module": "server",
+  "fix_pattern": "Add panic recovery/restart logic to timer runtime background loops; run tests under the race detector to surface concurrency issues.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46412",
     "https://github.com/pingcap/tidb/pull/46412.patch"

@@ -13,18 +13,18 @@
     "name": "planner_issue_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "`planner/core/issuetest` Bazel go_test is marked `flaky=True` and `race=\"on\"` (planner/core/issuetest/BUILD.bazel)"
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "`flaky=True` in planner/core/issuetest/BUILD.bazel (race=on)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a planner ResolveIndices correctness issue around duplicate columns in Join/Limit outputs. The related Bazel test suite is flagged `flaky=True`, but this catalog entry does not provide a concrete flaky failure signature or explain why the behavior is intermittent. To avoid guessing a concurrency category from the Bazel `race` flag, classify as insufficient evidence.",
   "module": "planner",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Fix ResolveIndices behavior for Join/Limit when child outputs contain duplicate columns; flaky quarantine signal exists but no concrete flaky signature captured here.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45831",
     "https://github.com/pingcap/tidb/pull/45831.patch"

@@ -17,16 +17,14 @@
   ],
   "failure_signature": "fix data race | tk.MustQuery(\"select SQL_NO_CACHE resource_group_name, watch_text, action, watch from mysql.tidb_runaway_watch order by id\"). (executor/internal/querywatch/query_watch_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: fix data race | tk.MustQuery(\"select SQL_NO_CACHE resource_group_name, watch_text, action, watch from mysql.tidb_runaway_watch order by id\").",
-  "module": "module_unknown",
-  "fix_pattern": "fix data race | tk.MustQuery(\"select SQL_NO_CACHE resource_group_name, watch_text, action, watch from mysql.tidb_runaway_watch order by id\"). (executor/internal/querywatch/query_watch_test.go)",
+  "root_cause_explanation": "The patch includes an explicit data-race fix in runaway watch synchronization: operations like RemoveRunawayWatch and system-table readers access shared syncer state concurrently. The fix adds proper locking (mu.Lock/Unlock) and avoids unsafe concurrent mutation (e.g., checkpoint updates when doing point reads by ID), making the background sync and manual operations thread-safe.",
+  "module": "domain",
+  "fix_pattern": "Protect runaway watch syncer state with a mutex and avoid unsafe concurrent checkpoint mutation in system-table readers.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45465",
     "https://github.com/pingcap/tidb/pull/45465.patch"

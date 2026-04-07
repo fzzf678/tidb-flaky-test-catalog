@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: statistics: improve code to avoid data race.",
+  "root_cause_explanation": "The LFU stats cache eviction/reject callbacks operate on cached table objects while the cache is accessed concurrently. Mutating the evicted item in-place (e.g., dropping unnecessary data) can race with other readers and with other callback invocations, leading to data races in `-race` runs. The fix copies the cache item before dropping memory-heavy parts and refactors the reject/evict paths and cost accounting so the concurrent callbacks don't race on shared state.",
   "module": "statistics",
-  "fix_pattern": "statistics: improve code to avoid data race",
+  "fix_pattern": "Copy cache items before eviction/memory dropping and refactor reject/evict callbacks + cost accounting to avoid concurrent mutation/data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/46309",
     "https://github.com/pingcap/tidb/pull/46309.patch"
