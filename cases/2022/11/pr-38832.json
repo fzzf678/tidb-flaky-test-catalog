@@ -13,19 +13,18 @@
     "name": "foreign_key_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select * from t2 order by i\").Check(testkit.Rows(\"<nil>\", \"1\", \"1\", \"3\")) (executor/fktest/foreign_key_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; the change fixes INSERT IGNORE behavior with foreign key checks and updates related tests."
   ],
-  "failure_signature": "tk.MustQuery(\"select * from t2 order by i\").Check(testkit.Rows(\"<nil>\", \"1\", \"1\", \"3\")) (executor/fktest/foreign_key_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (bug fix + tests).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes INSERT IGNORE behavior with foreign key checks and updates related foreign key tests. The patch does not provide a concrete flaky failure signature or CI evidence of an intermittent flake (vs. a deterministic correctness bug), so we conservatively keep this case as needs-more-evidence.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Fix INSERT IGNORE behavior with foreign key checks and update tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38832",
     "https://github.com/pingcap/tidb/pull/38832.patch"

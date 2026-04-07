@@ -13,20 +13,18 @@
     "name": "index_merge_tmp_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select * from t order by a, b\").Check(testkit.Rows(\"0 9\", \"1 7\", \"2 7\", \"5 7\", \"8 8\", \"10 10\")) (ddl/index_merge_tmp_test.go)"
+    "DDL/index temp-index existence checks behave differently under fast reorg; some UTs fail when tidb_ddl_enable_fast_reorg is enabled."
   ],
-  "failure_signature": "tk.MustQuery(\"select * from t order by a, b\").Check(testkit.Rows(\"0 9\", \"1 7\", \"2 7\", \"5 7\", \"8 8\", \"10 10\")) (ddl/index_merge_tmp_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (DDL/temp-index correctness fix under fast reorg).",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch is primarily a correctness fix for temp index key existence checks during add-index backfill (fast reorg), including handling delete markers and checking temp index keys. It does not provide a concrete intermittent flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence rather than guessing a flakiness category.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Fix temp-index key existence checks under fast reorg (handle delete markers; check temp index keys during backfill).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39371",
     "https://github.com/pingcap/tidb/pull/39371.patch"

@@ -13,19 +13,21 @@
     "name": "integration_test"
   },
   "symptoms": [
-    "result.Sort().Check(testkit.Rows(\"1\", \"1\", \"2\")) (planner/core/integration_test.go)"
+    "Tests assumed deterministic outputs while plan selection and row ordering can vary (cost model version changes + queries without ORDER BY), leading to unstable expectations."
   ],
-  "failure_signature": "result.Sort().Check(testkit.Rows(\"1\", \"1\", \"2\")) (planner/core/integration_test.go)",
+  "failure_signature": "Unstable test expectations due to nondeterministic plan choice (cost model) and nondeterministic row order (missing ORDER BY).",
   "root_cause_categories": [
     "nondeterministic_plan_selection",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "assert_exact_plan_or_cost",
+    "missing_order_by",
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The tests were unstable because they depended on outputs that can legitimately vary: optimizer choices can change with cost model version/statistics, and queries without ORDER BY do not guarantee row order. This PR stabilizes the suite by explicitly setting `tidb_cost_model_version` where needed and sorting results in tests (`result.Sort().Check(...)`) for queries whose result order is not guaranteed.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Stabilize tests by pinning cost model version and enforcing deterministic result ordering in assertions (ORDER BY or sort results).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39138",
     "https://github.com/pingcap/tidb/pull/39138.patch"

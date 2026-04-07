@@ -17,14 +17,14 @@
   ],
   "failure_signature": "fix data race",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: improve the reorg task scheduling.",
+  "root_cause_explanation": "This PR fixes a data race in the backfill worker scheduler: workers were started in goroutines before their shared task/result channels were fully assigned, so concurrent reads/writes could happen on partially-initialized worker state. The fix assigns the task/result channels first and only then appends the worker and starts `runner.run(...)`.",
   "module": "ddl",
-  "fix_pattern": "ddl: improve the reorg task scheduling",
+  "fix_pattern": "Assign shared task/result channels before starting backfill worker goroutines to avoid data races during worker initialization.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38646",
     "https://github.com/pingcap/tidb/pull/38646.patch"

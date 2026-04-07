@@ -13,18 +13,19 @@
     "name": "TestCacheTableSizeLimit"
   },
   "symptoms": [
-    "+ // check the result makes this test unstable, so skip the following."
+    "TestCacheTableSizeLimit waited for `cached` with a fixed-iteration sleep loop and then asserted `require.True(cached)`; on slow CI/hardware it could remain false and fail intermittently."
   ],
-  "failure_signature": "+ // check the result makes this test unstable, so skip the following.",
+  "failure_signature": "`require.True(cached)` fails because cache state did not become true within the fixed sleep/iteration window (slow CI).",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: make test case TestCacheTableSizeLimit stable.",
+  "root_cause_explanation": "The test was flaky due to timing sensitivity: it polls for a cache condition using a fixed number of iterations with `time.Sleep(50ms)` and then asserts `cached` must be true. On slower CI machines, the condition may not be reached in time, causing intermittent failures. This PR stabilizes the test by skipping the remaining assertions when `cached` is still false (effectively quarantining the slow-path rather than failing).",
   "module": "ddl",
-  "fix_pattern": "ddl: make test case TestCacheTableSizeLimit stable",
+  "fix_pattern": "Avoid assuming fixed timing windows in tests (replace strict `require.True` after sleep loops with more robust waiting or conditional skip on slow CI).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38822",
     "https://github.com/pingcap/tidb/pull/38822.patch"

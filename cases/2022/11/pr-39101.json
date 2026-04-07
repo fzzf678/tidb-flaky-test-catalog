@@ -13,18 +13,18 @@
     "name": "TestTuner"
   },
   "symptoms": [
-    "gogctuner: fix unstable test in the TestTuner"
+    "TestTuner intermittently fails the GC percent range assertion (tn.getGCPercent()) due to runtime/memory variability."
   ],
-  "failure_signature": "gogctuner: fix unstable test in the TestTuner",
+  "failure_signature": "require.GreaterOrEqual/require.LessOrEqual assertions on tn.getGCPercent() in TestTuner fail intermittently.",
   "root_cause_categories": [
     "external_dependency"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: gogctuner: fix unstable test in the TestTuner.",
+  "root_cause_explanation": "TestTuner asserts tn.getGCPercent() falls into a hard-coded range after runtime.GC(). The original range ([50, 100]) was too strict given environment-specific factors (e.g., default MinGCPercent and test framework memory overhead), so the assertions could fail on some machines. This PR stabilizes it by asserting >= MinGCPercent and widening the upper bound to 200.",
   "module": "gc",
-  "fix_pattern": "gogctuner: fix unstable test in the TestTuner",
+  "fix_pattern": "Loosen TestTuner GC percent assertions (use MinGCPercent and widen upper bound).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39101",
     "https://github.com/pingcap/tidb/pull/39101.patch"

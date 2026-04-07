@@ -13,18 +13,18 @@
     "name": "TestSpeedRecorder"
   },
   "symptoms": [
-    "dumpling: fix TestSpeedRecorder flaky test"
+    "TestSpeedRecorder intermittently fails due to timing/scheduling variance when asserting speed calculations after time.Sleep()."
   ],
-  "failure_signature": "dumpling: fix TestSpeedRecorder flaky test",
+  "failure_signature": "require.FailNow(\"speed is unexpected\", \"expected: ... recent: ...\") in TestSpeedRecorder.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "relying_on_map_iteration_order"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Map/dict iteration order is not stable across runs. This PR stabilizes it by: dumpling: fix TestSpeedRecorder flaky test.",
-  "module": "module_unknown",
-  "fix_pattern": "dumpling: fix TestSpeedRecorder flaky test",
+  "root_cause_explanation": "TestSpeedRecorder computes recent speed based on wall-clock timing and uses time.Sleep() in the test loop. The original assertion used an absolute error threshold (abs(expected-recentSpeed) > 1), which is too strict under variable scheduling/GC/CPU load and makes the test flaky. This PR stabilizes it by switching to a relative error threshold (10%).",
+  "module": "br",
+  "fix_pattern": "Use relative error tolerance when asserting speed recorder output in timing-dependent test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39314",
     "https://github.com/pingcap/tidb/pull/39314.patch"

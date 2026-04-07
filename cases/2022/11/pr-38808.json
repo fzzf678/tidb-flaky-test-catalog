@@ -9,24 +9,22 @@
   "pr_merged_at": "2022-11-16T17:11:56+08:00",
   "test": {
     "type": "unit",
-    "path": "ddl/db_integration_test.go",
-    "name": "db_integration_test"
+    "path": "executor/autoidtest/autoid_test.go",
+    "name": "autoid_test"
   },
   "symptoms": [
-    "flaky = True and race = \"on\" | tk.MustQuery(\"select (a & 3) from t order by 1;\").Check(testkit.Rows(\"1\", \"2\")) (ddl/db_integration_test.go)"
+    "TestAlterTableAutoIDCache hardcoded `show table ... next_row_id` values (e.g. expecting a fixed AUTO_INCREMENT base), which can vary and cause CI failures; the Bazel target was also quarantined via `flaky = True` and `race = \"on\"`."
   ],
-  "failure_signature": "flaky = True and race = \"on\" | tk.MustQuery(\"select (a & 3) from t order by 1;\").Check(testkit.Rows(\"1\", \"2\")) (ddl/db_integration_test.go)",
+  "failure_signature": "Hardcoded AUTO_INCREMENT/next_row_id expectation in TestAlterTableAutoIDCache; observed value differs in CI.",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it asserted an exact `show table ... next_row_id` / AUTO_INCREMENT value that is not stable across runs (it can depend on allocator/service state). This PR stabilizes the test by reading the current `next_row_id` at runtime and asserting relative increments instead of hardcoding a fixed base (and also marks the Bazel `autoidtest_test` target as flaky/race while the issue is being investigated).",
+  "module": "executor",
+  "fix_pattern": "Avoid hardcoded AUTO_INCREMENT/next_row_id values in tests by querying the current value and asserting relative increments; quarantine Bazel target with flaky/race attributes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38808",
     "https://github.com/pingcap/tidb/pull/38808.patch"

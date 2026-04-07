@@ -13,18 +13,18 @@
     "name": "session_test"
   },
   "symptoms": [
-    "*: fix data race in the client-go's SetVars"
+    "DATA RACE in tikv client-go SetVars / transaction.SetSuccess (concurrent access without proper synchronization)."
   ],
-  "failure_signature": "*: fix data race in the client-go's SetVars",
+  "failure_signature": "DATA RACE reported by -race on transaction.SetSuccess in tikvclient/probeSetVars path.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix data race in the client-go's SetVars.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix data race in the client-go's SetVars",
+  "root_cause_explanation": "The flakiness was caused by a data race in client-go's SetVars probing path: transaction.SetSuccess was accessed concurrently without proper synchronization. This PR stabilizes the test/code by making SetSuccess an atomic value and updating the test to use Load()/Store() instead of direct reads/writes.",
+  "module": "kv",
+  "fix_pattern": "Make transaction.SetSuccess atomic and update tests to use Load/Store.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39392",
     "https://github.com/pingcap/tidb/pull/39392.patch"

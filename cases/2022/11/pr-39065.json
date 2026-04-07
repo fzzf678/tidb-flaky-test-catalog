@@ -22,7 +22,7 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: update some UTs from cost model1 to model2.",
+  "root_cause_explanation": "The tests were brittle because they asserted exact plans/cost-related outputs, while optimizer plan selection can change with cost model version/statistics (e.g., zero estimated rows can produce zero operator cost and flip plan choice). This PR stabilizes the UTs by explicitly setting `tidb_cost_model_version=2` in many tests and updating the expected outputs/golden files accordingly.",
   "module": "planner",
   "fix_pattern": "planner: update some UTs from cost model1 to model2",
   "evidence_links": [

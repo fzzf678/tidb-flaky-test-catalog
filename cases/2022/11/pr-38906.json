@@ -13,18 +13,19 @@
     "name": "switch_test"
   },
   "symptoms": [
-    "test: fix unstable test"
+    "TestConcurrentDDLSwitch sometimes checked for DDL jobs too early (before the jobs were persisted/visible), leading to intermittent failures."
   ],
-  "failure_signature": "test: fix unstable test",
+  "failure_signature": "Flaky due to DDL job visibility/persistence timing (jobs not yet in table when test starts checking).",
   "root_cause_categories": [
-    "external_dependency"
+    "schema_change_race"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "ddl_without_wait",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: test: fix unstable test.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable test",
+  "root_cause_explanation": "The test was flaky because DDL job state is updated asynchronously: the goroutine submits DDL work and the test begins polling before the jobs are reliably persisted/visible. This PR stabilizes it by adding a short sleep (2s) to give the DDL jobs time to be inserted into the job table before the ticker-based checking starts.",
+  "module": "ddl",
+  "fix_pattern": "Add synchronization/wait before asserting DDL job state (here via a short sleep to avoid checking the job table too early).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38906",
     "https://github.com/pingcap/tidb/pull/38906.patch"
