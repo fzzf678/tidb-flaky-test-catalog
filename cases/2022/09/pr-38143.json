@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "executor/tiflashtest/main_test.go",
-    "name": "main_test"
+    "name": "TestMain"
   },
   "symptoms": [
-    "Enable -race for additional executor test targets (config-only change)."
+    "Goroutine leak / insufficient cleanup in test main: OpenCensus stats `view` needs to be stopped to satisfy goleak."
   ],
-  "failure_signature": "Race runs enabled (no specific flaky fix).",
+  "failure_signature": "goleak detects leaked goroutines (OpenCensus stats `view`) when running executor tests.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Patch enables race builds for executor tests and updates Bazel configs, without a specific flaky failure signature or stabilization fix.",
-  "module": "test_infra",
-  "fix_pattern": "Adjust CI/test configuration (enable -race).",
+  "root_cause_explanation": "The executor test suite's `TestMain` uses goleak to detect leftover goroutines, but OpenCensus stats `view` can keep background goroutines running if not stopped. The patch adds a `goleak.Cleanup` hook to call `view.Stop()` so the global background goroutines are cleaned up and the test suite no longer flakes due to goroutine leaks.",
+  "module": "executor",
+  "fix_pattern": "Add goleak cleanup to stop OpenCensus stats view (`view.Stop()`) in `TestMain` to avoid goroutine leaks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38143",
     "https://github.com/pingcap/tidb/pull/38143.patch"
