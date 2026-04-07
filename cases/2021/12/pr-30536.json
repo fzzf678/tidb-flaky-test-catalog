@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"explain format='brief' select * from t force index(i) where id <= 99 and c1 >= 0 and c1 <= 99 and c2 in (2, 4, 6, 8) order by c1 limit 1\").Check(kit.Rows( (planner/core/plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(\"explain format='brief' select * from t force index(i) where id <= 99 and c1 >= 0 and c1 <= 99 and c2 in (2, 4, 6, 8) order by c1 limit 1\").Check(kit.Rows( (planner/core/plan_test.go).",
+  "root_cause_explanation": "Some tests in this change set were not safe to run in parallel due to shared/global state in package-level test setup and fixtures. This PR stabilizes the affected planner/paging tests by removing `t.Parallel()` so they run serially (and by using a common test setup in `TestMain`), reducing cross-test interference under concurrent execution.",
   "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"explain format='brief' select * from t force index(i) where id <= 99 and c1 >= 0 and c1 <= 99 and c2 in (2, 4, 6, 8) order by c1 limit 1\").Check(kit.Rows( (planner/core/plan_test.go)",
+  "fix_pattern": "Avoid running shared-state tests in parallel (remove `t.Parallel()` / use serial execution with common test setup).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30536",
     "https://github.com/pingcap/tidb/pull/30536.patch"

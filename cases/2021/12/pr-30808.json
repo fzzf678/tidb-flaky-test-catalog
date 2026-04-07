@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: Close may be called multiple times, fix potential data race.",
+  "root_cause_explanation": "The flakiness risk came from a concurrency issue where `Close()` could be invoked multiple times while another goroutine was managing the underlying connection, leading to unsynchronized access/close of shared state (e.g., `ds.conn`). This PR stabilizes the code by making `Close()` only signal cancellation, and ensuring the connection is closed in a single goroutine (via a deferred close in the run loop), avoiding concurrent close/data races.",
   "module": "server",
-  "fix_pattern": "Close may be called multiple times, fix potential data race",
+  "fix_pattern": "Make `Close()` idempotent and close shared resources (e.g., connections) in a single goroutine to avoid concurrent close/data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30808",
     "https://github.com/pingcap/tidb/pull/30808.patch"

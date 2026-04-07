@@ -20,11 +20,12 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "race_condition_in_async_code",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: make EnableSlowLog atomic to fix data race.",
-  "module": "module_unknown",
-  "fix_pattern": "make EnableSlowLog atomic to fix data race.",
+  "root_cause_explanation": "The flakiness was caused by a data race on a shared global configuration flag (`EnableSlowLog`): multiple goroutines could read/write it concurrently (e.g., via sysvars / session paths) without synchronization. This PR stabilizes it by converting the flag to an atomic type and using thread-safe Load/Store access.",
+  "module": "server",
+  "fix_pattern": "Protect shared global configuration with atomic access (Load/Store) or proper locking to prevent races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30346",
     "https://github.com/pingcap/tidb/pull/30346.patch"

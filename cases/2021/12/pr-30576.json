@@ -13,20 +13,18 @@
     "name": "TestAnalyzeGlobalStatsWithOpts/2"
   },
   "symptoms": [
-    "planner: fix the unstable test TestAnalyzeGlobalStatsWithOpts/2"
+    "After running ANALYZE, the test sometimes observed incomplete/old stats because the expected stats were not fully loaded yet."
   ],
-  "failure_signature": "planner: fix the unstable test TestAnalyzeGlobalStatsWithOpts/2",
+  "failure_signature": "Expected stats were not fully loaded yet after ANALYZE; querying stats via `show stats_*` could observe incomplete results.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "shared_state_pollution"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: planner: fix the unstable test TestAnalyzeGlobalStatsWithOpts/2.",
-  "module": "planner",
-  "fix_pattern": "planner: fix the unstable test TestAnalyzeGlobalStatsWithOpts/2",
+  "root_cause_explanation": "The flakiness came from checking statistics immediately after ANALYZE via `show stats_*`, while the expected stats may not have been loaded/ready yet (timing-dependent). This PR stabilizes the test by fetching the stats directly from storage via `StatsHandle.TableStatsFromStorage` instead of relying on asynchronously loaded in-memory/cached stats.",
+  "module": "statistics",
+  "fix_pattern": "Avoid reading asynchronously loaded stats in assertions; read stats deterministically from storage (`TableStatsFromStorage`) after ANALYZE.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30576",
     "https://github.com/pingcap/tidb/pull/30576.patch"

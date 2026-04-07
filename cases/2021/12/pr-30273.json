@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from t where (a>'a' and b='a') or (b = 'A' and a < 'd') order by a,c;\").Check(testkit.Rows(\"'b' 'a' '1'\", \"'b', 'A', '2'\", \"'c', 'a', '3'\")) (planner/core/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select * from t where (a>'a' and b='a') or (b = 'A' and a < 'd') order by a,c;\").Check(testkit.Rows(\"'b' 'a' '1'\", \"'b', 'A', '2'\", \"'c', 'a', '3'\")) (planner/core/integration_test.go).",
-  "module": "module_unknown",
-  "fix_pattern": "tk.MustQuery(\"select * from t where (a>'a' and b='a') or (b = 'A' and a < 'd') order by a,c;\").Check(testkit.Rows(\"'b' 'a' '1'\", \"'b', 'A', '2'\", \"'c', 'a', '3'\")) (planner/core/integration_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic correctness issue in ORDER BY optimization / datum comparison (collation-sensitive) and updates tests accordingly. The available case data does not provide a clear flaky-test failure signature or targeted stabilization mechanism, so we conservatively classify it as insufficient evidence.",
+  "module": "planner",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30273",
     "https://github.com/pingcap/tidb/pull/30273.patch"

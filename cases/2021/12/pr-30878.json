@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustExec(\"select avg(0) over w from t1 window w as (order by (select 1))\") (planner/core/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustExec(\"select avg(0) over w from t1 window w as (order by (select 1))\") (planner/core/integration_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic nil-pointer issue in PlanBuilder window spec handling when entering/leaving subqueries. It does not present a clear flaky-test failure signature or a targeted stabilization mechanism, so we keep the classification conservative.",
   "module": "planner",
-  "fix_pattern": "tk.MustExec(\"select avg(0) over w from t1 window w as (order by (select 1))\") (planner/core/integration_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30878",
     "https://github.com/pingcap/tidb/pull/30878.patch"

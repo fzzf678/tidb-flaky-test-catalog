@@ -20,11 +20,12 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "t_parallel_with_shared_state",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: expression: fix data race in builtin_other_vec_generated_test.go.",
+  "root_cause_explanation": "The tests were flaky due to parallel execution with shared/global state: helper-based vectorized expression tests were running with `t.Parallel()` while using shared variables/fixtures, leading to data races. This PR stabilizes them by removing `t.Parallel()` from the affected helper tests so they run serially and no longer race on shared state.",
   "module": "expression",
-  "fix_pattern": "expression: fix data race in builtin_other_vec_generated_test.go",
+  "fix_pattern": "Avoid running shared-state tests in parallel (remove `t.Parallel()` or isolate shared fixtures).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30503",
     "https://github.com/pingcap/tidb/pull/30503.patch"

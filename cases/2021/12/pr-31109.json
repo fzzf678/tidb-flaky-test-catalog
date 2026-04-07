@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rand.Seed(time.Now().Unix()) (planner/core/prepare_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: rand.Seed(time.Now().Unix()) (planner/core/prepare_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly adds new test coverage for `admin flush plan_cache`, including randomized execution paths seeded by `time.Now()`. While time-seeded randomness can introduce nondeterminism, the case does not provide a concrete flaky failure signature or evidence that a specific stabilization was performed, so we keep the classification conservative.",
   "module": "planner",
-  "fix_pattern": "rand.Seed(time.Now().Unix()) (planner/core/prepare_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31109",
     "https://github.com/pingcap/tidb/pull/31109.patch"

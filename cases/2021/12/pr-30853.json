@@ -9,8 +9,8 @@
   "pr_merged_at": "2021-12-21T11:47:46+08:00",
   "test": {
     "type": "unit",
-    "path": "ddl/ddl_test.go",
-    "name": "ddl_test"
+    "path": "ddl/foreign_key_test.go",
+    "name": "TestForeignKey"
   },
   "symptoms": [
     "// fix data race"
@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: // fix data race.",
+  "root_cause_explanation": "The flakiness risk came from concurrent access to shared state inside the DDL hook/test logic (e.g., hook callbacks updating shared variables), which can lead to data races and nondeterministic behavior. This PR stabilizes it by adding a mutex to guard shared variables in the hook callback path (the code marked with `// fix data race`).",
   "module": "ddl",
-  "fix_pattern": "// fix data race",
+  "fix_pattern": "Protect shared test/hook state with a mutex to avoid data races in concurrent hook callbacks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30853",
     "https://github.com/pingcap/tidb/pull/30853.patch"

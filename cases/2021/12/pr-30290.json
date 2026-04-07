@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: I try to add some unit test code like this and run it with `-race` flag, but can't reproduce.",
+  "root_cause_explanation": "The flakiness risk here comes from a concurrency/data race in the write path: parallel projection could lead to concurrent access to MemDB, which is not thread-safe (issue #26832). This PR stabilizes it by forcing insert/update/delete to use the non-parallel projection executor, avoiding concurrent MemDB access during writes.",
   "module": "executor",
-  "fix_pattern": "I try to add some unit test code like this and run it with `-race` flag, but can't reproduce.",
+  "fix_pattern": "Avoid concurrent access to non-thread-safe shared state (disable parallel execution in write path).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30290",
     "https://github.com/pingcap/tidb/pull/30290.patch"
