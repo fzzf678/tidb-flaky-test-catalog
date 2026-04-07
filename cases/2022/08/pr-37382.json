@@ -17,14 +17,14 @@
   ],
   "failure_signature": "testkit,executor: add MustQueryWitnContext API and fix unstable test TestCoprocessorPriority",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: testkit,executor: add MustQueryWitnContext API and fix unstable test TestCoprocessorPriority.",
+  "root_cause_explanation": "The test installs a global TiKV client hijacker for priority checking; without proper scoping, this global hook can affect other operations/tests and cause cross-test interference. This PR stabilizes the test by adding context-aware `MustExec/QueryWithContext` APIs and using a dedicated context so the hijacker's priority checks only apply to the intended test actions.",
   "module": "executor",
-  "fix_pattern": "testkit,executor: add MustQueryWitnContext API and fix unstable test TestCoprocessorPriority",
+  "fix_pattern": "Scope global client-hijacker effects to a dedicated context (use `MustExec/QueryWithContext`) to avoid cross-test interference from global hooks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37382",
     "https://github.com/pingcap/tidb/pull/37382.patch"

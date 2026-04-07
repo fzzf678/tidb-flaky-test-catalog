@@ -13,18 +13,18 @@
     "name": "backup_restore_test"
   },
   "symptoms": [
-    "// Use the testSerialSuite to fix the unstable test"
+    "Test cleanup/isolation refactor: migrate cleanup from scattered defers to `t.Cleanup()` (reduces unstable/serial-only behavior)."
   ],
-  "failure_signature": "// Use the testSerialSuite to fix the unstable test",
+  "failure_signature": "Resource/test-fixture cleanup issue (patch migrates cleanup to `t.Cleanup()` to improve isolation).",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: *: replace defer clean with t.Cleanup.",
-  "module": "module_unknown",
-  "fix_pattern": "*: replace defer clean with t.Cleanup",
+  "root_cause_explanation": "Tests that rely on incomplete/fragile teardown can leak resources or shared state and become suite-order-dependent. This PR improves stability by replacing defer-based cleanup with `t.Cleanup()` so resources/state are reliably cleaned up per test, reducing shared-state leakage and unstable behavior.",
+  "module": "test_infra",
+  "fix_pattern": "Use `t.Cleanup()` for reliable per-test teardown (replace scattered defer-based cleanup) to reduce leaked state/resources.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36722",
     "https://github.com/pingcap/tidb/pull/36722.patch"

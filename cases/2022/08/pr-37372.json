@@ -20,10 +20,9 @@
     "shared_state_pollution"
   ],
   "review_smells": [
-    "insufficient_cleanup_between_tests",
-    "shared_table_without_isolation"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. This PR stabilizes it by: executor: fix unstable TestGlobalMemoryTrackerOnCleanUp.",
+  "root_cause_explanation": "The test was flaky because executor memory trackers were not reliably reset/cleaned up on `Close()`, so memory-usage state could leak across statements and make assertions brittle. This PR stabilizes the test by resetting the statement memory tracker (`ReplaceBytesUsed(0)`) during executor `Close()` and adjusting the test to assert on the per-session statement tracker.",
   "module": "executor",
   "fix_pattern": "executor: fix unstable TestGlobalMemoryTrackerOnCleanUp",
   "evidence_links": [

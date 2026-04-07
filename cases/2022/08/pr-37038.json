@@ -22,9 +22,9 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix unstable test TestPushDownSelectionForMPP.",
+  "root_cause_explanation": "The test asserts on MPP/TiFlash-related plan behavior, but the read-engine selection can vary if `tidb_isolation_read_engines` is not pinned, leading to intermittent plan differences. This PR stabilizes the test by explicitly setting `@@tidb_isolation_read_engines='tiflash,tidb'` so the optimizer consistently considers TiFlash for MPP.",
   "module": "planner",
-  "fix_pattern": "planner: fix unstable test TestPushDownSelectionForMPP",
+  "fix_pattern": "Pin `tidb_isolation_read_engines` in the test so the optimizer consistently considers TiFlash/MPP and plan assertions are stable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37038",
     "https://github.com/pingcap/tidb/pull/37038.patch"
