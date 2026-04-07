@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(`explain format='brief' select row_number() over(order by a.k) from (select * from sbtest where id<10) a`).Check(testkit.Rows( (pkg/planner/core/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(`explain format='brief' select row_number() over(order by a.k) from (select * from sbtest where id<10) a`).Check(testkit.Rows( (pkg/planner/core/integration_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic planner/optimizer bug (DataSource task selection terminating too early when exploring enforced properties) and adds a regression test (`TestIssue46177`) that asserts expected EXPLAIN output with/without a fix-control switch. The case evidence does not include flaky CI failures or a nondeterministic trigger, so we keep a conservative fallback classification instead of treating this as a flaky-plan issue.",
   "module": "planner",
-  "fix_pattern": "tk.MustQuery(`explain format='brief' select row_number() over(order by a.k) from (select * from sbtest where id<10) a`).Check(testkit.Rows( (pkg/planner/core/integration_test.go)",
+  "fix_pattern": "Fix DataSource `findBestTask` behavior for enforced-property exploration (introduce optimizer fix-control `46177` to optionally explore enforced plans). Add/extend regression tests asserting the expected EXPLAIN output with/without the fix-control enabled.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48186",
     "https://github.com/pingcap/tidb/pull/48186.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "select group_concat(c order by (select group_concat(c order by a) from t2 where a=t1.a)) from t1; (tests/integrationtest/t/planner/core/integration.test)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: select group_concat(c order by (select group_concat(c order by a) from t2 where a=t1.a)) from t1; (tests/integrationtest/t/planner/core/integration.test).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR updates the `mysql-tester` dependency and then refreshes a large number of integration test inputs/outputs (mostly formatting / semicolon cleanup / golden result updates) to match the new tester behavior. The case evidence is a SQL statement from the test suite, not a flaky failure signature, so we keep a conservative fallback classification instead of forcing an ordering/plan flakiness label.",
   "module": "test_infra",
-  "fix_pattern": "select group_concat(c order by (select group_concat(c order by a) from t2 where a=t1.a)) from t1; (tests/integrationtest/t/planner/core/integration.test)",
+  "fix_pattern": "Bump `mysql-tester` to a newer commit and update affected integration test `.test` and `.result` files accordingly (format/semicolons/output changes).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48462",
     "https://github.com/pingcap/tidb/pull/48462.patch"

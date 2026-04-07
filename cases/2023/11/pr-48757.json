@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "This case is flaky because merging global stats TopN with concurrency exposed a logical race/ordering bug: the merge worker processed a slice shard but used the shard-local index (starting from 0) without applying the `start` offset, which could place merged results into the wrong slot when concurrency > 1. In addition, pooled merge structs needed proper field reset on reuse. The fix corrects the index offset (`i += start`) and resets recycled fields (e.g. `disjointNDV`) so concurrent/global stats merging produces stable, correct results.",
   "module": "statistics",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Fix concurrent global-stats TopN merge by applying the correct shard start offset when iterating (`i += start`) and by resetting pooled/recycled merge fields (e.g. `bucket4Merging.disjointNDV = 0`) before reuse; update related unit tests/bench configs accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48757",
     "https://github.com/pingcap/tidb/pull/48757.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "slices.SortFunc(data, func(a, b []byte) int { (br/pkg/membuf/buffer_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: slices.SortFunc(data, func(a, b []byte) int { (br/pkg/membuf/buffer_test.go).",
-  "module": "gc",
-  "fix_pattern": "slices.SortFunc(data, func(a, b []byte) int { (br/pkg/membuf/buffer_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a performance/memory optimization (introduce `membuf.SliceLocation` to reduce GC pressure and adapt Lightning external writer to store locations instead of slices). The captured evidence is a code excerpt from a membuf benchmark/test (`slices.SortFunc(...)`), not a flaky failure signature or stabilization change, so we keep a conservative fallback classification.",
+  "module": "br",
+  "fix_pattern": "Introduce `membuf.SliceLocation` (store slice locations instead of byte slices to reduce GC pressure) and update Lightning external writer/buffer code and tests/benchmarks accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48710",
     "https://github.com/pingcap/tidb/pull/48710.patch"

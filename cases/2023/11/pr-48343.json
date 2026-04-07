@@ -17,14 +17,14 @@
   ],
   "failure_signature": "-// TODO: flaky test which can't find the root cause, will run it later.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "This case is flaky because cancellation/timeout signals were not propagated correctly in disttask execution: the scheduler passed a long-lived \"manager context\" down to the local backend, so canceling a task did not cancel the underlying gRPC/worker operations (workers could hang waiting on TiKV). The fix introduces a per-task context (`taskCtx`) for scheduler lifecycle methods (Init/Run/Pause/Rollback) so cancel/pause/resume can reliably stop background work, while keeping manager context for task-table interactions.",
   "module": "domain",
-  "fix_pattern": "-// TODO: flaky test which can't find the root cause, will run it later.",
+  "fix_pattern": "Use a per-task `context.WithCancelCause` and pass it to scheduler methods (Init/Run/Pause/Rollback) so cancellation interrupts long-running/gRPC operations; keep manager context only for task-table persistence/retry paths.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48343",
     "https://github.com/pingcap/tidb/pull/48343.patch"

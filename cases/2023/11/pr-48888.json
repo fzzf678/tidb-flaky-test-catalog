@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: Add `Clone()` and `Internal()` method for `Column.GeneratedExpr` field.",
-  "module": "module_unknown",
-  "fix_pattern": "Add `Clone()` and `Internal()` method for `Column.GeneratedExpr` field.",
+  "root_cause_explanation": "This case is flaky under the race detector because generated-column expressions were stored as a shared mutable AST node (`Column.GeneratedExpr`). Multiple code paths (planner rewrite, DDL/schema tracker, Lightning) can read/rewrite/resolve this expression, and if the same AST instance is reused across goroutines it can trigger data races. The fix wraps the expression as a `ClonableExprNode` backed by the `GeneratedExprString` and requires callers to use `Clone()` when they need to rewrite/modify the AST, while `Internal()` is used only for read-only inspection.",
+  "module": "ddl",
+  "fix_pattern": "Replace `Column.GeneratedExpr` with a `ClonableExprNode` that can reconstruct a fresh AST from `GeneratedExprString` (`Clone()`), and update all rewrite/eval sites to use `GeneratedExpr.Clone()` instead of sharing/mutating a single AST node; use `Internal()` only in read-only checks (dependencies/illegal-fn checks).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48888",
     "https://github.com/pingcap/tidb/pull/48888.patch"

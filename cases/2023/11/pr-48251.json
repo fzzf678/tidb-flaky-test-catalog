@@ -17,14 +17,14 @@
   ],
   "failure_signature": "without race",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: without race.",
+  "root_cause_explanation": "This case is flaky because the test is slow: under the injected `exchangePartitionErr` failpoint, DDL exchange-partition can retry many times (default `DDLErrorCountLimit` is high), making the test take much longer and intermittently hit CI time budgets (especially under `-race`). The fix temporarily lowers `DDLErrorCountLimit` to 3 for this test and restores the original value afterwards, keeping runtime stable.",
   "module": "ddl",
-  "fix_pattern": "without race",
+  "fix_pattern": "In `TestHalfwayCancelOperations`, temporarily set `variable.SetDDLErrorCountLimit(3)` (saving/restoring the original value with `defer`) so the failpoint-triggered exchange-partition retry loop does not run hundreds of times and the test runtime stays stable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48251",
     "https://github.com/pingcap/tidb/pull/48251.patch"

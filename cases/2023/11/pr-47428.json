@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix data race.",
+  "root_cause_explanation": "Parallel hash aggregation had a real concurrency data race during worker lifecycle/cleanup: the executor cleared worker slices (`partialWorkers`/`finalWorkers`) while other goroutines could still access them, leading to race-detector failures and flaky CI runs. This PR stabilizes it by removing the racy nil assignments and tightening the parallel hash aggregation worker/map handling.",
   "module": "executor",
-  "fix_pattern": "fix data race",
+  "fix_pattern": "Avoid racy cleanup in parallel hash aggregation by not nil-ing out `partialWorkers`/`finalWorkers` after closing channels; adjust worker/map logic to keep concurrent access safe under the race detector.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47428",
     "https://github.com/pingcap/tidb/pull/47428.patch"

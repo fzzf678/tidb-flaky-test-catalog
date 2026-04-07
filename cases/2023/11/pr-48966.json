@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: fix DATA RACE caused by TestTiDBBindingInListToVer175",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: planner: fix DATA RACE caused by TestTiDBBindingInListToVer175.",
-  "module": "planner",
-  "fix_pattern": "planner: fix DATA RACE caused by TestTiDBBindingInListToVer175",
+  "root_cause_explanation": "This case is flaky due to a concurrency bug in session bootstrap upgrade logic: `upgradeToVer175` iterates over a result set (`rs.Next(...)`) and previously executed `UPDATE mysql.bind_info ...` statements via the same session inside the scan loop, while the current statement/resultset had not finished. This can lead to concurrent statement execution / unsafe re-entrance on the session (showing up as DATA RACE reports in `TestTiDBBindingInListToVer175`). The fix buffers the needed UPDATE statements during the scan and executes them only after the scan finishes and the result set is closed, avoiding the race.",
+  "module": "session",
+  "fix_pattern": "Avoid running `mustExecute(...)` updates while a result set is still being scanned: collect the needed `UPDATE mysql.bind_info ...` statements during `rs.Next(...)`, close the result set, then execute the updates afterwards to prevent session re-entrance / concurrency races during bootstrap upgrade.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48966",
     "https://github.com/pingcap/tidb/pull/48966.patch"

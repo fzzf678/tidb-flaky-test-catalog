@@ -18,14 +18,14 @@
   "failure_signature": "tk.MustQuery(\"select a from t use index(idx) order by a;\").Check(testkit.Rows(\"3\", \"4\", \"5\")) (tests/realtikvtest/addindextest1/disttask_test.go)",
   "root_cause_categories": [
     "external_dependency",
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
     "real_tikv_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: tk.MustQuery(\"select a from t use index(idx) order by a;\").Check(testkit.Rows(\"3\", \"4\", \"5\")) (tests/realtikvtest/addindextest1/disttask_test.go).",
+  "root_cause_explanation": "This case is flaky because it depends on real cluster/PD availability: a transient PD TSO allocation failure (e.g. PD not leader) can cause `ResetEngine` to fail. The bug was that the engine manager state was not cleaned up on `ResetEngine` error, so the next retry could reuse an engine/backend with an uninitialized (zero) commit TS, leading to ingest failures. The fix clears `engineInfo.openEngine`/`engineInfo.closedEngine` on reset error so the retry opens a fresh backend and allocates a valid TS.",
   "module": "ddl",
-  "fix_pattern": "tk.MustQuery(\"select a from t use index(idx) order by a;\").Check(testkit.Rows(\"3\", \"4\", \"5\")) (tests/realtikvtest/addindextest1/disttask_test.go)",
+  "fix_pattern": "On `ResetEngine` error (e.g. PD TSO allocation failure), set `engineInfo.openEngine` and `engineInfo.closedEngine` to `nil` so subsequent retries recreate the backend/engine and re-allocate commit TS instead of reusing stale engine state with zero TS; update related DDL ingest and Lightning local-backend paths and adjust real-TiKV tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48797",
     "https://github.com/pingcap/tidb/pull/48797.patch"

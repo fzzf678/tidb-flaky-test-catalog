@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: // As multiple threads may memorize regexp and cause data race, only the first thread.",
+  "root_cause_explanation": "This case is flaky (typically via race-detector failures) because builtin expression evaluation previously relied on an \"inner\" stored session context inside builtin function structs (e.g. `baseBuiltinFunc.ctx`). When expression/builtin evaluation happens concurrently, capturing and reusing a shared context can lead to data races or incorrect cross-goroutine context usage. This PR removes the inner ctx from builtin functions and makes all Eval/VecEval paths use the `ctx` parameter passed into evaluation, reducing shared-state races during concurrent evaluation (including regexp memoization paths guarded by `sync.Once`).",
   "module": "expression",
-  "fix_pattern": "// As multiple threads may memorize regexp and cause data race, only the first thread",
+  "fix_pattern": "Remove the stored inner session context from builtin funcs (`baseBuiltinFunc.ctx`) and plumb the caller-provided `ctx` through all Eval/VecEval methods, so builtin evaluation does not reuse shared context across goroutines; update related helpers (e.g. regexp memoization / param builders) to use the passed-in ctx.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48409",
     "https://github.com/pingcap/tidb/pull/48409.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "fix unstable test | explain select * from pt1 order by a; (tests/integrationtest/r/planner/cascades/integration.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: fix unstable test | explain select * from pt1 order by a; (tests/integrationtest/r/planner/cascades/integration.result).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a broad integrationtest infrastructure update (mysql-tester bump, enable `table-lock`, and moving multiple test cases into the integrationtest harness) plus some golden output adjustments. It touches many tests/results at once and the patch does not provide a single concrete flaky failure signature attributable to a specific root cause mechanism, so we keep the conservative fallback classification.",
   "module": "test_infra",
-  "fix_pattern": "fix unstable test | explain select * from pt1 order by a; (tests/integrationtest/r/planner/cascades/integration.result)",
+  "fix_pattern": "Update integrationtest harness and golden tests: bump mysql-tester version, enable `table-lock` in integrationtest config, move multiple test cases from Go tests into integrationtest `.test/.result`, and adjust golden matching (e.g., replace-regex patterns / tighter information_schema filtering) to reduce nondeterministic output in CI.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48956",
     "https://github.com/pingcap/tidb/pull/48956.patch"

@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: // report unexpected/unreasonable data race error on subIndexWorkerWg when running TestAnalyzeVirtualCol test.",
+  "root_cause_explanation": "`TestAnalyzeVirtualCol` was flaky under `-race` because the analyze implementation managed multiple goroutines and a wait group (`subIndexWorkerWg`) in a way that could trigger race-detector warnings (unexpected/unreasonable data race reports) during concurrent sampling/NDV handling. This PR stabilizes it by reworking analyze concurrency to reuse goroutines via a goroutine pool and by switching to a pool-backed wait-group wrapper (`WaitGroupPool`) to ensure the wait-group lifecycle is safe under concurrency.",
   "module": "executor",
-  "fix_pattern": "// report unexpected/unreasonable data race error on subIndexWorkerWg when running TestAnalyzeVirtualCol test",
+  "fix_pattern": "Refactor analyze executor concurrency to use a goroutine pool (`gp.Pool`) and a pool-backed wait group (`WaitGroupPool`), avoiding racy wait-group initialization/usage (e.g. `subIndexWorkerWg`) observed under `-race` in `TestAnalyzeVirtualCol`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47637",
     "https://github.com/pingcap/tidb/pull/47637.patch"

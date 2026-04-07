@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "This case is flaky due to a logical race in disttask subtask state management under failure scenarios (e.g. network partition / cancel / reschedule): a subtask could be updated by a stale executor instance even after ownership (`exec_id`) changed, causing incorrect early-finish / success states. The fix threads context through task-table operations and guards subtask updates by `exec_id` (update `... where id = ? and exec_id = ?`), so only the current owner can mutate subtask state/meta; it also adds tests to ensure canceled contexts and exec-id changes do not incorrectly update subtasks.",
   "module": "domain",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Pass ctx into TaskManager/task-table methods and update subtask state/meta with an `exec_id` predicate (only update rows owned by the current executor). Add tests covering ctx-cancel and exec-id-changed scenarios to prevent stale executors from marking subtasks succeed/finished incorrectly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48660",
     "https://github.com/pingcap/tidb/pull/48660.patch"

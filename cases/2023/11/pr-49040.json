@@ -13,18 +13,18 @@
     "name": "disttask: fix flaky multi task test"
   },
   "symptoms": [
-    "disttask: fix flaky multi task test"
+    "Brittle multi-task assertion: require task[0]=Reverted and task[1..]=Succeed (which task fails can be nondeterministic under concurrency)"
   ],
-  "failure_signature": "disttask: fix flaky multi task test",
+  "failure_signature": "Brittle multi-task assertion expects a specific task index to be reverted/succeeded in a concurrent run",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "This case is flaky because the multi-task test assumed a deterministic mapping between task index and final state (e.g., `tasks[0]` must be reverted and `tasks[1..]` must succeed). Under concurrent scheduling, the exact task that hits the injected failure / revert path can vary, so asserting per-index outcomes is brittle and can fail intermittently. The fix makes the assertion order-independent by checking only that exactly one task ends up reverted, regardless of which task index it is.",
   "module": "domain",
-  "fix_pattern": "disttask: fix flaky multi task test",
+  "fix_pattern": "In concurrent multi-task tests, avoid asserting exact per-index task outcomes; instead assert an invariant (e.g., exactly one task is reverted/failed) to make the test resilient to nondeterministic scheduling.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49040",
     "https://github.com/pingcap/tidb/pull/49040.patch"

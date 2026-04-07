@@ -17,15 +17,14 @@
   ],
   "failure_signature": "race = \"on\", | insert into t select a from t1 order by a desc; (tests/integrationtest/r/executor/executor.result)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: race = \"on\", | insert into t select a from t1 order by a desc; (tests/integrationtest/r/executor/executor.result).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR updates `mysql-tester` includes and migrates more test cases into `tests/integrationtest/` (plus golden result refresh). The captured evidence includes Bazel `race = \"on\"` and SQL snippets that already contain `ORDER BY`, which are not flaky failure signatures by themselves. Since the diff is primarily test infra migration/refresh, we keep a conservative fallback classification.",
   "module": "test_infra",
-  "fix_pattern": "race = \"on\", | insert into t select a from t1 order by a desc; (tests/integrationtest/r/executor/executor.result)",
+  "fix_pattern": "Update mysql-tester includes and move additional package tests into `tests/integrationtest` (rewrite `.test` / `.result` files and adjust Bazel configs) as part of test infrastructure migration; no specific flaky stabilization is shown.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48617",
     "https://github.com/pingcap/tidb/pull/48617.patch"

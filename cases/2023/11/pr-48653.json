@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rnd := rand.New(rand.NewSource(0)) (pkg/util/chunk/list_test.go)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "rnd := rand.New(rand.NewSource(0)) (pkg/util/chunk/list_test.go)",
+  "root_cause_explanation": "This case is flaky because using the package-level `math/rand` global generator (`rand.Seed(...)`) mutates shared global state and can make tests order-dependent or nondeterministic (different test execution order can observe different random sequences). The fix stops seeding the global generator and instead uses local RNG instances (`rand.New(rand.NewSource(seed))`), improving determinism and avoiding cross-test interference (also aligning with Go 1.20 guidance that random seeding at startup makes `rand.Seed(time.Now().UnixNano())` unnecessary).",
+  "module": "test_infra",
+  "fix_pattern": "Replace `rand.Seed(...)` (global RNG mutation) with local `rand.New(rand.NewSource(seed))` usage across tests/tools, and log the chosen seed for reproducibility without changing global shared RNG state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/48653",
     "https://github.com/pingcap/tidb/pull/48653.patch"

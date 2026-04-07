@@ -17,14 +17,14 @@
   ],
   "failure_signature": "- Remove a flaky test because if goroutine runs faster than file \"a\" goroutine it will panic due to nil dereference. And returning the first error is easy when use errorgroup.",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: Fix a bug that `AllocBytesWithSliceLocation` wrongly used internal members so after `buffer.Reset` it will not allocate enough blocks Add TestPrepareLargeData which writes 1000 * 256MB data to the given storage.",
-  "module": "module_unknown",
-  "fix_pattern": "Fix a bug that `AllocBytesWithSliceLocation` wrongly used internal members so after `buffer.Reset` it will not allocate enough blocks Add TestPrepareLargeData which writes 1000 * 256MB data to the given storage. In furture PR we will use these data to check the performance of merge step and LoadIngestData Remove a flaky test because if goroutine runs faster than file \"a\" goroutine it will panic due to nil dereference. And returning the first error is easy when use errorgroup.",
+  "root_cause_explanation": "This case is flaky due to a concurrency race in test/error-injection logic: when running merge-related code concurrently, a goroutine-order dependent path could hit a nil dereference panic (\"if goroutine runs faster than file \\\"a\\\" goroutine\"). Because the failure depends on scheduling/timing, the same test can pass or panic nondeterministically. The fix removes the flaky failpoint-based test (and corresponding failpoint injection path) and relies on `errgroup` cancellation/first-error propagation rather than trying to deterministically coordinate multiple goroutines via a fragile injected-error setup.",
+  "module": "lightning",
+  "fix_pattern": "Avoid goroutine-order dependent flaky tests in the lightning external-merge code: remove the failpoint-based injected-error path and delete the flaky `TestMergeOverlappingFiles` that could panic due to nil dereference depending on goroutine scheduling; keep error handling based on `errgroup` first-error propagation.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/49024",
     "https://github.com/pingcap/tidb/pull/49024.patch"
