@@ -17,14 +17,14 @@
   ],
   "failure_signature": "- t.Skip(\"unstable, skip it and fix it before 20210702\")",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly addresses a functional conflict between TopSQL CPU profiling and the pprof HTTP profile API (introducing a ParallelCPUProfiler and related plumbing). The case does not include a concrete flaky-test failure signature or targeted stabilization mechanism to confidently classify a specific flakiness root cause here.",
+  "root_cause_explanation": "Some test suites use go.uber.org/goleak in `TestMain` to detect leaked goroutines. This PR introduces new background profiling goroutines (e.g., `ParallelCPUProfiler.profilingLoop` and related pprof/profile workers) which can be present during unit tests and trigger goleak failures. The patch stabilizes the tests by updating goleak options in affected `TestMain` files to ignore these known long-lived goroutines so the suite no longer flakes on benign background workers.",
   "module": "server",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "fix_pattern": "Stabilize go-leak checks: extend goleak ignore rules in `TestMain` for known long-lived profiling goroutines (e.g., `ParallelCPUProfiler.profilingLoop`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30891",
     "https://github.com/pingcap/tidb/pull/30891.patch"

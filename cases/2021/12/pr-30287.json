@@ -23,9 +23,9 @@
     "t_parallel_with_shared_state",
     "global_variable_mutation"
   ],
-  "root_cause_explanation": "The tests were flaky due to parallel execution with shared global failpoint state: multiple `t.Parallel()` tests enabled/disabled the `FakeAuthSwitch` failpoint, so one test could observe the failpoint disabled when it expected it enabled. This PR stabilizes the tests by scoping failpoint control via context (or otherwise isolating the failpoint state) so parallel tests no longer interfere with each other.",
+  "root_cause_explanation": "The tests were flaky due to parallel execution with shared global failpoint state: multiple `t.Parallel()` tests enabled/disabled the `FakeAuthSwitch` failpoint, so one test could observe the failpoint disabled when it expected it enabled. This PR stabilizes the tests by removing `t.Parallel()` from the affected authplugin tests so failpoint toggling no longer happens concurrently across tests.",
   "module": "server",
-  "fix_pattern": "Avoid global failpoint state in parallel tests (scope failpoints per-test via context or disable parallelism).",
+  "fix_pattern": "Avoid global failpoint state in parallel tests by running them serially (remove `t.Parallel()`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30287",
     "https://github.com/pingcap/tidb/pull/30287.patch"

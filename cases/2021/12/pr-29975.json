@@ -17,14 +17,14 @@
   ],
   "failure_signature": "sort.Slice(dupPairs, func(i, j int) bool { (br/pkg/lightning/backend/local/iterator_test.go)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a functional/performance change in Lightning's duplicate-detection key encoding (removing an unnecessary offset field) with broad code+test updates. The available evidence in this catalog does not clearly indicate a flaky-test failure signature or a targeted stabilization mechanism, so we conservatively classify it as insufficient evidence.",
+  "root_cause_explanation": "The instability risk here is parallel tests (`t.Parallel()`) interacting with shared resources/state in the Lightning local backend tests. This PR stabilizes the suite by removing `t.Parallel()` from several iterator/key-adapter tests, forcing them to run serially and avoiding parallel interference/races on shared fixtures/resources.",
   "module": "lightning",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "fix_pattern": "Avoid running shared-state tests in parallel (remove `t.Parallel()` so tests run serially).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29975",
     "https://github.com/pingcap/tidb/pull/29975.patch"

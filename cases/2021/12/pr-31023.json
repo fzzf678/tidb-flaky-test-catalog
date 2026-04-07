@@ -17,14 +17,16 @@
   ],
   "failure_signature": "- c.Skip(\"exhaustive types test, skip race test\")",
   "root_cause_categories": [
+    "concurrency_data_race",
     "test_infra_migration"
   ],
   "review_smells": [
-    "deprecated_test_framework_usage"
+    "deprecated_test_framework_usage",
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The flakiness risk here is driven by legacy test infrastructure: this PR migrates `executor/distsql_test.go` from pingcap check (gocheck) style to testify-based tests. Such migrations are a common stabilization step and improve isolation/maintainability under modern Go test execution.",
+  "root_cause_explanation": "This PR migrates `executor/distsql_test.go` from pingcap check (gocheck) style to testify-based tests, and it also removes `t.Parallel()` from a number of tests. Running these tests in parallel can be unstable when they touch shared fixtures/resources (e.g., mock stores/domains and package-level state). The patch stabilizes the suite by keeping the migrated tests running serially (no `t.Parallel()`), reducing cross-test interference under concurrent execution.",
   "module": "executor",
-  "fix_pattern": "Migrate legacy pingcap check (gocheck) tests to testify (Go testing) to improve test stability.",
+  "fix_pattern": "Migrate legacy pingcap check (gocheck) tests to testify and avoid parallel execution for shared-state tests (remove `t.Parallel()`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31023",
     "https://github.com/pingcap/tidb/pull/31023.patch"
