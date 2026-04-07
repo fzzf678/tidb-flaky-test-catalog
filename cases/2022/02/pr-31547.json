@@ -9,7 +9,7 @@
   "pr_merged_at": "2022-02-11T13:51:37+08:00",
   "test": {
     "type": "unit",
-    "path": "ddl/db_integration_test.go",
+    "path": "executor/admin_test.go",
     "name": "TestCheckFailReport"
   },
   "symptoms": [
@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: Fix unstable test TestCheckFailReport (#31701)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The PR is a large feature/refactor around data consistency checks and error reporting. The captured flaky signal references an unrelated \"Fix unstable test\" item, and the patch does not contain a clear targeted stabilization change that can be mapped to a specific flaky root cause for this case. Needs CI logs / a minimal repro to attribute the real cause.",
-  "module": "module_unknown",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "root_cause_explanation": "The `TestCheckFailReport` flow can cancel the context while the underlying distsql `Next()` is running. In this situation, `Next()` may return an empty chunk even though the actual data is not empty, and the data-consistency checker could incorrectly treat it as a mismatch and emit false-positive error logs (making the test flaky). The patch stabilizes this by explicitly checking `ctx.Done()` after `Next()` and exiting early when the context is canceled, avoiding timing-dependent false positives.",
+  "module": "executor",
+  "fix_pattern": "In async loops that may be canceled, check `ctx.Done()` before interpreting empty results as a real state; avoid producing side effects/logs after cancellation to prevent timing-dependent flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31547",
     "https://github.com/pingcap/tidb/pull/31547.patch"
