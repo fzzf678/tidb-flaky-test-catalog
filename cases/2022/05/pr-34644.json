@@ -20,12 +20,11 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code",
-    "global_variable_mutation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: move config file option oom-action to sysvar.",
+  "root_cause_explanation": "The tests were flaky under `-race` due to a data race triggered by running internal SQL too early during bootstrap (internal SQL could access the global bind-info handler before it is ready). This PR stabilizes it by avoiding that internal-SQL/sysvar-update path during bootstrap, preventing the unsafe concurrent access.",
   "module": "session",
-  "fix_pattern": "*: move config file option oom-action to sysvar",
+  "fix_pattern": "Avoid running internal SQL/sysvar update during bootstrap before the bind-info handler is fully initialized to prevent a data race.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34644",
     "https://github.com/pingcap/tidb/pull/34644.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 1\", \"100 102\")) (session/session_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "kv",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The tests were flaky because they did not reliably clean up tables/views created during the test run, leaving residual state that could interfere with subsequent tests. This PR stabilizes the suite by adding a teardown cleanup that enumerates tables via `SHOW FULL TABLES` and drops views/tables before closing the domain/store.",
+  "module": "test_infra",
+  "fix_pattern": "Add a teardown cleanup that drops all tables/views (via `SHOW FULL TABLES`) before `dom.Close()`/store close to prevent cross-test state pollution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34578",
     "https://github.com/pingcap/tidb/pull/34578.patch"

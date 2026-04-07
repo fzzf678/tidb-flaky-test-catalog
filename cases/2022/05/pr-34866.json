@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// Using same `tk` in different goroutines may lead to data race.",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: remove testify suite.",
+  "root_cause_explanation": "The test was flaky under `-race` because it used the same `testkit` instance across goroutines (DDL callback vs. test goroutine), which can lead to a data race. This PR stabilizes it by using a separate internal `testkit` instance for the callback path and removing the testify suite wrapper.",
   "module": "ddl",
-  "fix_pattern": "ddl: remove testify suite",
+  "fix_pattern": "Avoid sharing the same `testkit` across goroutines; use a separate `tkInternal` for callback/internal SQL to prevent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34866",
     "https://github.com/pingcap/tidb/pull/34866.patch"

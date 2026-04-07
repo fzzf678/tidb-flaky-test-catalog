@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix data race in the test mocker.",
+  "root_cause_explanation": "The test was flaky under `-race` due to a data race in the test mocker (concurrent access to its modification state). This PR stabilizes it by protecting the modification field with a mutex.",
   "module": "test_infra",
-  "fix_pattern": "test: fix data race in the test mocker",
+  "fix_pattern": "Protect shared fields in the test mocker with a mutex to avoid concurrent read/write data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34796",
     "https://github.com/pingcap/tidb/pull/34796.patch"

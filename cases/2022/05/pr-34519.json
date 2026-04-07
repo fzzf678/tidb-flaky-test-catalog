@@ -13,18 +13,18 @@
     "name": "Dockerfile"
   },
   "symptoms": [
-    "br: fix unstable backup empty test"
+    "backup: fix the lost empty database"
   ],
-  "failure_signature": "br: fix unstable backup empty test",
+  "failure_signature": "Backup may lose empty databases when multiple empty DBs exist (e.g., empty DB placeholder keyed by a constant can be overwritten).",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The backup metadata reader stored the empty-database placeholder `Table` in a map using a constant key (`tableMap[0]`), so when multiple empty databases were present, later entries could overwrite earlier ones and cause some empty DBs to be lost. The patch stabilizes the behavior by keying the placeholder by `dbInfo.ID` instead, and extends the integration test (`br_backup_empty`) to create multiple empty databases to cover this scenario.",
   "module": "br",
-  "fix_pattern": "backup: fix the lost empty database",
+  "fix_pattern": "Fix empty-DB placeholder collision: use `dbInfo.ID` as the map key instead of a constant (`0`), and extend the `br_backup_empty` test to cover multiple empty databases.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34519",
     "https://github.com/pingcap/tidb/pull/34519.patch"

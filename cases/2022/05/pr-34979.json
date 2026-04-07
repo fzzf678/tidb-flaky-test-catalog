@@ -17,14 +17,14 @@
   ],
   "failure_signature": "wg tidbutil.WaitGroupWrapper // It's only used to deal with data race in restart_test.",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: make `jobCtx` maintained by `ddlCtx`.",
+  "root_cause_explanation": "The test was flaky under `-race` due to unsafe concurrent access to DDL job context during restart testing. This PR stabilizes it by moving `jobCtx` under `ddlCtx` and protecting the job-context map with locks to avoid data races.",
   "module": "ddl",
-  "fix_pattern": "ddl: make `jobCtx` maintained by `ddlCtx`",
+  "fix_pattern": "Move `jobCtx` into `ddlCtx` and guard `jobCtxMap` access with a mutex/RWMutex to prevent concurrent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34979",
     "https://github.com/pingcap/tidb/pull/34979.patch"
