@@ -23,7 +23,7 @@
     "race_condition_in_async_code"
   ],
   "root_cause_explanation": "The flakiness was caused by data races in the MockTiFlash implementation: multiple goroutines (e.g., test logic and mocked HTTP handlers) could access and mutate MockTiFlash internal state concurrently without synchronization. This PR stabilizes it by adding locking around MockTiFlash state access/mutation to make the mock concurrency-safe under tests.",
-  "module": "domain",
+  "module": "ddl",
   "fix_pattern": "Synchronize shared mock state accessed concurrently (add locks/guards around MockTiFlash internals).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31836",
@@ -31,6 +31,7 @@
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/31836.patch",
   "changed_files": [
+    "ddl/ddl_tiflash_api.go",
     "ddl/ddl_tiflash_test.go",
     "domain/infosync/tiflash_manager.go"
   ],
@@ -44,5 +45,5 @@
       "files: ddl/ddl_tiflash_api.go, ddl/ddl_tiflash_test.go, domain/infosync/tiflash_manager.go"
     ]
   },
-  "analysis": "PR title: *: fix data races in from MockTiFlash\nPR url: https://github.com/pingcap/tidb/pull/31836\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Some fields in MockTiFlash is tested to have data race.\nChanged files (2): ddl/ddl_tiflash_test.go, domain/infosync/tiflash_manager.go\nPatch url: https://github.com/pingcap/tidb/pull/31836.patch\nPicked test: type=unit path=ddl/ddl_tiflash_test.go name=ddl_tiflash_test"
+  "analysis": "PR title: *: fix data races in from MockTiFlash\nPR url: https://github.com/pingcap/tidb/pull/31836\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Some fields in MockTiFlash is tested to have data race.\nChanged files (3): ddl/ddl_tiflash_api.go, ddl/ddl_tiflash_test.go, domain/infosync/tiflash_manager.go\nPatch url: https://github.com/pingcap/tidb/pull/31836.patch\nPicked test: type=unit path=ddl/ddl_tiflash_test.go name=ddl_tiflash_test"
 }
