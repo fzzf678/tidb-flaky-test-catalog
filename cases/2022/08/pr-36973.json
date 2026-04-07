@@ -17,16 +17,14 @@
   ],
   "failure_signature": "sort.Strings(tableNames) (ddl/schematracker/info_store_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The new schema/table listing APIs return map keys, and Go map iteration order is randomized. Tests that assert exact schema/table name ordering without sorting can fail intermittently. This PR stabilizes the tests by sorting schema/table name slices before assertions.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort schema/table name slices (map keys) before asserting to avoid Go map-iteration nondeterminism.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36973",
     "https://github.com/pingcap/tidb/pull/36973.patch"

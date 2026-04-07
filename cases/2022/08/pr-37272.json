@@ -17,14 +17,14 @@
   ],
   "failure_signature": "1. The order of `FallbackOldAndSetNewAction` is wrong. It should set the current action to the new one, and set the original one as its fallback (as how it's used, and described in the comments). However, it acts in the opposite way now :facepalm: , and cause the unstable test.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "relying_on_map_iteration_order"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Map/dict iteration order is not stable across runs. This PR stabilizes it by: *: fix the order of `FallbackOldAndSetNewAction`.",
-  "module": "ddl",
-  "fix_pattern": "*: fix the order of `FallbackOldAndSetNewAction`",
+  "root_cause_explanation": "The test was unstable due to concurrency/scheduling effects in memory spilling: spilling runs in parallel and the partition count can vary depending on goroutine scheduling, and the memory tracker action fallback order was incorrect. This PR stabilizes the test by fixing the `FallbackOldAndSetNewAction` ordering (so the intended action/fallback priority is correct) and adjusting the test memory limit so the partitioning behavior becomes deterministic.",
+  "module": "executor",
+  "fix_pattern": "Fix memory-tracker action fallback ordering and adjust test limits so parallel spilling/partitioning behavior is deterministic under goroutine scheduling.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37272",
     "https://github.com/pingcap/tidb/pull/37272.patch"

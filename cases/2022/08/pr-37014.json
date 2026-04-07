@@ -17,13 +17,12 @@
   ],
   "failure_signature": "planner: fix data race in the TestInlineProjection4HashJoinIssue15316",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: planner: fix data race in the TestInlineProjection4HashJoinIssue15316.",
+  "root_cause_explanation": "Several tests toggle global planner knobs (e.g., `ForceUseOuterBuild4Test` / `ForcedHashLeftJoin4Test`). When tests run concurrently, writing these globals can trigger Go data races and intermittent behavior. This PR fixes the flakiness by changing these global flags to atomic booleans and using `Store/Load` in tests and planner code.",
   "module": "planner",
   "fix_pattern": "planner: fix data race in the TestInlineProjection4HashJoinIssue15316",
   "evidence_links": [

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "br: fix data race in the RecordStores | slices.Sort(r.stores) (br/pkg/restore/client_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "`RecordStores.sort()` modified the shared `stores` slice without synchronization while other goroutines could append to it, causing data races and flaky behavior under concurrency. This PR fixes the race by taking a mutex in `sort()` and then sorting the slice under lock.",
   "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Protect shared slice mutation with a mutex when sorting/appending (lock around `stores` before sorting) to avoid data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37472",
     "https://github.com/pingcap/tidb/pull/37472.patch"

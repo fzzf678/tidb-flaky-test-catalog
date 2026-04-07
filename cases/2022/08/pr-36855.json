@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: Stabilise TestPartitionWithVariedDataSources",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "schema_change_race"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "plan_cache_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: Stabilise TestPartitionWithVariedDataSources.",
+  "root_cause_explanation": "The test repeatedly checks `@@last_plan_from_cache` across many randomized loops and previously asserted it always matched the expected cached/non-cached state. In practice, plan cache behavior can be unstable over many iterations due to background changes and cache behavior, so the strict assertion can fail intermittently. This PR stabilizes the test by (1) collecting cache-miss occurrences and allowing a small fraction of non-cached queries, and (2) adding `ANALYZE TABLE` to reduce variability.",
   "module": "planner",
-  "fix_pattern": "planner: Stabilise TestPartitionWithVariedDataSources",
+  "fix_pattern": "Avoid assuming 100% plan-cache hits across many loops; allow a small miss rate and ensure ANALYZE/stats so plan-cache behavior is less variable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36855",
     "https://github.com/pingcap/tidb/pull/36855.patch"

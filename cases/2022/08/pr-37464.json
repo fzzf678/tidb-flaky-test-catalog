@@ -22,7 +22,7 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: session: fix data race in the TestInitMetaTable.",
+  "root_cause_explanation": "The test accessed table metadata objects that could be shared/mutated concurrently, triggering a Go data race when comparing metadata from different schemas. This PR stabilizes the test by cloning the table metadata (`Meta().Clone()`) before assertions so the test works on an isolated snapshot rather than a potentially shared mutable object.",
   "module": "session",
   "fix_pattern": "session: fix data race in the TestInitMetaTable",
   "evidence_links": [

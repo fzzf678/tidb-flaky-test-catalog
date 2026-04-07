@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl/schematracker: fix SetDDL will cause data race",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl/schematracker: fix SetDDL will cause data race.",
+  "root_cause_explanation": "The mock store/domain can inject a DDL checker via `dom.SetDDL(...)`. Previously, the DDL injection could happen after bootstrap while other goroutines/internal SQL might access `dom.DDL()` or related global handlers, triggering a Go data race. This PR stabilizes the tests by injecting the DDL checker earlier (before/at bootstrap via a mockstore option) to avoid racing with domain initialization.",
   "module": "ddl",
-  "fix_pattern": "ddl/schematracker: fix SetDDL will cause data race",
+  "fix_pattern": "Inject the DDL checker/SetDDL earlier (before bootstrap) so it does not race with domain initialization/internal SQL.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36768",
     "https://github.com/pingcap/tidb/pull/36768.patch"

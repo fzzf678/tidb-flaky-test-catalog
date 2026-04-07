@@ -13,16 +13,16 @@
     "name": "schema_validator_test"
   },
   "symptoms": [
-    "Merge branch 'master' into zimuxia/fix-unstable-test"
+    "schema validator test intermittently observes an invalid lease grant item (e.g. `newItem {1661149543114079518 -1 0}` / missing expected schemaVer/leaseGrantTS progression)."
   ],
-  "failure_signature": "Merge branch 'master' into zimuxia/fix-unstable-test",
+  "failure_signature": "subTestSchemaValidatorGeneral: failed to get a newer lease grant item / observed invalid newItem (schemaVer/leaseGrantTS not advanced as expected).",
   "root_cause_categories": [
     "schema_change_race"
   ],
   "review_smells": [
     "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: domain: fix unstable subTestSchemaValidatorGeneral.",
+  "root_cause_explanation": "The schema validator test depended on timing-sensitive lease-grant item generation and could occasionally observe stale/invalid items (e.g., schemaVer not advancing, leading to `-1/0`-like values). This PR stabilizes the test by simplifying the lease-grant server logic so each request advances `schemaVer`/`leaseGrantTS` deterministically (instead of relying on ticker/random sleeps), reducing timing-dependent flakiness.",
   "module": "domain",
   "fix_pattern": "domain: fix unstable subTestSchemaValidatorGeneral",
   "evidence_links": [

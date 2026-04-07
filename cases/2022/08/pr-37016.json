@@ -17,14 +17,14 @@
   ],
   "failure_signature": "util: fix unstable test TestCheckCN",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: util: fix unstable test TestCheckCN.",
-  "module": "module_unknown",
-  "fix_pattern": "util: fix unstable test TestCheckCN",
+  "root_cause_explanation": "The TLS client/server test could be unstable because the first HTTP response body was not closed promptly (deferred close), leaving connections/resources in an unexpected state before the next request. This PR stabilizes the test by reading and closing the response body explicitly and ensuring cleanup happens deterministically; it also adjusts Bazel sharding/metadata for the test target.",
+  "module": "security",
+  "fix_pattern": "Ensure HTTP/TLS test resources are cleaned up deterministically (read/close response body explicitly) instead of relying on deferred cleanup.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37016",
     "https://github.com/pingcap/tidb/pull/37016.patch"

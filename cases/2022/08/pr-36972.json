@@ -17,12 +17,12 @@
   ],
   "failure_signature": "log-backup: fixed the unstable test case TestBasic",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "hardcoded_port_or_resource"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: log-backup: fixed the unstable test case TestBasic.",
+  "root_cause_explanation": "The fake cluster's checkpoint advancement used `rand.Uint64()%256`, which can be 0, so a region checkpoint could stay at 0 and violate the assumption that the server never returns checkpoint value 0. This makes the test probabilistically fail depending on random values/progress. The PR stabilizes the test by ensuring the checkpoint increment is at least 1 (`%256 + 1`) so progress always happens in the simulation.",
   "module": "br",
   "fix_pattern": "log-backup: fixed the unstable test case TestBasic",
   "evidence_links": [
