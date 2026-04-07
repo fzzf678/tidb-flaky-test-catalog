@@ -17,14 +17,14 @@
   ],
   "failure_signature": "statistics: fix unstable test",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "statistics_sensitive_test"
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: statistics: fix unstable test.",
+  "root_cause_explanation": "The tests were flaky due to shared state being used across parallel subtests: a single `testStatisticsSamples` fixture was reused while multiple `t.Parallel()` subtests ran concurrently, leading to races/interference. This PR stabilizes them by creating an independent fixture inside each subtest instead of sharing one across parallel runs.",
   "module": "statistics",
-  "fix_pattern": "statistics: fix unstable test",
+  "fix_pattern": "Avoid sharing mutable fixtures across `t.Parallel()` subtests; create per-subtest `testStatisticsSamples` to prevent data races/interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29843",
     "https://github.com/pingcap/tidb/pull/29843.patch"

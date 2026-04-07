@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustExec(`prepare stmt from 'SELECT * FROM UK_MU14722 WHERE col2 > ? OR col2 BETWEEN ? AND ? ORDER BY COL2 + ? LIMIT 3'`) (planner/core/prepare_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustExec(`prepare stmt from 'SELECT * FROM UK_MU14722 WHERE col2 > ?.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic correctness issue for cached plans (range rebuild) and adds/updates corresponding plan-cache test coverage. It does not present a clear flaky-test failure signature nor a targeted stabilization mechanism to classify a specific flakiness root cause here.",
   "module": "planner",
-  "fix_pattern": "tk.MustExec(`prepare stmt from 'SELECT * FROM UK_MU14722 WHERE col2 > ? OR col2 BETWEEN ? AND ? ORDER BY COL2 + ? LIMIT 3'`) (planner/core/prepare_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29312",
     "https://github.com/pingcap/tidb/pull/29312.patch"

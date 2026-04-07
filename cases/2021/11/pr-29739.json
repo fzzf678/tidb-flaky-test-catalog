@@ -23,9 +23,9 @@
     "t_parallel_with_shared_state",
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: *: disable parallel to avoid data race when test.",
-  "module": "module_unknown",
-  "fix_pattern": "*: disable parallel to avoid data race when test",
+  "root_cause_explanation": "The tests were flaky due to a concurrency/data-race risk: multiple tests were mutating shared global state (e.g. `domain.RunAutoAnalyze`) while running in parallel. This PR stabilizes them by disabling parallel execution / moving affected tests into serial test suites.",
+  "module": "statistics",
+  "fix_pattern": "Disable `t.Parallel()` / move tests to serial suites because tests mutate global `domain.RunAutoAnalyze`, which can race when run in parallel.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29739",
     "https://github.com/pingcap/tidb/pull/29739.patch"

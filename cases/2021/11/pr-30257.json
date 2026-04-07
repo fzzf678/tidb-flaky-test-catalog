@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: fix unstable test of topsql",
   "root_cause_categories": [
-    "external_dependency"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: fix unstable test of topsql.",
+  "root_cause_explanation": "The test was flaky because it assumed a deterministic order of requests/events when validating resource-group tag labels. In practice, requests may arrive in a different order, so comparing labels as an ordered list is unstable. This PR stabilizes it by changing the expected labels to a set (map) and asserting membership rather than sequence.",
   "module": "executor",
-  "fix_pattern": "executor: fix unstable test of topsql",
+  "fix_pattern": "Avoid asserting on nondeterministic request/event order; compare expected labels as a set (map) or sort before comparison.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30257",
     "https://github.com/pingcap/tidb/pull/30257.patch"

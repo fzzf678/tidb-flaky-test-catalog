@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: fix the unstable test `TestPartitionWithVariedDatasources`",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "schema_change_race"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "plan_cache_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix the unstable test `TestPartitionWithVariedDatasources`.",
+  "root_cause_explanation": "The test was flaky because it asserted plan-cache behavior (`@@last_plan_from_cache` must be `1`) across repeated EXECUTEs. Plan cache hits can be affected by internal conditions and are not guaranteed for all cases, so this assertion can be intermittently false. This PR stabilizes it by removing the brittle `last_plan_from_cache` checks and only comparing query results.",
   "module": "planner",
-  "fix_pattern": "planner: fix the unstable test `TestPartitionWithVariedDatasources`",
+  "fix_pattern": "Remove brittle assertions on `@@last_plan_from_cache` / plan-cache hit expectations; validate correctness via stable result checks instead.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30139",
     "https://github.com/pingcap/tidb/pull/30139.patch"

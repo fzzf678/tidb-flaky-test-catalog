@@ -17,14 +17,14 @@
   ],
   "failure_signature": "*: fix unstable test testChecksumSuite.TestChecksum",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "external_dependency"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: *: fix unstable test testChecksumSuite.TestChecksum.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix unstable test testChecksumSuite.TestChecksum",
+  "root_cause_explanation": "The test was flaky due to an environment/resource conflict: the mock TiDB server used a shared/default Unix socket path, which could collide across parallel tests or leftover files. This PR stabilizes it by assigning a unique socket path (under `/tmp/` with a UnixNano suffix) for each mock server instance.",
+  "module": "br",
+  "fix_pattern": "Use a unique Unix socket path for the mock TiDB server instance to avoid conflicts with parallel tests or leftover socket files.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29767",
     "https://github.com/pingcap/tidb/pull/29767.patch"

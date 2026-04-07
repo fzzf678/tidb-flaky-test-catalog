@@ -9,22 +9,22 @@
   "pr_merged_at": "2021-11-10T00:49:06+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/myc_test.go",
-    "name": "myc_test"
+    "path": "executor/seqtest/seq_executor_serial_test.go",
+    "name": "TestShow"
   },
   "symptoms": [
     "sorted := res.Sort() (executor/seqtest/seq_executor_serial_test.go)"
   ],
   "failure_signature": "sorted := res.Sort() (executor/seqtest/seq_executor_serial_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: sorted := res.Sort() (executor/seqtest/seq_executor_serial_test.go).",
-  "module": "module_unknown",
-  "fix_pattern": "sorted := res.Sort() (executor/seqtest/seq_executor_serial_test.go)",
+  "root_cause_explanation": "The test was flaky because it compared results across multiple executions of `SHOW ... VARIABLES` while the `timestamp` variable could change between queries (system-time dependent). This PR stabilizes it by avoiding a second query for the sorted comparison (sort the same result), and by making the timestamp-related integration test deterministic via fixed `time_zone` and stable `NOW(...)` formatting.",
+  "module": "session",
+  "fix_pattern": "Avoid re-executing time-dependent SHOW queries when computing sorted expectations; make timestamp-related tests deterministic by fixing time zone and using stable NOW(...) formatting.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29447",
     "https://github.com/pingcap/tidb/pull/29447.patch"

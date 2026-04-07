@@ -17,15 +17,16 @@
   ],
   "failure_signature": "*: fix unstable test TestStoreGlobalConfig",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "global_variable_mutation",
-    "shared_table_without_isolation"
+    "async_wait_without_backoff",
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: *: fix unstable test TestStoreGlobalConfig.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix unstable test TestStoreGlobalConfig",
+  "root_cause_explanation": "The test was flaky due to eventual consistency: writing the global config to etcd happens asynchronously, so immediately reading the key could intermittently observe an empty result. This PR stabilizes it by retrying the etcd GET with a short sleep until the key/value is visible (or timing out).",
+  "module": "domain",
+  "fix_pattern": "Retry reads for async etcd/global-config sync (with bounded retries and sleep) before asserting on key/value visibility.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29900",
     "https://github.com/pingcap/tidb/pull/29900.patch"

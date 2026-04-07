@@ -17,14 +17,16 @@
   ],
   "failure_signature": "- c.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\") | return &defaultRandGen{rand.New(&lockedSource{src:rand.NewSource(int64(rand.Uint64()))})} (expression/bench_test.go)",
   "root_cause_categories": [
-    "external_dependency"
+    "concurrency_data_race",
+    "test_infra_migration"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code",
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: - c.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\") | return &defaultRandGen{rand.New(&lockedSource{src:rand.NewSource(int64(rand.Uint64()))})} (expression/bench_test.go).",
+  "root_cause_explanation": "The instability came from tests exercising shared randomness and test infrastructure in a way that was not safe under concurrent execution. This PR stabilizes the suite by making the RNG thread-safe (wrapping `rand.Source` with a mutex via `lockedSource`), moving sensitive tests to a serial suite where needed, and migrating legacy gocheck-style tests to testify/Go `testing.T`.",
   "module": "expression",
-  "fix_pattern": "- c.Skip(\"Skip this unstable test temporarily and bring it back before 2021-07-26\") | return &defaultRandGen{rand.New(&lockedSource{src:rand.NewSource(int64(rand.Uint64()))})} (expression/bench_test.go)",
+  "fix_pattern": "Use a thread-safe RNG (locked `rand.Source`), run race-prone tests serially, and migrate gocheck tests to testify for better stability.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29276",
     "https://github.com/pingcap/tidb/pull/29276.patch"

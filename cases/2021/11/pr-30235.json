@@ -17,14 +17,14 @@
   ],
   "failure_signature": "statistics: fix unstable test case TestTraceCE",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: statistics: fix unstable test case TestTraceCE.",
+  "root_cause_explanation": "The test was flaky because it compared two slices with strict equality (`require.Equal`) even though the element order was not guaranteed (order could vary across runs). This PR stabilizes it by using `require.ElementsMatch` to compare the slices ignoring order.",
   "module": "statistics",
-  "fix_pattern": "statistics: fix unstable test case TestTraceCE",
+  "fix_pattern": "Avoid asserting slice order when order is not guaranteed; compare as sets using `require.ElementsMatch` (or sort before compare).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30235",
     "https://github.com/pingcap/tidb/pull/30235.patch"
