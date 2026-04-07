@@ -10,22 +10,21 @@
   "test": {
     "type": "unit",
     "path": "ddl/ddl.go",
-    "name": "TestConnExecutionTimeout"
+    "name": "ddl.DoDDLJob"
   },
   "symptoms": [
     "*: fix a data race on TestConnExecutionTimeout"
   ],
   "failure_signature": "*: fix a data race on TestConnExecutionTimeout",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "async_timing_issue"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix a data race on TestConnExecutionTimeout.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix a data race on TestConnExecutionTimeout",
+  "root_cause_explanation": "There was a data race between the kill invoker goroutine and the goroutine executing the DDL job: the kill path attempted to inspect statement context state and cancel the DDL job concurrently. The patch avoids this race by moving the cancel-on-kill logic into the DDL execution loop (`DoDDLJob`) itself: it checks the atomic killed flag and cancels the DDL job from within the DDL goroutine, instead of having `killConn` concurrently read/cancel based on `StmtCtx` state.",
+  "module": "ddl",
+  "fix_pattern": "Avoid kill-vs-DDL data race: let the DDL goroutine handle cancel-on-kill (check atomic killed flag in `DoDDLJob` and cancel the job), instead of canceling from `killConn`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35923",
     "https://github.com/pingcap/tidb/pull/35923.patch"

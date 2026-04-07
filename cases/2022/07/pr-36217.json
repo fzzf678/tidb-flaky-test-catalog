@@ -17,14 +17,14 @@
   ],
   "failure_signature": "chunk: refactor test to fix unstable test",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: chunk: refactor test to fix unstable test.",
-  "module": "kv",
-  "fix_pattern": "chunk: refactor test to fix unstable test",
+  "root_cause_explanation": "The disk spill tests modify global configuration (`config.UpdateGlobal` for `SpilledFileEncryptionMethod`) and rely on proper restoration to avoid affecting other tests. Using `t.Run` subtests under a single parent with shared setup/defers can make the global-config scope unclear and lead to unstable behavior when tests run in different orders/contexts. The patch stabilizes the suite by removing `t.Run` subtests and splitting them into separate top-level test functions, each with its own config update + restore, reducing shared-state interference.",
+  "module": "chunk",
+  "fix_pattern": "Isolate global config mutations: split `t.Run` subtests into separate tests, each with its own `config.UpdateGlobal` + `RestoreFunc()`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36217",
     "https://github.com/pingcap/tidb/pull/36217.patch"

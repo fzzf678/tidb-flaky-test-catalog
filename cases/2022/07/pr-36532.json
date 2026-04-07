@@ -17,16 +17,14 @@
   ],
   "failure_signature": "test: fix unstable test `TestParallelDDL`",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: fix unstable test `TestParallelDDL`.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable test `TestParallelDDL`",
+  "root_cause_explanation": "`TestParallelDDL` runs DDL operations in parallel, so the exact ordering of generated sequence IDs is not strictly deterministic. The test previously asserted a strict ordering relationship (`require.Less(seqIDs[9], seqIDs[10])`) that can legitimately be violated depending on scheduling/execution order, causing flakiness. The patch stabilizes the test by removing the overly strict order assertion.",
+  "module": "ddl",
+  "fix_pattern": "Relax brittle ordering assertions in `TestParallelDDL` (do not assume strict sequence ID order under parallel execution).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36532",
     "https://github.com/pingcap/tidb/pull/36532.patch"

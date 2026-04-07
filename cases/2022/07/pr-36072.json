@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "sessiontxn/isolation/main_test.go",
-    "name": "main_test"
+    "name": "txnAssert.Check"
   },
   "symptoms": [
-    "*: fix unstable test in `sessiontxn`"
+    "Flaky time comparison: comparing only `time.Time.Nanosecond()` can fail when the timestamp crosses a second boundary."
   ],
-  "failure_signature": "*: fix unstable test in `sessiontxn`",
+  "failure_signature": "Assertion failure: `txnCtx.CreateTime.Nanosecond() >= minStartTime.Nanosecond()` is not reliable across seconds.",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: *: fix unstable test in `sessiontxn`.",
-  "module": "kv",
-  "fix_pattern": "*: fix unstable test in `sessiontxn`",
+  "root_cause_explanation": "The test compared `CreateTime.Nanosecond()` against `minStartTime.Nanosecond()`, which only compares the nanosecond component within a second and is not a correct ordering check across second boundaries. Depending on timing, the comparison can intermittently fail even if `CreateTime` is later. The patch fixes the flakiness by comparing full timestamps with `UnixNano()` instead.",
+  "module": "txn",
+  "fix_pattern": "Compare timestamps using `UnixNano()` instead of `Nanosecond()` to avoid second-boundary flakiness in time ordering assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36072",
     "https://github.com/pingcap/tidb/pull/36072.patch"

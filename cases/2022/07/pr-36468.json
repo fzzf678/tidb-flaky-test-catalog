@@ -13,18 +13,18 @@
     "name": "TestTopSQLCPUProfile"
   },
   "symptoms": [
-    "test: stabilize TestTopSQLCPUProfile"
+    "TestTopSQLCPUProfile can exceed a brittle test-local 20s timeout under CI jitter, causing intermittent failures."
   ],
-  "failure_signature": "test: stabilize TestTopSQLCPUProfile",
+  "failure_signature": "`require.NoError(timeoutCtx.Err())` fails (context deadline exceeded) when `TestTopSQLCPUProfile` runs longer than 20s.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: stabilize TestTopSQLCPUProfile",
+  "root_cause_explanation": "`TestTopSQLCPUProfile` used a test-local `context.WithTimeout(..., 20s)` and asserted `require.NoError(timeoutCtx.Err())`. Under CI timing jitter the test can legitimately take longer than 20 seconds, which would make the assertion fail even though the system is healthy. The patch stabilizes the test by removing the brittle test-local timeout check and relying on the overall test timeout/harness instead.",
+  "module": "server",
+  "fix_pattern": "Remove the brittle test-local 20s timeout check in `TestTopSQLCPUProfile` (drop `context.WithTimeout` and `require.NoError(timeoutCtx.Err())`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36468",
     "https://github.com/pingcap/tidb/pull/36468.patch"

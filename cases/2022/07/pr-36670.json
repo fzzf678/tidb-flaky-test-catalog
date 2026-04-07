@@ -13,18 +13,18 @@
     "name": "graceshutdown_test"
   },
   "symptoms": [
-    "tests: fix unstable graceshutdown test"
+    "The graceshutdown test is timing-sensitive: connecting to TiDB can take longer than the fixed retry budget, and the retry loop could accidentally swallow the last connection error."
   ],
-  "failure_signature": "tests: fix unstable graceshutdown test",
+  "failure_signature": "connectTiDB: after exhausting retries, the function could return `db, nil` due to `db.Close()` overwriting `err`.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: tests: fix unstable graceshutdown test.",
-  "module": "test_infra",
-  "fix_pattern": "tests: fix unstable graceshutdown test",
+  "root_cause_explanation": "The graceshutdown test relies on connecting to a TiDB instance which may not be ready within a small fixed retry budget. Previously `connectTiDB` only retried 5 times and, when all retries failed, it could still return `db, nil` because `db.Close()` overwrote the connection error with a nil close error. The patch makes the test more robust by increasing the retry budget (`maxRetry := 10`) and by using a separate `err1` for `db.Close()` so the connection error is preserved and returned when retries are exhausted.",
+  "module": "server",
+  "fix_pattern": "Make `connectTiDB` retry more robust: increase max retry attempts (5→10) and avoid clobbering the connection error with `db.Close()`'s error so failures are surfaced correctly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36670",
     "https://github.com/pingcap/tidb/pull/36670.patch"

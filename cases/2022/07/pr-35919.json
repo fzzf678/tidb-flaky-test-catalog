@@ -9,22 +9,22 @@
   "pr_merged_at": "2022-07-07T00:49:02+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/distsql_test.go",
-    "name": "distsql_test"
+    "path": "executor/aggregate.go",
+    "name": "HashAggExec.prepare4ParallelExec"
   },
   "symptoms": [
-    "fix data race"
+    "DATA RACE risk: HashAgg parallel workers may update runtime stats after the executor is reused (Open/Close multiple times under Apply)."
   ],
-  "failure_signature": "fix data race",
+  "failure_signature": "DATA RACE: `HashAggExec` runtime stats (`PartialWallTime` / `FinalWallTime`) updated by goroutines after reuse.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix incorrect runtime stats when there are `apply`s.",
+  "root_cause_explanation": "`HashAggExec` starts background goroutines to wait for partial/final workers and then adds wall-time into `e.stats`. When the plan includes `Apply`, executors can be reused (Open/Close multiple times), and HashAgg does not wait for all goroutines to exit in `Close()`. That means a goroutine from a previous execution can still run while the next execution has started, causing a data race when it accesses `e.stats`. The patch fixes this by capturing the stats field pointers (`PartialWallTime` / `FinalWallTime`) before starting goroutines and then doing `atomic.AddInt64` via those captured pointers, avoiding racing with reuse.",
   "module": "executor",
-  "fix_pattern": "executor: fix incorrect runtime stats when there are `apply`s",
+  "fix_pattern": "Avoid stats data race across executor reuse: capture `e.stats` wall-time pointers before starting goroutines, then `atomic.AddInt64` via captured pointers.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35919",
     "https://github.com/pingcap/tidb/pull/35919.patch"

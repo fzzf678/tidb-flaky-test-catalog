@@ -9,22 +9,20 @@
   "pr_merged_at": "2022-07-20T13:09:08+08:00",
   "test": {
     "type": "unit",
-    "path": "ddl/BUILD.bazel",
-    "name": "BUILD"
+    "path": "ddl/ddl.go",
+    "name": "ddlCtx.setDDLSourceForDiagnosis"
   },
   "symptoms": [
     "ddl: fix data race in the setDDLLabelForDiagnosis"
   ],
   "failure_signature": "ddl: fix data race in the setDDLLabelForDiagnosis",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix data race in the setDDLLabelForDiagnosis.",
+  "root_cause_explanation": "`setDDLLabelForDiagnosis` mutates job context state used for diagnosis. The previous logic could call `ctx.setDDLLabelForDiagnosis(job)` outside the initialization path, which risks concurrent access to shared job context state and triggers race detector failures. The patch fixes the race by only setting the DDL label when the job context is first created and inserted into `jobCtxMap` (move the call into the `!exists` branch), and enables `-race` for `ddl_test`.",
   "module": "ddl",
   "fix_pattern": "ddl: fix data race in the setDDLLabelForDiagnosis",
   "evidence_links": [

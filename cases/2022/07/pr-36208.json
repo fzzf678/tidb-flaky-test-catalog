@@ -13,19 +13,18 @@
     "name": "aggregate_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"SELECT c1 + 0, COUNT(c1) FROM t1 GROUP BY c1 order by c1;\").Check(testkit.Rows(\"0 1\", \"1 1\", \"2 2\", \"3 1\")) (executor/aggregate_test.go)"
+    "Deterministic wrong result: aggregating/grouping enum zero value differs from MySQL (Issue #26885)."
   ],
-  "failure_signature": "tk.MustQuery(\"SELECT c1 + 0, COUNT(c1) FROM t1 GROUP BY c1 order by c1;\").Check(testkit.Rows(\"0 1\", \"1 1\", \"2 2\", \"3 1\")) (executor/aggregate_test.go)",
+  "failure_signature": "Wrong result: GROUP BY on ENUM (including zero/invalid values) yields incorrect aggregation vs MySQL.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic correctness issue for grouping/aggregating ENUM values (including invalid/zero values) and adds a regression unit test for Issue #26885. The patch does not provide a concrete flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "executor: fix aggregating enum zero value gets different results from mysql",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36208",
     "https://github.com/pingcap/tidb/pull/36208.patch"

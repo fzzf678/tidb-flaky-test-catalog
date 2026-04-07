@@ -20,11 +20,11 @@
     "external_dependency"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: domain: fix unstable test TestAbnormalSessionPool.",
+  "root_cause_explanation": "`TestAbnormalSessionPool` starts a TiDB server in tests and is sensitive to environment resources like ports / sockets. The patch stabilizes the test by adjusting the server test setup/config (e.g., setting `server.RunInGoTest = true` in `domain/main_test.go` and clearing the socket in the test config) to avoid port/socket conflicts that can make the test intermittently fail.",
   "module": "domain",
-  "fix_pattern": "domain: fix unstable test TestAbnormalSessionPool",
+  "fix_pattern": "Avoid test port/socket conflicts: enable Go-test mode for server (`server.RunInGoTest = true`) and adjust test config (clear socket) for `TestAbnormalSessionPool`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36154",
     "https://github.com/pingcap/tidb/pull/36154.patch"

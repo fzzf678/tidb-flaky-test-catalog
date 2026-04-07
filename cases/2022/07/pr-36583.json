@@ -13,19 +13,19 @@
     "name": "TestCancel"
   },
   "symptoms": [
-    "ddl: fix unstable test in the TestCancel"
+    "TestCancel is timing-sensitive: the mocked backfill slowdown window was too short under CI jitter."
   ],
-  "failure_signature": "ddl: fix unstable test in the TestCancel",
+  "failure_signature": "TestCancel intermittently fails due to an insufficient delay in the `mockBackfillSlow` failpoint.",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix unstable test in the TestCancel.",
+  "root_cause_explanation": "The unstable behavior comes from a timing window in the test setup: the `mockBackfillSlow` failpoint injects a fixed `time.Sleep(...)` to slow down backfill, but `30ms` was too short and could make `TestCancel` race with the backfill progress under CI jitter. The patch stabilizes the test by increasing the injected sleep from `30ms` to `100ms`, providing a larger buffer for the cancellation assertions.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix unstable test in the TestCancel",
+  "fix_pattern": "Increase the injected delay in `failpoint.Inject(\"mockBackfillSlow\")` (30ms→100ms) to widen the cancellation timing window and reduce flakiness in `TestCancel`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36583",
     "https://github.com/pingcap/tidb/pull/36583.patch"
