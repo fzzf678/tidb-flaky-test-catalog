@@ -13,19 +13,18 @@
     "name": "TestAlterTableDropPartitionByList"
   },
   "symptoms": [
-    "ddl: fix unstable test TestAlterTableDropPartitionByList"
+    "Nondeterministic row order: SELECT results asserted without sorting."
   ],
-  "failure_signature": "ddl: fix unstable test TestAlterTableDropPartitionByList",
+  "failure_signature": "SELECT result order nondeterministic; missing Sort() before Check().",
   "root_cause_categories": [
-    "schema_change_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix unstable test TestAlterTableDropPartitionByList.",
+  "root_cause_explanation": "The test asserted results of `select *` without ordering; row order is not guaranteed. The fix sorts the result before asserting expected rows.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix unstable test TestAlterTableDropPartitionByList",
+  "fix_pattern": "Sort query results before asserting rows.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37751",
     "https://github.com/pingcap/tidb/pull/37751.patch"

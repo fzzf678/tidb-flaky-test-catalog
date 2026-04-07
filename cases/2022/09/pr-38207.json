@@ -13,18 +13,18 @@
     "name": "TestOneStoreFailure"
   },
   "symptoms": [
-    "br: fix data race in the TestOneStoreFailure"
+    "Data race in BR fake cluster test helpers: region checkpoint updated/read concurrently."
   ],
-  "failure_signature": "br: fix data race in the TestOneStoreFailure",
+  "failure_signature": "Race detector reports data race on region.checkpoint field in fake cluster.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: br: fix data race in the TestOneStoreFailure.",
+  "root_cause_explanation": "The fake cluster used by BR streamhelper tests updated and read the region checkpoint concurrently. Using a plain uint64 led to data races under -race. The fix switches the field to atomic.Uint64 and uses atomic operations for updates/reads.",
   "module": "br",
-  "fix_pattern": "br: fix data race in the TestOneStoreFailure",
+  "fix_pattern": "Use atomic types/locks for shared counters accessed concurrently in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38207",
     "https://github.com/pingcap/tidb/pull/38207.patch"

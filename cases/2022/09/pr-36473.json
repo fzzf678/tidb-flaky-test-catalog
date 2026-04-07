@@ -13,19 +13,18 @@
     "name": "pessimistic_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select * from t4 order by id\").Check(testkit.Rows(\"1 2\", \"2 2\")) (table/tables/tables_test.go)"
+    "No explicit flaky signature in patch; changes are feature/refactor + new/updated tests."
   ],
-  "failure_signature": "tk.MustQuery(\"select * from t4 order by id\").Check(testkit.Rows(\"1 2\", \"2 2\")) (table/tables/tables_test.go)",
+  "failure_signature": "No explicit flaky signature; needs more evidence.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Patch contains broad transaction/behavior changes and adds/updates tests, but does not show a targeted flaky-test stabilization (e.g., ordering, timing, cleanup) tied to a specific failure signature.",
   "module": "txn",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Feature/refactor PR (no targeted flaky stabilization); keep needs_more_evidence.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36473",
     "https://github.com/pingcap/tidb/pull/36473.patch"

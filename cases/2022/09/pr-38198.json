@@ -13,18 +13,18 @@
     "name": "executor_test"
   },
   "symptoms": [
-    "sql := \"select * from t t1 join t t2 join t t3 on t1.a=t2.a and t1.a=t3.a order by t1.a;\" // Need 500MB (executor/executor_test.go)"
+    "Timing dependency in OOM test: memory allocation racing with query execution makes OOM trigger nondeterministic."
   ],
-  "failure_signature": "sql := \"select * from t t1 join t t2 join t t3 on t1.a=t2.a and t1.a=t3.a order by t1.a;\" // Need 500MB (executor/executor_test.go)",
+  "failure_signature": "OOM test flakes due to race between query start and background memory allocation.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The added global-memory-control test relied on the query being actively running before allocating a large slice in another goroutine. Without synchronization, scheduling could allocate memory too early/late, making the OOM behavior nondeterministic. The fix adds a small delay and a WaitGroup to enforce ordering and ensure the allocation happens while the query is running.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Synchronize goroutines in tests (WaitGroup/channel) to enforce ordering instead of relying on scheduling.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38198",
     "https://github.com/pingcap/tidb/pull/38198.patch"

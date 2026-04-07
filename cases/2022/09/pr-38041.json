@@ -13,18 +13,18 @@
     "name": "seq_executor_test"
   },
   "symptoms": [
-    "*: fix data race for txnCtx"
+    "Data race on SessionVars.TxnCtx: concurrent reads/writes without synchronization."
   ],
-  "failure_signature": "*: fix data race for txnCtx",
+  "failure_signature": "Race detector reports data race on session TxnCtx.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix data race for txnCtx.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix data race for txnCtx",
+  "root_cause_explanation": "TxnCtx was accessed concurrently from different code paths without synchronization, leading to data races under race builds. The fix introduces a mutex to protect TxnCtx and ensures callers lock around reads/writes when needed.",
+  "module": "session",
+  "fix_pattern": "Add mutex protection for shared session variables accessed concurrently.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38041",
     "https://github.com/pingcap/tidb/pull/38041.patch"

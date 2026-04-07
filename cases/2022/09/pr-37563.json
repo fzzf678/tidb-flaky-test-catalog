@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "owner/manager_test.go",
-    "name": "TestCluster"
+    "name": "manager_test"
   },
   "symptoms": [
-    "owner: fix the unstable test of `TestCluster`"
+    "Unstable owner election test: calling require/assert inside goroutine and racing with subsequent checks."
   ],
-  "failure_signature": "owner: fix the unstable test of `TestCluster`",
+  "failure_signature": "Owner election test races with CampaignOwner() goroutine; assertions may run after test proceeds.",
   "root_cause_categories": [
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: owner: fix the unstable test of `TestCluster`.",
-  "module": "session",
-  "fix_pattern": "owner: fix the unstable test of `TestCluster`",
+  "root_cause_explanation": "The test started owner election in a goroutine and performed assertions that depend on election completion. This introduces a race/timing window (and unsafe use of testing assertions in goroutines). The fix runs CampaignOwner synchronously before checking ownership.",
+  "module": "domain",
+  "fix_pattern": "Avoid assertions in goroutines; run setup steps synchronously before checking results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37563",
     "https://github.com/pingcap/tidb/pull/37563.patch"

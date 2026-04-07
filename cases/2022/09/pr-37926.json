@@ -13,20 +13,18 @@
     "name": "TestCancel"
   },
   "symptoms": [
-    "test,ddl: fix data race in `TestCancel`"
+    "Data race in DDL cancel tests: shared bool flags and hooks accessed concurrently without synchronization."
   ],
-  "failure_signature": "test,ddl: fix data race in `TestCancel`",
+  "failure_signature": "Race detector reports data race in DDL cancel hook state.",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test,ddl: fix data race in `TestCancel`.",
-  "module": "test_infra",
-  "fix_pattern": "test,ddl: fix data race in `TestCancel`",
+  "root_cause_explanation": "The DDL cancel tests used shared boolean flags that were read/written by hook callbacks concurrently with the test flow. This caused data races under -race. The fix uses atomic booleans and clones the callback when registering hooks to avoid sharing mutable state unsafely.",
+  "module": "ddl",
+  "fix_pattern": "Use atomic/locks for hook state and avoid sharing mutable callback instances across goroutines.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37926",
     "https://github.com/pingcap/tidb/pull/37926.patch"

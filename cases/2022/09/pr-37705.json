@@ -10,22 +10,22 @@
   "test": {
     "type": "unit",
     "path": "statistics/handle/handle_test.go",
-    "name": "TestAnalyzeGlobalStatsWithOpts2"
+    "name": "handle_test"
   },
   "symptoms": [
-    "statistics: fix unstable TestAnalyzeGlobalStatsWithOpts2"
+    "Global/session state interference: auto-analyze/persist options affect statistics handle tests."
   ],
-  "failure_signature": "statistics: fix unstable TestAnalyzeGlobalStatsWithOpts2",
+  "failure_signature": "Statistics tests affected by global tidb_enable_auto_analyze / persist_analyze_options state.",
   "root_cause_categories": [
     "shared_state_pollution"
   ],
   "review_smells": [
     "global_variable_mutation",
-    "shared_table_without_isolation"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: statistics: fix unstable TestAnalyzeGlobalStatsWithOpts2.",
+  "root_cause_explanation": "The test relied on global statistics-related variables (e.g., tidb_enable_auto_analyze, tidb_persist_analyze_options). If other tests mutate these globals, the test becomes flaky. The fix explicitly sets the needed globals and restores them after the test.",
   "module": "statistics",
-  "fix_pattern": "statistics: fix unstable TestAnalyzeGlobalStatsWithOpts2",
+  "fix_pattern": "Save/restore global variables and set required values explicitly within tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37705",
     "https://github.com/pingcap/tidb/pull/37705.patch"

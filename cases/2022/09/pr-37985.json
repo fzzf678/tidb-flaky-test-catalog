@@ -13,18 +13,18 @@
     "name": "multi_schema_change_test"
   },
   "symptoms": [
-    "test: fix unstable multi-schema change test"
+    "Unstable DDL multi-schema change tests: hook may observe job state before MultiSchemaInfo/SubJobs initialized."
   ],
-  "failure_signature": "test: fix unstable multi-schema change test",
+  "failure_signature": "Nil/out-of-range access when reading job.MultiSchemaInfo.SubJobs in cancel hook.",
   "root_cause_categories": [
     "schema_change_race"
   ],
   "review_smells": [
     "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: fix unstable multi-schema change test.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable multi-schema change test",
+  "root_cause_explanation": "The cancel hook accessed job.MultiSchemaInfo.SubJobs directly, which can be absent or not fully initialized at some intermediate DDL job update points, leading to panics/flakes. The fix adds guard assertions to validate the expected multi-schema structure before indexing into SubJobs.",
+  "module": "ddl",
+  "fix_pattern": "Guard against intermediate DDL job states before accessing nested fields (avoid nil/out-of-range in hooks).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37985",
     "https://github.com/pingcap/tidb/pull/37985.patch"

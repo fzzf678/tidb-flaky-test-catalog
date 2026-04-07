@@ -13,18 +13,18 @@
     "name": "client_test"
   },
   "symptoms": [
-    "br: fix DATA RACE in RecordStores when getting store length"
+    "Data race: shared RecordStores slice read while being written in restore client tests."
   ],
-  "failure_signature": "br: fix DATA RACE in RecordStores when getting store length",
+  "failure_signature": "Race detector reports data race when reading shared RecordStores slice.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: br: fix DATA RACE in RecordStores when getting store length.",
+  "root_cause_explanation": "The restore client tests concurrently mutate and read a shared slice (RecordStores.stores). Direct reads (len/index/log) without synchronization trigger data races under -race. The fix adds mutex-protected accessors for reads.",
   "module": "br",
-  "fix_pattern": "br: fix DATA RACE in RecordStores when getting store length",
+  "fix_pattern": "Protect shared slices/maps with locks; avoid unsynchronized reads during concurrent writes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37517",
     "https://github.com/pingcap/tidb/pull/37517.patch"
