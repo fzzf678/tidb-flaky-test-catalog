@@ -17,16 +17,16 @@
   ],
   "failure_signature": "ddl: fix data race and goroutine leak in test",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix data race and goroutine leak in test.",
+  "root_cause_explanation": "The test failures were caused by concurrency hazards in the DDL test suite: enabling failpoints and running test setup in the wrong lifecycle could trigger client-go data races, and missing cleanup (unclosed clients/stores) could leak goroutines/resources between tests. This PR stabilizes the suite by moving failpoint enabling into a package-level `TestMain` and by adding proper cleanup/closing (plus goleak verification) to prevent goroutine leaks and cross-test interference.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix data race and goroutine leak in test",
+  "fix_pattern": "Fix test lifecycle for concurrency + cleanup (use TestMain for global setup; close resources; verify goroutine leaks).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31896",
     "https://github.com/pingcap/tidb/pull/31896.patch"

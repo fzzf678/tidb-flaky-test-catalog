@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: topsql: fix data race in the topsql_test.",
+  "root_cause_explanation": "The tests spawned background goroutines in a loop without proper lifecycle management, which can cause data races (e.g., goroutines outliving the test or closures interacting with shared state). This PR fixes the race by using a `WaitGroupWrapper` to track goroutines and wait for them to exit, and by copying loop variables (`sql`/`plan`) into per-iteration locals before starting each goroutine.",
   "module": "server",
-  "fix_pattern": "topsql: fix data race in the topsql_test",
+  "fix_pattern": "When tests start goroutines, avoid closure-capturing loop variables and always join goroutines (e.g., via WaitGroup) to prevent races and goroutine leaks across test boundaries.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31244",
     "https://github.com/pingcap/tidb/pull/31244.patch"

@@ -20,12 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The flakiness/instability was caused by relying on an implicit (unstable) ordering of internal handles when building the table reader for IndexMerge. When handles (and thus kvRanges) are not ordered by start key, region splitting can miss ranges/regions and lead to incorrect or inconsistent query results in tests. This PR stabilizes it by explicitly enabling handle reordering before building the table reader so key ranges are processed in a deterministic order.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort/reorder internal handles (key ranges) before building cop requests to enforce deterministic range/region splitting.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31359",
     "https://github.com/pingcap/tidb/pull/31359.patch"

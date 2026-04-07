@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix DATA RACE in the TestAnalyzeParameters and other 3 test cases.",
-  "module": "executor",
-  "fix_pattern": "executor: fix DATA RACE in the TestAnalyzeParameters and other 3 test cases",
+  "root_cause_explanation": "The flakiness was caused by a data race in test setup/bootstrapping: the tests created a mock store and then separately bootstrapped a domain/session, which can introduce unsafe concurrent state in the test lifecycle. This PR stabilizes the affected analyze tests by using `testkit.CreateMockStoreAndDomain` (store+domain+cleanup via one helper) instead of mixing `CreateMockStore` with extra `BootstrapSession` calls.",
+  "module": "statistics",
+  "fix_pattern": "Use testkit helpers for store+domain/session setup to avoid bootstrapping data races in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31931",
     "https://github.com/pingcap/tidb/pull/31931.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "t.Skip(\"race test for this case takes too long time\")",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: dom.close() in test.",
+  "root_cause_explanation": "The instability was caused by missing cleanup of the domain lifecycle in tests: `domain.GetDomain(...)` returns a domain with background goroutines, and if it is not closed properly, it can leak goroutines/state across tests and make race-mode execution unstable (often leading to long-running/timeout behavior). This PR stabilizes the affected tests by explicitly `defer dom.Close()` and by switching to `testkit.CreateMockStoreAndDomain` so the domain is created and cleaned up consistently.",
   "module": "executor",
-  "fix_pattern": "executor: dom.close() in test",
+  "fix_pattern": "Ensure domain/store lifecycle is properly cleaned up in tests (defer dom.Close or use CreateMockStoreAndDomain).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31984",
     "https://github.com/pingcap/tidb/pull/31984.patch"

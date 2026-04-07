@@ -17,14 +17,14 @@
   ],
   "failure_signature": "* *: fix unstable test in placement gc cases (#30045) | s.mockDB.ExpectQuery(\"\\\\QSELECT table_name, column_name, column_type, generation_expression, extra FROM information_schema.columns WHERE table_schema = ? ORDER BY table_name, ordinal_position;\\\\E\"). (br/pkg/lightning/backend/tidb/tidb_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "missing_order_by"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR includes a test-infra migration in `br/pkg/lightning/backend/tidb/tidb_test.go`, converting gocheck-style suites to standard `testing` with `testify/require` (and related helper refactors). The change is primarily about modernizing/standardizing the test framework rather than a deterministic-ordering fix, so it is classified as `test_infra_migration`.",
   "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Migrate gocheck-based tests to `testing` + `testify/require` and refactor suite setup/teardown helpers accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29380",
     "https://github.com/pingcap/tidb/pull/29380.patch"

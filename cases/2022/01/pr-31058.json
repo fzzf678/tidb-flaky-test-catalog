@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: session: fix data race in ParseWithParamsInternal.",
+  "root_cause_explanation": "`ParseWithParamsInternal` toggled a shared session variable (`SessionVars.InRestrictedSQL`) around parsing via a save/restore pattern. When parsing happened concurrently, this unsynchronized mutation of shared session state could trigger a data race. This PR fixes the issue by removing the shared-state toggle and instead passing an explicit flag into `ParseWithParams` (and updating call sites), avoiding concurrent mutation of `SessionVars` during parse.",
   "module": "session",
-  "fix_pattern": "session: fix data race in ParseWithParamsInternal",
+  "fix_pattern": "Avoid mutating shared session variables from concurrent code paths; pass explicit flags/parameters (instead of toggling `SessionVars` state) to make parsing thread-safe.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31058",
     "https://github.com/pingcap/tidb/pull/31058.patch"

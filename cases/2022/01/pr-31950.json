@@ -17,14 +17,14 @@
   ],
   "failure_signature": "Merge branch 'master' into unstable-ci",
   "root_cause_categories": [
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix a test case leak cause CI timeout.",
+  "root_cause_explanation": "The CI timeout was caused by a leaked session/transaction goroutine in the test: a goroutine executed a blocking `SELECT ... FOR UPDATE` but did not rollback/cleanup afterward, leaving resources hanging and causing `go test` to time out (often surfaced by goleak in TestMain). This PR stabilizes the test by explicitly rolling back the transaction in the goroutine to avoid leaks.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix a test case leak cause CI timeout",
+  "fix_pattern": "Ensure blocking sessions/transactions in goroutines are explicitly cleaned up (e.g., rollback) to prevent goroutine leaks/timeouts.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31950",
     "https://github.com/pingcap/tidb/pull/31950.patch"

@@ -17,16 +17,15 @@
   ],
   "failure_signature": "\"select create_time from mysql.stats_history order by create_time desc limit 1)\", tableInfo.Meta().ID)).Rows() (executor/analyze_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "global_variable_mutation",
+    "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test interacted with shared global state (`tidb_enable_historical_stats`) and the shared system table `mysql.stats_history`. Selecting the \"latest\" record via an unscoped subquery (not filtering by `table_id`) and without a deterministic ordering could pick rows produced by other tables/tests, causing intermittent empty/wrong results. This PR stabilizes the test by cleaning up the global variable via `defer`, scoping the subquery to the target `table_id`, and adding a deterministic `ORDER BY` when reading the history rows.",
+  "module": "statistics",
+  "fix_pattern": "Isolate shared-state tests: restore global variables via `defer/t.Cleanup()`, scope queries against shared tables by identifiers (e.g., `table_id`), and add `ORDER BY` for deterministic row selection.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31032",
     "https://github.com/pingcap/tidb/pull/31032.patch"

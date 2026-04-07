@@ -20,11 +20,11 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: sessionctx/stmtctx: fix data race in weak consistency test.",
+  "root_cause_explanation": "The flakiness was caused by incorrect API usage in the test: `Session.Execute` returns record sets that must be closed. The previous test ignored the return value and left result sets unclosed, which can leak internal resources/goroutines and trigger race-detector failures or nondeterministic behavior. This PR stabilizes it by checking the error and explicitly closing all returned record sets.",
   "module": "session",
-  "fix_pattern": "sessionctx/stmtctx: fix data race in weak consistency test",
+  "fix_pattern": "Properly close resources returned by APIs in tests (close all record sets from Session.Execute).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31989",
     "https://github.com/pingcap/tidb/pull/31989.patch"

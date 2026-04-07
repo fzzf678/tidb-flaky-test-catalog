@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: statistics: fix data race and error handling in stats load.",
+  "root_cause_explanation": "The flakiness was caused by a concurrency/data race in the stats load worker: concurrent channel send/close and unsafe shared-state access could trigger panics (\"stats loading panicked\") or race-detector failures. This PR stabilizes the worker by making writes to the result channel safer (with panic recovery), fixing the bookkeeping around working state, and improving panic-to-error handling so failures are deterministic and correctly surfaced.",
   "module": "statistics",
-  "fix_pattern": "statistics: fix data race and error handling in stats load",
+  "fix_pattern": "Make async worker concurrency-safe (avoid send/close race; recover panics and convert to explicit errors).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31301",
     "https://github.com/pingcap/tidb/pull/31301.patch"

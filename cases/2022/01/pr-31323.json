@@ -17,14 +17,14 @@
   ],
   "failure_signature": "err := tk.QueryToErr(\"select /*+ INL_HASH_JOIN(s) */ * from t left join s on t.a=s.a order by t.pk\") (executor/join_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The flakiness was caused by a concurrency bug in IndexNestedLoopHashJoin's async worker path: errors/panics could race with result-channel usage (e.g., closing/sending), leading to crashes like `send on closed channel` or lost/incorrect error propagation (especially when keep-order is enabled). This PR stabilizes it by ensuring errors are sent/returned deterministically and result channels are closed in a controlled way even when panics happen in background goroutines.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Make background worker error/panic handling concurrency-safe (avoid send/close races; propagate errors deterministically).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/31323",
     "https://github.com/pingcap/tidb/pull/31323.patch"
