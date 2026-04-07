@@ -53,9 +53,9 @@ If you flag a smell, **read enough surrounding code** to avoid false positives:
 - If a suspicious line lives inside a helper, locate the helper definition and confirm actual behavior.
 - If the PR modifies only a few lines, but the risk depends on setup/teardown, read the file-level setup to confirm isolation.
 
-### 2) Do a fast smell scan (manual)
+### 2) Structural Smell Scan (Thorough)
 
-This skill is intentionally **script-free**. Do a fast manual scan for high-signal patterns:
+This skill requires **rigorous structural code analysis**, not superficial skimming. Analyze the control flow, concurrency models, and resource lifecycles:
 - Timing: `time.Sleep(...)`, small timeouts, polling without backoff
 - Concurrency: `t.Parallel()`, goroutines, shared/global state without cleanup
 - Determinism: missing `ORDER BY`, map iteration order, order-sensitive assertions
@@ -63,11 +63,11 @@ This skill is intentionally **script-free**. Do a fast manual scan for high-sign
 - DDL/schema propagation: DDL without wait, schema version races, async propagation
 - External deps: real TiKV/env deps, hardcoded ports, network calls without retry/timeout
 
-If nothing is flagged, still do a quick manual pass for ordering/timing/shared-state risks.
+If nothing is immediately obvious, you must systematically trace the test's setup, execution, and teardown for ordering/timing/shared-state risks.
 
-#### Go/TiDB quick search hints (optional)
+#### Go/TiDB Deep Analysis Patterns (Optional but recommended)
 
-When you have the repo locally, these tokens often help you *quickly* find flaky-relevant context around changed tests:
+When you have the repo locally, systematically analyze these tokens to trace execution flows and identify flaky-relevant contexts:
 
 - Concurrency: `t.Parallel`, `go func`, `WaitGroup`, `errgroup`, `chan`, `select`, `atomic.`, `sync.Mutex`, `Lock(`, `Unlock(`, `WithCancel`, `WithTimeout`
 - Ordering/determinism: `MustQuery(`, `.Check(`, `testkit.Rows`, `ORDER BY`, `Sort`
@@ -124,7 +124,7 @@ These catch a large portion of flaky test regressions. Use `review_smells.json` 
 
 - Determinism / ordering:
   - `missing_order_by`, `unsorted_result_assertion`, `relying_on_map_iteration_order`
-  - **How to spot quickly (TiDB tests)**:
+  - **Structural patterns to verify (TiDB tests)**:
     - Look for `tk.MustQuery(...).Check(testkit.Rows(...))` / `tk.MustQuery(...).Sort().Check(...)` and confirm ordering is actually stabilized.
     - If a query is asserted as an ordered list but lacks `ORDER BY`, that's often `missing_order_by` / `unsorted_result_assertion`.
     - If `ORDER BY` exists but the ordering key is **not unique**, tie ordering can still be nondeterministic → downgrade to `medium` and ask for a stable tie-breaker if needed.
@@ -132,27 +132,27 @@ These catch a large portion of flaky test regressions. Use `review_smells.json` 
     - Integration tests: check `.test` files under `tests/integrationtest/t/` for queries without `ORDER BY` whose `.result` files assume a fixed row order.
 - Concurrency / shared state:
   - `t_parallel_with_shared_state`, `race_condition_in_async_code`, `global_variable_mutation`, `insufficient_cleanup_between_tests`
-  - **How to spot quickly (Go tests)**:
+  - **Structural patterns to verify (Go tests)**:
     - `race_condition_in_async_code`: `go func` / background worker + shared variable/struct/map/slice accessed without mutex/atomic/channel handoff; or goroutine started but test doesn't **wait** for it deterministically (no `WaitGroup`, no channel sync, no context cancel). Also watch for callback/hook functions registered with the system that run asynchronously.
     - `t_parallel_with_shared_state`: `t.Parallel()` + shared DB/schema/port/temp dir/global config/failpoint. Confirm isolation is truly per-test.
     - `global_variable_mutation`: package-level `var`, `init()`, `TestMain`, or global setters (`config`/`variable`/failpoint) modified in tests; ensure they're restored via `defer` / `t.Cleanup`. Common TiDB patterns: `config.UpdateGlobal(...)`, `variable.SetSysVar(...)`, `failpoint.Enable(...)` without corresponding disable/restore.
     - `insufficient_cleanup_between_tests`: resources (tables/files/goroutines/failpoints/servers) created but not reliably cleaned up. Watch for `CREATE TABLE` without `DROP`, `failpoint.Enable` without `defer failpoint.Disable`, goroutines started without join.
 - Async / timing:
   - `time_sleep_for_sync`, `insufficient_timeout`, `async_wait_without_backoff`, `clock_skew_dependency`
-  - **How to spot quickly (Go tests)**:
+  - **Structural patterns to verify (Go tests)**:
     - `time_sleep_for_sync`: bare `time.Sleep(...)` used as a synchronization barrier (not inside a retry/eventually loop).
     - `insufficient_timeout`: hardcoded short timeouts (`time.Second`, `time.Millisecond * 100`) in tests that wait for async operations; look for `context.WithTimeout`, `time.After`, `time.NewTimer` with tight bounds.
     - `async_wait_without_backoff`: polling loops (`for { ... time.Sleep(...) }`) without exponential backoff or bounded retry count; also `require.Eventually` with very short poll intervals that may not give enough time for the operation.
     - `clock_skew_dependency`: tests using `time.Now()` for ordering/comparison, `time.Since()` for assertions, or `AS OF TIMESTAMP` / stale read features that depend on clock precision.
 - Plan / stats sensitivity:
   - `assert_exact_plan_or_cost`, `statistics_sensitive_test`, `plan_cache_dependency`
-  - **How to spot quickly (TiDB tests)**:
+  - **Structural patterns to verify (TiDB tests)**:
     - `assert_exact_plan_or_cost`: `tk.MustQuery("EXPLAIN ...")` with assertions on exact plan operator names, row counts, or cost values; `tk.MustQuery("EXPLAIN ANALYZE ...")` checking exact execution stats. Any `EXPLAIN` output compared with `Check(testkit.Rows(...))` is suspect unless plan is pinned with hints.
     - `statistics_sensitive_test`: tests that depend on optimizer stats being in a specific state — look for `ANALYZE TABLE` presence/absence, assertions on row estimates, tests that `INSERT` data then immediately assert plans without `ANALYZE`. Also: tests that set `tidb_opt_*` session variables or modify stats-related config.
     - `plan_cache_dependency`: tests exercising prepared statements or `EXECUTE` that assume cold/warm plan cache state. Look for `PREPARE`/`EXECUTE` sequences without explicit `ADMIN FLUSH PLAN_CACHE` or plan cache variable toggles.
 - DDL / schema propagation:
   - `ddl_without_wait`, `schema_version_race`, `async_schema_propagation`
-  - **How to spot quickly (TiDB tests)**:
+  - **Structural patterns to verify (TiDB tests)**:
     - `ddl_without_wait`: DDL statements (`ALTER`, `CREATE INDEX`, `ADD COLUMN`) issued without waiting for completion in async DDL mode.
     - `schema_version_race`: tests that issue DDL then immediately read `information_schema` or use the new schema without ensuring the schema version has propagated. Multi-domain tests or tests with multiple TiDB instances are especially suspect.
     - `async_schema_propagation`: tests that create/modify schema objects across goroutines or in callbacks where propagation timing is uncertain.
