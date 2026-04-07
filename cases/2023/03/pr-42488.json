@@ -13,19 +13,18 @@
     "name": "pessimistic_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select a, b from t order by a\").Check(tt.finalRows) (tests/realtikvtest/pessimistictest/pessimistic_test.go)"
+    "Incorrect union-scan behavior under pessimistic locking: lock-derived KV pairs became visible to union-scan, leading to duplicated rows (one from snapshot and one from in-txn mem/index reader)."
   ],
-  "failure_signature": "tk.MustQuery(\"select a, b from t order by a\").Check(tt.finalRows) (tests/realtikvtest/pessimistictest/pessimistic_test.go)",
+  "failure_signature": "Duplicated rows in pessimistic transaction due to union-scan seeing both snapshot and lock-converted records",
   "root_cause_categories": [
-    "external_dependency",
-    "nondeterministic_result_order"
+    "external_dependency"
   ],
   "review_smells": [
     "real_tikv_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: tk.MustQuery(\"select a, b from t order by a\").Check(tt.finalRows) (tests/realtikvtest/pessimistictest/pessimistic_test.go).",
+  "root_cause_explanation": "The issue occurs in real TiKV-backed pessimistic transactions: converting unique-index locks into in-txn PUT records made those KV pairs visible to union-scan, causing duplicated rows (one from snapshot, one from mem/index reader). This PR fixes the instability/correctness issue by reverting the lock-to-PUT conversion logic introduced in #25730 for PointGet/BatchPointGet, relying on TiKV's improved lock handling instead, and updates the realtikv test to cover issue #28011.",
   "module": "executor",
-  "fix_pattern": "tk.MustQuery(\"select a, b from t order by a\").Check(tt.finalRows) (tests/realtikvtest/pessimistictest/pessimistic_test.go)",
+  "fix_pattern": "Avoid making lock-derived KV pairs visible to union-scan by converting locks to PUTs in the txn mem buffer; revert/guard such optimizations and add realtikv regression tests to ensure snapshot+mem readers don't double-count rows.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42488",
     "https://github.com/pingcap/tidb/pull/42488.patch"

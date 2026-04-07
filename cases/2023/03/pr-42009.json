@@ -12,19 +12,19 @@
     "path": "executor/resource_tag_test.go",
     "name": "resource_tag_test"
   },
-  "symptoms": [
-    "*: fix data race at the UnistoreRPCClientSendHook"
-  ],
-  "failure_signature": "*: fix data race at the UnistoreRPCClientSendHook",
-  "root_cause_categories": [
-    "concurrency_data_race"
-  ],
-  "review_smells": [
-    "race_condition_in_async_code"
-  ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix data race at the UnistoreRPCClientSendHook.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix data race at the UnistoreRPCClientSendHook",
+    "symptoms": [
+        "Go data race on the global test hook `unistore.UnistoreRPCClientSendHook` (mockstore/unistore) when tests assign the hook while `RPCClient.SendRequest` concurrently loads/calls it under a failpoint."
+    ],
+    "failure_signature": "Go data race: concurrent read/write of `UnistoreRPCClientSendHook` (mockstore/unistore RPC SendRequest hook)",
+    "root_cause_categories": [
+        "concurrency_data_race"
+    ],
+    "review_smells": [
+        "global_variable_mutation"
+    ],
+    "root_cause_explanation": "The flake was caused by a Go data race on the global `UnistoreRPCClientSendHook`: test code overwrote the hook function while the Unistore mock RPC client concurrently read/called it (via the `unistoreRPCClientSendHook` failpoint). This PR fixes the unsynchronized shared state by switching the hook to an `atomic.Pointer[func(*tikvrpc.Request)]` and using `Load()`/`Store()` for concurrent-safe access.",
+    "module": "test_infra",
+    "fix_pattern": "Replace an unsynchronized global hook function variable with an `atomic.Pointer` and use `Load()`/`Store()` in both the call path and tests to eliminate concurrent read/write races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42009",
     "https://github.com/pingcap/tidb/pull/42009.patch"

@@ -13,20 +13,18 @@
     "name": "TestResourceGroupBasic"
   },
   "symptoms": [
-    "ddl/test: fix DATA RACE in TestResourceGroupBasic"
+    "DATA RACE in `TestResourceGroupBasic`: a DDL callback updates `groupID` while the test concurrently reads it during assertions."
   ],
-  "failure_signature": "ddl/test: fix DATA RACE in TestResourceGroupBasic",
+  "failure_signature": "DATA RACE (race detector): concurrent read/write of `groupID` in `TestResourceGroupBasic`",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl/test: fix DATA RACE in TestResourceGroupBasic.",
+  "root_cause_explanation": "`TestResourceGroupBasic` registers an `onJobUpdated` callback to capture the created resource group's `SchemaID` into `groupID`, but the callback and the check/assertion code can run concurrently. Using a plain `int64` caused a data race when the callback wrote `groupID` while assertions read it. This PR fixes the race by switching `groupID` to `atomic.Int64` (using `Load()`/`Store()`), and also enables Bazel `race = \"on\"` for the test target to catch regressions.",
   "module": "ddl",
-  "fix_pattern": "ddl/test: fix DATA RACE in TestResourceGroupBasic",
+  "fix_pattern": "When callbacks/goroutines share state with the main test thread, use concurrency-safe primitives (e.g., `atomic.*` or a mutex) for shared variables; enable race detector for the test target to prevent regressions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42148",
     "https://github.com/pingcap/tidb/pull/42148.patch"

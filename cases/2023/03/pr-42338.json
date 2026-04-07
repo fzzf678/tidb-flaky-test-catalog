@@ -13,18 +13,18 @@
     "name": "execdetails: fix data race in the BasicRuntimeStats"
   },
   "symptoms": [
-    "execdetails: fix data race in the BasicRuntimeStats"
+    "DATA RACE in runtime statistics: `BasicRuntimeStats` fields (`loop`/`consume`/`rows`) can be updated concurrently while other goroutines clone/merge/stringify the stats."
   ],
-  "failure_signature": "execdetails: fix data race in the BasicRuntimeStats",
+  "failure_signature": "DATA RACE (race detector): concurrent access to `BasicRuntimeStats` counters (`loop`/`consume`/`rows`)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: execdetails: fix data race in the BasicRuntimeStats.",
-  "module": "module_unknown",
-  "fix_pattern": "execdetails: fix data race in the BasicRuntimeStats",
+  "root_cause_explanation": "`BasicRuntimeStats` was accessed concurrently: one goroutine records/merges stats while others read/clone/format them. The previous implementation mixed plain fields with ad-hoc atomic ops, which still allowed racy reads/writes (especially around clone/merge/string formatting). This PR fixes the race by converting `loop`/`consume`/`rows` to atomic counters (`go.uber.org/atomic`) and consistently using `Load()`/`Store()`/`Add()` when reading or updating them. It also enables Bazel `race = \"on\"` for the relevant unit test target.",
+  "module": "executor",
+  "fix_pattern": "Make shared runtime-stat counters concurrency-safe (atomic counters + consistent `Load`/`Add` usage) so recording/merging and formatting/cloning can happen safely in parallel; enable race detector in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42338",
     "https://github.com/pingcap/tidb/pull/42338.patch"

@@ -13,18 +13,18 @@
     "name": "operate_test"
   },
   "symptoms": [
-    "test: fix flaky test due to forget to change batch size"
+    "`TestOperateRunningJob` is timing-sensitive: it starts a `LOAD DATA` job in a goroutine and then sleeps before querying `SHOW LOAD DATA JOBS`; with the default `batch_size` the job lifecycle/keepalive timing could make the fixed sleep unreliable."
   ],
-  "failure_signature": "test: fix flaky test due to forget to change batch size",
+  "failure_signature": "Intermittent empty/too-short running window for `SHOW LOAD DATA JOBS` in `TestOperateRunningJob` (sleep-based synchronization)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix flaky test due to forget to change batch size",
+  "root_cause_explanation": "`TestOperateRunningJob` relied on fixed sleeps to wait for a `LOAD DATA` job to appear in `SHOW LOAD DATA JOBS` while another goroutine runs the job (expected to hit a keepalive failure). With the default `batch_size`, the job's progress/timing could make the sleep window unreliable, causing flakiness. This PR stabilizes the test by explicitly setting `WITH batch_size = 1` (so the job stays observable as running) and reducing the second sleep to a shorter wait aligned with the smaller batch size.",
+  "module": "executor",
+  "fix_pattern": "Avoid relying on implicit defaults plus magic sleeps for asynchronous job state; set explicit parameters (e.g., `batch_size`) and use deterministic waits (ideally Eventually/polling) before asserting on job visibility/state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42408",
     "https://github.com/pingcap/tidb/pull/42408.patch"

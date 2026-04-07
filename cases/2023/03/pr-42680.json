@@ -13,18 +13,20 @@
     "name": "local_test"
   },
   "symptoms": [
-    "test: use concurrent-safe structure to fix a flaky test"
+    "TestCheckPeersBusy was flaky due to racy cross-goroutine communication (appending to a shared slice) and a fixed sleep-based timing assumption."
   ],
-  "failure_signature": "test: use concurrent-safe structure to fix a flaky test",
+  "failure_signature": "Intermittent assertion failures in TestCheckPeersBusy (retry job not observed in time) and/or race detector findings due to unsynchronized shared slice access.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "race_condition_in_async_code",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: use concurrent-safe structure to fix a flaky test.",
-  "module": "test_infra",
-  "fix_pattern": "test: use concurrent-safe structure to fix a flaky test",
+  "root_cause_explanation": "The flake was caused by concurrency + timing: the test used a shared slice to record a retry job from another goroutine (not concurrency-safe) and relied on a fixed `time.Sleep` to assume the worker was sleeping before asserting. This PR stabilizes the test by switching to a channel for cross-goroutine signaling and replacing the fixed sleep with `require.Eventually`, plus using t.Cleanup to restore a package-level backoff knob used by the worker.",
+  "module": "lightning",
+  "fix_pattern": "Use a channel instead of a shared slice for cross-goroutine communication, replace `time.Sleep` with `require.Eventually`, and restore modified package-level backoff settings via t.Cleanup.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42680",
     "https://github.com/pingcap/tidb/pull/42680.patch"

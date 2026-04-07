@@ -13,19 +13,18 @@
     "name": "progress_test"
   },
   "symptoms": [
-    "fix race | selectSQL := \"select * from range_t order by a;\" (executor/loaddatatest/load_data_test.go)"
+    "TestLoadDataIntoPartitionedTable compared exact rows from a partitioned table using a SELECT without ORDER BY, causing intermittent row-order mismatches."
   ],
-  "failure_signature": "fix race | selectSQL := \"select * from range_t order by a;\" (executor/loaddatatest/load_data_test.go)",
+  "failure_signature": "Row order mismatch in TestLoadDataIntoPartitionedTable when selecting from range_t without ORDER BY.",
   "root_cause_categories": [
-    "concurrency_data_race",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix race | selectSQL := \"select * from range_t order by a;\" (executor/loaddatatest/load_data_test.go).",
-  "module": "module_unknown",
-  "fix_pattern": "fix race | selectSQL := \"select * from range_t order by a;\" (executor/loaddatatest/load_data_test.go)",
+  "root_cause_explanation": "The flaky behavior was caused by nondeterministic result ordering: the test checked exact rows after LOAD DATA, but the verification query selected from the partitioned table without ORDER BY so row iteration order could vary. This PR stabilizes the test by adding an explicit ORDER BY (e.g. `select * from range_t order by a`) before comparing results.",
+  "module": "executor",
+  "fix_pattern": "Add ORDER BY to the verification SELECT in loaddatatest so the expected rows are compared deterministically.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42565",
     "https://github.com/pingcap/tidb/pull/42565.patch"

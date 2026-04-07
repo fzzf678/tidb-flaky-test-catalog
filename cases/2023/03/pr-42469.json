@@ -13,18 +13,18 @@
     "name": "backend_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "The only explicit flaky-related signal captured in this case is a Bazel test metadata change enabling `race = \"on\"`; the PR itself is primarily a large refactor of Lightning backend code."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Bazel metadata-only change: enable `race = \"on\"` (no concrete race report/log captured here)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is largely a refactor (\"reuse in load data\") and the case data here only points to enabling Bazel `race = \"on\"` for a test target. Turning on race detection is not a root-cause explanation by itself unless we also have the actual race report (stack) showing what was racy and how the PR fixes it. Keep this as insufficient evidence until we have the race output or a focused follow-up fix that addresses the underlying concurrency issue.",
   "module": "lightning",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Enable race detector without a concrete race report/fix in the case evidence; keep as insufficient evidence until the underlying data race is identified and fixed with supporting logs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42469",
     "https://github.com/pingcap/tidb/pull/42469.patch"

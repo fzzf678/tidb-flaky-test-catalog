@@ -13,18 +13,18 @@
     "name": "TestStaleReadNoExtraTSORequest"
   },
   "symptoms": [
-    "session: fix unstable test TestStaleReadNoExtraTSORequest"
+    "The failpoint `assertTSONotRequest` could panic unexpectedly because internal/background SQL (e.g., DDL internal sessions) still requests TSO while the failpoint is enabled for the test."
   ],
-  "failure_signature": "session: fix unstable test TestStaleReadNoExtraTSORequest",
+  "failure_signature": "panic: tso shouldn't be requested (failpoint `assertTSONotRequest` triggered by internal session)",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: session: fix unstable test TestStaleReadNoExtraTSORequest.",
+  "root_cause_explanation": "The test enabled the `assertTSONotRequest` failpoint to assert that the test's SQL path should not request a new TSO. However, TiDB may execute internal/background SQL periodically (e.g., DDL internal sessions), and those internal requests still go through `PrepareTSFuture`, causing the global failpoint check to panic. This PR stabilizes the test by scoping the failpoint assertion to external SQL only (`!s.isInternal()`), preventing internal background activity from tripping the test's failpoint.",
   "module": "session",
-  "fix_pattern": "session: fix unstable test TestStaleReadNoExtraTSORequest",
+  "fix_pattern": "Scope global test hooks/failpoints so they do not affect internal/background SQL paths (e.g., skip assertions for `s.isInternal()` sessions) to avoid cross-component interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42101",
     "https://github.com/pingcap/tidb/pull/42101.patch"

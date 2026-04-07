@@ -13,19 +13,18 @@
     "name": "join_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select ( table1 . a , table1 . b ) NOT IN ( SELECT 3 , 2 UNION SELECT 9, 2 ) AS field2 from t as table1 order by field2;\").Check(testkit.Rows( (executor/join_test.go)"
+    "Query execution could panic in the NAAJ (null-aware anti join) path with `runtime error: index out of range`, e.g. `probeWorker[0] meets error` during `NOT IN` evaluation on tuple keys."
   ],
-  "failure_signature": "tk.MustQuery(\"select ( table1 . a , table1 . b ) NOT IN ( SELECT 3 , 2 UNION SELECT 9, 2 ) AS field2 from t as table1 order by field2;\").Check(testkit.Rows( (executor/join_test.go)",
+  "failure_signature": "runtime error: index out of range (NAAJ probeWorker panic during NOT IN join key comparison)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select ( table1 .",
+  "root_cause_explanation": "The flake was caused by a plan-dependent executor bug in the NAAJ (null-aware anti join) hash join implementation: when building the lists of join-key column positions to re-check (for probe keys containing NULLs), the code mixed up the field-type slices and positions, which could lead to mismatched lengths and an out-of-range access during `codec.EqualChunkRow(...)` checks in the probe worker. This PR fixes the panic by keeping the \"needCheck\" column positions and their corresponding field types aligned, and adds a regression test (`TestTiDBNAAJ`) covering the problematic `NOT IN` tuple case.",
   "module": "executor",
-  "fix_pattern": "tk.MustQuery(\"select ( table1 . a , table1 . b ) NOT IN ( SELECT 3 , 2 UNION SELECT 9, 2 ) AS field2 from t as table1 order by field2;\").Check(testkit.Rows( (executor/join_test.go)",
+  "fix_pattern": "In join-key comparison logic, keep the column-position slices and corresponding field-type slices aligned (same ordering/length) when doing per-column equality checks; add a focused regression test for the plan/operator that previously panicked.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42482",
     "https://github.com/pingcap/tidb/pull/42482.patch"

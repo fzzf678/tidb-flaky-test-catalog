@@ -13,18 +13,18 @@
     "name": "show_test"
   },
   "symptoms": [
-    "+ // Must not use b.pattern to avoid data race"
+    "Data race on cached wildcard pattern (`b.pattern`) in builtin ILIKE evaluation."
   ],
-  "failure_signature": "+ // Must not use b.pattern to avoid data race",
+  "failure_signature": "data race on `builtinIlikeSig.pattern` (expression/builtin_ilike.go / expression/builtin_ilike_vec.go)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + // Must not use b.pattern to avoid data race.",
+  "root_cause_explanation": "The builtin ILIKE implementation cached a compiled wildcard pattern in the builtin signature (`b.pattern`). In non-memorized cases, compiling/reusing this shared pattern across concurrent evaluations can trigger a data race. This PR fixes the race by making the pattern cache initialization thread-safe (`sync.Once`) and by avoiding shared mutable state for non-constant patterns (compile into a local `pattern` instead of reusing `b.pattern`).",
   "module": "expression",
-  "fix_pattern": "+ // Must not use b.pattern to avoid data race",
+  "fix_pattern": "For builtin-function caches that may be accessed concurrently, make initialization thread-safe (e.g., `sync.Once`/mutex) and avoid sharing mutable compiled objects across goroutines; compile per-evaluation when the pattern is not constant.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40942",
     "https://github.com/pingcap/tidb/pull/40942.patch"

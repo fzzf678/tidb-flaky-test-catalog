@@ -13,18 +13,18 @@
     "name": "distsql_test"
   },
   "symptoms": [
-    "queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from tlist use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.go)"
+    "Partition table queries with `ORDER BY ... LIMIT` (including `/*+ LIMIT_TO_COP() */`) could return rows in an inconsistent order compared to the equivalent regular-table query, due to unstable merging across per-partition select results."
   ],
-  "failure_signature": "queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from tlist use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.go)",
+  "failure_signature": "ORDER BY + LIMIT results order mismatch between partition table and regular table (non-deterministic merge order across partitions)",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
     "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from tlist use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.g….",
+  "root_cause_explanation": "The flakiness came from non-deterministic ordering when executing `ORDER BY ... LIMIT` on partition tables with order/limit pushed down: the executor built multiple per-partition `SelectResult`s, and the merging logic did not consistently compare/merge rows across different select result implementations (TableScan vs IndexScan). This PR fixes the ordering instability by introducing `sortedSelectResults` and merging per-partition results using the `ByItems` (ORDER BY keys), making the output order stable and consistent with the regular-table query.",
   "module": "executor",
-  "fix_pattern": "queryListPartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from tlist use index(idx_a) where a > %v and a < greatest(%v+1, %v) order by a limit %v\", x, x+1, maxEle, y) (executor/partition_table_test.go)",
+  "fix_pattern": "When `ORDER BY` order must be preserved across multiple sources (partitions/regions), merge results using a deterministic comparator on the ORDER BY keys (e.g., a `sortedSelectResults` heap merge keyed by `ByItems`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42024",
     "https://github.com/pingcap/tidb/pull/42024.patch"

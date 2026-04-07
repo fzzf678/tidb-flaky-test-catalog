@@ -13,18 +13,18 @@
     "name": "show_test"
   },
   "symptoms": [
-    "add log to check a unstable case"
+    "No concrete flaky failure signature is captured in this case. The PR is largely a feature/refactor around LOAD DATA parsing/planning (\"delimited data\", `FIELDS ... DEFINED NULL BY`, moving defaults from parser to planner); it briefly added a debug log for an \"unstable case\" and then reverted it."
   ],
-  "failure_signature": "add log to check a unstable case",
+  "failure_signature": "No concrete failure signature (feature PR; only temporary debug logging for an unstable case, later reverted)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: add log to check a unstable case.",
-  "module": "module_unknown",
-  "fix_pattern": "add log to check a unstable case",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a large feature/refactor for LOAD DATA. The only \"flaky\"-looking signal in the patch is a commit labeled \"add log to check a unstable case\", which is immediately reverted in the next commit and does not constitute a stabilization fix or a root-cause explanation. Without the actual flaky failure signature (CI logs/stack/repro) that motivated the temporary log, we should not guess a root cause (certainly not result-order related). Keep this as insufficient evidence until concrete failure evidence is linked.",
+  "module": "executor",
+  "fix_pattern": "Feature/refactor PR with only transient debug logging and no stable, targeted flaky fix; keep as insufficient evidence until CI logs/issues provide the failure signature and root cause.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42191",
     "https://github.com/pingcap/tidb/pull/42191.patch"

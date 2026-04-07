@@ -13,19 +13,18 @@
     "name": "plan_test"
   },
   "symptoms": [
-    "*: data race at the SessionVars.PlanID"
+    "DATA RACE on `SessionVars.PlanID`: concurrent plan building/tests reset and increment the plan ID counter without synchronization."
   ],
-  "failure_signature": "*: data race at the SessionVars.PlanID",
+  "failure_signature": "DATA RACE (race detector): concurrent access to `SessionVars.PlanID` (plan ID allocator)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: *: data race at the SessionVars.PlanID.",
+  "root_cause_explanation": "The flake was caused by a data race on the plan ID allocator: `SessionVars.PlanID` was a plain integer that multiple code paths/tests reset (`PlanID = 0`) and increment (`PlanID++`) concurrently during plan building and related logic (e.g., mem tracker IDs). This PR fixes the race by converting `PlanID` to an atomic counter (`atomic.Int32`) and switching all call sites to use `Load()`/`Store()`/`Add()`.",
   "module": "planner",
-  "fix_pattern": "*: data race at the SessionVars.PlanID",
+  "fix_pattern": "Use an atomic counter for shared ID allocators (`PlanID`) and avoid unsynchronized direct reads/writes; reset with `Store` and allocate with `Add` to prevent concurrent races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42373",
     "https://github.com/pingcap/tidb/pull/42373.patch"

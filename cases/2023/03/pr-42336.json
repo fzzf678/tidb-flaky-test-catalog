@@ -13,18 +13,18 @@
     "name": "foreign_key_test"
   },
   "symptoms": [
-    "*: fix data race at the TxnTotalSizeLimit"
+    "Go data race on the global transaction size limit (`kv.TxnTotalSizeLimit`) because tests mutate it while other goroutines read it during commit/txn driver logic."
   ],
-  "failure_signature": "*: fix data race at the TxnTotalSizeLimit",
+  "failure_signature": "DATA RACE: concurrent access to `kv.TxnTotalSizeLimit` (global txn total size limit)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix data race at the TxnTotalSizeLimit.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix data race at the TxnTotalSizeLimit",
+  "root_cause_explanation": "The flake was caused by unsynchronized mutation of a global config variable: unit tests temporarily changed `kv.TxnTotalSizeLimit` (to force ErrTxnTooLarge paths), while other goroutines concurrently read it (e.g., commit retry logic and txn driver unionstore limits). This PR fixes the data race by converting `TxnTotalSizeLimit` to an atomic uint64 and switching all reads/writes to `Load()`/`Store()`.",
+  "module": "kv",
+  "fix_pattern": "Make shared global config/test knobs concurrency-safe (use atomic `Load`/`Store` for `kv.TxnTotalSizeLimit`) and always restore the original value in `defer` to avoid cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42336",
     "https://github.com/pingcap/tidb/pull/42336.patch"

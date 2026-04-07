@@ -13,18 +13,18 @@
     "name": "main_test"
   },
   "symptoms": [
-    "turn off race"
+    "Bazel test metadata change: `race` is turned off for a target (quarantine for race failures; no concrete failure signature in this case)."
   ],
-  "failure_signature": "turn off race",
+  "failure_signature": "Bazel test metadata: `race = \"off\"` (quarantine / no concrete failure signature)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: turn off race.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Although this PR contains functional changes (prefetch for DELETE/BatchPointGet in multi-statement), the only flaky signal captured in the case data is a Bazel test metadata change that turns off `race`. Disabling race is a quarantine action and does not explain the underlying root cause without the actual race report/logs. Keep this as insufficient evidence until we have the failing race output or a follow-up PR that fixes the underlying concurrency issue.",
   "module": "server",
-  "fix_pattern": "turn off race",
+  "fix_pattern": "Quarantine by disabling `race` without a concrete failure signature or root-cause fix; keep as insufficient evidence until race logs or a dedicated fix is available.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29391",
     "https://github.com/pingcap/tidb/pull/29391.patch"

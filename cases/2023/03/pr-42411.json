@@ -13,18 +13,18 @@
     "name": "gc_worker_test"
   },
   "symptoms": [
-    "sort.Slice(stores, func(i, j int) bool { return stores[i].Address < stores[j].Address }) (store/gcworker/gc_worker_test.go)"
+    "Unit test assertions relied on an implicit/stable ordering of returned stores / sent requests, but the underlying iteration/order was not guaranteed, leading to intermittent mismatches."
   ],
-  "failure_signature": "sort.Slice(stores, func(i, j int) bool { return stores[i].Address < stores[j].Address }) (store/gcworker/gc_worker_test.go)",
+  "failure_signature": "Order-dependent test failure: comparing slices of stores/requests without sorting (non-deterministic order)",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: sort.Slice(stores, func(i, j int) bool { return stores[i].Address < stores[j].Address }) (store/gcworker/gc_worker_test.go).",
+  "root_cause_explanation": "The test was flaky because it compared slices whose order was not guaranteed (e.g., stores returned from cluster state and the collected sent requests). Depending on iteration/scheduling, the same elements could appear in different orders, causing intermittent assertion failures. This PR stabilizes the test by sorting `stores` by address and sorting collected sent requests by key/address before checking, making the assertions order-independent.",
   "module": "gc",
-  "fix_pattern": "sort.Slice(stores, func(i, j int) bool { return stores[i].Address < stores[j].Address }) (store/gcworker/gc_worker_test.go)",
+  "fix_pattern": "Before asserting equality on slices produced from unordered sources, sort them deterministically (e.g., by address/key) or compare as sets to avoid relying on incidental iteration order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42411",
     "https://github.com/pingcap/tidb/pull/42411.patch"

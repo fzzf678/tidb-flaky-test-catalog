@@ -7,28 +7,28 @@
     "body": "<!--\r\n\r\nThank you for contributing to TiDB!\r\n\r\nPR Title Format:\r\n1. pkg [, pkg2, pkg3]: what's changed\r\n2. *: what's changed\r\n\r\n-->\r\n\r\n### What problem does this PR solve?\r\n<!--\r\n\r\nPlease create an issue first to describe the problem.\r\n\r\nThere MUST be one line starting with \"Issue Number:  \" and \r\nlinking the relevant issues via the \"close\" or \"ref\".\r\n\r\nFor more info, check https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/contribute-code.html#referring-to-an-issue.\r\n\r\n-->\r\n\r\nIssue Number: ref #38535\r\n\r\nProblem Summary:\r\n\r\n### What is changed and how it works?\r\n\r\n### Check List\r\n\r\nTests <!-- At least one of them must be included. -->\r\n\r\n- [ ] Unit test\r\n- [ ] Integration test\r\n- [ ] Manual test (add detailed scripts or steps below)\r\n- [ ] No code\r\n\r\nSide effects\r\n\r\n- [ ] Performance regression: Consumes more CPU\r\n- [ ] Performance regression: Consumes more Memory\r\n- [ ] Breaking backward compatibility\r\n\r\nDocumentation\r\n\r\n- [ ] Affects user behaviors\r\n- [ ] Contains syntax changes\r\n- [ ] Contains variable changes\r\n- [ ] Contains experimental features\r\n- [ ] Changes MySQL compatibility\r\n\r\n### Release note\r\n\r\n<!-- compatibility change, improvement, bugfix, and new feature need a release note -->\r\n\r\nPlease refer to [Release Notes Language Style Guide](https://pingcap.github.io/tidb-dev-guide/contribute-to-tidb/release-notes-style-guide.html) to write a quality release note.\r\n\r\n```release-note\r\nNone\r\n```\r\n"
   },
   "pr_merged_at": "2023-03-20T11:48:42+08:00",
-  "test": {
-    "type": "unit",
-    "path": "table/tables/export_test.go",
-    "name": "export_test"
-  },
-  "symptoms": [
-    "reorgRand := rand.New(rand.NewSource(seed)) (table/tables/partition_test.go)"
-  ],
-  "failure_signature": "reorgRand := rand.New(rand.NewSource(seed)) (table/tables/partition_test.go)",
-  "root_cause_categories": [
-    "schema_change_race"
-  ],
-  "review_smells": [
-    "ddl_without_wait"
-  ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: reorgRand := rand.New(rand.NewSource(seed)) (table/tables/partition_test.go).",
-  "module": "ddl",
-  "fix_pattern": "reorgRand := rand.New(rand.NewSource(seed)) (table/tables/partition_test.go)",
-  "evidence_links": [
-    "https://github.com/pingcap/tidb/pull/42000",
-    "https://github.com/pingcap/tidb/pull/42000.patch"
-  ],
+    "test": {
+        "type": "unit",
+        "path": "table/tables/export_test.go",
+        "name": "export_test"
+    },
+    "symptoms": [
+        "No concrete flaky failure signature is recorded in this case; the PR mainly adds an extensive Reorganize Partition test and related refactors. One commit explicitly randomizes the test seed (`seed := rand.Int63()`), which is coverage-oriented rather than a stabilization fix."
+    ],
+    "failure_signature": "No concrete failure signature (PR adds/refactors Reorganize Partition tests; no explicit flaky report/logs captured in this case).",
+    "root_cause_categories": [
+        "insufficient_evidence"
+    ],
+    "review_smells": [
+        "needs_more_evidence"
+    ],
+    "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a feature/test addition (an extensive Reorganize Partition test) plus refactors like gating assertions via `shouldAssert`. The patch does not document a specific flaky failure signature or targeted stabilization; one commit even changes the test seed from a fixed constant to `rand.Int63()` for better coverage. Without the failing CI log/race report or an explicit statement of the flaky symptom, we should not classify this as `schema_change_race` or any other concrete root cause.",
+    "module": "ddl",
+    "fix_pattern": "No clear flaky stabilization pattern is evident from the PR patch/body; keep as insufficient evidence until we have failing logs or a follow-up PR with a targeted fix.",
+    "evidence_links": [
+        "https://github.com/pingcap/tidb/pull/42000",
+        "https://github.com/pingcap/tidb/pull/42000.patch"
+    ],
   "patch_url": "https://github.com/pingcap/tidb/pull/42000.patch",
   "changed_files": [
     "table/tables/BUILD.bazel",
