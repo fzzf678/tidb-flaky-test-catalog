@@ -13,18 +13,18 @@
     "name": "oom_test"
   },
   "symptoms": [
-    "oomtest: add whitelist for oom test to fix flaky test"
+    "OOM capture tests intermittently record unrelated background log messages as the captured \"tracker\" message, causing flaky assertions."
   ],
-  "failure_signature": "oomtest: add whitelist for oom test to fix flaky test",
+  "failure_signature": "`oomCapture.tracker` is overwritten by unrelated background logs (e.g. \"record table item load status failed...\") causing wrong captured message.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "oomtest: add whitelist for oom test to fix flaky test",
+  "root_cause_explanation": "The OOM test installs `oomCapture` as a zap core hook and records the last seen `entry.Message` in `h.tracker`. Common background tasks can log messages unrelated to the OOM scenario, and those messages can arrive concurrently and overwrite `h.tracker`, making the test flaky. The fix extends the whitelist in `oomCapture.Write` to ignore another known unrelated background log message, keeping the captured tracker message deterministic.",
+  "module": "executor",
+  "fix_pattern": "Filter out known unrelated background log messages in the OOM log-capture hook (`oomCapture.Write`) so the captured tracker message is deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40055",
     "https://github.com/pingcap/tidb/pull/40055.patch"

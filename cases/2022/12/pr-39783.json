@@ -13,18 +13,18 @@
     "name": "bootstrap_test"
   },
   "symptoms": [
-    "r := mustExecToRecodeSet(t, se, `select original_sql, bind_sql, default_db, status, create_time from mysql.bind_info where source != 'builtin' order by create_time`) (session/bootstrap_test.go)"
+    "Session tests can intermittently hang/timeout because `RecordSet` results from `Exec` are not closed, leaving executors/resources running."
   ],
-  "failure_signature": "r := mustExecToRecodeSet(t, se, `select original_sql, bind_sql, default_db, status, create_time from mysql.bind_info where source != 'builtin' order by create_time`) (session/bootstrap_test.go)",
+  "failure_signature": "Test timeout/hang in session test suite (e.g. mentioned `TestTiDBCostModelUpgradeFrom610To650`) caused by unclosed `RecordSet`.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Many session tests used a helper that executed SQL but did not close the returned `RecordSet`. Leaving `RecordSet` open can keep executors/background resources alive and eventually lead to hangs/timeouts in the test suite. The fix changes `mustExec` to always `Close()` the `RecordSet` (and assert no error), and introduces `mustExecToRecodeSet` for the few places that actually need to read rows before closing. This ensures resources are released deterministically and prevents timeout-style flakes.",
   "module": "session",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Always close `RecordSet` returned by `Exec` in tests (wrap in helper that closes), and only keep `RecordSet` open when explicitly iterating rows.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39783",
     "https://github.com/pingcap/tidb/pull/39783.patch"

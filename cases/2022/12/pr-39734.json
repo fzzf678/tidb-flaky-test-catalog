@@ -13,19 +13,18 @@
     "name": "foreign_key_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select * from t1 order by id\").Check(testkit.Rows()) (executor/fktest/foreign_key_test.go)"
+    "No explicit flaky failure signature is documented; the PR mainly fixes a panic when executing prepared DML with foreign key cascade."
   ],
-  "failure_signature": "tk.MustQuery(\"select * from t1 order by id\").Check(testkit.Rows()) (executor/fktest/foreign_key_test.go)",
+  "failure_signature": "Panic when executing prepared DML with foreign key cascade (no CI log / flaky signature linked in PR).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch changes planner flat-plan selection logic (skipping FK check/cascade operators) and adds a regression test for a panic when executing prepared DML with foreign key cascade. However, the PR/patch does not provide a concrete flaky test failure signature or CI evidence that this was an intermittent flake (vs. a deterministic bug/panic), so we conservatively avoid guessing a flakiness root cause.",
+  "module": "planner",
+  "fix_pattern": "Bug fix + regression test for a panic (planner flat plan selection around FK cascade); no explicit flaky signature/evidence provided.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39734",
     "https://github.com/pingcap/tidb/pull/39734.patch"

@@ -13,18 +13,18 @@
     "name": "sql_test"
   },
   "symptoms": [
-    "\"SELECT LOW_PRIORITY `id` FROM `test`.`t1` WHERE `id` >= 1 AND `id` < 100 AND `time` < '1970-01-01 00:00:00' ORDER BY `id` ASC LIMIT 3\", (ttl/sqlbuilder/sql_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; the changes add methods to split TTL scan tasks/ranges and update TTL SQL builder/worker code and tests."
   ],
-  "failure_signature": "\"SELECT LOW_PRIORITY `id` FROM `test`.`t1` WHERE `id` >= 1 AND `id` < 100 AND `time` < '1970-01-01 00:00:00' ORDER BY `id` ASC LIMIT 3\", (ttl/sqlbuilder/sql_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (feature/tests change for TTL scan range splitting).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds TTL scan-range splitting logic (cache/sqlbuilder/worker changes) and updates tests. The patch does not provide a concrete flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence.",
   "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Add TTL scan-task/range splitting utilities and update TTL SQL builder/worker/tests; no targeted flaky stabilization evidence in patch.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39627",
     "https://github.com/pingcap/tidb/pull/39627.patch"

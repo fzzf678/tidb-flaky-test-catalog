@@ -13,20 +13,18 @@
     "name": "tiflash_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"explain select max( tbl_1.col_1 ) as r0 , sum( tbl_1.col_1 ) as r1 , sum( tbl_1.col_8 ) as r2 from tbl_1 where tbl_1.col_8 != 68 or tbl_1.col_3 between null and 939 order by r0,r1,r2 ;\") (executor/tiflashtest/tiflash_test.go)"
+    "No explicit flaky failure signature is documented; the PR mainly refines planner behavior for disaggregated TiFlash mode and adds/adjusts related tests."
   ],
-  "failure_signature": "tk.MustQuery(\"explain select max( tbl_1.col_1 ) as r0 , sum( tbl_1.col_1 ) as r1 , sum( tbl_1.col_8 ) as r2 from tbl_1 where tbl_1.col_8 != 68 or tbl_1.col_3 between null and 939 order by r0,r1,r2 ;\") (executor/tiflashtest/tiflash_test.go)",
+  "failure_signature": "Feature/refactor PR without a concrete flaky CI failure signature linked in the PR.",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch refines MPP task conversion logic for disaggregated TiFlash mode and adds a new TiFlash test with a failpoint to bypass the \"no TiFlash compute node\" check in the current test framework. However, the PR does not provide a concrete flaky test failure signature or CI evidence that an intermittent flake is being fixed, so we conservatively avoid guessing a flakiness root cause category.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Feature/refactor for disaggregated TiFlash planning + test adjustments (incl. failpoint); no explicit flaky failure signature/evidence provided.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39813",
     "https://github.com/pingcap/tidb/pull/39813.patch"

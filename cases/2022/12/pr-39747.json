@@ -13,19 +13,18 @@
     "name": "TestLongBinaryPlan"
   },
   "symptoms": [
-    "planner: fix data race in the TestLongBinaryPlan"
+    "Go race detector reports a data race in `TestLongBinaryPlan` caused by global logger/config initialization racing with background goroutines."
   ],
-  "failure_signature": "planner: fix data race in the TestLongBinaryPlan",
+  "failure_signature": "DATA RACE in `TestLongBinaryPlan` around `logutil.InitLogger(...)` and mock store background logging.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix data race in the TestLongBinaryPlan.",
+  "root_cause_explanation": "`TestLongBinaryPlan` re-initializes global logging/config (`logutil.InitLogger(...)`) while a mock store created earlier may already have started background goroutines that log. That ordering can trigger concurrent access to global logger state and show up as a Go data race. The fix moves `CreateMockStore(...)` (and testkit/session setup) to happen after the logger initialization, so background goroutines start only after the global logger is configured, eliminating the race window.",
   "module": "planner",
-  "fix_pattern": "planner: fix data race in the TestLongBinaryPlan",
+  "fix_pattern": "Avoid racing global logger/config init with background goroutines: initialize the logger first, then create the mock store / start background tasks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39747",
     "https://github.com/pingcap/tidb/pull/39747.patch"

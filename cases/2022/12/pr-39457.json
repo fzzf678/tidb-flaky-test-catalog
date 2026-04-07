@@ -13,20 +13,18 @@
     "name": "plan_cache_test"
   },
   "symptoms": [
-    "tk.MustExec(\"prepare stmt from 'select * from t order by ?'\") (planner/core/plan_cache_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; the changes enrich diagnostic warnings for why a prepared statement is not plan-cacheable."
   ],
-  "failure_signature": "tk.MustExec(\"prepare stmt from 'select * from t order by ?'\") (planner/core/plan_cache_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (diagnostic improvements + tests).",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost",
-    "plan_cache_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds more detailed warnings explaining why a statement is skipped by the plan cache (and adds unit tests such as `TestPlanCacheDiagInfo`). The patch does not provide a concrete flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Improve plan-cache skip diagnostics by appending explicit warnings for common uncacheable cases; add corresponding unit tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39457",
     "https://github.com/pingcap/tidb/pull/39457.patch"

@@ -13,19 +13,18 @@
     "name": "TestAddIndex4"
   },
   "symptoms": [
-    "» go test -race ./ddl -run TestAddIndex4"
+    "Go race detector reports a data race when running `go test -race ./ddl -run TestAddIndex4`."
   ],
-  "failure_signature": "» go test -race ./ddl -run TestAddIndex4",
+  "failure_signature": "Go race detector warning in DDL job context diagnosis label/request-source handling (`TestAddIndex4`).",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: set context correctly in the setDDLLabelForDiagnosis.",
+  "root_cause_explanation": "The race detector failure was caused by DDL job diagnosis/request-source context being set in a non-idempotent / partially-initialized way. The fix makes `setDDLLabelForDiagnosis` set the label only once, stores the `JobContext` in the map before labeling, and ensures internal statements carry a non-empty `RequestSourceType` (panic in tests if missing). Together these changes eliminate the data race signal observed in `go test -race ./ddl -run TestAddIndex4`.",
   "module": "ddl",
-  "fix_pattern": "ddl: set context correctly in the setDDLLabelForDiagnosis",
+  "fix_pattern": "Make DDL job diagnosis/request-source context initialization idempotent and ensure internal SQL execution contexts always carry `RequestSourceType` (so race-mode tests don't hit partially-initialized state).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40090",
     "https://github.com/pingcap/tidb/pull/40090.patch"

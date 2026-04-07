@@ -13,19 +13,18 @@
     "name": "TestAlterModifyColumnOnPartitionedTableFail"
   },
   "symptoms": [
-    "ddl: Stabilise TestAlterModifyColumnOnPartitionedTableFail, due to #38669"
+    "`TestAlterModifyColumnOnPartitionedTableFail` can fail due to unstable `SHOW WARNINGS` expectations (warnings may appear depending on truncation/behavior)."
   ],
-  "failure_signature": "ddl: Stabilise TestAlterModifyColumnOnPartitionedTableFail, due to #38669",
+  "failure_signature": "`SHOW WARNINGS` output not consistently empty after `ALTER TABLE ... MODIFY` in `TestAlterModifyColumnOnPartitionedTableFail`.",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: Stabilise TestAlterModifyColumnOnPartitionedTableFail, due to #38669.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch \"stabilizes\" the test by commenting out the `SHOW WARNINGS` assertion after `ALTER TABLE ... MODIFY a varchar(5)`. The PR does not include CI logs or a detailed explanation of why the warnings output is flaky (vs. a deterministic behavior change), so we conservatively classify it as insufficient evidence rather than guessing a deeper root cause.",
   "module": "ddl",
-  "fix_pattern": "ddl: Stabilise TestAlterModifyColumnOnPartitionedTableFail, due to #38669",
+  "fix_pattern": "Remove/disable the brittle `SHOW WARNINGS` assertion in the DDL test to avoid instability when warnings differ.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39765",
     "https://github.com/pingcap/tidb/pull/39765.patch"

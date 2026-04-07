@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "executor/executor_pkg_test.go",
-    "name": "executor_pkg_test"
+    "name": "TestSlowQueryRuntimeStats"
   },
   "symptoms": [
-    "executor: fix data race in the slowQueryRuntimeStats"
+    "Race detector reports a data race involving `slowQueryRuntimeStats` fields (e.g., `readFile`) being updated while runtime stats are being cloned/registered."
   ],
-  "failure_signature": "executor: fix data race in the slowQueryRuntimeStats",
+  "failure_signature": "DATA RACE in executor/slow_query.go: concurrent mutation/read of `slowQueryRuntimeStats` during slow query parsing / runtime stats collection.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race in the slowQueryRuntimeStats.",
+  "root_cause_explanation": "`slowQueryRuntimeStats` is updated while parsing slow logs (e.g., accumulating `readFile` duration). Previously, runtime stats could be registered/cloned while the retriever was still running, leading to concurrent read/write on the same stats object (triggering the race detector). The fix defers `RuntimeStatsColl.RegisterStats(...)` until after the retriever is closed, ensuring the stats are no longer being mutated when they are registered/merged/cloned.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race in the slowQueryRuntimeStats",
+  "fix_pattern": "Defer runtime stats registration until after the slow-query retriever is closed to avoid concurrent mutation/read of `slowQueryRuntimeStats`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39630",
     "https://github.com/pingcap/tidb/pull/39630.patch"

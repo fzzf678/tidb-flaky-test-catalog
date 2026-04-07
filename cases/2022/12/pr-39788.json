@@ -13,19 +13,18 @@
     "name": "historical_stats_test"
   },
   "symptoms": [
-    "tk.MustQuery(fmt.Sprintf(\"select count(*) from mysql.stats_meta_history where table_id = '%d' order by create_time\", (executor/historical_stats_test.go)"
+    "No explicit flaky failure signature is documented; the PR adds support for GC-ing outdated historical stats and corresponding tests."
   ],
-  "failure_signature": "tk.MustQuery(fmt.Sprintf(\"select count(*) from mysql.stats_meta_history where table_id = '%d' order by create_time\", (executor/historical_stats_test.go)",
+  "failure_signature": "Feature/change PR (historical stats GC + new sysvar) without a concrete flaky CI failure signature.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch introduces/extends historical stats GC behavior (including a new duration sysvar) and adds a new unit test that uses `time.Sleep` to let stats become \"outdated\" before calling `ClearOutdatedHistoryStats()`. The PR does not provide CI logs or evidence of an intermittent flaky failure being fixed, so we conservatively classify it as insufficient evidence rather than guessing a flakiness root cause.",
   "module": "statistics",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Feature/change for historical stats GC + new sysvar/test; no explicit flaky failure signature/evidence provided.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39788",
     "https://github.com/pingcap/tidb/pull/39788.patch"
