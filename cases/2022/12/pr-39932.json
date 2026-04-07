@@ -13,18 +13,18 @@
     "name": "session_fail_test"
   },
   "symptoms": [
-    "fix DATA RACE"
+    "Go race detector reports a data race in the global MPP failed-store probe (`store/copr/mpp_probe.go`) when it scans/detects store recovery concurrently."
   ],
-  "failure_signature": "fix DATA RACE",
+  "failure_signature": "DATA RACE involving `globalMPPFailedStoreProbe` / `MPPSotreState` fields while the background probe goroutine runs.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: optimize mpp probe.",
-  "module": "executor",
-  "fix_pattern": "*: optimize mpp probe",
+  "root_cause_explanation": "`globalMPPFailedStoreProbe` runs a background scan loop and maintains per-store state (`MPPSotreState`). The previous implementation had insufficient synchronization (e.g. shared context/cancel and state fields accessed without consistent locking), which could trigger Go race detector failures and flaky behavior. The fix tightens concurrency control: it adds/adjusts locking around state access, avoids sharing mutable context/cancel inside the global probe, and passes a context into the probe run loop so it can be stopped safely.",
+  "module": "kv",
+  "fix_pattern": "Make the global MPP failed-store probe thread-safe: add proper locking around shared state and avoid storing shared ctx/cancel fields that can race; pass context into the background run loop.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39932",
     "https://github.com/pingcap/tidb/pull/39932.patch"

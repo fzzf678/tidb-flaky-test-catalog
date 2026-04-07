@@ -13,18 +13,18 @@
     "name": "executor_test"
   },
   "symptoms": [
-    "tk.MustGetDBError(\"(select a from t order by a) union all select a from t limit 1 union all select a from t limit 1\", plannercore.ErrWrongUsage) (executor/executor_test.go)"
+    "Tests can intermittently hang/timeout because `Exec` returns a `RecordSet` that is not closed (resource leak)."
   ],
-  "failure_signature": "tk.MustGetDBError(\"(select a from t order by a) union all select a from t limit 1 union all select a from t limit 1\", plannercore.ErrWrongUsage) (executor/executor_test.go)",
+  "failure_signature": "Test timeout/hang caused by unclosed `RecordSet` / executor resources in unit tests.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Some tests executed SQL via APIs that return a `RecordSet` but did not close it, leaving executor/resources alive and eventually causing suite-level hangs/timeouts. The fix updates the tests to use helpers that either close the returned `RecordSet` (e.g. `ExecToErr` / `MustExecToErr`) or explicitly call `rs.Close()` after use, ensuring deterministic cleanup.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Ensure every `RecordSet` returned by `Exec` is closed (wrap in helper that closes, or explicitly `rs.Close()`), to prevent resource leaks and timeout-style flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40010",
     "https://github.com/pingcap/tidb/pull/40010.patch"

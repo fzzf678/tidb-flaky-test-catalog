@@ -13,18 +13,18 @@
     "name": "cpu_test"
   },
   "symptoms": [
-    "util: fix data race in the cpu test"
+    "Go race detector reports a data race in `util/cpu` tests (CPUObserver / CPU usage sampling)."
   ],
-  "failure_signature": "util: fix data race in the cpu test",
+  "failure_signature": "Go race detector warning in `TestCPUValue` (CPUObserver start/stop vs concurrent sampling).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: util: fix data race in the cpu test.",
+  "root_cause_explanation": "`TestCPUValue` exercises a CPU observer while multiple goroutines concurrently sample CPU usage. The original test sequencing caused the race detector to report unsynchronized access around `CPUObserver.Start()` / `Stop()` and the concurrent sampling. The fix adjusts the test so the observer is started exactly once at the correct point, and enables `race = \"on\"` for the Bazel target so the race is consistently caught and prevented going forward.",
   "module": "module_unknown",
-  "fix_pattern": "util: fix data race in the cpu test",
+  "fix_pattern": "Fix the CPU observer test sequencing so `CPUObserver.Start()`/`Stop()` are not raced by concurrent sampling, and run the Bazel target with `race = \"on\"`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40154",
     "https://github.com/pingcap/tidb/pull/40154.patch"

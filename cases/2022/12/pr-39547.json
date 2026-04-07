@@ -13,18 +13,18 @@
     "name": "tiflash_test"
   },
   "symptoms": [
-    "sql := \"select a,b,c,count(*) from foo group by a,b,c order by a,b,c\" (executor/tiflashtest/tiflash_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; the changes prohibit an unsupported StreamAgg plan on TiFlash (with group keys) and add a regression test."
   ],
-  "failure_signature": "sql := \"select a,b,c,count(*) from foo group by a,b,c order by a,b,c\" (executor/tiflashtest/tiflash_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (bug fix + regression test for TiFlash StreamAgg support).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR prevents generating an unsupported StreamAgg-with-group-keys plan on TiFlash (returning an invalid task) and adds a regression test to ensure the plan avoids StreamAgg on TiFlash. The patch does not provide a concrete flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Reject unsupported StreamAgg-on-TiFlash plans (with group keys) and add a regression test to assert the plan does not contain StreamAgg on TiFlash.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39547",
     "https://github.com/pingcap/tidb/pull/39547.patch"

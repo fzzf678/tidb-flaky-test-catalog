@@ -13,18 +13,18 @@
     "name": "conn_stmt_test"
   },
   "symptoms": [
-    "Problem Summary: The data race happens because the backgroud copr goroutines take a reference to memtracker of cached stmt ctx, and the cached stmt ctx will be reset on next COM_STMT_FETCH requests."
+    "Go race detector reports a data race when using server-side cursors (`COM_STMT_FETCH`) because background coprocessor goroutines keep a reference to the cached statement context's memtracker while the statement context is reset for the next fetch."
   ],
-  "failure_signature": "Problem Summary: The data race happens because the backgroud copr goroutines take a reference to memtracker of cached stmt ctx, and the cached stmt ctx will be reset on next COM_STMT_FETCH requests.",
+  "failure_signature": "DATA RACE on cached `StatementContext` / memtracker during cursor fetch (`COM_STMT_FETCH`).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: server: avoid reusing cached stmt ctx on cursor read.",
+  "root_cause_explanation": "The server reuses a cached `StatementContext`, but cursor reads (`COM_STMT_FETCH`) can trigger background coprocessor goroutines that hold references to the statement context's memtracker. When the cached statement context is reset for the next fetch, it can race with those goroutines, leading to `-race` failures. The fix avoids reusing the cached statement context while a cursor exists: it sets a `ServerStatusCursorExists` flag around cursor operations and makes `ResetContextOfStmt` allocate a new `StatementContext` when needed, preventing concurrent reuse/reset of the same memtracker.",
   "module": "server",
-  "fix_pattern": "server: avoid reusing cached stmt ctx on cursor read",
+  "fix_pattern": "Do not reuse/reset a cached `StatementContext` across cursor fetch requests; use a cursor-exists flag and allocate a fresh `StatementContext` to avoid memtracker races with background coprocessor goroutines.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40023",
     "https://github.com/pingcap/tidb/pull/40023.patch"

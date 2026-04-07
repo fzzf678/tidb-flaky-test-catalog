@@ -13,18 +13,18 @@
     "name": "TestBootstrap"
   },
   "symptoms": [
-    "session: fix data race in TestBootstrap"
+    "Go race detector intermittently reports a data race in `TestBootstrap`."
   ],
-  "failure_signature": "session: fix data race in TestBootstrap",
+  "failure_signature": "Go race detector warning in `TestBootstrap` (unclosed `RecordSet` / executor cleanup).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: session: fix data race in TestBootstrap.",
+  "root_cause_explanation": "`TestBootstrap` opened a `RecordSet` and fetched one row, but did not close the `RecordSet`. Leaving it open can keep executor/background resources alive and trigger concurrent access to shared state, showing up as a race under `-race`. The fix explicitly closes the `RecordSet` (`require.NoError(t, r.Close())`) to ensure cleanup and eliminate the data race signal.",
   "module": "session",
-  "fix_pattern": "session: fix data race in TestBootstrap",
+  "fix_pattern": "After consuming the `RecordSet` in the test, explicitly call `r.Close()` (and assert no error) to ensure executor cleanup and avoid race warnings.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39718",
     "https://github.com/pingcap/tidb/pull/39718.patch"

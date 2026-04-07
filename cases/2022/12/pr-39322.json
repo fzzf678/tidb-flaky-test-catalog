@@ -13,18 +13,18 @@
     "name": "simple_test"
   },
   "symptoms": [
-    "rootTK.MustExec(`update mysql.password_history set Password_timestamp = date_sub(Password_timestamp,interval '1 0:0:1' DAY_SECOND) where user = 'testReuse' order by Password_timestamp asc limit 1`) (executor/simpletest/simple_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; this is a large feature PR implementing failed-login tracking and temporary account locking."
   ],
-  "failure_signature": "rootTK.MustExec(`update mysql.password_history set Password_timestamp = date_sub(Password_timestamp,interval '1 0:0:1' DAY_SECOND) where user = 'testReuse' order by Password_timestamp asc limit 1`) (executor/simpletest/simple_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (feature implementation).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "server",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR implements failed-login tracking and temporary account locking (parser/session/privilege changes plus tests). The patch does not include a concrete flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence.",
+  "module": "security",
+  "fix_pattern": "Implement failed-login tracking and temporary account locking (new errors, privilege/session logic, and tests).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39322",
     "https://github.com/pingcap/tidb/pull/39322.patch"

@@ -13,18 +13,18 @@
     "name": "TestStaleReadProcessorWithSelectTable"
   },
   "symptoms": [
-    "test: fix unstable test TestStaleReadProcessorWithSelectTable"
+    "`TestStaleReadProcessorWithSelectTable` can fail on slow/contended environments because it uses a very small `tidb_read_staleness` window (5 seconds) and assumes the test finishes within that window."
   ],
-  "failure_signature": "test: fix unstable test TestStaleReadProcessorWithSelectTable",
+  "failure_signature": "TestStaleReadProcessorWithSelectTable fails when the test runtime exceeds the configured staleness window (timestamp/evaluator mismatch).",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: test: fix unstable test TestStaleReadProcessorWithSelectTable.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable test TestStaleReadProcessorWithSelectTable",
+  "root_cause_explanation": "The test's staleness window was too small (`@@tidb_read_staleness=-5`, i.e. 5 seconds). If the test takes longer than that due to machine load, the calculated stale-read timestamp and the evaluator result can drift and cause failures. The fix increases the window to 100 seconds (`@@tidb_read_staleness=-100`) and updates expected timestamp calculations accordingly, making the test robust to slower environments.",
+  "module": "session",
+  "fix_pattern": "Increase `@@tidb_read_staleness` in the test from 5s to 100s and update expected TS calculations to avoid time-window based flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37858",
     "https://github.com/pingcap/tidb/pull/37858.patch"

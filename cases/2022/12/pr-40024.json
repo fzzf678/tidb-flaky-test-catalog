@@ -13,18 +13,18 @@
     "name": "TestMaxPreparedStmtCount"
   },
   "symptoms": [
-    "executor: fix unstable TestMaxPreparedStmtCount"
+    "`TestMaxPreparedStmtCount` is unstable because a global counter (`variable.PreparedStmtCount`) can be left non-zero by other tests."
   ],
-  "failure_signature": "executor: fix unstable TestMaxPreparedStmtCount",
+  "failure_signature": "`TestMaxPreparedStmtCount` fails intermittently depending on previous tests that incremented `PreparedStmtCount` (suite-order dependency).",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: fix unstable TestMaxPreparedStmtCount.",
+  "root_cause_explanation": "`TestMaxPreparedStmtCount` relies on the global counter `variable.PreparedStmtCount` starting from zero. When other tests run before it, the counter may already be incremented, making the test order-dependent and flaky. The fix saves the current value, resets `PreparedStmtCount` to 0 at the beginning of the test, and restores it via `defer`, isolating the test from suite-global state.",
   "module": "executor",
-  "fix_pattern": "executor: fix unstable TestMaxPreparedStmtCount",
+  "fix_pattern": "Save/restore global counters used by tests (e.g. `PreparedStmtCount`): reset to a known value at test start and restore in `defer` to avoid suite-order dependency.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40024",
     "https://github.com/pingcap/tidb/pull/40024.patch"

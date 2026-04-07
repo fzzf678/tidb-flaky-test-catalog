@@ -13,18 +13,18 @@
     "name": "oom_test"
   },
   "symptoms": [
-    "oomtest: add filter to avoid flaky test in the oomCapture"
+    "OOM capture tests intermittently record an unrelated background log message as the \"tracker\" message, causing assertions to fail."
   ],
-  "failure_signature": "oomtest: add filter to avoid flaky test in the oomCapture",
+  "failure_signature": "`oomCapture.tracker` is overwritten by background `BgLogger().Info(\"SetTiFlashGroupConfig\")`, leading to wrong captured message / flaky assertions.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "oomtest: add filter to avoid flaky test in the oomCapture",
+  "root_cause_explanation": "The OOM test installs `oomCapture` as a zap core hook and records the last seen `entry.Message` in `h.tracker`. A common background task logs `SetTiFlashGroupConfig`, which can arrive concurrently and overwrite `h.tracker` with an irrelevant message, making the test flaky. The fix explicitly ignores that background log message in `oomCapture.Write` so only OOM-relevant messages update the tracker.",
+  "module": "executor",
+  "fix_pattern": "Filter out known unrelated background log messages in the OOM log-capture hook (`oomCapture.Write`) so the captured tracker message is deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39728",
     "https://github.com/pingcap/tidb/pull/39728.patch"

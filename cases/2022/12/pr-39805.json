@@ -13,18 +13,18 @@
     "name": "TestStaleReadProcessorWithExecutePreparedStmt"
   },
   "symptoms": [
-    "staleread: fix flaky test TestStaleReadProcessorWithExecutePreparedStmt"
+    "`TestStaleReadProcessorWithExecutePreparedStmt` can fail on slow/contended environments because it uses a very small `tidb_read_staleness` window (5 seconds) and assumes the test finishes within that window."
   ],
-  "failure_signature": "staleread: fix flaky test TestStaleReadProcessorWithExecutePreparedStmt",
+  "failure_signature": "Test fails when the test runtime exceeds the configured staleness window (timestamp calculation mismatch).",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "staleread: fix flaky test TestStaleReadProcessorWithExecutePreparedStmt",
+  "root_cause_explanation": "The test's staleness window was too small (`@@tidb_read_staleness=-5`, i.e. 5 seconds). If the test takes longer than that due to machine load, the calculated stale-read timestamp and the expected timestamp can drift and cause failures. The fix increases the window to 100 seconds (`@@tidb_read_staleness=-100`) and updates expected timestamp calculations accordingly, making the test robust to slower environments.",
+  "module": "session",
+  "fix_pattern": "Increase `@@tidb_read_staleness` in the test from 5s to 100s and update expected TS calculations to avoid time-window based flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39805",
     "https://github.com/pingcap/tidb/pull/39805.patch"

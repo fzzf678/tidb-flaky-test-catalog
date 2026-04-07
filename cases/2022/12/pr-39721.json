@@ -9,22 +9,22 @@
   "pr_merged_at": "2022-12-07T21:20:04+08:00",
   "test": {
     "type": "unit",
-    "path": "README.md",
-    "name": "README"
+    "path": "util/stmtsummary/statement_summary.go",
+    "name": "stmtSummaryByDigestMap.GetMoreThanCntBindableStmt"
   },
   "symptoms": [
-    "stmtsummary: fix data race in the stmtSummaryByDigestElement.authUsers"
+    "Go race detector reports a data race involving `stmtSummaryByDigestElement.authUsers` (shared `map` accessed concurrently)."
   ],
-  "failure_signature": "stmtsummary: fix data race in the stmtSummaryByDigestElement.authUsers",
+  "failure_signature": "DATA RACE on `stmtSummaryByDigestElement.authUsers` map (statement summary bindable statement extraction).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: stmtsummary: fix data race in the stmtSummaryByDigestElement.authUsers.",
+  "root_cause_explanation": "When building a `BindableStatement`, the code previously assigned `Users: ssElement.authUsers`, which shares the same underlying `map` as the statement-summary element. Since `authUsers` can be modified concurrently, sharing that map pointer can trigger a Go data race. The fix allocates a fresh `Users` map and copies entries from `ssElement.authUsers` (via `maps.Copy`), avoiding aliasing and making the access race-free.",
   "module": "module_unknown",
-  "fix_pattern": "stmtsummary: fix data race in the stmtSummaryByDigestElement.authUsers",
+  "fix_pattern": "Avoid sharing the mutable `authUsers` map: allocate a new map for `BindableStatement.Users` and copy entries (e.g., `maps.Copy`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39721",
     "https://github.com/pingcap/tidb/pull/39721.patch"

@@ -13,18 +13,18 @@
     "name": "main_test"
   },
   "symptoms": [
-    "Why do we need to move some tests into another folder? We have too much test cases put into the folder. Bazel can split test cases into shard. Shard can run the test cases parallel. But bad news is that the max sharding is 50, so that too much test cases lead to put too much cases into shard. More test cases in the shard. More retry because of unstable te..."
+    "The Bazel `executor_test` target had too many test files; shard splitting is capped (max 50), so shards became large and required more retries due to unstable tests."
   ],
-  "failure_signature": "Why do we need to move some tests into another folder? We have too much test cases put into the folder. Bazel can split test cases into shard. Shard can run the test cases parallel. But bad news is that the max sharding is 50, so that too much test cases lead to put too much cases into shard. More test cases in the shard. More retry because of unstable te...",
+  "failure_signature": "Bazel executor unit tests need frequent retries due to oversized shards (shard_count cap vs too many tests).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "test_suite_setup_issue"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: executor: move some test into writetest.",
+  "root_cause_explanation": "The instability here is caused by test-suite organization and Bazel sharding limits: the `executor_test` target accumulated too many test files, but Bazel sharding is capped (max 50), so each shard becomes large and CI needs more retries when unstable tests are mixed together. This PR stabilizes execution by splitting out `write_test.go` into a dedicated `executor/writetest` test target (with its own `TestMain` setup), tuning shard counts, and shrinking the remaining `executor_test` target so it can run under a shorter timeout.",
   "module": "executor",
-  "fix_pattern": "executor: move some test into writetest",
+  "fix_pattern": "Split an overgrown Bazel `go_test` target into smaller targets (move write-related tests into `executor/writetest`, add dedicated `TestMain`, tune shard_count/timeouts) to reduce retries from unstable shard composition.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40097",
     "https://github.com/pingcap/tidb/pull/40097.patch"

@@ -13,20 +13,18 @@
     "name": "partition_table_test"
   },
   "symptoms": [
-    "queryPartitionWithTiFlash := fmt.Sprintf(\"select /*+ read_from_storage(tiflash[trange_intpk]) */ * from trange_intpk where a > %v order by a limit %v\", x, y) (executor/partition_table_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; the changes add/extend tests around property pushdown for partition tables (including TiFlash) and minor supporting code tweaks."
   ],
-  "failure_signature": "queryPartitionWithTiFlash := fmt.Sprintf(\"select /*+ read_from_storage(tiflash[trange_intpk]) */ * from trange_intpk where a > %v order by a limit %v\", x, y) (executor/partition_table_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (tests/feature coverage).",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "relying_on_map_iteration_order"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly expands unit tests for partition table property pushdown (including TiFlash plan checks) and makes small supporting changes. The patch does not provide a concrete flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Add/extend partition table property pushdown tests (including TiFlash) and adjust supporting code; no targeted flaky stabilization evidence in patch.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39530",
     "https://github.com/pingcap/tidb/pull/39530.patch"

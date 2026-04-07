@@ -13,19 +13,18 @@
     "name": "slow_query_sql_test"
   },
   "symptoms": [
-    "executor, planner: `InitLogger` before `CreateMockStore` in tests to avoid data race"
+    "Go race detector reports a data race in slow-log / binary-plan tests caused by global logger initialization racing with background goroutines started by `CreateMockStore`."
   ],
-  "failure_signature": "executor, planner: `InitLogger` before `CreateMockStore` in tests to avoid data race",
+  "failure_signature": "DATA RACE around `logutil.InitLogger(...)` and background logging from mock-store/domain goroutines.",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor, planner: `InitLogger` before `CreateMockStore` in tests to avoid data race.",
-  "module": "executor",
-  "fix_pattern": "executor, planner: `InitLogger` before `CreateMockStore` in tests to avoid data race",
+  "root_cause_explanation": "Several tests re-initialize global logging/config via `logutil.InitLogger(...)` but previously created the mock store/testkit first. `CreateMockStore(...)` can start background goroutines that log, which can race with the global logger init and trigger `-race` failures. The fix moves mock-store creation to happen after logger initialization (and adjusts cleanup), so background goroutines start only after the global logger is configured.",
+  "module": "test_infra",
+  "fix_pattern": "Initialize global logger/config first, then create the mock store/testkit so background goroutines cannot race with `logutil.InitLogger(...)`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39900",
     "https://github.com/pingcap/tidb/pull/39900.patch"

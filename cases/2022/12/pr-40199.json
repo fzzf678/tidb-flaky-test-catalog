@@ -13,18 +13,19 @@
     "name": "explain_complex"
   },
   "symptoms": [
-    "planner: fix an unstable explain test case"
+    "`explaintest` output is unstable because the chosen plan/EXPLAIN output depends on the session `tidb_cost_model_version`."
   ],
-  "failure_signature": "planner: fix an unstable explain test case",
+  "failure_signature": "EXPLAIN output mismatch in `cmd/explaintest` when `tidb_cost_model_version` differs.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
+    "global_variable_mutation",
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix an unstable explain test case.",
+  "root_cause_explanation": "The `explaintest` case compares an exact EXPLAIN output. That output depends on the cost model version, and `tidb_cost_model_version` can differ across environments or be affected by surrounding statements in the same test session. The fix pins `tidb_cost_model_version=2` before running the EXPLAIN in `explain_complex` and then resets it back to `1`, making the output deterministic for this test.",
   "module": "planner",
-  "fix_pattern": "planner: fix an unstable explain test case",
+  "fix_pattern": "Pin plan-affecting session variables (e.g. `tidb_cost_model_version`) around explaintest queries and restore afterwards to make exact EXPLAIN assertions deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/40199",
     "https://github.com/pingcap/tidb/pull/40199.patch"
