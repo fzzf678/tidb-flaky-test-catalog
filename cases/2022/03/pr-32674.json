@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// this test file include some test that will cause data race, mainly because restartWorkers modify d.ctx",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch mainly cleans up redundant global test settings / refactors DDL tests (e.g., removing `GlobalInfoSyncerInit`, adjusting suite structure). The case evidence only shows a comment mentioning a potential data race, but without CI failure logs or a minimal repro it is not possible to confidently attribute the flakiness to a specific root cause category.",
+  "root_cause_explanation": "The DDL test suite mutates and initializes global/shared state (e.g., `config.UpdateGlobal`, `autoid.SetStep`, `ReorgWaitTimeout`, `infosync.GlobalInfoSyncerInit`) across multiple test entrypoints/files, which can cause cross-test interference and flaky behavior. The patch stabilizes the suite by removing redundant per-file global setup and centralizing shared initialization in `TestMain`, reducing shared-state pollution between tests.",
   "module": "ddl",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "fix_pattern": "Avoid scattered global config/initializer mutations across test files; centralize shared setup in `TestMain` and ensure global state is initialized once (or restored) to reduce cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32674",
     "https://github.com/pingcap/tidb/pull/32674.patch"
