@@ -20,10 +20,10 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: slices.SortFunc(kvs2, func(i, j common.KvPair) int { (br/pkg/lightning/backend/external/writer_test.go).",
-  "module": "module_unknown",
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic ordering of in-memory key/value pairs. This PR stabilizes it by explicitly sorting the kv slice (`slices.SortFunc(...)`) before assertions, making output deterministic.",
+  "module": "lightning",
   "fix_pattern": "slices.SortFunc(kvs2, func(i, j common.KvPair) int { (br/pkg/lightning/backend/external/writer_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47131",

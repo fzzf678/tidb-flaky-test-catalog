@@ -13,20 +13,18 @@
     "name": "encode_and_sort_operator_test"
   },
   "symptoms": [
-    "race = \"on\", | slices.Sort(allData) (tests/realtikvtest/importintotest4/global_sort_test.go)"
+    "Global sort test output/order could be nondeterministic; the test needs deterministic ordering before assertions."
   ],
-  "failure_signature": "race = \"on\", | slices.Sort(allData) (tests/realtikvtest/importintotest4/global_sort_test.go)",
+  "failure_signature": "Non-deterministic ordering in global sort test output.",
   "root_cause_categories": [
-    "concurrency_data_race",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "global_variable_mutation",
-    "race_condition_in_async_code"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Global state must be reset/restored between tests. This PR stabilizes it by: race = \"on\", | slices.Sort(allData) (tests/realtikvtest/importintotest4/global_sort_test.go).",
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic ordering of result data produced by the global sort path. This PR stabilizes the test by sorting the collected data (`slices.Sort(allData)`) before performing assertions, making output deterministic across runs.",
   "module": "executor",
-  "fix_pattern": "race = \"on\", | slices.Sort(allData) (tests/realtikvtest/importintotest4/global_sort_test.go)",
+  "fix_pattern": "Stabilize global sort test assertions by sorting the collected output (`slices.Sort(allData)`) before checking results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/47185",
     "https://github.com/pingcap/tidb/pull/47185.patch"
