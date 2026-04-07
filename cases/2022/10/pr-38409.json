@@ -13,18 +13,18 @@
     "name": "executor_issue_test"
   },
   "symptoms": [
-    "config: fix data race raised by EnableCollectExecutionInfo"
+    "Go race detector: data race on global config flag Instance.EnableCollectExecutionInfo."
   ],
-  "failure_signature": "config: fix data race raised by EnableCollectExecutionInfo",
+  "failure_signature": "Go race detector: data race on config.Instance.EnableCollectExecutionInfo (concurrent read/write).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: config: fix data race raised by EnableCollectExecutionInfo.",
-  "module": "module_unknown",
-  "fix_pattern": "config: fix data race raised by EnableCollectExecutionInfo",
+  "root_cause_explanation": "The test was flaky due to a data race: the global config flag EnableCollectExecutionInfo was read/written concurrently. This PR stabilizes it by using an AtomicBool for the flag and accessing it via Load/Store.",
+  "module": "server",
+  "fix_pattern": "Use AtomicBool for EnableCollectExecutionInfo (use Load/Store instead of direct bool access).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38409",
     "https://github.com/pingcap/tidb/pull/38409.patch"

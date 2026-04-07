@@ -13,18 +13,18 @@
     "name": "DEPS"
   },
   "symptoms": [
-    "expression: fix data race in the SetCoercibility"
+    "Go race detector: data race in collation coercibility state (SetCoercibility/Coercibility)."
   ],
-  "failure_signature": "expression: fix data race in the SetCoercibility",
+  "failure_signature": "Go race detector: data race in collationInfo coercibility field access (SetCoercibility/Coercibility).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: expression: fix data race in the SetCoercibility.",
+  "root_cause_explanation": "The test was flaky due to a data race: the collation coercibility field was read/written concurrently without proper synchronization. This PR stabilizes it by making Coercibility an int32 and using atomic load/store for the coercibility field (SetCoercibility/Coercibility).",
   "module": "expression",
-  "fix_pattern": "expression: fix data race in the SetCoercibility",
+  "fix_pattern": "Use atomic load/store for collation coercibility (change Coercibility to int32).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38326",
     "https://github.com/pingcap/tidb/pull/38326.patch"

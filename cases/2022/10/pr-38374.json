@@ -13,9 +13,9 @@
     "name": "BUILD"
   },
   "symptoms": [
-    "variable: fix data race in the variable.SetPDClientDynamicOption"
+    "Go race detector: data race on global variable.SetPDClientDynamicOption callback (concurrent set/call)."
   ],
-  "failure_signature": "variable: fix data race in the variable.SetPDClientDynamicOption",
+  "failure_signature": "Go race detector: data race on variable.SetPDClientDynamicOption (concurrent set/call).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
@@ -23,9 +23,9 @@
     "global_variable_mutation",
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Global state must be reset/restored between tests. This PR stabilizes it by: variable: fix data race in the variable.SetPDClientDynamicOption.",
-  "module": "module_unknown",
-  "fix_pattern": "variable: fix data race in the variable.SetPDClientDynamicOption",
+  "root_cause_explanation": "The test was flaky due to a data race: the global SetPDClientDynamicOption callback was set/read concurrently without synchronization. This PR stabilizes it by storing the callback as an atomic.Pointer and invoking it via Load/Store.",
+  "module": "session",
+  "fix_pattern": "Use atomic.Pointer for variable.SetPDClientDynamicOption and invoke via Load/Store.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38374",
     "https://github.com/pingcap/tidb/pull/38374.patch"

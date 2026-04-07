@@ -13,18 +13,18 @@
     "name": "TestDAGPlanBuilderUnionScan"
   },
   "symptoms": [
-    "planner: fix unstable test TestDAGPlanBuilderUnionScan"
+    "TestDAGPlanBuilderUnionScan intermittently fails due to brittle plan-string assertions (UnionScan plans depend on schema/txn state)."
   ],
-  "failure_signature": "planner: fix unstable test TestDAGPlanBuilderUnionScan",
+  "failure_signature": "Plan suite assertion mismatch in TestDAGPlanBuilderUnionScan (expected UnionScan-related plan string differs from actual plan).",
   "root_cause_categories": [
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix unstable test TestDAGPlanBuilderUnionScan.",
+  "root_cause_explanation": "TestDAGPlanBuilderUnionScan asserts an exact plan string (core.ToString(plan)) which is brittle when the optimizer plan depends on runtime context (schema/InfoSchema and whether the session is inside an active transaction with uncommitted changes, which affects UnionScan). This PR stabilizes it by creating a real table, explicitly starting a transaction, inserting a row to trigger UnionScan behavior, reloading domain InfoSchema, and then comparing the optimized plan against updated expected outputs.",
   "module": "planner",
-  "fix_pattern": "planner: fix unstable test TestDAGPlanBuilderUnionScan",
+  "fix_pattern": "Make UnionScan plan test deterministic by using real schema and explicit txn (begin+insert+rollback) before optimizing.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37895",
     "https://github.com/pingcap/tidb/pull/37895.patch"

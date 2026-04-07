@@ -13,19 +13,18 @@
     "name": "recover_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select a from t order by a\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/recover_test.go)"
+    "Feature/behavior change (FLASHBACK SCHEMA / FLASHBACK DATABASE support) plus new/updated tests; no concrete flaky failure signature is captured in this case."
   ],
-  "failure_signature": "tk.MustQuery(\"select a from t order by a\").Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/recover_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (feature + tests).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch is a large feature change (support FLASHBACK SCHEMA / FLASHBACK DATABASE) and adds/updates tests. The PR/case does not provide a concrete intermittent flaky failure signature or a targeted stabilization fix, so keep this case as needs-more-evidence rather than guessing a flakiness category.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "ddl: support flashback schema (FLASHBACK SCHEMA / FLASHBACK DATABASE).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37438",
     "https://github.com/pingcap/tidb/pull/37438.patch"

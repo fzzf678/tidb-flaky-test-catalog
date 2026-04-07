@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic iteration/collection ordering (e.g., map iteration order). This PR stabilizes it by sorting the collected list (sort.Slice) before assertions to make the test deterministic.",
   "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort collected metadata list before assertions (sort.Slice) to avoid nondeterministic iteration order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38386",
     "https://github.com/pingcap/tidb/pull/38386.patch"

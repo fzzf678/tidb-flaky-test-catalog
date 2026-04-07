@@ -13,20 +13,18 @@
     "name": "db_partition_test"
   },
   "symptoms": [
-    "tk.MustQuery(`select * from t order by b`).Check(testkit.Rows(\"\"+ (ddl/db_partition_test.go)"
+    "Feature change (support ALTER TABLE ... MODIFY COLUMN on partitioned tables) plus new/updated tests; no concrete flaky failure signature is captured in this case."
   ],
-  "failure_signature": "tk.MustQuery(`select * from t order by b`).Check(testkit.Rows(\"\"+ (ddl/db_partition_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (feature + tests).",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch removes the limitation for MODIFY COLUMN on partitioned tables and adds DDL backfill handling plus new tests. It does not provide a concrete intermittent flaky failure signature or a targeted stabilization fix, so keep this case as needs-more-evidence.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Support MODIFY COLUMN on partitioned tables (update backfill/row handling) and add tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38302",
     "https://github.com/pingcap/tidb/pull/38302.patch"
