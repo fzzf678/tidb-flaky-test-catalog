@@ -13,18 +13,18 @@
     "name": "analyze_test"
   },
   "symptoms": [
-    "+// inherently racy and is unsafe to use without external synchronization."
+    "Statistics cache operations were inherently racy / unsafe without external synchronization."
   ],
-  "failure_signature": "+// inherently racy and is unsafe to use without external synchronization.",
+  "failure_signature": "Statistics cache operations were inherently racy / unsafe without external synchronization.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: +// inherently racy and is unsafe to use without external synchronization.",
+  "root_cause_explanation": "The test was flaky due to a concurrency data race around statistics cache state. The code path was described as 'inherently racy' without external synchronization; this PR refactors the stats cache data structure/usage and clarifies the racy behavior to avoid unsafe concurrent access.",
   "module": "statistics",
-  "fix_pattern": "+// inherently racy and is unsafe to use without external synchronization.",
+  "fix_pattern": "Refactor/guard stats cache state to avoid unsafe concurrent access (eliminate inherently racy usage without synchronization).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44374",
     "https://github.com/pingcap/tidb/pull/44374.patch"

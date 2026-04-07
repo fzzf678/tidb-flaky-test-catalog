@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: fix the unstable test `TestHypoIndexDDL`",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "schema_change_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix the unstable test `TestHypoIndexDDL`.",
+  "root_cause_explanation": "The test was flaky due to relying on Go map iteration order: the code iterated over a map of hypo indexes, producing a nondeterministic index list/order that made the SHOW/DDL-related output unstable. This PR stabilizes it by collecting map values into a slice and sorting it deterministically (e.g., by index name).",
   "module": "planner",
-  "fix_pattern": "planner: fix the unstable test `TestHypoIndexDDL`",
+  "fix_pattern": "Avoid relying on Go map iteration order: collect map values into a slice and sort deterministically before using them in outputs/assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44358",
     "https://github.com/pingcap/tidb/pull/44358.patch"

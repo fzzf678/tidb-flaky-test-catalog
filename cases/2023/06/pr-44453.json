@@ -13,18 +13,18 @@
     "name": "parse_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "Global test state (e.g., last import job id) can be accessed concurrently in IMPORT INTO job management tests."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "Potential data race on global test state in IMPORT INTO job management tests.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "The test was flaky due to a concurrency data race involving shared test/global state in IMPORT INTO job management. This PR stabilizes it by making the shared state concurrency-safe (e.g., using an atomic `TestLastImportJobID`) and enabling race-detector runs for the relevant tests.",
   "module": "executor",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Make shared test/global state atomic (e.g., `TestLastImportJobID`) and enable race-detector runs to catch data races early.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44453",
     "https://github.com/pingcap/tidb/pull/44453.patch"

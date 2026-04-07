@@ -13,18 +13,19 @@
     "name": "TestEtcdNotifier"
   },
   "symptoms": [
-    "timer: fix unstable test `TestEtcdNotifier`"
+    "Timer notifier/watch test is time/ordering sensitive; short timeouts and missing sync between watcher creation and notify/close can cause flakes."
   ],
-  "failure_signature": "timer: fix unstable test `TestEtcdNotifier`",
+  "failure_signature": "Timer notifier/watch test times out or misses events due to insufficient waits/synchronization.",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_timeout",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: timer: fix unstable test `TestEtcdNotifier`.",
-  "module": "kv",
-  "fix_pattern": "timer: fix unstable test `TestEtcdNotifier`",
+  "root_cause_explanation": "The test was flaky due to asynchronous timing issues: event delivery and watcher setup are not instantaneous, so short timeouts and lack of synchronization can lead to intermittent timeouts/missed events. This PR stabilizes the test by increasing wait timeouts (e.g., 10s → 1m) and adding small sleeps between watcher setup and notify/close operations.",
+  "module": "module_unknown",
+  "fix_pattern": "Increase timeouts and add small sleeps/synchronization so watcher setup and event delivery have time to converge before assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44709",
     "https://github.com/pingcap/tidb/pull/44709.patch"

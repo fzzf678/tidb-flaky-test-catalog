@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: Fix `DATA RACE`.",
+  "root_cause_explanation": "The test was flaky due to a concurrency data race in admin pause/resume DDL tests: shared test state (job id / pause-cancel flags / admin command state) and helpers were accessed from concurrent goroutines without proper synchronization. This PR stabilizes it by making shared state goroutine-safe (mutexes for critical sections, atomics for shared flags/ids).",
   "module": "ddl",
-  "fix_pattern": "Fix `DATA RACE`",
+  "fix_pattern": "Make shared test state goroutine-safe using mutexes/atomics (e.g., guard admin commands and job/paused/cancelled flags) to eliminate data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44783",
     "https://github.com/pingcap/tidb/pull/44783.patch"

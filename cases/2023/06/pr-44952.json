@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: oomtest: fix data race in the oomCapture.",
-  "module": "module_unknown",
-  "fix_pattern": "oomtest: fix data race in the oomCapture",
+  "root_cause_explanation": "The test was flaky due to a concurrency data race in the OOM test helper (`oomCapture`) where shared state was accessed from multiple goroutines without proper synchronization. This PR stabilizes it by making the capture helper goroutine-safe (e.g., using locks/atomics) to eliminate the data race.",
+  "module": "executor",
+  "fix_pattern": "Make shared test helper state (e.g., `oomCapture`) goroutine-safe using locks/atomics to eliminate data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44952",
     "https://github.com/pingcap/tidb/pull/44952.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sql := fmt.Sprintf(\"select job_meta from mysql.tidb_ddl_history where job_id=%d or job_id=%d order by job_id\", jobID, jobID+1) (session/bootstraptest/bootstrap_upgrade_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
     "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: sql := fmt.Sprintf(\"select job_meta from mysql.tidb_ddl_history where job_id=%d or job_id=%d order by job_id\", jobID, jobID+1) (session/bootstraptest/bootstrap_upgrade_test.go).",
-  "module": "ddl",
-  "fix_pattern": "sql := fmt.Sprintf(\"select job_meta from mysql.tidb_ddl_history where job_id=%d or job_id=%d order by job_id\", jobID, jobID+1) (session/bootstraptest/bootstrap_upgrade_test.go)",
+  "root_cause_explanation": "The test was flaky due to nondeterministic result ordering: it queried DDL history rows without enforcing a stable order. This PR stabilizes it by adding an `ORDER BY job_id` clause to the query in the bootstrap upgrade test.",
+  "module": "session",
+  "fix_pattern": "Add `ORDER BY` to the DDL history query used by the bootstrap upgrade test to make row order deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44305",
     "https://github.com/pingcap/tidb/pull/44305.patch"

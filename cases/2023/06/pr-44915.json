@@ -13,19 +13,18 @@
     "name": "tiflash_test"
   },
   "symptoms": [
-    "race = \"on\", | sql = \"select /*+ READ_FROM_STORAGE(tiflash[t]) */ a, b from t order by 1\" (executor/test/tiflashtest/tiflash_test.go)"
+    "No concrete flaky failure signature recorded in the case data; PR is feature work (MPPGather for UnionScan) and the captured signal is mixed BUILD metadata."
   ],
-  "failure_signature": "race = \"on\", | sql = \"select /*+ READ_FROM_STORAGE(tiflash[t]) */ a, b from t order by 1\" (executor/test/tiflashtest/tiflash_test.go)",
+  "failure_signature": "No concrete flaky signature recorded; feature work with mixed BUILD/test metadata signals.",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: race = \"on\", | sql = \"select /*+ READ_FROM_STORAGE(tiflash[t]) */ a, b from t order by 1\" (executor/test/tiflashtest/tiflash_test.go).",
-  "module": "txn",
-  "fix_pattern": "race = \"on\", | sql = \"select /*+ READ_FROM_STORAGE(tiflash[t]) */ a, b from t order by 1\" (executor/test/tiflashtest/tiflash_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds support for MPPGather for UnionScan and updates related executor/MPP code. The case data does not include a concrete flaky failure signature or a targeted stabilization change; keep it as insufficient evidence rather than inferring ordering/race root causes from mixed metadata signals.",
+  "module": "executor",
+  "fix_pattern": "Feature implementation (MPPGather for UnionScan); no clearly evidenced anti-flake stabilization in the case.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44915",
     "https://github.com/pingcap/tidb/pull/44915.patch"

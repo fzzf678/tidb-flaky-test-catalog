@@ -13,18 +13,18 @@
     "name": "resource_group_test"
   },
   "symptoms": [
-    "avoid data race"
+    "Data race risk: setting the TiKV resource control interceptor while the resource group controller is not fully initialized."
   ],
-  "failure_signature": "avoid data race",
+  "failure_signature": "Race involving initialization ordering of resource group controller vs setting resource control interceptor.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: avoid data race.",
-  "module": "executor",
-  "fix_pattern": "avoid data race",
+  "root_cause_explanation": "The test was flaky due to a concurrency data race caused by initialization ordering: `tikv.SetResourceControlInterceptor(...)` was invoked during domain initialization, while the resource group controller might not be fully initialized yet. This PR stabilizes it by moving the interceptor setup to `tidb-server/main.go` after creating the store/domain, using `dom.ResourceGroupsController()`.",
+  "module": "domain",
+  "fix_pattern": "Set the resource control interceptor after domain/controller initialization (move `SetResourceControlInterceptor` to main after `createStoreAndDomain`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44474",
     "https://github.com/pingcap/tidb/pull/44474.patch"

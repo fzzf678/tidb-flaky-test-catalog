@@ -13,18 +13,18 @@
     "name": "client_test"
   },
   "symptoms": [
-    "+ race = \"on\","
+    "TimerStore runtime/tests had shared state accessed concurrently; data races can make tests flaky."
   ],
-  "failure_signature": "+ race = \"on\",",
+  "failure_signature": "Potential data race in TimerStore runtime/tests due to unsynchronized shared state.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + race = \"on\",.",
+  "root_cause_explanation": "The test was flaky due to a concurrency data race in the TimerStore runtime/tests. This PR stabilizes it by making shared state concurrency-safe (e.g., guarding with mutexes and using atomic pointers for cross-goroutine references) and enabling race-detector runs for the relevant tests.",
   "module": "module_unknown",
-  "fix_pattern": "+ race = \"on\",",
+  "fix_pattern": "Guard shared state with mutex/atomics in TimerStore runtime/tests, and enable race-detector runs to catch races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44446",
     "https://github.com/pingcap/tidb/pull/44446.patch"

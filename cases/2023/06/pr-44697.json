@@ -13,18 +13,18 @@
     "name": "local_mpp_coordinator_test"
   },
   "symptoms": [
-    "+ race = \"on\","
+    "MPP coordinator state (e.g., dispatch failure / close flags) can be racy when updated from multiple goroutines without atomic synchronization."
   ],
-  "failure_signature": "+ race = \"on\",",
+  "failure_signature": "Data race in MPP coordinator state due to unsynchronized shared flags across goroutines.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + race = \"on\",.",
+  "root_cause_explanation": "The test was flaky due to a concurrency data race in MPP coordinator logic. This PR makes shared coordinator state concurrency-safe (e.g., using atomic CAS/loads for dispatch/close/report flags and mutexes where needed) and enables race-detector runs for the relevant tests to catch such issues early.",
   "module": "executor",
-  "fix_pattern": "+ race = \"on\",",
+  "fix_pattern": "Use atomics/mutexes to guard shared MPP coordinator state across goroutines, and enable race-detector runs for relevant tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44697",
     "https://github.com/pingcap/tidb/pull/44697.patch"

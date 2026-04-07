@@ -13,18 +13,18 @@
     "name": "distsql_test"
   },
   "symptoms": [
-    "sort.Slice(details, func(i, j int) bool { (sessionctx/stmtctx/stmtctx_test.go)"
+    "Order-dependent assertions on execution details can be flaky if the `details` slice is not deterministically sorted."
   ],
-  "failure_signature": "sort.Slice(details, func(i, j int) bool { (sessionctx/stmtctx/stmtctx_test.go)",
+  "failure_signature": "stmtctx test has order-dependent assertions on `details` without deterministic sorting.",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: sort.Slice(details, func(i, j int) bool { (sessionctx/stmtctx/stmtctx_test.go).",
-  "module": "module_unknown",
-  "fix_pattern": "sort.Slice(details, func(i, j int) bool { (sessionctx/stmtctx/stmtctx_test.go)",
+  "root_cause_explanation": "The test was flaky due to nondeterministic ordering of in-memory execution details. This PR stabilizes it by sorting the `details` slice deterministically (e.g., `sort.Slice(details, ...)`) before assertions.",
+  "module": "session",
+  "fix_pattern": "Deterministically sort in-memory execution details before assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44269",
     "https://github.com/pingcap/tidb/pull/44269.patch"

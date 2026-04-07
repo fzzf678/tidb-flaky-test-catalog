@@ -13,19 +13,18 @@
     "name": "planner_issue_test"
   },
   "symptoms": [
-    "race = \"on\", | tk.MustQuery(\"SELECT one.a, one.b as b2 FROM t1 one ORDER BY (SELECT two.b FROM t2 two WHERE two.a = one.b)\").Check(testkit.Rows(\"1 1\")) (planner/core/issuetest/planner_issue_test.go)"
+    "No concrete flaky failure signature recorded in the case data; PR fixes a planner correctness issue around column alias in ORDER BY subqueries."
   ],
-  "failure_signature": "race = \"on\", | tk.MustQuery(\"SELECT one.a, one.b as b2 FROM t1 one ORDER BY (SELECT two.b FROM t2 two WHERE two.a = one.b)\").Check(testkit.Rows(\"1 1\")) (planner/core/issuetest/planner_issue_test.go)",
+  "failure_signature": "No concrete flaky signature recorded; planner correctness fix around ORDER BY subquery alias resolution.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: race = \"on\", | tk.MustQuery(\"SELECT one.a, one.b as b2 FROM t1 one ORDER BY (SELECT two.b FROM t2 two WHERE two.a = one.b)\").Check(testkit.Rows(\"1 1\")) (planner/core/issuetest/planner_issue_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a planner correctness issue (column alias resolution in ORDER BY subqueries) and adjusts test/BUILD settings. The case data does not include a concrete flaky signature or a targeted stabilization change for nondeterminism, so keep it as insufficient evidence rather than asserting a specific flaky mechanism.",
   "module": "planner",
-  "fix_pattern": "race = \"on\", | tk.MustQuery(\"SELECT one.a, one.b as b2 FROM t1 one ORDER BY (SELECT two.b FROM t2 two WHERE two.a = one.b)\").Check(testkit.Rows(\"1 1\")) (planner/core/issuetest/planner_issue_test.go)",
+  "fix_pattern": "Planner correctness fix for alias resolution in ORDER BY subqueries; no clearly evidenced anti-flake stabilization in the case data.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45003",
     "https://github.com/pingcap/tidb/pull/45003.patch"

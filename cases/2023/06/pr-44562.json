@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race at the TestShowStatsExtended.",
+  "root_cause_explanation": "The test was flaky due to a concurrency data race in `TestShowStatsExtended`. This PR stabilizes it by fixing the underlying unsynchronized shared-state access in the stats/show-stats path, preventing concurrent mutation/reads from racing during the test.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race at the TestShowStatsExtended",
+  "fix_pattern": "Fix unsynchronized shared-state access in the show-stats path used by `TestShowStatsExtended` (add proper synchronization / avoid concurrent mutation).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44562",
     "https://github.com/pingcap/tidb/pull/44562.patch"

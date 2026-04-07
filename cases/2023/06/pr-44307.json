@@ -13,18 +13,18 @@
     "name": "util_test"
   },
   "symptoms": [
-    "fix race"
+    "Data-race risk from concurrent goroutines accessing IMPORT INTO disk quota / engine writer state without synchronization."
   ],
-  "failure_signature": "fix race",
+  "failure_signature": "Potential data race in IMPORT INTO pipeline (disk quota / writer state) due to missing synchronization.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix race.",
+  "root_cause_explanation": "The test was flaky due to a concurrency data race in the IMPORT INTO pipeline. This PR adds explicit synchronization (a shared `sync.RWMutex` / `diskQuotaLock`) and guards concurrent operations (e.g., around writer append) to prevent unsynchronized shared-state access between goroutines.",
   "module": "executor",
-  "fix_pattern": "fix race",
+  "fix_pattern": "Introduce a shared lock (e.g., `diskQuotaLock` via `sync.RWMutex`) to guard concurrent state access in the IMPORT INTO pipeline.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44307",
     "https://github.com/pingcap/tidb/pull/44307.patch"
