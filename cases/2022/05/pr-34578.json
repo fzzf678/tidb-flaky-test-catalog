@@ -17,14 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 1\", \"100 102\")) (session/session_test.go)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly reorganizes real-tikv tests into a dedicated package/workflow. The available case data does not include a clear flaky failure signature or a targeted stabilization fix, so we conservatively mark it as insufficient evidence.",
+  "root_cause_explanation": "The tests were flaky because they did not reliably clean up tables/views created during the test run, leaving residual state that could interfere with subsequent tests. This PR stabilizes the suite by adding a teardown cleanup that enumerates tables via `SHOW FULL TABLES` and drops views/tables before closing the domain/store.",
   "module": "test_infra",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "fix_pattern": "Add a teardown cleanup that drops all tables/views (via `SHOW FULL TABLES`) before `dom.Close()`/store close to prevent cross-test state pollution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34578",
     "https://github.com/pingcap/tidb/pull/34578.patch"
