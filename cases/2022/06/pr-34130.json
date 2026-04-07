@@ -8,9 +8,9 @@
   },
   "pr_merged_at": "2022-06-24T15:06:38+08:00",
   "test": {
-    "type": "unit",
-    "path": "br/pkg/errors/errors_test.go",
-    "name": "errors_test"
+    "type": "integration",
+    "path": "br/tests/lightning_incremental/run.sh",
+    "name": "lightning_incremental"
   },
   "symptoms": [
     "fix unstable test | run_sql \"SELECT group_concat(v) from incr.$tbl order by v;\" (br/tests/lightning_incremental/run.sh)"
@@ -22,9 +22,9 @@
   "review_smells": [
     "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The integration test asserted on the exact output string of `GROUP_CONCAT(v)` in `br/tests/lightning_incremental/run.sh`, but the original query did not enforce a deterministic order (`SELECT group_concat(v) ... group by 'all'`). The patch stabilizes the check by updating the query to include an explicit ordering (`... order by v`) so the concatenation order (and thus the asserted output) is stable.",
   "module": "lightning",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Stabilize lightning incremental test output: add explicit ordering to the `GROUP_CONCAT(v)` check in `br/tests/lightning_incremental/run.sh` to avoid nondeterministic concatenation order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34130",
     "https://github.com/pingcap/tidb/pull/34130.patch"

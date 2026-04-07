@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: refactor analyze executor.",
+  "root_cause_explanation": "The case evidence points to a race-detection issue around `subIndexWorkerWg` when running `TestAnalyzeVirtualCol` with `-race`. The patch refactors the analyze executor and reorganizes the NDV pushdown worker/waitgroup wiring (including where `subIndexWorkerWg` is initialized/used) to avoid the reported data race warning in this test scenario.",
   "module": "executor",
-  "fix_pattern": "executor: refactor analyze executor",
+  "fix_pattern": "Refactor analyze executor and adjust NDV pushdown worker/waitgroup wiring (`subIndexWorkerWg`) to avoid `-race` data race reports in `TestAnalyzeVirtualCol`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35201",
     "https://github.com/pingcap/tidb/pull/35201.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "checkPlanCost(`select sum(a), b*2 from t use index(b) group by b order by sum(a) limit 10`, (planner/core/plan_cost_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds `EXPLAIN ANALYZE format=true_card_cost` support and introduces new unit tests that assert exact `EXPLAIN` prefixes/costs. The diff does not provide a concrete flaky failure signature or a targeted stabilization change for an intermittent failure, so keep this case as `insufficient_evidence`.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Add `EXPLAIN ANALYZE format=true_card_cost` support and new unit tests validating verbose/true_card_cost outputs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34566",
     "https://github.com/pingcap/tidb/pull/34566.patch"

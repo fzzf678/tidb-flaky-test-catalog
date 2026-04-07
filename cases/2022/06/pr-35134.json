@@ -17,16 +17,14 @@
   ],
   "failure_signature": "planner: fix data race in the TestCacheHitInRc",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "plan_cache_dependency",
-    "assert_exact_plan_or_cost"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: planner: fix data race in the TestCacheHitInRc.",
+  "root_cause_explanation": "The test executed prepared statements via `ExecutePreparedStmt(...)` but did not close the returned `RecordSet`, which can leave background operations running and trigger data race reports (especially when the test concurrently changes schema via `ALTER TABLE`). The patch stabilizes the test by capturing the returned `RecordSet` and closing it (`rs.Close()`) after each execution, removing the race window.",
   "module": "planner",
-  "fix_pattern": "planner: fix data race in the TestCacheHitInRc",
+  "fix_pattern": "Close the `RecordSet` returned by `ExecutePreparedStmt(...)` in `TestCacheHitInRc` to avoid data races when schema changes invalidate plan cache.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35134",
     "https://github.com/pingcap/tidb/pull/35134.patch"

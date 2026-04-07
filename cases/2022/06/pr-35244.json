@@ -13,19 +13,18 @@
     "name": "session_test"
   },
   "symptoms": [
-    "// Default RPC encoding may cause statistics explain result differ and then the test unstable."
+    "Behavior/EXPLAIN can differ when coprocessor paging is enabled; many tests explicitly set `@@tidb_enable_paging = off` to keep expectations stable."
   ],
-  "failure_signature": "// Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "failure_signature": "Tests need to pin `@@tidb_enable_paging` (often set to `off`) to avoid behavior/EXPLAIN drift when paging is enabled.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost",
-    "statistics_sensitive_test"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: *: support paging protocol on unistore.",
-  "module": "module_unknown",
-  "fix_pattern": "*: support paging protocol on unistore",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds support for coprocessor paging protocol on unistore and updates many tests/configs (often pinning `@@tidb_enable_paging = off`) to accommodate behavior/EXPLAIN differences. The available catalog evidence does not provide a concrete intermittent flaky failure signature attributable to a single root cause, so keep this case as `insufficient_evidence`.",
+  "module": "kv",
+  "fix_pattern": "Support coprocessor paging on unistore and update tests to pin `@@tidb_enable_paging` (often `off`) to keep expectations stable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35244",
     "https://github.com/pingcap/tidb/pull/35244.patch"

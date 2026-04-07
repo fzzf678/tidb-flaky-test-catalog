@@ -13,19 +13,18 @@
     "name": "explain_test"
   },
   "symptoms": [
-    "// Default RPC encoding may cause statistics explain result differ and then the test unstable."
+    "No concrete flaky signature is provided; the PR fixes a deterministic runtime-stats correctness issue for `ShuffleReceiver`."
   ],
-  "failure_signature": "// Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "failure_signature": "INSUFFICIENT_EVIDENCE: deterministic runtime-stats correctness fix (`ShuffleReceiver` operator id/stats collection).",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: executor: fix wrong runtime stats for `ShuffleReceiver`.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a runtime stats correctness bug for `ShuffleReceiver` (operator initialization/reuse so runtime stats map to a single id) and updates tests accordingly. The available catalog evidence does not show an intermittent flaky signature or a targeted stabilization change for flakiness, so keep this case as `insufficient_evidence`.",
   "module": "executor",
-  "fix_pattern": "executor: fix wrong runtime stats for `ShuffleReceiver`",
+  "fix_pattern": "Fix runtime stats correctness for `ShuffleReceiver` by reusing a single physical operator id per data source; update tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35293",
     "https://github.com/pingcap/tidb/pull/35293.patch"
