@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: refactor restart test.",
-  "module": "test_infra",
-  "fix_pattern": "test: refactor restart test",
+  "root_cause_explanation": "The restart-related DDL tests could trigger data races because helper logic like `restartWorkers` modified shared DDL context (`d.ctx`) while other goroutines/workers were still running. The patch stabilizes the tests by refactoring `restart_test` to restart DDL using explicit `ddl.Stop()` / `ddl.Start()` instead of manually restarting workers / mutating internal context, which avoids unsynchronized concurrent access.",
+  "module": "ddl",
+  "fix_pattern": "Refactor DDL restart tests to use `ddl.Stop()` / `ddl.Start()` (avoid mutating internal `d.ctx` / restarting workers unsafely).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36174",
     "https://github.com/pingcap/tidb/pull/36174.patch"

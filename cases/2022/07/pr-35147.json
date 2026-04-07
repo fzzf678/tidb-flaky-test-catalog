@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test collects store IDs while communicating with TiKV stores concurrently. Without enforcing a deterministic ordering, the collected store-id slice can have nondeterministic order due to goroutine scheduling, making assertions flaky. This PR stabilizes the test by sorting the store IDs before comparing/asserting.",
   "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "When asserting on results collected from concurrent operations, sort the collected IDs/results before comparison to avoid nondeterministic ordering.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35147",
     "https://github.com/pingcap/tidb/pull/35147.patch"

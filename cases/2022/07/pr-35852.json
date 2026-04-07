@@ -10,22 +10,21 @@
   "test": {
     "type": "unit",
     "path": "executor/aggregate_test.go",
-    "name": "aggregate_test"
+    "name": "TestIssue27751"
   },
   "symptoms": [
-    "tk.MustQuery(\"select group_concat(nname order by 1 separator '#' ) from t;\").Check(testkit.Rows(\"11#1\")) (executor/aggregate_test.go)"
+    "Deterministic wrong result: `GROUP_CONCAT` returns incorrect output after setting `group_concat_max_len` (Issue #27751)."
   ],
-  "failure_signature": "tk.MustQuery(\"select group_concat(nname order by 1 separator '#' ) from t;\").Check(testkit.Rows(\"11#1\")) (executor/aggregate_test.go)",
+  "failure_signature": "Wrong result: GROUP_CONCAT output mismatch after `set @@group_concat_max_len=0` (Issue #27751).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic correctness bug in `GROUP_CONCAT` truncation logic (using `heap.Pop` instead of directly indexing the heap array) and adds a regression unit test for Issue #27751. The patch does not provide a concrete flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Fix GROUP_CONCAT truncation: use `heap.Pop` to get the correct heap top row, and add regression test for Issue #27751.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35852",
     "https://github.com/pingcap/tidb/pull/35852.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: separate unstable test into package",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: separate unstable test into package.",
+  "root_cause_explanation": "`TestGlobalMemoryTrackerOnCleanUp` asserts that the global memory usage tracker is unchanged after certain operations. This kind of assertion is sensitive to shared/global state: other tests in the same package (or shared setup) can affect global memory tracking/config and make the test unstable. The patch stabilizes it by moving the test into a separate `executor/memtest` package with its own `TestMain` setup (and Bazel target), reducing interference from other executor tests.",
   "module": "executor",
-  "fix_pattern": "executor: separate unstable test into package",
+  "fix_pattern": "Isolate flaky test from shared state: move `TestGlobalMemoryTrackerOnCleanUp` into a separate `executor/memtest` package/target with dedicated `TestMain` setup.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36506",
     "https://github.com/pingcap/tidb/pull/36506.patch"

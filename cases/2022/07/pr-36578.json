@@ -9,23 +9,22 @@
   "pr_merged_at": "2022-07-26T21:07:11+08:00",
   "test": {
     "type": "realtikv",
-    "path": "tests/realtikvtest/sessiontest/retry_test.go",
-    "name": "retry_test"
+    "path": "tests/realtikvtest/testkit.go",
+    "name": "RunTestMain"
   },
   "symptoms": [
-    "+ pessimistic_test.go:2328: This test is unstable as depending on time.Sleep"
+    "Goroutine leak checks (goleak) can fail due to a long-lived background keepAlive goroutine introduced by transaction code."
   ],
-  "failure_signature": "+ pessimistic_test.go:2328: This test is unstable as depending on time.Sleep",
+  "failure_signature": "goleak: leaked goroutine `github.com/tikv/client-go/v2/txnkv/transaction.keepAlive`.",
   "root_cause_categories": [
-    "async_timing_issue"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "time_sleep_for_sync",
-    "clock_skew_dependency"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). Fixed sleeps are brittle under CI timing jitter. This PR stabilizes it by: *: enable pessimistic transaction on unistore.",
-  "module": "txn",
-  "fix_pattern": "*:  enable pessimistic transaction on unistore",
+  "root_cause_explanation": "Some test suites use go.uber.org/goleak in `TestMain` / test harness to detect leaked goroutines. This PR introduces/relies on a background transaction keepAlive goroutine (`github.com/tikv/client-go/v2/txnkv/transaction.keepAlive`), which can remain running during tests and trigger goleak failures. The patch stabilizes suites (including realtikv tests) by adding `goleak.IgnoreTopFunction(\"github.com/tikv/client-go/v2/txnkv/transaction.keepAlive\")` to the goleak options so this known background goroutine does not fail the suite.",
+  "module": "test_infra",
+  "fix_pattern": "Stabilize go-leak checks: add `goleak.IgnoreTopFunction(\".../transaction.keepAlive\")` in affected test suites (including realtikv harness) to avoid failures from a known background keepAlive goroutine.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36578",
     "https://github.com/pingcap/tidb/pull/36578.patch"

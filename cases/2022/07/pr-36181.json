@@ -13,19 +13,18 @@
     "name": "physical_plan_test"
   },
   "symptoms": [
-    "\"from t group by date_format(d,'%Y') order by df;\").Check( (planner/core/physical_plan_test.go)"
+    "No explicit flaky failure signature in patch (feature PR adding skew distinct aggregate rewrite + related tests/testdata)."
   ],
-  "failure_signature": "\"from t group by date_format(d,'%Y') order by df;\").Check( (planner/core/physical_plan_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (feature PR adding skew distinct aggregate rewrite).",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR introduces a new planner rewrite rule/variable (`tidb_opt_skew_distinct_agg`) and updates related tests/testdata. The patch does not provide a concrete flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "planner: support rewrite for skew group distinct aggregate to avoid skew execution",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36181",
     "https://github.com/pingcap/tidb/pull/36181.patch"

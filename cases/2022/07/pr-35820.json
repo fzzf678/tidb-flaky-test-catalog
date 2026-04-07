@@ -9,23 +9,22 @@
   "pr_merged_at": "2022-07-11T19:41:06+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/executor_test.go",
-    "name": "executor_test"
+    "path": "executor/index_lookup_hash_join.go",
+    "name": "indexHashJoinInnerWorker.handleTask"
   },
   "symptoms": [
-    "tk.MustQuery(\"select /*+ inl_hash_join(t2) */ t1.b from t1 left join t2 on t1.b=t2.d order by t1.b limit 1000,1;\").Check(testkit.Rows(\"1001\")) (executor/executor_test.go)"
+    "IndexLookupHashJoin may hang/timeout when used with LIMIT because the inner worker can block pushing results after the consumer is closed."
   ],
-  "failure_signature": "tk.MustQuery(\"select /*+ inl_hash_join(t2) */ t1.b from t1 left join t2 on t1.b=t2.d order by t1.b limit 1000,1;\").Check(testkit.Rows(\"1001\")) (executor/executor_test.go)",
+  "failure_signature": "Hang/timeout: IndexLookupHashJoin inner worker blocks on `task.resultCh` send after Close().",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The IndexLookupHashJoin inner worker can still run after the LIMIT executor closes. When the consumer stops reading, `task.resultCh` can become full and the worker blocks forever trying to push `joinResult`, causing a hang/timeout. The patch makes the send cancel-aware by selecting on `ctx.Done()` before sending to the result channel.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Avoid blocking sends after Close: use `select { case <-ctx.Done(): case resultCh <- joinResult: }` when pushing results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35820",
     "https://github.com/pingcap/tidb/pull/35820.patch"

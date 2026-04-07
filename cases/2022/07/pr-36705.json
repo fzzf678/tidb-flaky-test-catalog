@@ -13,18 +13,18 @@
     "name": "client_test"
   },
   "symptoms": [
-    "// SetRowCount sets the number of rows. Make sure it can pass `make race`."
+    "No specific flaky-test failure signature is provided; the patch is a cross-cutting timestamp conversion cleanup across multiple packages."
   ],
-  "failure_signature": "// SetRowCount sets the number of rows. Make sure it can pass `make race`.",
+  "failure_signature": "INSUFFICIENT_EVIDENCE: bulk timestamp conversion cleanup (e.g., `UnixNano()/time.Millisecond` → `UnixMilli()`, `time.UnixMicro/UnixMilli`).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix timestamp conversion.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR updates timestamp conversion helpers/usages across many packages (e.g., switching to `time.Now().UnixMilli()` and `time.UnixMicro/UnixMilli` for formatting). The change appears to be a correctness/style cleanup rather than a targeted stabilization for an intermittent flaky signature, and the available catalog evidence does not tie the diff to a specific flaky failure. Keep this case as `insufficient_evidence`.",
   "module": "module_unknown",
-  "fix_pattern": "*: fix timestamp conversion",
+  "fix_pattern": "Cross-cutting timestamp conversion cleanup across packages (use `UnixMilli()` / `UnixMicro` / `UnixMilli`), without a specific flaky signature evidenced in the catalog.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36705",
     "https://github.com/pingcap/tidb/pull/36705.patch"

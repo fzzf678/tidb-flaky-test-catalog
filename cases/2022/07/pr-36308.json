@@ -20,11 +20,11 @@
     "external_dependency"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: domain: fix unstable test.",
+  "root_cause_explanation": "`TestNormalSessionPool` / `TestAbnormalSessionPool` start a TiDB server in unit tests and can be flaky due to port/status-port conflicts. The patch stabilizes the tests by setting `conf.Port = 0` (let the OS choose an available port) and disabling status reporting (`conf.Status.ReportStatus = false`) to avoid external resource conflicts during tests.",
   "module": "domain",
-  "fix_pattern": "domain: fix unstable test",
+  "fix_pattern": "Avoid test port/status conflicts: set `conf.Port = 0` and disable status reporting (`ReportStatus = false`) when starting server in domain session-pool tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36308",
     "https://github.com/pingcap/tidb/pull/36308.patch"

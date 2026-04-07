@@ -13,16 +13,16 @@
     "name": "insert_test"
   },
   "symptoms": [
-    "add flaky test"
+    "Resource leak in unit test: `RecordSet` returned by `tk.Exec(...)` was not always closed in `insert_test`, causing unstable behavior across tests."
   ],
-  "failure_signature": "add flaky test",
+  "failure_signature": "Leaked `RecordSet` in `executor/insert_test.go` (missing `Close()`), causing test instability.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "Some test cases used `tk.Exec(...)` and ignored the returned `RecordSet` without closing it, which can leak resources (result sets / sessions) and make subsequent tests unstable. The patch stabilizes `insert_test` by ensuring returned recordsets are closed (and by using `MustGetErrMsg` / `MustMatchErrMsg` helpers where appropriate) so resources are cleaned up between assertions.",
   "module": "executor",
   "fix_pattern": "executor: close recordset in the insert_test",
   "evidence_links": [

@@ -8,23 +8,23 @@
   },
   "pr_merged_at": "2022-07-23T17:47:09+08:00",
   "test": {
-    "type": "unit",
-    "path": "br/pkg/version/version_test.go",
-    "name": "version_test"
+    "type": "realtikv",
+    "path": "br/tests/br_rawkv/run.sh",
+    "name": "test_full_rawkv"
   },
   "symptoms": [
-    "fix unstable rawkv test"
+    "Unstable BR rawkv backup/restore test due to missing key range bound in `run_br ... backup/restore raw`."
   ],
-  "failure_signature": "fix unstable rawkv test",
+  "failure_signature": "BR rawkv test can intermittently fail due to backing up/restoring an unbounded key range (mismatch with intended check range).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: br: fix compatibility issue with concurrent ddl.",
+  "root_cause_explanation": "The rawkv BR test computes checksums over a specific key range, but the backup/restore commands previously only passed `--start` without `--end`, which makes the effective backup/restore range inconsistent/unbounded and can interact with unrelated keys in the cluster. Depending on surrounding state, this can make the test unstable. The patch stabilizes the test by passing both `--start` and `--end` to `br backup raw` / `br restore raw` so the operation is bounded to the intended key range.",
   "module": "br",
-  "fix_pattern": "br: fix compatibility issue with concurrent ddl",
+  "fix_pattern": "Stabilize BR rawkv test by bounding the raw backup/restore range: add `--end $check_range_end` to match the intended check range.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36474",
     "https://github.com/pingcap/tidb/pull/36474.patch"
