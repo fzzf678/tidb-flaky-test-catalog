@@ -17,14 +17,14 @@
   ],
   "failure_signature": "+ // But we allow a little of error to avoid the test being flaky.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch adds a store write limiter feature and tweaks tests to tolerate small errors (\"allow a little of error to avoid the test being flaky\"), but the case data does not include a concrete flaky failure signature or evidence that allows confidently classifying the underlying root cause beyond this mitigation.",
+  "root_cause_explanation": "The unit test `TestStoreWriteLimiter` derives a theoretical max token bound from `time.Since(start)` and the configured rate limit, but scheduling/timing jitter can make the observed `gotTokens` exceed the computed bound by a small amount. The patch stabilizes the test by relaxing this time-based assertion (`maxTokens+1`) to tolerate minor timing error and avoid intermittent failures.",
   "module": "lightning",
-  "fix_pattern": "lightning: add store write limiter",
+  "fix_pattern": "Stabilize `TestStoreWriteLimiter` by relaxing the time-based token bound assertion (`maxTokens+1`) to tolerate minor timing jitter.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35193",
     "https://github.com/pingcap/tidb/pull/35193.patch"

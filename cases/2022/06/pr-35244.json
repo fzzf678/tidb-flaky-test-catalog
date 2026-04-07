@@ -17,14 +17,14 @@
   ],
   "failure_signature": "Tests need to pin `@@tidb_enable_paging` (often set to `off`) to avoid behavior/EXPLAIN drift when paging is enabled.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds support for coprocessor paging protocol on unistore and updates many tests/configs (often pinning `@@tidb_enable_paging = off`) to accommodate behavior/EXPLAIN differences. The available catalog evidence does not provide a concrete intermittent flaky failure signature attributable to a single root cause, so keep this case as `insufficient_evidence`.",
+  "root_cause_explanation": "Some tests assert exact `EXPLAIN` output strings. When coprocessor paging is enabled (`@@tidb_enable_paging = on`), `EXPLAIN` for `IndexLookUp` can include an extra `paging:true`, making these snapshot assertions brittle across paging settings. The patch stabilizes the plan output expectations by explicitly pinning `set @@tidb_enable_paging = off` before the relevant EXPLAIN checks.",
   "module": "kv",
-  "fix_pattern": "Support coprocessor paging on unistore and update tests to pin `@@tidb_enable_paging` (often `off`) to keep expectations stable.",
+  "fix_pattern": "Pin `@@tidb_enable_paging = off` in EXPLAIN snapshot tests to avoid plan output drift (`paging:true`) when paging is enabled.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35244",
     "https://github.com/pingcap/tidb/pull/35244.patch"

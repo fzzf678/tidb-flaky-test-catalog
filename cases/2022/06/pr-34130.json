@@ -13,18 +13,18 @@
     "name": "lightning_incremental"
   },
   "symptoms": [
-    "fix unstable test | run_sql \"SELECT group_concat(v) from incr.$tbl order by v;\" (br/tests/lightning_incremental/run.sh)"
+    "fix unstable test | run_sql \"SELECT group_concat(v order by v) as result from incr.$tbl group by 'all';\" (br/tests/lightning_incremental/run.sh)"
   ],
-  "failure_signature": "fix unstable test | run_sql \"SELECT group_concat(v) from incr.$tbl order by v;\" (br/tests/lightning_incremental/run.sh)",
+  "failure_signature": "fix unstable test | run_sql \"SELECT group_concat(v order by v) as result from incr.$tbl group by 'all';\" (br/tests/lightning_incremental/run.sh)",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
     "missing_order_by"
   ],
-  "root_cause_explanation": "The integration test asserted on the exact output string of `GROUP_CONCAT(v)` in `br/tests/lightning_incremental/run.sh`, but the original query did not enforce a deterministic order (`SELECT group_concat(v) ... group by 'all'`). The patch stabilizes the check by updating the query to include an explicit ordering (`... order by v`) so the concatenation order (and thus the asserted output) is stable.",
+  "root_cause_explanation": "The integration test asserted on the exact output string of `GROUP_CONCAT(v)` in `br/tests/lightning_incremental/run.sh`, but the original query did not enforce a deterministic order (`SELECT group_concat(v) ... group by 'all'`). The patch stabilizes the check by making the concatenation order explicit (`GROUP_CONCAT(v ORDER BY v)`), so the asserted output string is stable.",
   "module": "lightning",
-  "fix_pattern": "Stabilize lightning incremental test output: add explicit ordering to the `GROUP_CONCAT(v)` check in `br/tests/lightning_incremental/run.sh` to avoid nondeterministic concatenation order.",
+  "fix_pattern": "Stabilize lightning incremental test output: add explicit ordering to the `GROUP_CONCAT(v ORDER BY v)` check in `br/tests/lightning_incremental/run.sh` to avoid nondeterministic concatenation order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34130",
     "https://github.com/pingcap/tidb/pull/34130.patch"

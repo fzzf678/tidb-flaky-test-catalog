@@ -13,18 +13,18 @@
     "name": "session_test"
   },
   "symptoms": [
-    "// Default RPC encoding may cause statistics explain result differ and then the test unstable."
+    "remove 'paging:true' from explain result"
   ],
-  "failure_signature": "// Default RPC encoding may cause statistics explain result differ and then the test unstable.",
+  "failure_signature": "EXPLAIN output for IndexLookUp can include a `paging:true` suffix when paging is enabled, making exact-plan snapshot assertions brittle.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR changes the default `tidb_enable_paging` behavior for newly-bootstrapped clusters and updates related session/sysvar/bootstrap logic and tests. The available case evidence does not provide a specific intermittent flaky failure signature attributable to this change, so keep this case as `insufficient_evidence`.",
+  "root_cause_explanation": "When `tidb_enable_paging` is enabled by default, some tests that assert exact `EXPLAIN` strings can start seeing an extra `paging:true` suffix on `IndexLookUp`, making the assertions brittle across paging settings. The patch stabilizes the plan snapshot by removing the `paging:true` suffix from `PhysicalIndexLookUpReader.ExplainInfo` and by explicitly pinning `@@tidb_enable_paging` in tests where needed.",
   "module": "session",
-  "fix_pattern": "Enable `tidb_enable_paging` by default for newly-bootstrapped clusters; update bootstrap/sysvar logic and tests accordingly.",
+  "fix_pattern": "Stabilize EXPLAIN snapshot output under paging-default-on by removing `paging:true` from IndexLookUp ExplainInfo and pinning `@@tidb_enable_paging` in affected tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35275",
     "https://github.com/pingcap/tidb/pull/35275.patch"
