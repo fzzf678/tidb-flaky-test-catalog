@@ -10,21 +10,22 @@
   "test": {
     "type": "unit",
     "path": "executor/analyzetest/analyze_test.go",
-    "name": "TestDefaultValForAnalyze"
+    "name": "analyze_test"
   },
   "symptoms": [
-    "executor: fix flaky TestDefaultValForAnalyze"
+    "Statistics-sensitive test: insufficient/unstable sampling caused histogram/plan expectations to vary."
   ],
-  "failure_signature": "executor: fix flaky TestDefaultValForAnalyze",
+  "failure_signature": "Analyze sampling not stable; explain output depends on histogram built from samples.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "statistics_sensitive_test",
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "executor",
-  "fix_pattern": "executor: fix flaky TestDefaultValForAnalyze",
+  "root_cause_explanation": "The test asserts on EXPLAIN output after ANALYZE. With analyze v1, limited region sampling can produce different histograms, making the plan/explain output unstable. The fix increases sample size (and sets explicit analyze options) to ensure stable histogram building and deterministic plan selection for the test.",
+  "module": "statistics",
+  "fix_pattern": "For stats-sensitive plan assertions, increase/override ANALYZE sampling to make histograms stable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37576",
     "https://github.com/pingcap/tidb/pull/37576.patch"

@@ -9,22 +9,22 @@
   "pr_merged_at": "2022-09-16T17:47:00+08:00",
   "test": {
     "type": "unit",
-    "path": "ddl/db_partition_test.go",
-    "name": "db_partition_test"
+    "path": "executor/partition_table_test.go",
+    "name": "partition_table_test"
   },
   "symptoms": [
-    "Fixed an unstable test"
+    "Nondeterministic row order: test asserts rows without sorting in index-join query."
   ],
-  "failure_signature": "Fixed an unstable test",
+  "failure_signature": "Query result row order nondeterministic; missing Sort() before Check().",
   "root_cause_categories": [
-    "external_dependency"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "hardcoded_port_or_resource"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: *: Support multi-column RANGE COLUMNS partitioning.",
-  "module": "ddl",
-  "fix_pattern": "*: Support multi-column RANGE COLUMNS partitioning",
+  "root_cause_explanation": "The unit test assumed a stable row order for an index-join query result, but the execution does not guarantee a deterministic order without ORDER BY. The fix sorts the query result before comparing expected rows.",
+  "module": "executor",
+  "fix_pattern": "Sort query results (e.g., .Sort()) before asserting rows.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36637",
     "https://github.com/pingcap/tidb/pull/36637.patch"

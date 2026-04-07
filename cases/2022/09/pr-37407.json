@@ -9,22 +9,22 @@
   "pr_merged_at": "2022-09-16T14:43:00+08:00",
   "test": {
     "type": "unit",
-    "path": "ddl/db_integration_test.go",
-    "name": "db_integration_test"
+    "path": "expression/builtin_regexp.go",
+    "name": "builtin_regexp"
   },
   "symptoms": [
-    "+ re.once.Do(memorize) // Avoid data race"
+    "Data race in regexp function shared initialization/state used concurrently."
   ],
-  "failure_signature": "+ re.once.Do(memorize) // Avoid data race",
+  "failure_signature": "Data race due to unsynchronized shared initialization in regexp builtin.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: expression: support all regexp functions.",
+  "root_cause_explanation": "Concurrent execution of regexp-related builtins could access shared initialization/state without proper synchronization, causing data races under race builds. The fix guards the initialization with sync.Once to ensure thread safety.",
   "module": "expression",
-  "fix_pattern": "expression: support all regexp functions",
+  "fix_pattern": "Guard shared initialization/state with sync.Once or locks to avoid data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37407",
     "https://github.com/pingcap/tidb/pull/37407.patch"

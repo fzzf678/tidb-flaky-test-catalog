@@ -9,22 +9,22 @@
   "pr_merged_at": "2022-09-07T13:22:56+08:00",
   "test": {
     "type": "unit",
-    "path": "config/config_test.go",
-    "name": "config_test"
+    "path": "ddl/foreign_key_test.go",
+    "name": "foreign_key_test"
   },
   "symptoms": [
-    "- // fix data race"
+    "Data race in foreign key DDL tests (hook/callback shared state accessed concurrently)."
   ],
-  "failure_signature": "- // fix data race",
+  "failure_signature": "Race detector reports data race in foreign key DDL tests / DDL callbacks.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: support create table with foreign key and maintain foreign key reference.",
-  "module": "domain",
-  "fix_pattern": "*: support create table with foreign key and maintain foreign key reference",
+  "root_cause_explanation": "Foreign key tests used DDL hooks/callbacks and shared variables across asynchronous DDL job updates, which can trigger data races under concurrent execution/race builds. The fix refactors the tests to avoid unsafe shared state and makes the hook logic safe.",
+  "module": "ddl",
+  "fix_pattern": "Refactor hook/callback tests to avoid unsafe shared mutable state (use proper sync or simplify flow).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37148",
     "https://github.com/pingcap/tidb/pull/37148.patch"

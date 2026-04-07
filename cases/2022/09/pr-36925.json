@@ -8,23 +8,24 @@
   },
   "pr_merged_at": "2022-09-08T12:20:57+08:00",
   "test": {
-    "type": "realtikv",
-    "path": "tests/realtikvtest/pessimistictest/pessimistic_test.go",
-    "name": "pessimistic_test"
+    "type": "unit",
+    "path": "ddl/schematracker/info_store_test.go",
+    "name": "info_store_test"
   },
   "symptoms": [
-    "+build:race --config=ci | sort.Strings(tableNames) (ddl/schematracker/info_store_test.go)"
+    "Nondeterministic ordering: schema/table name lists derived from map iteration caused flaky assertions."
   ],
-  "failure_signature": "+build:race --config=ci | sort.Strings(tableNames) (ddl/schematracker/info_store_test.go)",
+  "failure_signature": "Schema/table name list order nondeterministic; missing sort before assertion.",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order",
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "br",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The tests compared schema/table name lists with a fixed order, but the underlying list construction can be affected by Go map iteration order. The fix sorts the name slices before asserting equality.",
+  "module": "ddl",
+  "fix_pattern": "Sort name lists (e.g., sort.Strings) before asserting equality.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36925",
     "https://github.com/pingcap/tidb/pull/36925.patch"

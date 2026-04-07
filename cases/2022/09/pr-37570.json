@@ -13,18 +13,18 @@
     "name": "tracker_test"
   },
   "symptoms": [
-    "util: fix unstable tests"
+    "Finalizer/GC timing dependency: test assumed finalizer effects observed after fixed GC calls."
   ],
-  "failure_signature": "util: fix unstable tests",
+  "failure_signature": "Flaky GC/finalizer timing: BytesReleased not updated when asserted.",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "finalizer_timing_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: util: fix unstable tests.",
-  "module": "kv",
-  "fix_pattern": "util: fix unstable tests",
+  "root_cause_explanation": "The test depended on Go GC/finalizer timing: calling runtime.GC() does not guarantee finalizers/sweeps have completed. This led to intermittent failures when BytesReleased was not updated in time. The fix polls (GC + short sleep) until the finalizer effects are observed.",
+  "module": "gc",
+  "fix_pattern": "Poll for GC/finalizer completion; do not assume a fixed number of runtime.GC() calls is sufficient.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37570",
     "https://github.com/pingcap/tidb/pull/37570.patch"

@@ -10,22 +10,21 @@
   "test": {
     "type": "unit",
     "path": "testkit/mocksessionmanager.go",
-    "name": "mocksessionmanager"
+    "name": "MockSessionManager"
   },
   "symptoms": [
-    "*: fix race and enable race for concurrent ddl test"
+    "DATA RACE risk: `MockSessionManager` iterates over `msm.conn` without holding its mutex, which can race with concurrent updates in concurrent DDL tests."
   ],
-  "failure_signature": "*: fix race and enable race for concurrent ddl test",
+  "failure_signature": "DATA RACE: `testkit/mocksessionmanager.go` concurrent access to `msm.conn` (race detector).",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix race and enable race for concurrent ddl test.",
+  "root_cause_explanation": "`MockSessionManager` accesses shared state (`msm.conn` / txn info) from multiple goroutines in concurrent DDL tests. The patch fixes a race by adding proper locking around iterations/access (Lock/Unlock or defer Unlock) in methods like `ShowProcessList`, `ShowTxnList`, and `CheckOldRunningTxn`, and enables `-race` for the concurrent DDL test target.",
   "module": "ddl",
-  "fix_pattern": "*: fix race and enable race for concurrent ddl test",
+  "fix_pattern": "Protect `MockSessionManager` shared state with a mutex when iterating/accessing (`msm.mu.Lock()/Unlock()`), and enable race testing for concurrent DDL tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38093",
     "https://github.com/pingcap/tidb/pull/38093.patch"

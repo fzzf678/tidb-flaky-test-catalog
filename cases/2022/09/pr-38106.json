@@ -13,19 +13,18 @@
     "name": "TestConcurrentLoadHistTimeout"
   },
   "symptoms": [
-    "handle_test: fix unstable TestConcurrentLoadHistTimeout"
+    "Timing-dependent assertion: test polled with time.Sleep waiting for background timeout task; unstable across runs."
   ],
-  "failure_signature": "handle_test: fix unstable TestConcurrentLoadHistTimeout",
+  "failure_signature": "Background timeout task completion timing is nondeterministic; sleep-based polling flakes.",
   "root_cause_categories": [
-    "concurrency_data_race",
     "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: handle_test: fix unstable TestConcurrentLoadHistTimeout.",
-  "module": "module_unknown",
-  "fix_pattern": "handle_test: fix unstable TestConcurrentLoadHistTimeout",
+  "root_cause_explanation": "The test depended on a background timeout task completing within an assumed window and used time.Sleep polling to wait. Scheduling variance makes this flaky. The fix removes the timing-dependent wait/assertion from the test.",
+  "module": "statistics",
+  "fix_pattern": "Avoid sleep-based polling for background tasks; remove or refactor timing-dependent assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38106",
     "https://github.com/pingcap/tidb/pull/38106.patch"

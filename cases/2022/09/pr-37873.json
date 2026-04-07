@@ -13,20 +13,18 @@
     "name": "TestParallelDDLBeforeRunDDLJob"
   },
   "symptoms": [
-    "ddl,test: fix unstable test `TestParallelDDLBeforeRunDDLJob`"
+    "Timing/synchronization issue: test used atomic counters + sleep loops and could hang waiting for two sessions."
   ],
-  "failure_signature": "ddl,test: fix unstable test `TestParallelDDLBeforeRunDDLJob`",
+  "failure_signature": "Test may hang or flake due to sleep-based synchronization between sessions.",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl,test: fix unstable test `TestParallelDDLBeforeRunDDLJob`.",
+  "root_cause_explanation": "The test coordinated two sessions using atomic counters and repeated time.Sleep polling, which can hang or behave nondeterministically depending on scheduling. The fix replaces sleep/polling with a WaitGroup and channel signaling to enforce deterministic ordering.",
   "module": "ddl",
-  "fix_pattern": "ddl,test: fix unstable test `TestParallelDDLBeforeRunDDLJob`",
+  "fix_pattern": "Use channels/WaitGroup to synchronize goroutines instead of time.Sleep polling loops.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37873",
     "https://github.com/pingcap/tidb/pull/37873.patch"

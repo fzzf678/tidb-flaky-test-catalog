@@ -13,18 +13,18 @@
     "name": "mdl_test"
   },
   "symptoms": [
-    "*: add more tests for metadata lock and fix data race"
+    "Data race in session transaction context (TxnCtx/relatedTableForMDL) access during cleanup/show process."
   ],
-  "failure_signature": "*: add more tests for metadata lock and fix data race",
+  "failure_signature": "Race detector reports data race on TxnCtx-related fields.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: add more tests for metadata lock and fix data race.",
-  "module": "txn",
-  "fix_pattern": "*: add more tests for metadata lock and fix data race",
+  "root_cause_explanation": "Session transaction context fields were accessed without proper locking (e.g., resetting relatedTableForMDL outside the mutex) and some test helpers returned references to mutable slices/maps. Under concurrent usage this can trigger data races. The fix moves mutations under the appropriate lock and makes helper access patterns safer.",
+  "module": "session",
+  "fix_pattern": "Protect session transaction context with locks; avoid exposing mutable shared state without synchronization.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37930",
     "https://github.com/pingcap/tidb/pull/37930.patch"

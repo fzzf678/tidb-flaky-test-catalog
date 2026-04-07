@@ -13,19 +13,18 @@
     "name": "db_partition_test"
   },
   "symptoms": [
-    "ddl,executor: fix two unstable partitino table unit test cases"
+    "Nondeterministic row order: SELECT results asserted without sorting."
   ],
-  "failure_signature": "ddl,executor: fix two unstable partitino table unit test cases",
+  "failure_signature": "SELECT result order nondeterministic; missing Sort() before Check().",
   "root_cause_categories": [
-    "schema_change_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl,executor: fix two unstable partitino table unit test cases.",
+  "root_cause_explanation": "The tests asserted query results without enforcing order. Without ORDER BY, row order can vary, causing flakes. The fix adds Sort() before comparing expected rows.",
   "module": "ddl",
-  "fix_pattern": "ddl,executor: fix two unstable partitino table unit test cases",
+  "fix_pattern": "Sort query results before asserting rows.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37721",
     "https://github.com/pingcap/tidb/pull/37721.patch"

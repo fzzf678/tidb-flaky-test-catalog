@@ -13,18 +13,18 @@
     "name": "BUILD"
   },
   "symptoms": [
-    "statistics: fix data race in the QueryFeedback"
+    "Leaked background goroutines: go.opencensus view worker not stopped, causing goleak failures."
   ],
-  "failure_signature": "statistics: fix data race in the QueryFeedback",
+  "failure_signature": "goleak reports leaked go.opencensus view worker goroutine.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: remove goleak's ignoring opencensus top function.",
-  "module": "statistics",
-  "fix_pattern": "*: remove goleak's ignoring opencensus top function",
+  "root_cause_explanation": "Tests started OpenCensus view workers that keep background goroutines running. Previously they were ignored via goleak allowlists; this is brittle and can hide leaks. The fix explicitly stops the view worker (view.Stop) in test cleanup so goroutines do not leak between tests/suites.",
+  "module": "test_infra",
+  "fix_pattern": "Stop global/background workers in test teardown (e.g., defer view.Stop()).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37908",
     "https://github.com/pingcap/tidb/pull/37908.patch"

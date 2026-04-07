@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "executor/table_reader.go",
-    "name": "table_reader"
+    "name": "TableReaderExecutor.buildKVReq"
   },
   "symptoms": [
-    "*: fix data race and enable race for tidb-server"
+    "DATA RACE risk: building KV requests using a session/global InfoSchema can race with concurrent schema updates; use transaction InfoSchema snapshot instead."
   ],
-  "failure_signature": "*: fix data race and enable race for tidb-server",
+  "failure_signature": "DATA RACE: concurrent access to InfoSchema during KV request build (race detector).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix data race and enable race for tidb-server.",
-  "module": "server",
-  "fix_pattern": "*: fix data race and enable race for tidb-server",
+  "root_cause_explanation": "When building the KV request, `TableReaderExecutor` previously used `e.ctx.GetInfoSchema()`, which can change concurrently with schema updates and trigger race detector failures in `tidb-server` race runs. The patch switches to `sessiontxn.GetTxnManager(e.ctx).GetTxnInfoSchema()` so request building uses the transaction-level InfoSchema snapshot, avoiding concurrent/unsafe access to the session/global InfoSchema.",
+  "module": "executor",
+  "fix_pattern": "Use transaction InfoSchema snapshot when building KV requests (`GetTxnInfoSchema()` via `sessiontxn.GetTxnManager`) to avoid races with concurrent schema updates.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38176",
     "https://github.com/pingcap/tidb/pull/38176.patch"

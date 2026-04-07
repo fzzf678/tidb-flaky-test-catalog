@@ -13,18 +13,18 @@
     "name": "handle"
   },
   "symptoms": [
-    "domain: fix data race in the Domain.bindHandle"
+    "Data race in Domain.bindHandle lifecycle: reset/recreate without proper synchronization."
   ],
-  "failure_signature": "domain: fix data race in the Domain.bindHandle",
+  "failure_signature": "Race detector reports data race involving Domain.bindHandle / BindHandle internal fields.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: domain: fix data race in the Domain.bindHandle.",
+  "root_cause_explanation": "Domain.LoadBindInfoLoop updated the bind handle in a way that could race with concurrent readers (e.g., replacing/resetting internal state without a dedicated reset path). The fix introduces a BindHandle.Reset method that resets internal state under locks and avoids unsafe replacement patterns, reducing data race risk.",
   "module": "domain",
-  "fix_pattern": "domain: fix data race in the Domain.bindHandle",
+  "fix_pattern": "Reset shared handles under lock instead of replacing them unsafely; ensure concurrent readers see consistent state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38223",
     "https://github.com/pingcap/tidb/pull/38223.patch"

@@ -13,19 +13,18 @@
     "name": "cbo_test"
   },
   "symptoms": [
-    "tk.MustExec(\"update tb1 set tb1.b=(select tb2.b from tb2 where tb2.a=tb1.a order by c desc limit 1);\") (planner/core/cbo_test.go)"
+    "Planner bugfix + explain golden update; no explicit flaky signature/stabilization change."
   ],
-  "failure_signature": "tk.MustExec(\"update tb1 set tb1.b=(select tb2.b from tb2 where tb2.a=tb1.a order by c desc limit 1);\") (planner/core/cbo_test.go)",
+  "failure_signature": "No explicit flaky signature; needs more evidence.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Patch is a planner/optimizer bugfix with corresponding explain golden updates. There is no clear flaky-test failure signature or stabilization technique shown in the diff.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Bugfix PR with deterministic test updates; keep needs_more_evidence for flaky classification.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/37582",
     "https://github.com/pingcap/tidb/pull/37582.patch"
