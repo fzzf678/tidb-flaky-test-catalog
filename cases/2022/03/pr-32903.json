@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(`SELECT SUBTIME(a, '00:00:00.000001') FROM t ORDER BY a;`).Check(testkit.Rows(\"1000-01-01 00:59:59.999999\", \"1000-01-01 01:00:00.000000\")) (expression/integration_serial_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch fixes a deterministic correctness/overflow issue in `SUBTIME` implementation (switching to `time.Add()` to avoid overflow). The captured signal shows an ordered query (`ORDER BY a`) with exact expected results, and the case does not provide a flaky failure signature (e.g., intermittent mismatch under CI load). Treat this as insufficient evidence rather than mislabeling it as ordering flakiness.",
   "module": "expression",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32903",
     "https://github.com/pingcap/tidb/pull/32903.patch"

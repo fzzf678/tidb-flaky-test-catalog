@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from t1 order by a\").Check(testkit.Rows(\"4 5\", \"10 11\")) (ddl/column_modify_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR migrates part of the DDL test suite from legacy gocheck-style suites to testify. Test-framework migration / suite refactor can stabilize suite lifecycle and reduce flakiness introduced by deprecated test frameworks.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Migrate legacy gocheck-based DDL tests to testify (modern Go `testing.T` patterns), updating suite setup/teardown and assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33258",
     "https://github.com/pingcap/tidb/pull/33258.patch"

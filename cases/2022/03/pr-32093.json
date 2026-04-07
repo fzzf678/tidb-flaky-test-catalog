@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from t3 where t3.a <> ALL (select t1.a from t1 partition (p0)) order by t3.a\").Sort().Check(testkit.Rows(\"10 10\", \"11 11\", \"12 12\", \"13 13\", \"14 14\", \"15 15\", \"16 16\", \"17 17\", \"18 18\", \"19 19\", \"20 20\", \"21 21\", \"22 22\", \"23 23\", \"5 5\", \"6 6\", \"7 7\", \"8 8\", \"9 9\")) (planner/core/partition_pruner_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily planner/executor correctness work for explicit partition pruning in index joins, and updates related tests. The available case data does not include a concrete flaky failure signature or a targeted stabilization change, so we conservatively mark it as insufficient evidence.",
+  "module": "planner",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32093",
     "https://github.com/pingcap/tidb/pull/32093.patch"

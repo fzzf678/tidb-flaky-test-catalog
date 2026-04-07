@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select query_time, conn_id from `CLUSTER_SLOW_QUERY` order by time limit 1\").Check(testkit.Rows(\"4.895492 6\")) (infoschema/cluster_tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "server",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The PR is primarily about removing the deprecated `tidb_enable_streaming` system variable. The captured flaky signal (asserting an exact `query_time`/`conn_id` row from `CLUSTER_SLOW_QUERY`) does not clearly map to a targeted stabilization change in the patch, so we cannot confidently classify the underlying root cause from this case alone.",
+  "module": "domain",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32765",
     "https://github.com/pingcap/tidb/pull/32765.patch"

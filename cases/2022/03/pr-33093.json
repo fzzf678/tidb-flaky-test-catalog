@@ -17,14 +17,15 @@
   ],
   "failure_signature": "Try to make the function stable and remove it from the unstable list.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "time_sleep_for_sync",
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test depends on time-based behavior (`now(6)` / `AS OF TIMESTAMP`) and used an extremely small sleep window, which is brittle under CI timing jitter or coarse clock resolution. This PR stabilizes the test by adding a larger timing buffer (e.g., `time.Sleep(100ms)`) around the timestamp capture and by using query assertions that fail fast when unexpected errors occur.",
   "module": "executor",
-  "fix_pattern": "executor: make CI function TestInvalidReadCacheTable more stable",
+  "fix_pattern": "Avoid microsecond-scale sleeps in time-sensitive tests; add a sufficient timing buffer around `now()`/stale-read (`AS OF TIMESTAMP`) boundaries to make eventual/clock-dependent behavior stable in CI.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33093",
     "https://github.com/pingcap/tidb/pull/33093.patch"

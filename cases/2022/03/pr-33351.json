@@ -17,15 +17,15 @@
   ],
   "failure_signature": "executor: fix unstable test TestPlanCacheWithStaleReadByBinaryProto",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "plan_cache_dependency",
-    "assert_exact_plan_or_cost"
+    "clock_skew_dependency",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: executor: fix unstable test TestPlanCacheWithStaleReadByBinaryProto.",
+  "root_cause_explanation": "The test depends on time-based stale reads (`AS OF TIMESTAMP`) and plan-cache execution, and was unstable due to local time skew / insufficient timing buffer around capturing `now(6)` for the snapshot timestamp. This PR stabilizes it by adding a larger sleep window and adjusting when the timestamp variable is set so the stale-read snapshot boundary is deterministic under CI timing jitter.",
   "module": "executor",
-  "fix_pattern": "executor: fix unstable test TestPlanCacheWithStaleReadByBinaryProto",
+  "fix_pattern": "Avoid tight timing windows in stale-read/`AS OF TIMESTAMP` tests: add sufficient buffer around `now()` capture and ensure snapshot timestamps are set deterministically so CI clock jitter does not flip expected results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33351",
     "https://github.com/pingcap/tidb/pull/33351.patch"

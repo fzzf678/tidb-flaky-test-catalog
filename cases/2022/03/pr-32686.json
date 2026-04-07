@@ -17,15 +17,14 @@
   ],
   "failure_signature": "- c.Skip(\"race detected, skip it temporarily and fix it before 20210619\")",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "race_condition_in_async_code",
-    "t_parallel_with_shared_state"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: migrate test-infra to testify for parallel_apply_test.go.",
+  "root_cause_explanation": "This PR migrates `executor/parallel_apply_test` from legacy gocheck-style suites to testify. The test has an explicit skip note about race detection; framework migration / suite refactor is often a prerequisite to properly fix and re-enable previously skipped unstable tests.",
   "module": "executor",
-  "fix_pattern": "executor: migrate test-infra to testify for parallel_apply_test.go",
+  "fix_pattern": "Migrate legacy gocheck-based executor tests to testify (modern Go `testing.T` patterns), updating suite setup/teardown and assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32686",
     "https://github.com/pingcap/tidb/pull/32686.patch"

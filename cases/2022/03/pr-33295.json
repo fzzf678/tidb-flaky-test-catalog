@@ -17,14 +17,14 @@
   ],
   "failure_signature": "The infoschema tests are unstable. This is caused by the HOST portion of the processlist now including the peer port (from https://github.com/pingcap/tidb/pull/30183 ). The solution is just to not include this in the results.",
   "root_cause_categories": [
-    "schema_change_race"
+    "external_dependency"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: infoschema: stabalize TestSelectClusterTable test.",
+  "root_cause_explanation": "The test asserted on `CLUSTER_PROCESSLIST`/infoschema output that includes the peer host:port. After upstream changes, the HOST field started including a peer port which can vary across environments/runs, making the assertion flaky. This PR stabilizes the test by no longer including the unstable port component in the checked results.",
   "module": "domain",
-  "fix_pattern": "infoschema: stabalize TestSelectClusterTable test",
+  "fix_pattern": "Avoid asserting on unstable host:port values in cluster tables/processlist output; strip/ignore the port portion or assert only on stable fields.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33295",
     "https://github.com/pingcap/tidb/pull/33295.patch"

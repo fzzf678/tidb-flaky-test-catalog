@@ -17,14 +17,14 @@
   ],
   "failure_signature": "expr: switch off funticon push down which caused unstable test",
   "root_cause_categories": [
-    "external_dependency"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "unsupported_pushdown"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: expr: switch off funticon push down which caused unstable test.",
-  "module": "module_unknown",
-  "fix_pattern": "expr: switch off funticon push down which caused unstable test",
+  "root_cause_explanation": "The test was unstable because certain scalar functions (`tan`, `yearweek`) were being pushed down to the coprocessor path and sometimes failed in copr-tests (environment-dependent / hard to reproduce locally). This PR stabilizes the behavior by disabling pushdown for those functions to avoid the risky/unsupported pushdown path.",
+  "module": "expression",
+  "fix_pattern": "Disable or gate pushdown for risky/unsupported expressions/functions so tests do not depend on unstable coprocessor evaluation paths.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33421",
     "https://github.com/pingcap/tidb/pull/33421.patch"

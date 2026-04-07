@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ddl: fix an unstable test case TestDDLStatsInfo",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix an unstable test case TestDDLStatsInfo.",
+  "root_cause_explanation": "The test used a failpoint/channel notification to check DDL stats during backfill, but the notification ordering was not synchronized (the DDL worker continued after sending, while the test-side checks were still in progress). This created a race between async DDL progress and assertions. The fix adds an explicit synchronization handshake (e.g., sending a `*sync.WaitGroup` through the channel) so the worker waits until the test finishes checking.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix an unstable test case TestDDLStatsInfo",
+  "fix_pattern": "Add an explicit synchronization handshake between the DDL worker failpoint and the test assertions (e.g., `WaitGroup` ack) to avoid ordering races when checking DDL stats.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32709",
     "https://github.com/pingcap/tidb/pull/32709.patch"

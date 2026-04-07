@@ -22,9 +22,9 @@
   "review_smells": [
     "network_without_retry"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: lightning: revert custom gRPC resolver.",
+  "root_cause_explanation": "The Lightning/BR code introduced a custom gRPC resolver for TiKV address changes, but it did not handle TLS configuration correctly. This could cause environment/network-dependent failures in Lightning tests. This PR stabilizes the behavior by reverting the custom resolver path and relying on the standard gRPC resolver/TLS handling.",
   "module": "lightning",
-  "fix_pattern": "lightning: revert custom gRPC resolver",
+  "fix_pattern": "Revert/remove custom network resolver logic that mishandles TLS or cluster address changes; rely on standard gRPC resolver/TLS handling to avoid environment-dependent failures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33115",
     "https://github.com/pingcap/tidb/pull/33115.patch"

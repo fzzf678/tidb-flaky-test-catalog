@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test relied on nondeterministic ordering when collecting `tableids` (e.g., map/iterator order is not guaranteed), causing intermittent assertion failures. This PR stabilizes it by explicitly sorting `tableids` before comparing/asserting.",
+  "module": "planner",
+  "fix_pattern": "Sort collected IDs/rows before assertions; never rely on Go map iteration order or implicit iteration order when comparing results in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33498",
     "https://github.com/pingcap/tidb/pull/33498.patch"

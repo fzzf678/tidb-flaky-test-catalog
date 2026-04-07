@@ -20,11 +20,11 @@
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "plan_cache_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: Updated failing test after #33098.",
+  "root_cause_explanation": "The test relied on plan cache behavior (checking `@@last_plan_from_cache`) with a hardcoded expectation that did not hold for all partitioned table variants after upstream changes. This caused instability/failures and the test was kept in the unstable list. The fix updates the expected `last_plan_from_cache` value per case so the assertion matches actual plan cache behavior and the test can be removed from `unstable.txt`.",
   "module": "planner",
-  "fix_pattern": "planner: Updated failing test after #33098",
+  "fix_pattern": "When asserting plan cache behavior, avoid hardcoded expectations; assert `@@last_plan_from_cache` based on the specific statement/data source behavior (or explicitly reset/disable plan cache) to keep tests stable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33299",
     "https://github.com/pingcap/tidb/pull/33299.patch"

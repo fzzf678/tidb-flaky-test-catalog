@@ -17,16 +17,14 @@
   ],
   "failure_signature": "-// this SerialSuites is used to solve the data race caused by TableStatsCacheExpiry, | tk.MustQuery(\"select * from t order by c_int;\").Check(testkit.RowsWithSep(\"|\", \"21|silver sight\", \"22|gold witch\", \"24|gray singer\")) (executor/write_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "test_infra_migration"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR migrates executor infoschema-related tests from legacy gocheck suites (including `SerialSuites`) to testify/require with standard Go `testing.T` patterns. The original test suite explicitly notes a data-race risk around `executor.TableStatsCacheExpiry`, and framework/suite refactors are often required to stabilize setup/teardown and reduce flakiness.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Migrate legacy gocheck-based executor test suites to testify (`testing.T` + `require`), replacing suite/SerialSuites usage with explicit per-test setup/cleanup.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32688",
     "https://github.com/pingcap/tidb/pull/32688.patch"
