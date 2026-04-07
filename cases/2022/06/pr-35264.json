@@ -17,15 +17,14 @@
   ],
   "failure_signature": "// Default RPC encoding may cause statistics explain result differ and then the test unstable. | err = tk.ExecToErr(\"UPDATE t SET c2=16777215 WHERE c1>= -8388608 AND c1 < -9 ORDER BY c1 LIMIT 2\") (executor/write_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds planner support for the leading hint on outer joins and updates planner rule/testdata. The available case evidence does not provide a concrete flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as `insufficient_evidence`.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Planner feature: support leading hint for outer join; update join reorder rules and testdata.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35264",
     "https://github.com/pingcap/tidb/pull/35264.patch"

@@ -23,9 +23,9 @@
     "assert_exact_plan_or_cost",
     "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: *: implement chunk rpc encoding for unistore.",
+  "root_cause_explanation": "Some tests assert exact statistics/EXPLAIN outputs, but the default RPC encoding mode (chunk RPC on/off) can change statistics-related EXPLAIN results. This PR makes `CreateSession4Test` cover both encodings, which can make these EXPLAIN snapshot tests unstable if they rely on defaults. The stabilization in this patch is to force a deterministic configuration by explicitly setting `set @@tidb_enable_chunk_rpc = on` before running the relevant EXPLAIN/statistics assertions.",
   "module": "planner",
-  "fix_pattern": "*: implement chunk rpc encoding for unistore",
+  "fix_pattern": "Force a consistent RPC encoding (`set @@tidb_enable_chunk_rpc = on`) in EXPLAIN/statistics-sensitive tests to avoid golden output drifting across encoding modes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35114",
     "https://github.com/pingcap/tidb/pull/35114.patch"

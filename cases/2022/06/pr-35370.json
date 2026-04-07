@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: charset: fix data race in the Collation.IsDefault.",
+  "root_cause_explanation": "The test triggered a data race in collation logic (`Collation.IsDefault`) when subcases ran concurrently. The patch stabilizes the test by removing goroutines/WaitGroup usage and running the `testLock(...)` subcases sequentially, avoiding concurrent access that caused the race report.",
   "module": "parser",
-  "fix_pattern": "charset: fix data race in the Collation.IsDefault",
+  "fix_pattern": "Remove parallel goroutines in `TestPointGetLockExistKey` and run subcases sequentially to avoid `Collation.IsDefault` data race under `-race`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35370",
     "https://github.com/pingcap/tidb/pull/35370.patch"

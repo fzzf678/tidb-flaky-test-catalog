@@ -17,14 +17,14 @@
   ],
   "failure_signature": "+ // Use the testSerialSuite to fix the unstable test",
   "root_cause_categories": [
-    "test_infra_migration"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "test_suite_setup_issue"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to instability introduced during test-infrastructure migration or refactoring (framework changes, fixtures/setup/teardown, or helper updates). This PR stabilizes it by: sessionctx, types, executor: support encoding and decoding user-defined variables.",
+  "root_cause_explanation": "The patch notes an unstable executor test setup due to shared/global state: some tests need to mutate global configuration (e.g., `Security.SkipGrantTable`) and are sensitive to suite ordering/parallelism. The stabilization is to isolate the setup into a dedicated suite/bootstrapping path and to restore global config, and to run the previously unstable test (`TestDropPartitionStats`) under a serial suite to reduce shared-state interference.",
   "module": "executor",
-  "fix_pattern": "sessionctx, types, executor: support encoding and decoding user-defined variables",
+  "fix_pattern": "Stabilize suite setup by isolating tests that mutate global config (restore after use) and running the previously unstable case under a serial suite to reduce shared-state interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/35343",
     "https://github.com/pingcap/tidb/pull/35343.patch"
