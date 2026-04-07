@@ -17,14 +17,16 @@
   ],
   "failure_signature": "The privileges test has leaks. It might be related to the go 1.18 upgrade since nothing has changed.. but it could also be a race that is now common since I had previously seen these errors but they went away.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "external_dependency",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "hardcoded_port_or_resource",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: privilege/privileges, server: stabalize tests.",
-  "module": "server",
-  "fix_pattern": "privilege/privileges, server: stabalize tests",
+  "root_cause_explanation": "The server test was flaky because it bound to default ports (4000/10080), which can conflict with a locally running TiDB or other processes. The privileges test was flaky due to goroutine/leak checks being triggered by background goroutines. This PR stabilizes the tests by using ephemeral ports (`Port=0` / `StatusPort=0`) and by extending goleak ignore rules for known background goroutines.",
+  "module": "test_infra",
+  "fix_pattern": "Avoid hardcoded ports in tests by binding to port 0 (ephemeral ports); ensure background goroutines are properly cleaned up or explicitly ignored in goleak for known benign goroutines to reduce leak-related flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33246",
     "https://github.com/pingcap/tidb/pull/33246.patch"

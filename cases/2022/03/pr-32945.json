@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: table: fix ForListColumnPruning.valueMap's data race.",
+  "root_cause_explanation": "`ForListColumnPruning.valueMap` could be read/written concurrently when `LocatePartition` is called in parallel, leading to `fatal error: concurrent map writes` (and/or race detector warnings). This PR fixes the flakiness by adding proper synchronization (a lock) to make access to `valueMap` thread-safe.",
   "module": "module_unknown",
-  "fix_pattern": "table: fix ForListColumnPruning.valueMap's data race",
+  "fix_pattern": "Protect shared mutable state (`ForListColumnPruning.valueMap`) with proper synchronization (e.g., a mutex) to avoid concurrent map writes under parallel partition lookup.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32945",
     "https://github.com/pingcap/tidb/pull/32945.patch"

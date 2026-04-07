@@ -17,15 +17,14 @@
   ],
   "failure_signature": "- // Set projection concurrency to avoid data race here. | tk.MustQuery(\"select * from t order by en;\").Check(testkit.Rows(\"c\", \"b\", \"a\")) (executor/executor_issue_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR migrates parts of executor tests from legacy gocheck-style suites to testify/require. Test-framework migrations often stabilize suite lifecycle / setup/teardown and reduce flaky behavior introduced by deprecated test frameworks.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Migrate legacy gocheck-based executor tests to testify (modern Go `testing.T` patterns), updating suite setup/teardown and assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32884",
     "https://github.com/pingcap/tidb/pull/32884.patch"

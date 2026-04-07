@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// report unexpected/unreasonable data race error on subIndexWorkerWg when running TestAnalyzeVirtualCol test",
   "root_cause_categories": [
-    "schema_change_race"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: migrate test-infra to testify for testDBSuite1 and testDBSuite2.",
+  "root_cause_explanation": "This PR migrates parts of the DDL test suite (including `TestAnalyzeVirtualCol`) from legacy gocheck-style suites to testify. The test suite contains an explicit note about unexpected data race errors, and framework migration / suite refactor is often required to stabilize lifecycle and reduce flaky behavior in such tests.",
   "module": "ddl",
-  "fix_pattern": "ddl: migrate test-infra to testify for testDBSuite1 and testDBSuite2",
+  "fix_pattern": "Migrate legacy gocheck-based DDL tests to testify (modern Go `testing.T` patterns), updating suite setup/teardown and assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32992",
     "https://github.com/pingcap/tidb/pull/32992.patch"

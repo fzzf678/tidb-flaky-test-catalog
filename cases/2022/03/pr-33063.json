@@ -17,14 +17,14 @@
   ],
   "failure_signature": "util: fix unstable test in the TestNotifyErrorWaitGroupWrapper",
   "root_cause_categories": [
-    "async_timing_issue"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "async_wait_without_backoff"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). Fixed waits without polling/backoff are brittle under CI timing jitter. This PR stabilizes it by: util: fix unstable test in the TestNotifyErrorWaitGroupWrapper.",
-  "module": "module_unknown",
-  "fix_pattern": "util: fix unstable test in the TestNotifyErrorWaitGroupWrapper",
+  "root_cause_explanation": "`NotifyErrorWaitGroupWrapper` had a concurrency/ordering issue in multi-producer scenarios (goroutines finishing quickly could cause the wait/notify lifecycle to complete early), making `TestNotifyErrorWaitGroupWrapper` flaky. This PR fixes the race by ensuring the notify channel is only closed after all producer goroutines have finished (deterministic join/close ordering).",
+  "module": "test_infra",
+  "fix_pattern": "Fix wait-group wrapper lifecycle: ensure all producer goroutines are joined before closing the notify channel to avoid racey early completion in concurrent tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33063",
     "https://github.com/pingcap/tidb/pull/33063.patch"

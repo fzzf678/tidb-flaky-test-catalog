@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: fix data race in TestTiFlashBatchRateLimiter",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix data race in TestTiFlashBatchRateLimiter.",
+  "root_cause_explanation": "The test triggered a concurrency/data-race issue where `session.Close()` was invoked from multiple goroutines (not thread-safe), leading to nondeterministic failures under `-race` or concurrent execution. This PR fixes the flakiness by protecting the close path with proper synchronization so the session is closed safely exactly once.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix data race in TestTiFlashBatchRateLimiter",
+  "fix_pattern": "Protect non-thread-safe session lifecycle operations (e.g., `Close()`) with proper synchronization (mutex/once) to avoid concurrent close races in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33006",
     "https://github.com/pingcap/tidb/pull/33006.patch"

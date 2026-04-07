@@ -17,15 +17,14 @@
   ],
   "failure_signature": "rs, err := tk.Session().Execute(ctx, \"select /*+ time_range('2020-02-12 10:35:00','2020-02-12 10:37:00') */ item, type, instance,status_address, value, reference, details from information_schema.inspection_result where rule='threshold-check' order by item\") (executor/inspection_result_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "missing_order_by",
-    "relying_on_map_iteration_order"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR migrates `inspection_result_test.go` from legacy gocheck-style suites to testify. Framework migration can reduce flaky suite lifecycle / fixture issues by adopting modern `testing.T` + testify patterns.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Migrate gocheck-based executor tests to testify (modern Go `testing.T` patterns), updating suite setup/teardown and assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32511",
     "https://github.com/pingcap/tidb/pull/32511.patch"

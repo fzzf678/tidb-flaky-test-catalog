@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: lightning: support inject external storage when as library.",
+  "root_cause_explanation": "Lightning had a potential data race around progress initialization (shared init code could run concurrently). This PR stabilizes the behavior by guarding the one-time initialization path (e.g., using `sync.Once` via `initProgressOnce`) so progress is initialized exactly once even under concurrent execution.",
   "module": "lightning",
-  "fix_pattern": "lightning: support inject external storage when as library",
+  "fix_pattern": "Guard shared one-time initialization (progress setup) with `sync.Once`/locking to avoid concurrent init data races in Lightning.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33303",
     "https://github.com/pingcap/tidb/pull/33303.patch"

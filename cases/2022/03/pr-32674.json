@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// this test file include some test that will cause data race, mainly because restartWorkers modify d.ctx",
   "root_cause_categories": [
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: cleanup redundant globally settings for tests.",
+  "root_cause_explanation": "The DDL test suite mutates and initializes global/shared state (e.g., `config.UpdateGlobal`, `autoid.SetStep`, `ReorgWaitTimeout`, `infosync.GlobalInfoSyncerInit`) across multiple test entrypoints/files, which can cause cross-test interference and flaky behavior. The patch stabilizes the suite by removing redundant per-file global setup and centralizing shared initialization in `TestMain`, reducing shared-state pollution between tests.",
   "module": "ddl",
-  "fix_pattern": "ddl: cleanup redundant globally settings for tests",
+  "fix_pattern": "Avoid scattered global config/initializer mutations across test files; centralize shared setup in `TestMain` and ensure global state is initialized once (or restored) to reduce cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32674",
     "https://github.com/pingcap/tidb/pull/32674.patch"

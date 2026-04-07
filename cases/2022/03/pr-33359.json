@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"explain format='brief' SELECT /*+ merge_join(t1, t2)*/ * FROM (t1 LEFT JOIN t2 ON t1.col1=t2.id) order by t2.id;\").Check( (planner/core/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The planner previously allowed an outer merge join to incorrectly inherit/keep the ordering property of its inner child, which can change plan properties and break tests that assert exact `EXPLAIN` output. This PR fixes the optimizer rule (rejecting that property propagation case) and updates the corresponding integration-test expected plans.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Fix optimizer property derivation: do not propagate/assume inner-child order preservation for outer merge joins; update plan-test expectations accordingly.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33359",
     "https://github.com/pingcap/tidb/pull/33359.patch"

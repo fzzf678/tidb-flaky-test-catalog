@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: remove race skip for test",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: remove race skip for test.",
+  "root_cause_explanation": "The DDL test had been temporarily skipped under `-race` due to known race issues. This PR removes the skip guard to re-enable the race test (assuming the underlying race condition has been addressed), improving coverage and reducing the chance of hiding concurrency flakes.",
   "module": "ddl",
-  "fix_pattern": "ddl: remove race skip for test",
+  "fix_pattern": "Remove temporary `Skip` guards for race tests only after the underlying data race is fixed; keep concurrent test code properly synchronized to avoid regressions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33324",
     "https://github.com/pingcap/tidb/pull/33324.patch"
