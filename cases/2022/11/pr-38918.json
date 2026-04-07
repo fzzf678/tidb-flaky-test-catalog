@@ -13,18 +13,18 @@
     "name": "session_test"
   },
   "symptoms": [
-    "*: avoid special cases DATA RACE"
+    "Race detector reported a data race around session chunk allocator reuse: after a SQL execution error, unfinished goroutines could continue using the session allocator / reused chunks, leading to concurrent access."
   ],
-  "failure_signature": "*: avoid special cases DATA RACE",
+  "failure_signature": "DATA RACE involving session chunk allocator / reuse-chunk pool (race detector).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: avoid special cases DATA RACE.",
+  "root_cause_explanation": "The flakiness was caused by a concurrency data race: session-level chunk allocator/reuse pool state could be accessed by unfinished goroutines after a SQL execution error, so the session allocator/chunk reuse objects were not safely isolated per statement. This PR mitigates the race by adjusting allocator lifecycle (clearing/replacing allocator state on error paths), adding type verification for reused columns, and updating tests to use the new allocator APIs.",
   "module": "session",
-  "fix_pattern": "*:  avoid special cases DATA RACE",
+  "fix_pattern": "Isolate/replace session chunk allocator state on error paths to prevent unfinished goroutines from reusing shared allocator/chunk state (avoid data races).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38918",
     "https://github.com/pingcap/tidb/pull/38918.patch"

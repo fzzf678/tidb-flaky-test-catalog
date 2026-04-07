@@ -13,18 +13,18 @@
     "name": "main_test"
   },
   "symptoms": [
-    "*: data race in the statisticstest"
+    "Statisticstest TestMain had suite-level setup (testsetup + goleak) that conflicted with realtikvtest.RunTestMain and caused instability (data race / goleak)."
   ],
-  "failure_signature": "*: data race in the statisticstest",
+  "failure_signature": "DATA RACE / goleak failures in tests/realtikvtest/statisticstest TestMain.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "test_suite_setup_issue"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix goleak in the statisticstest.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix goleak in the statisticstest",
+  "root_cause_explanation": "Statisticstest defined its own TestMain that performed common test setup and ran goleak verification, but realtikvtest.RunTestMain already provides suite-level initialization for realtikv tests. The duplicated/conflicting suite setup can introduce instability (e.g., data race or goleak failures). This PR stabilizes the suite by removing the extra testsetup/goleak logic and relying on realtikvtest.RunTestMain only.",
+  "module": "statistics",
+  "fix_pattern": "Use realtikvtest.RunTestMain only; remove redundant testsetup/goleak in TestMain.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39503",
     "https://github.com/pingcap/tidb/pull/39503.patch"

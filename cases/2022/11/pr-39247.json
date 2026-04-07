@@ -13,19 +13,18 @@
     "name": "multi_schema_change_test"
   },
   "symptoms": [
-    "ddl: stabilize multi-schema change tests"
+    "Multi-schema change cancel-hook tests can be flaky when the hook observes non-multi-schema DDL jobs and cancels/asserts on the wrong job."
   ],
-  "failure_signature": "ddl: stabilize multi-schema change tests",
+  "failure_signature": "Cancel hook/assertMultiSchema fails or tests time out waiting for the expected multi-schema DDL job to reach a target state.",
   "root_cause_categories": [
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "ddl_without_wait"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: stabilize multi-schema change tests.",
+  "root_cause_explanation": "These tests use a cancel hook that inspects running DDL jobs and assumes the job is a multi-schema change job. In practice, other DDL jobs may be observed, causing the hook/assertions to act on the wrong job and making the tests flaky. This PR stabilizes the suite by skipping non-multi-schema change jobs in the hook (job.Type check) and avoiding hard assertions on job.Type inside assertMultiSchema().",
   "module": "ddl",
-  "fix_pattern": "ddl: stabilize multi-schema change tests",
+  "fix_pattern": "Filter cancel hook to only handle ActionMultiSchemaChange DDL jobs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39247",
     "https://github.com/pingcap/tidb/pull/39247.patch"

@@ -13,19 +13,18 @@
     "name": "plan_cost_ver2_test"
   },
   "symptoms": [
-    "sql := \"select sum(t1.b), t1.a from t t1, t t2 where t1.a>0 and t2.a>10 and t1.b=t2.b group by t1.a order by t1.a limit 5\" (planner/core/plan_cost_ver2_test.go)"
+    "Planner cost trace performance optimization and related test/benchmark updates; no concrete flaky failure signature is captured in this case."
   ],
-  "failure_signature": "sql := \"select sum(t1.b), t1.a from t t1, t t2 where t1.a>0 and t2.a>10 and t1.b=t2.b group by t1.a order by t1.a limit 5\" (planner/core/plan_cost_ver2_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (performance refactor + benchmark/test updates).",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch is a performance-focused refactor/optimization of cost trace, adds a benchmark (BenchmarkGetPlanCost), and updates expected cost formula strings in tests. It does not provide a concrete intermittent flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Optimize planner cost trace performance and update related tests/benchmarks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39385",
     "https://github.com/pingcap/tidb/pull/39385.patch"

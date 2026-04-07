@@ -13,19 +13,18 @@
     "name": "db_integration_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select (a & 3) from t order by 1;\").Check(testkit.Rows(\"1\", \"2\")) (ddl/db_integration_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; this PR is a large refactor around auto_increment/_tidb_rowid allocator behavior when AUTO_ID_CACHE=1 (with many code/test updates)."
   ],
-  "failure_signature": "tk.MustQuery(\"select (a & 3) from t order by 1;\").Check(testkit.Rows(\"1\", \"2\")) (ddl/db_integration_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (feature/refactor + tests).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR separates the auto_increment ID allocator from the _tidb_rowid allocator when AUTO_ID_CACHE=1 and updates a broad set of DDL/executor/autoid components and tests. The patch does not provide a concrete flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence.",
+  "module": "ddl",
+  "fix_pattern": "Separate auto_increment allocator from _tidb_rowid allocator when AUTO_ID_CACHE=1 and update related components/tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39041",
     "https://github.com/pingcap/tidb/pull/39041.patch"

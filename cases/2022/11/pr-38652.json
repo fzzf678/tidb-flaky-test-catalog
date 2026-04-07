@@ -13,19 +13,18 @@
     "name": "foreign_key_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select id, a, b from t1 where id in (1,2) order by id\").Check(testkit.Rows(\"1 111 221\", \"2 112 222\")) (executor/fktest/foreign_key_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; the change primarily implements foreign key ON UPDATE CASCADE behavior and expands related tests."
   ],
-  "failure_signature": "tk.MustQuery(\"select id, a, b from t1 where id in (1,2) order by id\").Check(testkit.Rows(\"1 111 221\", \"2 112 222\")) (executor/fktest/foreign_key_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (feature change + tests).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR implements foreign key ON UPDATE CASCADE behavior and adds/updates extensive foreign key test coverage. The patch does not provide a concrete flaky failure signature or a targeted stabilization fix for an intermittent failure, so keep this case as needs-more-evidence.",
+  "module": "executor",
+  "fix_pattern": "Implement foreign key ON UPDATE CASCADE behavior and update foreign key tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38652",
     "https://github.com/pingcap/tidb/pull/38652.patch"

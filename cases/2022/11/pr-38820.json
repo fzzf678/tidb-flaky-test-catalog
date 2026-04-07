@@ -13,18 +13,18 @@
     "name": "TestCacheTableBasicReadAndWrite"
   },
   "symptoms": [
-    "table/tables: fix unstable test TestCacheTableBasicReadAndWrite"
+    "TestCacheTableBasicReadAndWrite polled on cache state, but asserted stale rows in the loop; the UPDATE could become visible earlier than expected, causing intermittent assertion failures."
   ],
-  "failure_signature": "table/tables: fix unstable test TestCacheTableBasicReadAndWrite",
+  "failure_signature": "Intermittent mismatch in expected rows while polling (cache state vs. visibility of updated row).",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: table/tables: fix unstable test TestCacheTableBasicReadAndWrite.",
-  "module": "kv",
-  "fix_pattern": "table/tables: fix unstable test TestCacheTableBasicReadAndWrite",
+  "root_cause_explanation": "The test was flaky due to timing around cache state/visibility: after another session updates a row, the test loops while `lastReadFromCache(tk)` is false but still asserts a fixed (stale) result set. Depending on when the UPDATE becomes visible, the loop could observe the new value and fail. The fix updates the expected rows in the polling loop to match the updated value, making the assertion consistent with the observed behavior while waiting.",
+  "module": "module_unknown",
+  "fix_pattern": "Fix polling assertions in cache-related tests to tolerate timing/visibility changes (avoid asserting stale rows while waiting).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38820",
     "https://github.com/pingcap/tidb/pull/38820.patch"

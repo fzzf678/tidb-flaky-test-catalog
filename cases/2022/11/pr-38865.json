@@ -13,18 +13,18 @@
     "name": "executor_test"
   },
   "symptoms": [
-    "err := tk.QueryToErr(\"select * from t order by a\") (executor/executor_test.go)"
+    "No explicit flaky failure signature is described in the PR or reflected in the patch; the change adds a sort checkpoint to periodically detect kill signals and adds a failpoint-based test."
   ],
-  "failure_signature": "err := tk.QueryToErr(\"select * from t order by a\") (executor/executor_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (bug fix + tests).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds a checkpoint inside `SortedRowContainer.Sort()` (triggering `memTracker.Consume(...)` periodically) so long-running sorts can detect outside kill/NeedKill signals, and it adds a failpoint-based unit test. The patch does not provide a concrete flaky failure signature or CI evidence of an intermittent flake being fixed, so we conservatively keep this case as needs-more-evidence.",
+  "module": "executor",
+  "fix_pattern": "Add periodic kill-signal checkpoints during sort (memTracker consume) and add a failpoint-based unit test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38865",
     "https://github.com/pingcap/tidb/pull/38865.patch"

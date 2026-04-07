@@ -13,16 +13,16 @@
     "name": "dm_tracker_test"
   },
   "symptoms": [
-    "before this PR, DM needs to clone the TableInfo after reading in order to avoid data race with SchemaTracker, but that consumes much memory. After this PR TableInfo is immutable so no need to clone it."
+    "Data race risk between DM reading `TableInfo` and SchemaTracker mutating the same in-memory metadata; readers needed to clone defensively to avoid races."
   ],
-  "failure_signature": "before this PR, DM needs to clone the TableInfo after reading in order to avoid data race with SchemaTracker, but that consumes much memory. After this PR TableInfo is immutable so no need to clone it.",
+  "failure_signature": "Potential DATA RACE on shared `TableInfo`/schema metadata between readers and SchemaTracker mutations.",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: schematracker: treat TableInfo as immutable.",
+  "root_cause_explanation": "The issue was caused by shared mutable metadata: SchemaTracker stored `DBInfo`/`TableInfo` pointers that could later be mutated in place, so other components (like DM) reading the same objects could race with SchemaTracker updates. This PR treats stored metadata as immutable by cloning `DBInfo`/`TableInfo` before applying DDL changes and then writing the cloned copy back, avoiding in-place mutation and reducing reader-side cloning needs.",
   "module": "ddl",
   "fix_pattern": "schematracker: treat TableInfo as immutable",
   "evidence_links": [

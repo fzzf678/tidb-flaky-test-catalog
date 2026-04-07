@@ -13,20 +13,19 @@
     "name": "partition_table_test"
   },
   "symptoms": [
-    "// explain select * from t where a > {y} use index(idx_a) order by a limit {x}; // check if IndexLookUp is used (executor/partition_table_test.go)"
+    "Test expected a stable row order from a SELECT without ORDER BY, but result order is nondeterministic (e.g. OR predicates / partition access), causing flaky assertions."
   ],
-  "failure_signature": "// explain select * from t where a > {y} use index(idx_a) order by a limit {x}; // check if IndexLookUp is used (executor/partition_table_test.go)",
+  "failure_signature": "Flaky test due to nondeterministic row ordering; assertions compared rows without enforcing deterministic ordering (missing ORDER BY / missing Sort()).",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
     "missing_order_by",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it assumed a deterministic row order from queries without ORDER BY. TiDB does not guarantee row order unless ORDER BY (or explicit sorting in the test) is used. This PR stabilizes the tests by sorting query results before assertions (and adjusting expected rows accordingly).",
+  "module": "executor",
+  "fix_pattern": "Enforce deterministic ordering in tests (add ORDER BY or sort results) before comparing rows.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/36108",
     "https://github.com/pingcap/tidb/pull/36108.patch"

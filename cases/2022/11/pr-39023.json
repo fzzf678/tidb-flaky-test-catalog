@@ -13,18 +13,18 @@
     "name": "TestRandomPanicConsume"
   },
   "symptoms": [
-    "go test -run TestRandomPanicConsume -race -v"
+    "HashJoin leaked goroutines (goleak) after the result set was closed; tests like TestRandomPanicConsume could intermittently fail under race/goleak checks."
   ],
-  "failure_signature": "go test -run TestRandomPanicConsume -race -v",
+  "failure_signature": "goleak / leaked goroutines in HashJoin (e.g., fetchAndBuildHashTable continues after rs.Close()).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix hashjoin goleak.",
+  "root_cause_explanation": "The flakiness was caused by a goroutine leak in HashJoin: background goroutines (build/probe workers and waiter) could outlive the executor/result set lifecycle, so `rs.Close()` did not reliably stop all goroutines. This PR stabilizes the tests by running HashJoin workers via `WaitGroupWrapper`, waiting for the waiter/worker goroutines in `Close()`, and ensuring result channels are closed only after all workers exit.",
   "module": "executor",
-  "fix_pattern": "executor: fix hashjoin goleak",
+  "fix_pattern": "Ensure HashJoin goroutines exit and are waited on close (use WaitGroupWrapper; wait in Close; close result channel after workers).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39023",
     "https://github.com/pingcap/tidb/pull/39023.patch"

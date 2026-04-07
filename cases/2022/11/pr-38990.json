@@ -13,20 +13,18 @@
     "name": "analyze_test"
   },
   "symptoms": [
-    "executor/analyzetest: Stabilise analyze table tests due to SyncWaitStatsLoad timeout"
+    "Analyze table tests could intermittently fail due to `SyncWaitStatsLoad` timing out while waiting for statistics to load."
   ],
-  "failure_signature": "executor/analyzetest: Stabilise analyze table tests due to SyncWaitStatsLoad timeout",
+  "failure_signature": "`SyncWaitStatsLoad` timeout in analyze table tests (stats load not completed within default wait window).",
   "root_cause_categories": [
-    "async_timing_issue",
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "insufficient_timeout",
-    "async_wait_without_backoff"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: executor/analyzetest: Stabilise analyze table tests due to SyncWaitStatsLoad timeout.",
+  "root_cause_explanation": "The test was flaky due to timing sensitivity: `SyncWaitStatsLoad` may not finish within the default wait time under CI load, causing timeouts. This PR stabilizes the analyze tests by increasing the session variable `tidb_stats_load_sync_wait` (to 20000) for the affected test cases.",
   "module": "executor",
-  "fix_pattern": "executor/analyzetest: Stabilise analyze table tests due to SyncWaitStatsLoad timeout",
+  "fix_pattern": "Increase stats-load sync wait in tests (set `@@session.tidb_stats_load_sync_wait = 20000`) to avoid SyncWaitStatsLoad timeouts.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38990",
     "https://github.com/pingcap/tidb/pull/38990.patch"

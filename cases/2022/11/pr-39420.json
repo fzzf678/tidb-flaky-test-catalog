@@ -13,19 +13,18 @@
     "name": "foreign_key_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select * from t1 order by id\").Check(testkit.Rows(\"2\", \"11\", \"13\")) (executor/fktest/foreign_key_test.go)"
+    "Foreign key cascade can observe data-index inconsistency when autocommit updates do not rebuild untouched index keys; related FK tests may fail."
   ],
-  "failure_signature": "tk.MustQuery(\"select * from t1 order by id\").Check(testkit.Rows(\"2\", \"11\", \"13\")) (executor/fktest/foreign_key_test.go)",
+  "failure_signature": "No explicit flaky failure signature in patch (foreign key cascade correctness fix).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch is a correctness fix for foreign key cascade handling (ensure indices are rebuilt/written when FK cascade is pending, even if the index key is otherwise considered untouched under autocommit), plus regression tests. The PR/case does not include a concrete intermittent flaky failure signature, so keep this case as needs-more-evidence rather than guessing a flakiness category.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Rebuild/write index keys during FK cascade to avoid data-index inconsistency under autocommit.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39420",
     "https://github.com/pingcap/tidb/pull/39420.patch"

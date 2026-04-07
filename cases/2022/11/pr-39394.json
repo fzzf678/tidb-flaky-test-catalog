@@ -13,18 +13,18 @@
     "name": "distsql_test"
   },
   "symptoms": [
-    "fix race"
+    "High memory usage / potential OOM when recording runtime stats for many cop tasks until statement finishes."
   ],
-  "failure_signature": "fix race",
+  "failure_signature": "OOM / memory exhaustion due to runtime stats retention (issue #39413).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "external_dependency"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: merge the runtime stats in time to avoid using too many memory.",
-  "module": "module_unknown",
-  "fix_pattern": "*: merge the runtime stats in time to avoid using too many memory",
+  "root_cause_explanation": "Runtime stats were accumulated per executor/cop-task and only merged at statement end, which can retain a large amount of memory for queries producing many cop tasks and lead to environment-dependent OOM failures. This PR reduces memory pressure by reusing/obtaining basic runtime stats from RuntimeStatsColl and deferring RegisterStats/merging to Close(), so intermediate per-task stats are not all kept alive until the end.",
+  "module": "executor",
+  "fix_pattern": "Defer runtime stats registration/merging to Close() and reuse basic runtime stats to reduce memory retention.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/39394",
     "https://github.com/pingcap/tidb/pull/39394.patch"
