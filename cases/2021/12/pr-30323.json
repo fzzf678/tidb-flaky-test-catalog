@@ -17,14 +17,15 @@
   ],
   "failure_signature": "expression: make some unstable test serial",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "t_parallel_with_shared_state",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: expression: make some unstable test serial.",
+  "root_cause_explanation": "The tests were flaky due to shared global state pollution under parallel execution: some operations in the expression integration tests mutate global variables, and when run in parallel they can interfere with each other. This PR stabilizes them by moving the affected tests to the serial suite / making them run serially to avoid cross-test interference.",
   "module": "expression",
-  "fix_pattern": "expression: make some unstable test serial",
+  "fix_pattern": "Avoid running global-state-mutating tests in parallel (move to serial suite or isolate global state).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30323",
     "https://github.com/pingcap/tidb/pull/30323.patch"

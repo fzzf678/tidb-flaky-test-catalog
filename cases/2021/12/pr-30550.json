@@ -17,15 +17,14 @@
   ],
   "failure_signature": "There exists potential data race when accessing `Handle.globalMap`/`Handle.feedback` concurrently.",
   "root_cause_categories": [
-    "shared_state_pollution",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: There exists potential data race when accessing `Handle.globalMap`/`Handle.feedback` concurrently.",
+  "root_cause_explanation": "The flakiness risk came from concurrent goroutines accessing shared mutable state (`Handle.globalMap` / `Handle.feedback`) without proper synchronization, which can cause data races and nondeterministic behavior. This PR stabilizes the code by adding mutex protection around reads/writes to those shared structures.",
   "module": "statistics",
-  "fix_pattern": "There exists potential data race when accessing `Handle.globalMap`/`Handle.feedback` concurrently.",
+  "fix_pattern": "Add mutex protection around shared Handle state (maps/feedback) accessed concurrently by background goroutines.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30550",
     "https://github.com/pingcap/tidb/pull/30550.patch"

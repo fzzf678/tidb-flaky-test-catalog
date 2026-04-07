@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: topsql: reduce data race of sql digest.",
+  "root_cause_explanation": "The instability was caused by a concurrency/data race when TopSQL/resource-tag callbacks frequently accessed statement SQL digest state across goroutines. This PR reduces the race window by retrieving the SQL digest from `StmtCtx` (as local values) and passing/encoding it directly, avoiding repeated unsynchronized access to shared digest fields from async callbacks.",
   "module": "server",
-  "fix_pattern": "topsql: reduce data race of sql digest",
+  "fix_pattern": "Avoid accessing mutable statement state from async callbacks; copy required fields (e.g., digests) into local variables or use thread-safe accessors.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30296",
     "https://github.com/pingcap/tidb/pull/30296.patch"

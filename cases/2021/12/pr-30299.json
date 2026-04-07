@@ -17,15 +17,15 @@
   ],
   "failure_signature": "ddltest: refactor logutil.InitLogger in ddltest to avoid data race",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "race_condition_in_async_code",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: ddltest: refactor logutil.InitLogger in ddltest to avoid data race.",
-  "module": "ddl",
-  "fix_pattern": "ddltest: refactor logutil.InitLogger in ddltest to avoid data race",
+  "root_cause_explanation": "The flakiness was caused by a data race on global logging state: `logutil.InitLogger` mutates the global gRPC logger (`grpclog.SetLoggerV2`), and invoking it from test code can race with other goroutines/tests that read/write gRPC logging. This PR stabilizes the ddltest suite by moving the logger initialization to `main_test` (TestMain-style init) so the global logger is set up in a controlled, non-racy way.",
+  "module": "test_infra",
+  "fix_pattern": "Move global logger initialization to TestMain / one-time setup to avoid concurrent mutation of global logger state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30299",
     "https://github.com/pingcap/tidb/pull/30299.patch"

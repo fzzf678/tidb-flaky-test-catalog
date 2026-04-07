@@ -9,23 +9,22 @@
   "pr_merged_at": "2021-12-30T15:45:50+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/analyze_test.go",
-    "name": "analyze_test"
+    "path": "planner/core/collect_column_stats_usage_test.go",
+    "name": "collect_column_stats_usage_test"
   },
   "symptoms": [
     "sort.Strings(cols) (planner/core/collect_column_stats_usage_test.go)"
   ],
   "failure_signature": "sort.Strings(cols) (planner/core/collect_column_stats_usage_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: sort.Strings(cols) (planner/core/collect_column_stats_usage_test.go).",
-  "module": "statistics",
-  "fix_pattern": "sort.Strings(cols) (planner/core/collect_column_stats_usage_test.go)",
+  "root_cause_explanation": "The test compared a collected list of column names against expected values, but the collection order was nondeterministic because it was derived from Go map iteration. This PR stabilizes the assertion by sorting the collected slice (`sort.Strings(cols)`) before comparing it with the expected list.",
+  "module": "planner",
+  "fix_pattern": "Sort map-derived slices before assertions to avoid relying on Go map iteration order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30816",
     "https://github.com/pingcap/tidb/pull/30816.patch"

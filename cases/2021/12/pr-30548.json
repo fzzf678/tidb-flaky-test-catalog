@@ -17,15 +17,14 @@
   ],
   "failure_signature": "result.Sort().Check(testutil.RowsWithSep(\"|\", (expression/integration_serial_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: result.Sort().Check(testutil.RowsWithSep(\"|\", (expression/integration_serial_test.go).",
+  "root_cause_explanation": "The flakiness risk here is driven by legacy test infrastructure: this PR migrates expression integration tests from pingcap check (gocheck) style to testify-based tests, which commonly improves isolation and stability under modern Go test execution.",
   "module": "expression",
-  "fix_pattern": "result.Sort().Check(testutil.RowsWithSep(\"|\", (expression/integration_serial_test.go)",
+  "fix_pattern": "Migrate legacy pingcap check (gocheck) tests to testify (Go testing) to improve test stability.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30548",
     "https://github.com/pingcap/tidb/pull/30548.patch"

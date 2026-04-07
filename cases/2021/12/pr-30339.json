@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race in oomtest.",
+  "root_cause_explanation": "The flakiness was caused by a data race in the OOM test harness: a shared `oomCapture` field (tracker string) was written from background goroutines (via logger callbacks) while the test read/asserted it, triggering race-detector failures. This PR stabilizes it by adding proper synchronization (mutex-protected getter/setter) around the shared tracker state.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race in oomtest",
+  "fix_pattern": "Synchronize shared test harness state accessed by multiple goroutines (e.g., mutex-protected getters/setters).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30339",
     "https://github.com/pingcap/tidb/pull/30339.patch"

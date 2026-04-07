@@ -21,12 +21,11 @@
     "async_timing_issue"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: Plans are unstable due to async lazy-load of statistics.",
-  "module": "module_unknown",
-  "fix_pattern": "Plans are unstable due to async lazy-load of statistics. Sometimes, unreasonable plans cause oom.",
+  "root_cause_explanation": "Plans/tests were unstable because statistics were lazy-loaded asynchronously: depending on timing, planning could happen before stats loading finished, leading to different (sometimes unreasonable) plans across runs. This PR stabilizes plan selection by making SQL planning/execution sync-wait for stats loading completion, removing the timing window where partially-loaded stats cause nondeterministic plan choices.",
+  "module": "planner",
+  "fix_pattern": "Synchronize/wait for async statistics loading before planning to avoid nondeterministic plan choices.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30026",
     "https://github.com/pingcap/tidb/pull/30026.patch"

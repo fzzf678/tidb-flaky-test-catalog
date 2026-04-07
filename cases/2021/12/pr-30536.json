@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"explain format='brief' select * from t force index(i) where id <= 99 and c1 >= 0 and c1 <= 99 and c2 in (2, 4, 6, 8) order by c1 limit 1\").Check(kit.Rows( (planner/core/plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(\"explain format='brief' select * from t force index(i) where id <= 99 and c1 >= 0 and c1 <= 99 and c2 in (2, 4, 6, 8) order by c1 limit 1\").Check(kit.Rows( (planner/core/plan_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a functional/performance feature (paging coprocessor usage in optimizer) with broad changes across planner/executor/distsql. The available case data does not provide a clear flaky-test signature or targeted stabilization mechanism, so we conservatively classify it as insufficient evidence.",
   "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"explain format='brief' select * from t force index(i) where id <= 99 and c1 >= 0 and c1 <= 99 and c2 in (2, 4, 6, 8) order by c1 limit 1\").Check(kit.Rows( (planner/core/plan_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30536",
     "https://github.com/pingcap/tidb/pull/30536.patch"

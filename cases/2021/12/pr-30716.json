@@ -13,18 +13,22 @@
     "name": "tracing_serial_test"
   },
   "symptoms": [
-    "br: fix some unstable unit test cases."
+    "Mock cluster start sometimes failed due to port conflicts when allocating ports for the mock HTTP endpoints.",
+    "Trace test timing was unstable because it relied on very short fixed sleeps (10ms) and was sensitive to scheduling/CI load."
   ],
-  "failure_signature": "br: fix some unstable unit test cases.",
+  "failure_signature": "Port allocation conflict for mock cluster start, and timing-sensitive trace assertions due to too-short sleeps.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "external_dependency",
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "hardcoded_port_or_resource",
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "Two instability sources were addressed: (1) mock cluster start could fail due to port conflicts when allocating/listening on ports; (2) the tracing test relied on very short `time.Sleep(10ms)` windows that were not stable under scheduling/CI load. The PR stabilizes the suite by retrying/validating port availability during mock cluster startup and by increasing the sleep duration (10ms → 100ms) and updating the timing assertions accordingly.",
   "module": "br",
-  "fix_pattern": "br: fix some unstable unit test cases.",
+  "fix_pattern": "Use robust resource allocation for ports (retry/validate availability) and avoid too-short sleeps by increasing timing windows for async operations.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30716",
     "https://github.com/pingcap/tidb/pull/30716.patch"

@@ -17,16 +17,14 @@
   ],
   "failure_signature": "sort.Strings(cols) (planner/core/collect_column_stats_usage_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: sort.Strings(cols) (planner/core/collect_column_stats_usage_test.go).",
+  "root_cause_explanation": "The test compared a collected list of column names against expected values, but the collection order was nondeterministic because it was derived from Go map iteration. This PR stabilizes the assertion by sorting the collected slice (`sort.Strings(cols)`) before comparing it with the expected list.",
   "module": "planner",
-  "fix_pattern": "sort.Strings(cols) (planner/core/collect_column_stats_usage_test.go)",
+  "fix_pattern": "Sort map-derived slices before assertions to avoid relying on Go map iteration order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/30671",
     "https://github.com/pingcap/tidb/pull/30671.patch"
