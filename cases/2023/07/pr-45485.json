@@ -17,16 +17,14 @@
   ],
   "failure_signature": "r1.Sort().Check(r2.Sort().Rows()) (planner/core/plan_cache_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost",
-    "plan_cache_dependency"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: r1.Sort().Check(r2.Sort().Rows()) (planner/core/plan_cache_test.go).",
+  "root_cause_explanation": "The test compares query results under different plan-cache settings (e.g., plan cache enabled vs disabled). Even when the result set content is the same, row ordering may differ if the query doesn't enforce ordering, making direct `Check(...)` assertions flaky. The fix stabilizes the test by sorting both result sets before comparing them (`r1.Sort().Check(r2.Sort().Rows())`), removing nondeterministic order from the assertion (planner/core/plan_cache_test.go).",
   "module": "planner",
-  "fix_pattern": "r1.Sort().Check(r2.Sort().Rows()) (planner/core/plan_cache_test.go)",
+  "fix_pattern": "Sort results before comparing across different execution modes (e.g., plan cache on/off) to avoid order-dependent test assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45485",
     "https://github.com/pingcap/tidb/pull/45485.patch"

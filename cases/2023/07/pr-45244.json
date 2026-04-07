@@ -13,18 +13,18 @@
     "name": "TestIndexDoubleReadClose"
   },
   "symptoms": [
-    "*: fix unstable test TestIndexDoubleReadClose"
+    "After closing the result set, a background goroutine (e.g., `pickAndExecTask`) could still be running, and the test's fixed sleep was sometimes insufficient before asserting the goroutine had exited (executor/test/seqtest/seq_executor_test.go)."
   ],
-  "failure_signature": "*: fix unstable test TestIndexDoubleReadClose",
+  "failure_signature": "`checkGoroutineExists(\"pickAndExecTask\")` sometimes remains true shortly after `rs.Close()` (executor/test/seqtest/seq_executor_test.go).",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: *: fix unstable test TestIndexDoubleReadClose.",
-  "module": "kv",
-  "fix_pattern": "*: fix unstable test TestIndexDoubleReadClose",
+  "root_cause_explanation": "The test asserted that a background worker goroutine was gone right after closing the result set, but goroutine shutdown is asynchronous. A fixed `time.Sleep(10ms)` could be too short on slower runs, making the goroutine-existence check flaky. The fix replaces the fixed sleep with an `Eventually` loop that waits until the goroutine disappears (within a bounded timeout), making the test robust to timing variability (executor/test/seqtest/seq_executor_test.go).",
+  "module": "executor",
+  "fix_pattern": "Replace fixed sleeps with `require.Eventually` (poll/wait until goroutines exit) when asserting asynchronous cleanup after Close().",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45244",
     "https://github.com/pingcap/tidb/pull/45244.patch"

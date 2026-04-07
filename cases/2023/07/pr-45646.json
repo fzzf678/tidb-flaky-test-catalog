@@ -13,19 +13,18 @@
     "name": "integration_partition_test"
   },
   "symptoms": [
-    "if !strings.Contains(tt, \"order by\") { (planner/core/casetest/partition/integration_partition_test.go)"
+    "The partition integration casetest handled result ordering inconsistently: it needed to sort results only for queries without ORDER BY, otherwise ORDER BY queries should keep their order (planner/core/casetest/partition/integration_partition_test.go)."
   ],
-  "failure_signature": "if !strings.Contains(tt, \"order by\") { (planner/core/casetest/partition/integration_partition_test.go)",
+  "failure_signature": "Result order mismatch in partition integration casetests due to unconditional sorting vs ORDER BY-preserving checks.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: if !strings.Contains(tt, \"order by\") { (planner/core/casetest/partition/integration_partition_test.go).",
+  "root_cause_explanation": "The casetest compares query results across partition prune modes and against expected outputs. Result ordering is only stable when the query enforces it (via ORDER BY). The fix makes ordering handling explicit: for queries without ORDER BY it sorts results before comparing; for queries with ORDER BY it preserves the original order and avoids applying `.Sort()` that could change semantics and cause mismatches (planner/core/casetest/partition/integration_partition_test.go).",
   "module": "planner",
-  "fix_pattern": "if !strings.Contains(tt, \"order by\") { (planner/core/casetest/partition/integration_partition_test.go)",
+  "fix_pattern": "Handle ordering deterministically in casetests: sort results only when the SQL lacks ORDER BY; keep order when ORDER BY is present.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45646",
     "https://github.com/pingcap/tidb/pull/45646.patch"

@@ -20,12 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select * from t order by a\").Check(testkit.Rows(\"2 3\", \"4 8\", \"6 8\")) (executor/union_scan_test.go).",
+  "root_cause_explanation": "The query enforces ordering via `ORDER BY`, so the test expects a stable row order. For partition tables, UnionScan previously didn't fully respect the `keepOrder` requirement when reading added rows from the in-memory buffer, which could lead to order mismatches and flaky assertions. The fix threads the `keepOrder` flag through UnionScan's mem readers and, when `keepOrder` is required for a partition table, explicitly sorts the in-memory added rows using the executor's compare logic before returning them (executor/union_scan_test.go).",
   "module": "executor",
-  "fix_pattern": "tk.MustQuery(\"select * from t order by a\").Check(testkit.Rows(\"2 3\", \"4 8\", \"6 8\")) (executor/union_scan_test.go)",
+  "fix_pattern": "Respect `keepOrder` for partition tables in UnionScan by sorting in-memory added rows deterministically before asserting ordered results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45140",
     "https://github.com/pingcap/tidb/pull/45140.patch"

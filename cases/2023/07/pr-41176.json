@@ -13,19 +13,18 @@
     "name": "set_test"
   },
   "symptoms": [
-    "tk.MustExec(\"set @@session.tidb_stats_load_sync_wait = 20000\") // to stabilise test"
+    "The test depended on statistics being loaded before assertions, but stats loading can be asynchronous; insufficient waiting led to intermittent instability (executor/set_test.go)."
   ],
-  "failure_signature": "tk.MustExec(\"set @@session.tidb_stats_load_sync_wait = 20000\") // to stabilise test",
+  "failure_signature": "Test flakiness due to asynchronous stats loading not completing before assertions (executor/set_test.go).",
   "root_cause_categories": [
-    "concurrency_data_race",
     "async_timing_issue"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Global state must be reset/restored between tests. This PR stabilizes it by: tk.MustExec(\"set @@session.tidb_stats_load_sync_wait = 20000\") // to stabilise test.",
+  "root_cause_explanation": "The test relies on statistics being available, but stats loading is asynchronous and can lag, causing timing-dependent failures. The fix stabilizes the test by increasing the synchronous wait budget for stats loading (`tidb_stats_load_sync_wait = 20000`) so the test waits long enough for stats to be loaded before checking results (executor/set_test.go).",
   "module": "statistics",
-  "fix_pattern": "tk.MustExec(\"set @@session.tidb_stats_load_sync_wait = 20000\") // to stabilise test",
+  "fix_pattern": "Increase synchronous wait/timeout for stats loading in the test (`tidb_stats_load_sync_wait`) to avoid timing-dependent failures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41176",
     "https://github.com/pingcap/tidb/pull/41176.patch"

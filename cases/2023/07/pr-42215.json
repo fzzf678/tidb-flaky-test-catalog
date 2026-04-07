@@ -13,19 +13,18 @@
     "name": "infoschema_cluster_table_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select REGION_ID, DB_NAME, TABLE_NAME, IS_INDEX, INDEX_ID, INDEX_NAME, IS_PARTITION, PARTITION_NAME from information_schema.TIKV_REGION_STATUS where DB_NAME = 'test' and TABLE_NAME = 'test_t1' order by PARTITION_NAME\").Check(testkit.Rows( (executor/infoschema_cluster_table_test.go)"
+    "No concrete flaky failure signature is captured in this case. The patch mainly adds partition information to `information_schema.TIKV_REGION_STATUS` and extends the corresponding unit tests (executor/infoschema_cluster_table_test.go)."
   ],
-  "failure_signature": "tk.MustQuery(\"select REGION_ID, DB_NAME, TABLE_NAME, IS_INDEX, INDEX_ID, INDEX_NAME, IS_PARTITION, PARTITION_NAME from information_schema.TIKV_REGION_STATUS where DB_NAME = 'test' and TABLE_NAME = 'test_t1' order by PARTITION_NAME\").Check(testkit.Rows( (executor/infoschema_cluster_table_test.go)",
+  "failure_signature": "No concrete failure signature captured (PR adds partition info columns + test coverage for TIKV_REGION_STATUS).",
   "root_cause_categories": [
-    "schema_change_race",
-    "external_dependency"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: tk.MustQuery(\"select REGION_ID, DB_NAME, TABLE_NAME, IS_INDEX, INDEX_ID, INDEX_NAME, IS_PARTITION, PARTITION_NAME from information_schema.TIKV_REGION_STATUS where DB_NAME = 'test' and TABLE_NAME = 'test_t1' order by PART….",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The available evidence does not show a specific flaky mechanism being fixed: the patch adds partition metadata fields to the `TIKV_REGION_STATUS` cluster table and updates unit tests accordingly. Without an actual flaky signature or a targeted stabilization (e.g., wait/retry for schema propagation), classify this case as insufficient evidence rather than guessing schema-race/external-dependency causes.",
   "module": "executor",
-  "fix_pattern": "tk.MustQuery(\"select REGION_ID, DB_NAME, TABLE_NAME, IS_INDEX, INDEX_ID, INDEX_NAME, IS_PARTITION, PARTITION_NAME from information_schema.TIKV_REGION_STATUS where DB_NAME = 'test' and TABLE_NAME = 'test_t1' order by PARTITION_NAME\").Check(testkit.Rows( (executor/infoschema_cluster_table_test.go)",
+  "fix_pattern": "Add partition metadata to `information_schema.TIKV_REGION_STATUS` and extend tests; no clearly evidenced anti-flake stabilization in the case.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42215",
     "https://github.com/pingcap/tidb/pull/42215.patch"

@@ -13,18 +13,18 @@
     "name": "physical_plan_test"
   },
   "symptoms": [
-    "+ // We need to cut the unstable output of execution info, memory and disk."
+    "EXPLAIN ANALYZE output included runtime-dependent fields (execution info / memory / disk) that can vary across runs, making exact-output assertions unstable (planner/core/casetest/physicalplantest/physical_plan_test.go)."
   ],
-  "failure_signature": "+ // We need to cut the unstable output of execution info, memory and disk.",
+  "failure_signature": "EXPLAIN ANALYZE output mismatch due to unstable execution info/memory/disk fields in golden assertions.",
   "root_cause_categories": [
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "plan_cache_dependency"
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: + // We need to cut the unstable output of execution info, memory and disk.",
+  "root_cause_explanation": "The test asserted exact EXPLAIN/EXPLAIN ANALYZE output, but runtime-dependent fields such as execution info, memory, and disk usage are inherently unstable across runs/environments. The stabilization strips these unstable columns from EXPLAIN ANALYZE output before comparing against expected results, making the planner test deterministic (planner/core/casetest/physicalplantest/physical_plan_test.go).",
   "module": "planner",
-  "fix_pattern": "+ // We need to cut the unstable output of execution info, memory and disk.",
+  "fix_pattern": "Before asserting EXPLAIN ANALYZE output, remove/normalize unstable runtime fields (execution info, memory, disk) so golden checks don't depend on environment variability.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45252",
     "https://github.com/pingcap/tidb/pull/45252.patch"

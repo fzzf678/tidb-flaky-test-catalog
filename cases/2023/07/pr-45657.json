@@ -13,18 +13,19 @@
     "name": "TestLoadRemote/TestShowDetachedJob"
   },
   "symptoms": [
-    "importintotest: fail fast to avoid data race"
+    "ImportInto real-TiKV tests wait for async job/task state transitions (finished/failed/reverted). Non-fatal waiting could allow the test to continue in an unexpected state, leading to unstable behavior (tests/realtikvtest/importintotest/job_test.go)."
   ],
-  "failure_signature": "importintotest: fail fast to avoid data race",
+  "failure_signature": "Timing-sensitive job/task state assertions (eventual checks) can fail intermittently and the test may proceed, causing instability (tests/realtikvtest/importintotest/job_test.go).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "async_wait_without_backoff",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: importintotest: fail fast to avoid data race.",
-  "module": "module_unknown",
-  "fix_pattern": "importintotest: fail fast to avoid data race",
+  "root_cause_explanation": "These tests depend on asynchronous state transitions (import job status and dist-task state). If the \"eventually\" condition is not met, continuing the test can interact with unfinished background work and lead to unstable behavior. The fix makes the waits fail-fast by switching from non-fatal `s.Eventually(...)` to `s.Require().Eventually(...)`, and it increases the timeout in one case, ensuring the test stops immediately when the expected state doesn't arrive and reducing timing-related flakes (tests/realtikvtest/importintotest/job_test.go).",
+  "module": "executor",
+  "fix_pattern": "Use fail-fast eventual assertions (`Require().Eventually`) when waiting for async job/task state, and adjust timeouts so tests don't proceed in inconsistent states.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45657",
     "https://github.com/pingcap/tidb/pull/45657.patch"

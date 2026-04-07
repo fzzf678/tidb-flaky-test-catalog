@@ -20,12 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by",
-    "relying_on_map_iteration_order"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: It will change to `b = 1127`.",
+  "root_cause_explanation": "The test uses `ORDER BY` + `LIMIT` but orders only by a single column (e.g., `ORDER BY a` while selecting both `a` and `b`). When multiple rows share the same ordered key within the limited range, the chosen rows (and their secondary column values) can vary, making the assertion unstable. The fix makes the test deterministic by tightening the upper bound (cutting the max element to avoid ambiguous ties) and by sorting result sets before comparing partition-table queries against the regular table baseline (executor/partition_table_test.go).",
   "module": "executor",
-  "fix_pattern": "It will change to `b = 1127`. Sometimes we have more than 1 line equal to 1127, so the result is unstable. | queryRangePartitionWithLimitHint := fmt.Sprintf(\"select /*+ LIMIT_TO_COP() */ * from trange use index(idx_a) where a > %v and a < %v order by a limit %v\", x, maxEle, y) (executor/partition_table_test.go)",
+  "fix_pattern": "Make ORDER BY+LIMIT tests deterministic by avoiding ambiguous tie ranges and sorting results before comparing across execution/partition variants.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45513",
     "https://github.com/pingcap/tidb/pull/45513.patch"

@@ -13,18 +13,18 @@
     "name": "TestTTLTimerHookOnEvent"
   },
   "symptoms": [
-    "ttl: fix unstable test 'TestTTLTimerHookOnEvent'"
+    "The test could become timing-sensitive or hang while waiting for a TTL job to finish; cancellation/error handling in the wait loop made the test unstable (ttl/ttlworker/timer_test.go)."
   ],
-  "failure_signature": "ttl: fix unstable test 'TestTTLTimerHookOnEvent'",
+  "failure_signature": "Test may hang or take too long in `waitJobFinished(...)` when job polling/cancellation does not terminate promptly (ttl/ttlworker/timer_test.go).",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: ttl: fix unstable test 'TestTTLTimerHookOnEvent'.",
-  "module": "domain",
-  "fix_pattern": "ttl: fix unstable test 'TestTTLTimerHookOnEvent'",
+  "root_cause_explanation": "The instability is timing-related: the test waits for a TTL job to finish and relies on cancellation being triggered when the adapter returns an error. The patch relaxes the mock expectation so cancellation can be applied correctly and adds an explicit time bound (assert `waitJobFinished` returns within 10 seconds), preventing hangs/long waits and making the test deterministic (ttl/ttlworker/timer_test.go).",
+  "module": "server",
+  "fix_pattern": "Make async wait loops testable: ensure cancellation is applied and add an explicit timeout/bound (`require.Less(time.Since(start), ...)`) to prevent hangs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/45446",
     "https://github.com/pingcap/tidb/pull/45446.patch"

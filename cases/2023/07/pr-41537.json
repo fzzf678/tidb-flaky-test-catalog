@@ -9,23 +9,23 @@
   "pr_merged_at": "2023-07-31T22:35:37+08:00",
   "test": {
     "type": "unit",
-    "path": "ddl/db_partition_test.go",
-    "name": "db_partition_test"
+    "path": "planner/core/partition_pruner_test.go",
+    "name": "partition_pruner_test"
   },
   "symptoms": [
-    "+ // Default RPC encoding may cause statistics explain result differ and then the test unstable. | sort.Slice(infos, func(i, j int) bool { (planner/core/partition_pruner_test.go)"
+    "EXPLAIN/statistics-related golden output could differ under different RPC encoding settings, making the planner test unstable (planner/core/partition_pruner_test.go)."
   ],
-  "failure_signature": "+ // Default RPC encoding may cause statistics explain result differ and then the test unstable. | sort.Slice(infos, func(i, j int) bool { (planner/core/partition_pruner_test.go)",
+  "failure_signature": "Statistics EXPLAIN output differs depending on RPC encoding (planner/core/partition_pruner_test.go).",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "statistics_sensitive_test",
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: + // Default RPC encoding may cause statistics explain result differ and then the test unstable.",
-  "module": "module_unknown",
-  "fix_pattern": "+ // Default RPC encoding may cause statistics explain result differ and then the test unstable. | sort.Slice(infos, func(i, j int) bool { (planner/core/partition_pruner_test.go)",
+  "root_cause_explanation": "The planner test is sensitive to exact EXPLAIN/statistics output. The patch notes that default RPC encoding can make statistics EXPLAIN results differ, causing the golden-plan test to be unstable. The stabilization forces a deterministic configuration by explicitly setting `tidb_enable_chunk_rpc = on` before running the EXPLAIN assertions, reducing environment/config-dependent variation (planner/core/partition_pruner_test.go).",
+  "module": "planner",
+  "fix_pattern": "Force a deterministic RPC encoding/config (`tidb_enable_chunk_rpc = on`) before asserting EXPLAIN/statistics output in the planner golden tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/41537",
     "https://github.com/pingcap/tidb/pull/41537.patch"
