@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// fix data race",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily refactors DDL tests (moving some tests to the `ddl_test` package and exporting helpers/callbacks). The available case data does not include a concrete flaky failure signature or a targeted stabilization change, so we conservatively mark it as insufficient evidence.",
+  "root_cause_explanation": "The DDL tests were flaky under `-race` due to unsafe concurrent access between the DDL callback hook (running in background/job worker) and the test goroutine. This PR stabilizes the tests by guarding shared variables (e.g., `checkOK`/`hookErr`) with a mutex in the callback path and refactors the tests into `ddl_test` with exported callbacks/helpers.",
   "module": "ddl",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "fix_pattern": "Protect shared variables accessed by async DDL hook callbacks with a mutex (or other synchronization) to eliminate data races between callback goroutines and the main test goroutine.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34308",
     "https://github.com/pingcap/tidb/pull/34308.patch"

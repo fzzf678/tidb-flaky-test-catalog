@@ -9,22 +9,22 @@
   "pr_merged_at": "2022-04-26T03:58:50+08:00",
   "test": {
     "type": "unit",
-    "path": "bindinfo/bind_test.go",
+    "path": "statistics/handle/handle_test.go",
     "name": "TestAnalyzeGlobalStatsWithOpts"
   },
   "symptoms": [
-    "*: move config file option mem-quota-query to sysvar"
+    "planner: fix the unstable test TestAnalyzeGlobalStatsWithOpts"
   ],
-  "failure_signature": "*: move config file option mem-quota-query to sysvar",
+  "failure_signature": "planner: fix the unstable test TestAnalyzeGlobalStatsWithOpts",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR converts the `mem-quota-query` config option into a global sysvar (`tidb-mem-quota-query`) and updates related bootstrap/config behavior. The available case data does not include a concrete flaky failure signature or a targeted stabilization change for a specific flaky test, so we conservatively mark it as insufficient evidence.",
-  "module": "session",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "root_cause_explanation": "`TestAnalyzeGlobalStatsWithOpts` validates histogram/topN properties after analyze. It could fail when some index stats buckets were not loaded (empty buckets) at the time of checking, making the assertion timing-dependent. This PR stabilizes it by skipping indices whose buckets are not loaded, and removes the hard `t.Skip(\"unstable test\")` gates.",
+  "module": "statistics",
+  "fix_pattern": "In stats-sensitive tests, avoid asserting on not-yet-loaded histogram buckets (load them explicitly or skip/guard when buckets are empty) instead of hard-skipping the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34141",
     "https://github.com/pingcap/tidb/pull/34141.patch"
