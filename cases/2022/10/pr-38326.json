@@ -9,22 +9,22 @@
   "pr_merged_at": "2022-10-08T18:47:48+08:00",
   "test": {
     "type": "unit",
-    "path": "DEPS.bzl",
-    "name": "DEPS"
+    "path": "expression/collation.go",
+    "name": "collationInfo.SetCoercibility"
   },
   "symptoms": [
-    "Go race detector: data race in collation coercibility state (SetCoercibility/Coercibility)."
+    "Race detector reports a DATA RACE in `collationInfo.SetCoercibility` / `Coercibility` due to non-atomic access to the `coer` field."
   ],
-  "failure_signature": "Go race detector: data race in collationInfo coercibility field access (SetCoercibility/Coercibility).",
+  "failure_signature": "DATA RACE: expression/collation.go (SetCoercibility/Coercibility)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to a data race: the collation coercibility field was read/written concurrently without proper synchronization. This PR stabilizes it by making Coercibility an int32 and using atomic load/store for the coercibility field (SetCoercibility/Coercibility).",
+  "root_cause_explanation": "`collationInfo.coer` was read/written concurrently by `Coercibility()` and `SetCoercibility()` without synchronization, triggering the race detector. The patch changes `Coercibility` to `int32` and uses `sync/atomic` Load/Store for the `coer` field to make the access race-free.",
   "module": "expression",
-  "fix_pattern": "Use atomic load/store for collation coercibility (change Coercibility to int32).",
+  "fix_pattern": "Make coercibility reads/writes atomic (Coercibility=int32 + atomic Load/Store in SetCoercibility/Coercibility).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38326",
     "https://github.com/pingcap/tidb/pull/38326.patch"
