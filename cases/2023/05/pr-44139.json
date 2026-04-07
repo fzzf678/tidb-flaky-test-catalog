@@ -13,19 +13,19 @@
     "name": "partition_table_test"
   },
   "symptoms": [
-    "tk.MustExec(\"select * from t order by b limit 5\") (tests/realtikvtest/brietest/brie_test.go)"
+    "Plan assertions around IndexLookUp/TopN differ between static and dynamic partition pruning modes, making the test unstable across environments."
   ],
-  "failure_signature": "tk.MustExec(\"select * from t order by b limit 5\") (tests/realtikvtest/brietest/brie_test.go)",
+  "failure_signature": "Plan-shape assertions (e.g., expecting no `TopN`) fail depending on `tidb_partition_prune_mode` (static-only vs dynamic-only).",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "external_dependency"
+    "shared_state_pollution",
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by"
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustExec(\"select * from t order by b limit 5\") (tests/realtikvtest/brietest/brie_test.go).",
-  "module": "executor",
-  "fix_pattern": "tk.MustExec(\"select * from t order by b limit 5\") (tests/realtikvtest/brietest/brie_test.go)",
+  "root_cause_explanation": "`TestOrderByAndLimit` asserts specific plan shapes (e.g., absence of `TopN` when order properties are pushed down). However, plan behavior differs between static and dynamic partition pruning modes (controlled by `tidb_partition_prune_mode` / `UseDynamicPartitionPrune()`), so relying on an implicit default can make the test environment-dependent. This PR stabilizes the test by explicitly setting the prune mode in the loop (`static-only` vs `dynamic-only`), gating strict plan assertions to the mode where they hold, and resetting the variable after the test.",
+  "module": "planner",
+  "fix_pattern": "Set `tidb_partition_prune_mode` explicitly and avoid asserting a single plan shape across prune modes; gate plan assertions based on mode and reset the variable after the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44139",
     "https://github.com/pingcap/tidb/pull/44139.patch"
@@ -35,7 +35,7 @@
     "executor/builder.go",
     "executor/partition_table_test.go",
     "planner/core/find_best_task.go",
-    "tests/realtikvtest/sessiontest/session_fail_test.go"
+    "tests/realtikvtest/brietest/brie_test.go"
   ],
   "triage": {
     "sources": [
@@ -44,8 +44,8 @@
     ],
     "evidence": [
       "evidence: tk.MustExec(\"select * from t order by b limit 5\") (tests/realtikvtest/brietest/brie_test.go)",
-      "files: executor/builder.go, executor/partition_table_test.go, planner/core/find_best_task.go, tests/realtikvtest/brietest/brie_test.go, tests/realtikvtest/sessiontest/session_fail_test.go"
+      "files: executor/builder.go, executor/partition_table_test.go, planner/core/find_best_task.go, tests/realtikvtest/brietest/brie_test.go"
     ]
   },
-  "analysis": "PR title: executor, planner: fix indexLookUp with static pruning\nPR url: https://github.com/pingcap/tidb/pull/44139\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustExec(\"select * from t order by b limit 5\") (tests/realtikvtest/brietest/brie_test.go)\nChanged files (4): executor/builder.go, executor/partition_table_test.go, planner/core/find_best_task.go, tests/realtikvtest/sessiontest/session_fail_test.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: executor, planner: fix indexLookUp with static pruning\nPR url: https://github.com/pingcap/tidb/pull/44139\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: Plan assertions differ between static/dynamic partition pruning (`tidb_partition_prune_mode`), making the test environment-dependent.\nChanged files (4): executor/builder.go, executor/partition_table_test.go, planner/core/find_best_task.go, tests/realtikvtest/brietest/brie_test.go\nPatch series analyzed; see patch_url."
 }

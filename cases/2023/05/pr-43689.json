@@ -13,18 +13,18 @@
     "name": "TestIndexMergeReaderPanic"
   },
   "symptoms": [
-    "race = \"on\","
+    "executor: split TestIndexMergeReaderPanic to avoid case timeout"
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "TestIndexMergeReaderPanic timeout / hang in CI",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "The test `TestIndexMergeReaderPanic` could time out because it bundled multiple slow/hang-prone failpoint scenarios into one long-running test (including sleep-based failpoints). This PR stabilizes it by splitting the test into smaller parts and removing/avoiding unnecessary sleep-based failpoints, reducing total runtime and preventing CI timeouts.",
   "module": "executor",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Split the long-running panic/failpoint test into smaller cases and reduce/remove sleep-based failpoints to avoid CI timeouts.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43689",
     "https://github.com/pingcap/tidb/pull/43689.patch"

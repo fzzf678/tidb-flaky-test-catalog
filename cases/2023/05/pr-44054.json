@@ -13,19 +13,18 @@
     "name": "cte"
   },
   "symptoms": [
-    "race = \"on\", | rs.Sort().Check(testkit.Rows(\"1 <nil> <nil> <nil>\", \"2 <nil> <nil> <nil>\", \"3 <nil> <nil> <nil>\")) (planner/core/issuetest/planner_issue_test.go)"
+    "planner: wrong execution when CTE meet non-correlated subquery"
   ],
-  "failure_signature": "race = \"on\", | rs.Sort().Check(testkit.Rows(\"1 <nil> <nil> <nil>\", \"2 <nil> <nil> <nil>\", \"3 <nil> <nil> <nil>\")) (planner/core/issuetest/planner_issue_test.go)",
+  "failure_signature": "planner: wrong execution when CTE meet non-correlated subquery",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: race = \"on\", | rs.Sort().Check(testkit.Rows(\"1 <nil> <nil> <nil>\", \"2 <nil> <nil> <nil>\", \"3 <nil> <nil> <nil>\")) (planner/core/issuetest/planner_issue_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The patch fixes a correctness issue for CTE + non-correlated subqueries and updates/extends tests accordingly. The case data does not contain a concrete flaky failure signature or a targeted test stabilization mechanism (the captured `race = \"on\"`/quarantine metadata is not sufficient evidence). Keep as insufficient evidence until CI flake logs or a reliable repro are available.",
   "module": "planner",
-  "fix_pattern": "race = \"on\", | rs.Sort().Check(testkit.Rows(\"1 <nil> <nil> <nil>\", \"2 <nil> <nil> <nil>\", \"3 <nil> <nil> <nil>\")) (planner/core/issuetest/planner_issue_test.go)",
+  "fix_pattern": "Correctness fix + test updates; no concrete flaky signature captured, so treat as insufficient evidence.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44054",
     "https://github.com/pingcap/tidb/pull/44054.patch"

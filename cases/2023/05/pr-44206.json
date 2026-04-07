@@ -13,18 +13,18 @@
     "name": "integration_test"
   },
   "symptoms": [
-    "race = \"on\","
+    "DDL ingest backend context was not unregistered on job cancel in `StateNone`, leaving `LitBackCtxMgr` unavailable for subsequent operations/tests."
   ],
-  "failure_signature": "race = \"on\",",
+  "failure_signature": "`ingest.LitBackCtxMgr` remains registered after cancel on `StateNone` (no rollback step), so `CheckAvailable()` can fail.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: race = \"on\",.",
+  "root_cause_explanation": "When an ingest add-index DDL job is cancelled at `StateNone`, there may be no rollback step, so the backend context was not unregistered. That leaves the global ingest backend manager (`ingest.LitBackCtxMgr`) in a polluted state, which can break subsequent tests/DDL operations. This PR fixes it by ensuring `Unregister(job.ID)` is executed on all cancellation/rollback conversion paths (with nil-guarding) and adds an integration test that cancels a NONE-state job and asserts `LitBackCtxMgr.CheckAvailable()` returns true.",
   "module": "ddl",
-  "fix_pattern": "race = \"on\",",
+  "fix_pattern": "Ensure global backend managers are unregistered/cleaned up on all cancel/rollback paths (including NONE-state cancel) and add a regression test asserting `CheckAvailable()`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/44206",
     "https://github.com/pingcap/tidb/pull/44206.patch"

@@ -13,19 +13,18 @@
     "name": "planner_issue_test"
   },
   "symptoms": [
-    "race = \"on\", | rs.Sort().Check(testkit.Rows(\"a aa aaa\", \"b bb bbb\", \"c cc ccc\")) (planner/core/issuetest/planner_issue_test.go)"
+    "planner: fix correctness of the correlated predicate push down for cte | tidb-test=pr/2128"
   ],
-  "failure_signature": "race = \"on\", | rs.Sort().Check(testkit.Rows(\"a aa aaa\", \"b bb bbb\", \"c cc ccc\")) (planner/core/issuetest/planner_issue_test.go)",
+  "failure_signature": "planner: fix correctness of the correlated predicate push down for cte | tidb-test=pr/2128",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: race = \"on\", | rs.Sort().Check(testkit.Rows(\"a aa aaa\", \"b bb bbb\", \"c cc ccc\")) (planner/core/issuetest/planner_issue_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The case data does not contain a concrete flaky failure signature nor enough evidence to confidently attribute a specific flaky mechanism. Keep as insufficient evidence until CI logs or a reliable repro are available.",
   "module": "planner",
-  "fix_pattern": "race = \"on\", | rs.Sort().Check(testkit.Rows(\"a aa aaa\", \"b bb bbb\", \"c cc ccc\")) (planner/core/issuetest/planner_issue_test.go)",
+  "fix_pattern": "PR is primarily a correctness fix (predicate pushdown for CTE); the current case data does not capture a concrete flaky signature, so treat as insufficient evidence.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43759",
     "https://github.com/pingcap/tidb/pull/43759.patch"

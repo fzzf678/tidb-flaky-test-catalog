@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: fix data race at the TestCancelAddIndexJobError",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix data race at the TestCancelAddIndexJobError.",
+  "root_cause_explanation": "The test registers an `OnJobUpdated` callback that captures and updates a shared `jobID` while DDL jobs run in the background. Reading/writing that shared `jobID` without synchronization triggers a data race under the race detector. This PR fixes it by switching `jobID` to `atomic.Int64` and using `Store`/`Load` consistently across the callback and the main test goroutine.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix data race at the TestCancelAddIndexJobError",
+  "fix_pattern": "Use `atomic.Int64` (Store/Load) for shared variables updated from DDL callbacks/goroutines and read later in the main test flow.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/43890",
     "https://github.com/pingcap/tidb/pull/43890.patch"

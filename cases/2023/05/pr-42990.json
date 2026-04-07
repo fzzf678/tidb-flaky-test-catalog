@@ -13,19 +13,18 @@
     "name": "pessimistic_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select id, v from t order by id\").Check(testkit.Rows(\"1 10\", \"2 20\", \"3 31\", \"4 41\")) (tests/realtikvtest/pessimistictest/pessimistic_test.go)"
+    "*: Add test to cover the case that resolving prewrite lock from a stale pessimistic lock written before switching primary"
   ],
-  "failure_signature": "tk.MustQuery(\"select id, v from t order by id\").Check(testkit.Rows(\"1 10\", \"2 20\", \"3 31\", \"4 41\")) (tests/realtikvtest/pessimistictest/pessimistic_test.go)",
+  "failure_signature": "*: Add test to cover the case that resolving prewrite lock from a stale pessimistic lock written before switching primary",
   "root_cause_categories": [
-    "external_dependency",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: tk.MustQuery(\"select id, v from t order by id\").Check(testkit.Rows(\"1 10\", \"2 20\", \"3 31\", \"4 41\")) (tests/realtikvtest/pessimistictest/pessimistic_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The case data does not contain a concrete flaky failure signature nor enough evidence to confidently attribute a specific flaky mechanism. Keep as insufficient evidence until CI logs or a reliable repro are available.",
   "module": "txn",
-  "fix_pattern": "tk.MustQuery(\"select id, v from t order by id\").Check(testkit.Rows(\"1 10\", \"2 20\", \"3 31\", \"4 41\")) (tests/realtikvtest/pessimistictest/pessimistic_test.go)",
+  "fix_pattern": "PR mainly adds a RealTiKV test for a pessimistic-lock scenario; no clear flaky signature or targeted stabilization is captured in the case data, so treat as insufficient evidence.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/42990",
     "https://github.com/pingcap/tidb/pull/42990.patch"
