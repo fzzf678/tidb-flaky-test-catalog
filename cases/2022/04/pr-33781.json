@@ -17,15 +17,14 @@
   ],
   "failure_signature": "util/ddl-checker: fix DATA RACE in TestExecute",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: util/ddl-checker: fix DATA RACE in TestExecute.",
-  "module": "ddl",
-  "fix_pattern": "util/ddl-checker: fix DATA RACE in TestExecute",
+  "root_cause_explanation": "The flakiness was caused by a data race between the background coprocessor goroutine from a previous `Exec()` and the next `Exec()`. The test did not close the `Exec()` result, so the background goroutine could keep running and race with subsequent execution. This PR stabilizes the test by explicitly closing the result set after each `Exec()`.",
+  "module": "test_infra",
+  "fix_pattern": "Close each `Exec()` result set (`res.Close()`) to ensure background goroutines exit before the next execution, avoiding data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33781",
     "https://github.com/pingcap/tidb/pull/33781.patch"

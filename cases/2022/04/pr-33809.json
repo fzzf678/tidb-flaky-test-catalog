@@ -17,14 +17,14 @@
   ],
   "failure_signature": "*: fix unstable case `TestIssue29282`",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix unstable case `TestIssue29282`",
+  "root_cause_explanation": "`TestIssue29282` involved an asynchronous background query rollback. The test could finish before the background rollback completed, leading to timing-dependent flakiness. This PR stabilizes it by explicitly waiting for the rollback to finish (via a channel) before the test ends.",
+  "module": "ddl",
+  "fix_pattern": "Wait for the background rollback to finish (e.g. synchronize on a completion channel) before ending the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33809",
     "https://github.com/pingcap/tidb/pull/33809.patch"

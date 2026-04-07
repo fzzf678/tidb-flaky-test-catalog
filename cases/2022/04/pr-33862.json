@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: exeuctor: fix data race for TestPointGetLockExistKey.",
+  "root_cause_explanation": "`TestPointGetLockExistKey` ran subtests concurrently in goroutines. The original implementation captured loop variables in a closure, which is a common source of races (and can lead to incorrect parameters being used across goroutines). This PR stabilizes the test by passing the loop values as explicit goroutine arguments and using a proper `sync.WaitGroup`.",
   "module": "executor",
-  "fix_pattern": "exeuctor: fix data race for TestPointGetLockExistKey",
+  "fix_pattern": "Avoid closure-capturing loop variables when launching goroutines (pass values as arguments) and use a `sync.WaitGroup` to synchronize completion.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33862",
     "https://github.com/pingcap/tidb/pull/33862.patch"

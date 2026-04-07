@@ -17,14 +17,14 @@
   ],
   "failure_signature": "- t.Skip(\"unstable, skip race test\")",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: tests: fix e2e-test.",
+  "root_cause_explanation": "The e2e `globalkilltest` (`TestLostConnection`) was unstable due to timing-sensitive behavior when simulating lost PD connections and stopping services gracefully. This PR stabilizes it by fixing the expected error assertions, removing the hard skip, and increasing the graceful-stop timeout to tolerate slower environments.",
   "module": "test_infra",
-  "fix_pattern": "tests: fix e2e-test",
+  "fix_pattern": "Fix timing-sensitive e2e tests by correcting expected error assertions and increasing timeouts (e.g. graceful shutdown) to handle slower CI environments.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34194",
     "https://github.com/pingcap/tidb/pull/34194.patch"

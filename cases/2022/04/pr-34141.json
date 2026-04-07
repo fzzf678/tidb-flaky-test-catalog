@@ -9,7 +9,7 @@
   "pr_merged_at": "2022-04-26T03:58:50+08:00",
   "test": {
     "type": "unit",
-    "path": "bindinfo/bind_test.go",
+    "path": "statistics/handle/handle_test.go",
     "name": "TestAnalyzeGlobalStatsWithOpts"
   },
   "symptoms": [
@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: fix the unstable test TestAnalyzeGlobalStatsWithOpts",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: *: move config file option mem-quota-query to sysvar.",
-  "module": "planner",
-  "fix_pattern": "*: move config file option mem-quota-query to sysvar",
+  "root_cause_explanation": "`TestAnalyzeGlobalStatsWithOpts` validates histogram/topN properties after analyze. It could fail when some index stats buckets were not loaded (empty buckets) at the time of checking, making the assertion timing-dependent. This PR stabilizes it by skipping indices whose buckets are not loaded, and removes the hard `t.Skip(\"unstable test\")` gates.",
+  "module": "statistics",
+  "fix_pattern": "In stats-sensitive tests, avoid asserting on not-yet-loaded histogram buckets (load them explicitly or skip/guard when buckets are empty) instead of hard-skipping the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34141",
     "https://github.com/pingcap/tidb/pull/34141.patch"

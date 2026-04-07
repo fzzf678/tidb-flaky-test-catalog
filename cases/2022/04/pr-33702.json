@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: util: refactor TestExecute to fix data race.",
-  "module": "module_unknown",
-  "fix_pattern": "util: refactor TestExecute to fix data race",
+  "root_cause_explanation": "The flakiness was caused by a data race in `TestExecute` when using `ExecutableChecker` execution in the test. This PR stabilizes it by refactoring the test to use an isolated mock store + `testkit.TestKit` session and executing SQL via `tk.Exec`, avoiding racy shared checker state.",
+  "module": "test_infra",
+  "fix_pattern": "Refactor the test to use an isolated mock store + `testkit.TestKit` (instead of shared `ExecutableChecker` state) to avoid data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33702",
     "https://github.com/pingcap/tidb/pull/33702.patch"

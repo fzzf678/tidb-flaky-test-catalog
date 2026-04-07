@@ -9,22 +9,23 @@
   "pr_merged_at": "2022-04-02T16:08:30+08:00",
   "test": {
     "type": "unit",
-    "path": "again",
-    "name": "again"
+    "path": "br/tests/br_s3/run.sh",
+    "name": "run"
   },
   "symptoms": [
     "br: Fix unstable s3 test (again)"
   ],
   "failure_signature": "br: Fix unstable s3 test (again)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "external_dependency",
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The BR S3 test starts a MinIO service and waits for the HTTP endpoint to be ready. The readiness check parses HTTP status codes from `curl`, but the original bash condition had incorrect operator precedence, which could cause the script to mis-handle non-ready/5xx responses and proceed too early, leading to flaky failures. This PR stabilizes the test by fixing the condition with proper grouping and making the status handling more robust.",
   "module": "br",
-  "fix_pattern": "br: Fix unstable s3 test (again)",
+  "fix_pattern": "Fix the MinIO readiness loop by checking HTTP status codes from `curl` and grouping bash conditions correctly (operator precedence), retrying until the endpoint is ready.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33666",
     "https://github.com/pingcap/tidb/pull/33666.patch"

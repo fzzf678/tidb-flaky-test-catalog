@@ -17,14 +17,14 @@
   ],
   "failure_signature": "br: fix unstable s3 test",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "external_dependency"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "network_without_retry"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The integration test depended on an external S3 service and performed a readiness check using `curl`. `curl` can exit successfully even when the HTTP response is 503, which made the script treat the service as ready and proceed, leading to flaky failures. This PR stabilizes the test by checking the HTTP status code instead of only the `curl` exit code.",
   "module": "br",
-  "fix_pattern": "br: fix unstable s3 test",
+  "fix_pattern": "Check HTTP status code (e.g. 200) from `curl` instead of only the exit code when waiting for the S3 service to be ready.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33610",
     "https://github.com/pingcap/tidb/pull/33610.patch"

@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race in TestSlowQueryOOM.",
+  "root_cause_explanation": "`TestSlowQueryOOM` exercised slow-query retrieval with asynchronous parsing. Background goroutines could continue running after cancellation/close and race on shared state (and related resources like memory trackers), leading to race detector failures. This PR stabilizes it by tracking async goroutines with a `sync.WaitGroup` and waiting in `close()`, and ensuring session/mem-tracker cleanup happens safely.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race in TestSlowQueryOOM",
+  "fix_pattern": "Track async goroutines with a `sync.WaitGroup` and wait for completion during cleanup/close; ensure related resources (e.g. session stmtctx mem tracker) are detached/closed safely.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34016",
     "https://github.com/pingcap/tidb/pull/34016.patch"
