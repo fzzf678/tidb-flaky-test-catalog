@@ -13,18 +13,18 @@
     "name": "nontransactional_test"
   },
   "symptoms": [
-    "\"select `a` from `test`.`t` where true order by `a`\")) (session/nontransactional_test.go)"
+    "tk.MustQuery(\"split on a limit 3 delete from test.t\").Check(...) (session/nontransactional_test.go)"
   ],
-  "failure_signature": "\"select `a` from `test`.`t` where true order by `a`\")) (session/nontransactional_test.go)",
+  "failure_signature": "tk.MustQuery(\"split on a limit 3 delete from test.t\").Check(...) (session/nontransactional_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR implements a new non-transactional delete feature and updates related tests/outputs. The available case data does not include a concrete flaky failure signature or a targeted stabilization change, so we conservatively mark it as insufficient evidence.",
+  "module": "session",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33736",
     "https://github.com/pingcap/tidb/pull/33736.patch"

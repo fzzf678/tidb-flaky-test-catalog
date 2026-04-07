@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: fix unstable test of `TestTimestampDefaultValueTimeZone`",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: fix unstable test of `TestTimestampDefaultValueTimeZone`.",
+  "root_cause_explanation": "`TestTimestampDefaultValueTimeZone` used `now()` while switching session time zones and doing schema changes (generated column + index + admin check). Using `now()` makes the test depend on wall-clock timing and can trigger edge cases in timestamp formatting/conversion, leading to intermittent failures (e.g. invalid timestamp value). This PR stabilizes it by replacing `now()` with fixed timestamp literals.",
   "module": "executor",
-  "fix_pattern": "executor: fix unstable test of `TestTimestampDefaultValueTimeZone`",
+  "fix_pattern": "Avoid wall-clock dependent `now()` in tests; use fixed timestamp literals (or mock time) when time zone conversion is involved.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33926",
     "https://github.com/pingcap/tidb/pull/33926.patch"

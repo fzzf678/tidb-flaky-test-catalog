@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: server: fix data race in TestIssue33699.",
+  "root_cause_explanation": "`TestIssue33699` exercised concurrent operations on `clientConn`: one goroutine could call `ShowProcess()` (reading session context), while another path (e.g. `ComChangeUser`) recreated or cleared the same `TiDBContext`. Accessing `cc.ctx` without synchronization caused a data race. This PR stabilizes it by guarding the context field with a lock and using accessor methods (`getCtx`/`setCtx`) to synchronize reads/writes.",
   "module": "server",
-  "fix_pattern": "server: fix data race in TestIssue33699",
+  "fix_pattern": "Protect shared connection/session context (`cc.ctx`) with proper synchronization (e.g. RWMutex + accessor methods) when accessed from multiple goroutines.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34027",
     "https://github.com/pingcap/tidb/pull/34027.patch"

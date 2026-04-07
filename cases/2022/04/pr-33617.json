@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: topsql: fix data race in test.",
-  "module": "server",
-  "fix_pattern": "topsql: fix data race in test",
+  "root_cause_explanation": "The flakiness was caused by a data race in TopSQL labeling for DDL jobs: `jobContext` cached fields (SQL/digest/context) could be reused and updated in a racy way across job execution. This PR stabilizes it by resetting the jobContext when a job finishes and adjusting how SQL info is attached to avoid write races.",
+  "module": "ddl",
+  "fix_pattern": "Reset `jobContext` after each DDL job and adjust TopSQL SQLInfo attachment to avoid concurrent write races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33617",
     "https://github.com/pingcap/tidb/pull/33617.patch"

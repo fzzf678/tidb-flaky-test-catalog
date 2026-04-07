@@ -17,14 +17,14 @@
   ],
   "failure_signature": "q3 := \"select t1.b from t t1 where t1.b > (select max(b) from t t2 where t1.a > t2.a) order by t1.a\" (executor/parallel_apply_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR changes planner behavior to allow Apply to be parallelized more often (by rejecting order property usage). The case data does not include a concrete flaky failure signature or a targeted stabilization change, so we conservatively mark it as insufficient evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34238",
     "https://github.com/pingcap/tidb/pull/34238.patch"

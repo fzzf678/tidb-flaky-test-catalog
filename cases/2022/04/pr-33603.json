@@ -22,9 +22,9 @@
   "review_smells": [
     "test_suite_setup_issue"
   ],
-  "root_cause_explanation": "The test was flaky due to instability introduced during test-infrastructure migration or refactoring (framework changes, fixtures/setup/teardown, or helper updates). This PR stabilizes it by: executor: migrate test-infra to testify for executor_test.go testResourceTagSuite.",
+  "root_cause_explanation": "The test was unstable under the race build (it was being skipped as \"unstable\"). This PR migrates the legacy gocheck suite to a testify-based test and rewrites the resource-tag test, removing the race-only skip and reducing suite/setup fragility.",
   "module": "executor",
-  "fix_pattern": "executor: migrate test-infra to testify for executor_test.go testResourceTagSuite",
+  "fix_pattern": "Migrate legacy gocheck suite to testify and rewrite the test (isolated mock store + updated helpers), removing the race-only skip.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33603",
     "https://github.com/pingcap/tidb/pull/33603.patch"

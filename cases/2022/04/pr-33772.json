@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: fix unstable TestCheckActRowsWithUnistore",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: executor: fix unstable TestCheckActRowsWithUnistore.",
+  "root_cause_explanation": "The test relied on a global config flag (`EnableCollectExecutionInfo`). When it was false (depending on global state from other tests/config), `TestCheckActRowsWithUnistore` could fail. This PR stabilizes the test by explicitly setting the global flag to the required value and restoring it after the test.",
   "module": "executor",
-  "fix_pattern": "executor: fix unstable TestCheckActRowsWithUnistore",
+  "fix_pattern": "Explicitly set the required global config (`EnableCollectExecutionInfo=true`) in the test and restore the global config afterwards.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33772",
     "https://github.com/pingcap/tidb/pull/33772.patch"

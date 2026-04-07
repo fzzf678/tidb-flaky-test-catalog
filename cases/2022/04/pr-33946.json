@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ORDER BY ordinal_position LIMIT 1 (executor/infoschema_reader_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The flakiness was caused by concurrent access to a session that is not goroutine-safe. Building the view plan for `information_schema.columns` could run in the same session while other executor goroutines (e.g. HashJoin build/probe) were executing concurrently, leading to race/panic. This PR stabilizes it by running the build-plan logic in a separate system session to avoid concurrent access to the original session.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Run goroutine-unsafe operations (e.g. building view plans) in a separate system session instead of sharing the main session across concurrent executor goroutines.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/33946",
     "https://github.com/pingcap/tidb/pull/33946.patch"

@@ -13,19 +13,18 @@
     "name": "db_test"
   },
   "symptoms": [
-    "// only the first will actually do setSystemTimeZoneVariable, thus we can avoid data race."
+    "lease := 50 * time.Millisecond -> 100 * time.Millisecond (domain/db_test.go)"
   ],
-  "failure_signature": "// only the first will actually do setSystemTimeZoneVariable, thus we can avoid data race.",
+  "failure_signature": "lease := 50 * time.Millisecond -> 100 * time.Millisecond (domain/db_test.go)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "global_variable_mutation",
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Global state must be reset/restored between tests. This PR stabilizes it by: domain,session: Store and delete internal session in the session pool.",
+  "root_cause_explanation": "The session-pool tests were timing-sensitive. In particular, `TestAbnormalSessionPool` used a short lease duration (50ms), which could be insufficient under load and cause intermittent failures. This PR stabilizes the test by increasing the lease duration (to 100ms) and improving internal session bookkeeping in the session pool.",
   "module": "domain",
-  "fix_pattern": "domain,session: Store and delete internal session in the session pool",
+  "fix_pattern": "Increase timing windows (lease/timeout) in timing-sensitive tests and ensure session pool bookkeeping is consistent to avoid races with background cleanup.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/34168",
     "https://github.com/pingcap/tidb/pull/34168.patch"
