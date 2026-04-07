@@ -17,15 +17,14 @@
   ],
   "failure_signature": "checkMemoryInfo(t, tk, \"explain analyze select * from t order by v\") (executor/explain_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR is a test-infra migration: it rewrites `executor/explain_test.go` from gocheck to standard `testing` with `testify/require`, and updates testkit usage accordingly. The change is about improving/standardizing the test harness rather than a specific deterministic-ordering fix, so it is classified as `test_infra_migration`.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Migrate gocheck-based tests to `testing` + `testify/require`, and use the updated testkit APIs (`CreateMockStore`, `NewTestKit`, `SetSession`, etc.) to standardize the test harness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32307",
     "https://github.com/pingcap/tidb/pull/32307.patch"

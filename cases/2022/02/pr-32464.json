@@ -17,14 +17,14 @@
   ],
   "failure_signature": "topsql: fix unstable test in reporter",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "hardcoded_port_or_resource"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: topsql: fix unstable test in reporter.",
+  "root_cause_explanation": "The reporter tests had a timing race between sending data and starting to wait for it: the helper `WaitCollectCnt` captured the \"old\" record count at the time it was called (after sending), so if the record arrived quickly the baseline already included it and the wait would incorrectly block for an extra record and time out. This PR stabilizes the tests by capturing baseline counters before triggering the send, and then waiting for the deltas (both records and SQL meta) to increase by the expected amount.",
   "module": "server",
-  "fix_pattern": "topsql: fix unstable test in reporter",
+  "fix_pattern": "When waiting for async side effects, capture the baseline state before triggering the async action and wait for the expected delta (and all expected artifacts) rather than waiting from a potentially-late snapshot.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32464",
     "https://github.com/pingcap/tidb/pull/32464.patch"
