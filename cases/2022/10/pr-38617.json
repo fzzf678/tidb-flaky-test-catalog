@@ -13,19 +13,18 @@
     "name": "ddl_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select b from t order by b;\").Check(testkit.Rows(\"1\", \"2\")) (executor/ddl_test.go)"
+    "Feature change (support AUTO_RANDOM on composite clustered primary key) plus test updates; no concrete flaky failure signature is captured in this case."
   ],
-  "failure_signature": "tk.MustQuery(\"select b from t order by b;\").Check(testkit.Rows(\"1\", \"2\")) (executor/ddl_test.go)",
+  "failure_signature": "No explicit flaky failure signature; PR supports AUTO_RANDOM on composite clustered primary key and updates tests.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds support for AUTO_RANDOM on composite clustered primary keys and updates tests accordingly. The case does not capture a concrete intermittent flaky failure signature or a targeted stabilization fix for flakiness, so keep it as needs-more-evidence rather than guessing a flakiness category.",
+  "module": "ddl",
+  "fix_pattern": "Support AUTO_RANDOM on the first column in a composite clustered primary key.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38617",
     "https://github.com/pingcap/tidb/pull/38617.patch"

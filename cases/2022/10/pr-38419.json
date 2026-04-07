@@ -13,18 +13,18 @@
     "name": "memory_limit_tuner_test"
   },
   "symptoms": [
-    "util: fix data race for memory limit tuner test"
+    "Go race detector: data race in memory limit tuner (util/gctuner) test."
   ],
-  "failure_signature": "util: fix data race for memory limit tuner test",
+  "failure_signature": "Go race detector: data race in util/gctuner memory limit tuner state access.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: util: fix data race for memory limit tuner test.",
-  "module": "module_unknown",
-  "fix_pattern": "util: fix data race for memory limit tuner test",
+  "root_cause_explanation": "The test was flaky due to a data race in memory limit tuner state. This PR stabilizes it by converting shared tuner fields to atomicutil types (Bool/Float64) and enabling race detection for the target to catch similar issues.",
+  "module": "gc",
+  "fix_pattern": "Use atomicutil fields in memory limit tuner to avoid data races; enable Bazel race for the target.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38419",
     "https://github.com/pingcap/tidb/pull/38419.patch"

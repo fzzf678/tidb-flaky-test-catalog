@@ -13,18 +13,18 @@
     "name": "cte_test"
   },
   "symptoms": [
-    "*: enable race for some part"
+    "Goroutine leak detected by goleak in telemetry tests (OpenCensus stats/view worker keeps running)."
   ],
-  "failure_signature": "*: enable race for some part",
+  "failure_signature": "goleak: found unexpected goroutines (go.opencensus.io/stats/view.(*worker).start)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: enable race for some part.",
-  "module": "module_unknown",
-  "fix_pattern": "*: enable race for some part",
+  "root_cause_explanation": "Telemetry tests start the OpenCensus stats/view worker, and without stopping it, goleak can report a leaked background goroutine. The patch removes the goleak ignore for the view worker and instead calls `view.Stop()` during suite cleanup so the worker is shut down deterministically (it also enables Bazel race mode via `race = \"on\"`).",
+  "module": "test_infra",
+  "fix_pattern": "Stop background workers in test teardown (call `view.Stop()` instead of ignoring goleak) and enable race for relevant Bazel go_test targets.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/38288",
     "https://github.com/pingcap/tidb/pull/38288.patch"
