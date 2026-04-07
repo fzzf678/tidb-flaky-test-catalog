@@ -17,14 +17,15 @@
   ],
   "failure_signature": "executor: fix unstable unit test TestIssue16696",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "hardcoded_port_or_resource",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "Some tests relied on the default temporary directory, while other tests could remove that directory during teardown. When the tests ran in parallel, this shared temp-path state caused intermittent failures. This PR stabilizes the suite by using an isolated temporary directory (per test) instead of the shared default temp path.",
   "module": "executor",
-  "fix_pattern": "executor: fix unstable unit test TestIssue16696",
+  "fix_pattern": "Use per-test temporary directories (e.g., `t.TempDir()` or unique paths) and avoid deleting shared default temp paths to prevent cross-test interference under parallel runs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32225",
     "https://github.com/pingcap/tidb/pull/32225.patch"

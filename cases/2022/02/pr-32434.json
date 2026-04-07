@@ -17,14 +17,14 @@
   ],
   "failure_signature": "stmtsummary: fix unstable test",
   "root_cause_categories": [
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: stmtsummary: fix unstable test.",
-  "module": "kv",
-  "fix_pattern": "stmtsummary: fix unstable test",
+  "root_cause_explanation": "The statement-summary test exercised concurrent operations (adding statements while concurrently shrinking `MaxStmtCount`) and implicitly relied on a particular scheduling/ordering for eviction to happen before assertions. Under different goroutine interleavings, the expected eviction/extra record could fail to materialize in time, making the test unstable. This PR stabilizes the test by restructuring the concurrency (using a WaitGroup wrapper) and driving additional statement inserts after `SetMaxStmtCount` so eviction deterministically occurs before checking the summary rows.",
+  "module": "session",
+  "fix_pattern": "When testing concurrent code paths, avoid assertions that depend on goroutine scheduling. Add explicit synchronization and/or trigger the expected state transition (e.g., force eviction after config changes) before asserting on results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32434",
     "https://github.com/pingcap/tidb/pull/32434.patch"

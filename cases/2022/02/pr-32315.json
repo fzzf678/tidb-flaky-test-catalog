@@ -17,15 +17,14 @@
   ],
   "failure_signature": "r := tk.MustQuery(\"select FIRST_SEEN, LAST_SEEN from INFORMATION_SCHEMA.STATEMENTS_SUMMARY_HISTORY order by LAST_SEEN limit 1;\") (infoschema/cluster_tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "external_dependency"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "statistics",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The statement summary history table formatting depended on the server/local timezone (`time.Local`), which could diverge from the session/user timezone and from the CI environment timezone. This made time-based assertions sensitive to environment timezone/time handling and led to unstable results. This PR stabilizes the behavior by switching the reader to use a stable timezone (`time.UTC`) as the base and adding a unit test that varies `time_zone` to verify the timestamps are handled consistently.",
+  "module": "domain",
+  "fix_pattern": "Avoid using `time.Local` in statement-summary/infoschema timestamp rendering; use a stable reference timezone (e.g., UTC) and validate with tests that set session `time_zone`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32315",
     "https://github.com/pingcap/tidb/pull/32315.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select binary upper(a), lower(a) from t order by upper(a);\").Check([][]interface{}{{\"İ i\"}, {\"Ʞ ʞ\"}}) (expression/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "unsafe_zero_copy_alias"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The vectorized implementations of `upper()`/`lower()` evaluated arguments into the output column and then mutated that same column in-place while reading from it, which can lead to unsafe buffer aliasing and panics (especially with UTF8/collation edge cases). This PR stabilizes the behavior by evaluating into a separate scratch column and appending transformed strings to the output, with explicit NULL handling, and adds a regression test that exercises both non-vectorized and vectorized paths.",
   "module": "expression",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Avoid in-place mutation of chunk columns in vectorized eval: evaluate into a separate buffer, append results to the output column, and handle NULLs explicitly to prevent aliasing-related panics.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32505",
     "https://github.com/pingcap/tidb/pull/32505.patch"

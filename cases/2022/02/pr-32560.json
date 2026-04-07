@@ -17,15 +17,14 @@
   ],
   "failure_signature": "require.False(t, tk.MustUseIndex(\"select a from t order by a\", \"i_a\")) (planner/core/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR is a test-infra migration: it converts `planner/core/integration_test.go` (and related testdata) from gocheck to standard `testing` with `testify/require`, and migrates the suite testdata helpers accordingly. The change is primarily about modernizing/standardizing the test framework rather than changing planner behavior, so it is classified as `test_infra_migration`.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Migrate gocheck-based tests to `testing` + `testify/require`, and align testdata/testkit helpers with the new test framework.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32560",
     "https://github.com/pingcap/tidb/pull/32560.patch"

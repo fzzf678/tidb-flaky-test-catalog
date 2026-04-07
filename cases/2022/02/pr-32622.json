@@ -17,15 +17,14 @@
   ],
   "failure_signature": "handle_test: fix unstable test in the TestConcurrentLoadHistTimeout",
   "root_cause_categories": [
-    "concurrency_data_race",
     "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: handle_test: fix unstable test in the TestConcurrentLoadHistTimeout.",
-  "module": "module_unknown",
-  "fix_pattern": "handle_test: fix unstable test in the TestConcurrentLoadHistTimeout",
+  "root_cause_explanation": "The test waited for a background \"timeout\" stats-load task to finish by checking the lengths of internal channels (`TimeoutColumnsCh`/`NeededColumnsCh`). Channel length is not a reliable synchronization signal in concurrent code and can lead to timing-dependent flakes. This PR stabilizes the test by instead polling for an observable state change (the table stats object returned by `GetTableStats` changes after the timeout task is handled), making the wait condition deterministic.",
+  "module": "statistics",
+  "fix_pattern": "Avoid using channel length as a completion signal. Wait on an observable state transition (or a dedicated notification) that indicates the background task has actually been applied before asserting.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32622",
     "https://github.com/pingcap/tidb/pull/32622.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "cpuprofile: fix unstable test",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: cpuprofile: fix unstable test.",
-  "module": "kv",
-  "fix_pattern": "cpuprofile: fix unstable test",
+  "root_cause_explanation": "The CPU-profile test relied on collecting enough profiling samples within a short window. Under CI load, the original profiling duration (hundreds of milliseconds) could be insufficient, leading to intermittent failures when parsing/validating the profile output. This PR stabilizes the test by increasing the sampling duration/timeout (to give the profiler time to produce data) and hardening the profiler's consumer broadcast path to avoid panics when consumers are modified concurrently.",
+  "module": "server",
+  "fix_pattern": "Avoid too-short sampling windows in profiling tests: increase the profile collection duration/timeout and make the producer/consumer path resilient to concurrency (e.g., guard or recover around consumer sends).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32429",
     "https://github.com/pingcap/tidb/pull/32429.patch"

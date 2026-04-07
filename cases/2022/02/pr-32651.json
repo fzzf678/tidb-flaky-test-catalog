@@ -17,16 +17,14 @@
   ],
   "failure_signature": "// Using same `tk` in different goroutines may lead to data race. | tk.MustQuery(\"select c4, c2 from t order by c4 asc\").Check(testkit.Rows(\"8 N\", \"10 A\", \"11 A\")) (ddl/db_change_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "This PR is a test-infra migration: it converts `ddl/db_change_test.go` from gocheck to a `testify/suite`-based test suite and updates testkit usage accordingly. The change is primarily about modernizing/standardizing the test framework rather than changing DDL behavior, so it is classified as `test_infra_migration`.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Migrate gocheck-based tests to `testing` + `testify/suite` (and related `testify/require` patterns) and align testkit/helpers with the new framework.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32651",
     "https://github.com/pingcap/tidb/pull/32651.patch"

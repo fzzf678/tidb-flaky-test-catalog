@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: lightning: fix data race in lightning serial test suite.",
+  "root_cause_explanation": "The test suite called `web.EnableCurrentProgress()` during setup, which mutates global progress state. When multiple test suites executed concurrently, those repeated calls could race and trigger a data race. This PR stabilizes the tests by guarding the initialization with a package-level `sync.Once`, ensuring the global progress is enabled exactly once.",
   "module": "lightning",
-  "fix_pattern": "lightning: fix data race in lightning serial test suite",
+  "fix_pattern": "Guard non-thread-safe global initialization with `sync.Once` so concurrent tests/suites don't race on shared global state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32237",
     "https://github.com/pingcap/tidb/pull/32237.patch"

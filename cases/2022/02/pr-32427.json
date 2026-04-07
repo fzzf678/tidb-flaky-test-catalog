@@ -17,15 +17,14 @@
   ],
   "failure_signature": "r := tk.MustQuery(\"select FIRST_SEEN, LAST_SEEN from INFORMATION_SCHEMA.STATEMENTS_SUMMARY_HISTORY order by LAST_SEEN limit 1;\") (infoschema/cluster_tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "external_dependency"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Statement-summary timestamps (`FIRST_SEEN`/`LAST_SEEN`) were produced using local/server timezone handling and were not consistently converted to the requested/session timezone. This made the results sensitive to environment timezone settings and could lead to unstable behavior when tests changed `time_zone`. This PR stabilizes the behavior by making the reader timezone-aware (converting timestamps into the reader/session timezone) and using a stable reference timezone (UTC) in tests.",
   "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Make statement-summary timestamp rendering timezone-aware (convert `firstSeen/lastSeen` into the reader/session timezone) and avoid relying on `time.Local` by using a stable reference timezone (e.g., UTC) in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32427",
     "https://github.com/pingcap/tidb/pull/32427.patch"

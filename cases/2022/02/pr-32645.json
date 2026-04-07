@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: table/tables: fix data race in the TestConstraintCheckForUniqueIndex.",
+  "root_cause_explanation": "The test spawned a goroutine that wrote to an outer-scoped `err` variable (`_, err = ...`) while other goroutines could also access that variable, creating a data race in the test code. This PR fixes the race by using a goroutine-local `err` (`:=`) so concurrent goroutines don't mutate shared variables without synchronization.",
   "module": "module_unknown",
-  "fix_pattern": "table/tables: fix data race in the TestConstraintCheckForUniqueIndex",
+  "fix_pattern": "Avoid writing to shared variables from goroutines in tests; use local variables (or proper synchronization) to prevent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/32645",
     "https://github.com/pingcap/tidb/pull/32645.patch"
