@@ -16,7 +16,6 @@ For a human-readable checklist generated from `review_smells.json`, see `docs/re
 
 ## References
 
-- Project reference doc (Feishu): https://pingcap.feishu.cn/wiki/EkokwTs97irdyVknLJlcIht4njZ
 - Review checklist (Markdown): `docs/review_checklist.md`
 - Dictionaries: `taxonomy.json`, `review_smells.json`
 - Schemas: `schemas/`
