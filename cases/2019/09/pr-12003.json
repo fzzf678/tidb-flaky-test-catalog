@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: add max/avg cop response time for TableReader, IndexReader and IndexLookupReader.",
-  "module": "statistics",
-  "fix_pattern": "*: add max/avg cop response time for TableReader, IndexReader and IndexLookupReader.",
+  "root_cause_explanation": "The flakiness is caused by a real data race in asynchronous result fetching: `selectResult.fetch()` runs in a background goroutine and previously updated `RuntimeStatsColl` (recording reader stats) from that goroutine while other goroutines read/merge execution details. This can trigger `-race` failures. The PR stabilizes it by moving reader-stats recording into the main result-processing path (`updateCopRuntimeStats` called from `getSelectResp`) and passing `RespTime` explicitly, avoiding unsynchronized concurrent access.",
+  "module": "executor",
+  "fix_pattern": "Avoid mutating shared runtime stats from background goroutines; instead record/aggregate stats in a single goroutine (or protect updates with synchronization) to prevent data races under `-race`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12003",
     "https://github.com/pingcap/tidb/pull/12003.patch"
@@ -34,15 +34,16 @@
     "distsql/distsql.go",
     "distsql/distsql_test.go",
     "distsql/select_result.go",
-    "distsql/select_result_test.go",
     "executor/builder.go",
     "executor/distsql.go",
-    "executor/join_test.go",
     "executor/table_reader.go",
     "kv/kv.go",
     "planner/core/common_plans.go",
     "store/tikv/coprocessor.go",
-    "util/execdetails/execdetails.go"
+    "util/execdetails/execdetails.go",
+    "executor/join_test.go",
+    "planner/core/cbo_test.go",
+    "distsql/select_result_test.go"
   ],
   "triage": {
     "sources": [
@@ -51,8 +52,8 @@
     ],
     "evidence": [
       "evidence: fix data race",
-      "files: distsql/distsql.go, distsql/distsql_test.go, distsql/select_result.go, distsql/select_result_test.go, executor/builder.go, executor/distsql.go, executor/join_test.go, executor/table_reader.go, kv/kv.go, planner/core/cbo_test.go, planner/core/common_plans.go, store/tikv/coprocessor.go, util/execdetails/execdetails.go"
+      "files: distsql/distsql.go, distsql/distsql_test.go, distsql/select_result.go, executor/builder.go, executor/distsql.go, executor/table_reader.go, kv/kv.go, planner/core/common_plans.go, store/tikv/coprocessor.go, util/execdetails/execdetails.go, executor/join_test.go, planner/core/cbo_test.go, distsql/select_result_test.go"
     ]
   },
-  "analysis": "PR title: *: add max/avg cop response time for TableReader, IndexReader and IndexLookupReader.\nPR url: https://github.com/pingcap/tidb/pull/12003\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (12): distsql/distsql.go, distsql/distsql_test.go, distsql/select_result.go, distsql/select_result_test.go, executor/builder.go, executor/distsql.go, executor/join_test.go, executor/table_reader.go, kv/kv.go, planner/core/common_plans.go, store/tikv/coprocessor.go, util/execdetails/execdetails.go\nPatch url: https://github.com/pingcap/tidb/pull/12003.patch\nPicked test: type=unit path=distsql/distsql_test.go name=distsql_test"
+  "analysis": "PR title: *: add max/avg cop response time for TableReader, IndexReader and IndexLookupReader.\nPR url: https://github.com/pingcap/tidb/pull/12003\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (13): distsql/distsql.go, distsql/distsql_test.go, distsql/select_result.go, executor/builder.go, executor/distsql.go, executor/table_reader.go, kv/kv.go, planner/core/common_plans.go, store/tikv/coprocessor.go, util/execdetails/execdetails.go, executor/join_test.go, planner/core/cbo_test.go, distsql/select_result_test.go\nPatch url: https://github.com/pingcap/tidb/pull/12003.patch\nPicked test: type=unit path=distsql/distsql_test.go name=distsql_test"
 }

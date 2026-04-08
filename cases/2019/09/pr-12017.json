@@ -15,17 +15,16 @@
   "symptoms": [
     "// select ... order by (infoschema/perfschema/tables_test.go)"
   ],
-  "failure_signature": "// select ... order by (infoschema/perfschema/tables_test.go)",
+  "failure_signature": "INSUFFICIENT_EVIDENCE: This PR introduces statement summary system tables/variables; no concrete intermittent flaky signature is provided in the case data.",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds support for `events_statements_summary_by_digest` and related system variables/configs. The case data does not include a concrete intermittent failure signature or a targeted stabilization change, so keep it as needs-more-evidence rather than guessing nondeterminism categories.",
   "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12017",
     "https://github.com/pingcap/tidb/pull/12017.patch"
@@ -34,25 +33,28 @@
   "changed_files": [
     "config/config.go",
     "config/config.toml.example",
-    "config/config_test.go",
-    "domain/global_vars_cache.go",
-    "domain/global_vars_cache_test.go",
-    "executor/adapter.go",
     "infoschema/perfschema/const.go",
     "infoschema/perfschema/tables.go",
-    "infoschema/perfschema/tables_test.go",
+    "util/stmtsummary/statement_summary.go",
+    "executor/adapter.go",
     "session/session.go",
-    "session/tidb.go",
-    "sessionctx/variable/session_test.go",
+    "sessionctx/variable/session.go",
     "sessionctx/variable/sysvar.go",
-    "sessionctx/variable/sysvar_test.go",
     "sessionctx/variable/tidb_vars.go",
     "sessionctx/variable/varsutil.go",
-    "tidb-server/main.go",
     "util/kvcache/simple_lru.go",
+    "tidb-server/main.go",
+    "infoschema/perfschema/tables_test.go",
+    "session/tidb.go",
+    "util/stmtsummary/statement_summary_test.go",
+    "config/config_test.go",
+    "sessionctx/variable/session_test.go",
     "util/kvcache/simple_lru_test.go",
-    "util/stmtsummary/statement_summary.go",
-    "util/stmtsummary/statement_summary_test.go"
+    "sessionctx/variable/sysvar_observer_test.go",
+    "sessionctx/variable/sysvar_observers.go",
+    "sessionctx/variable/sysvar_test.go",
+    "domain/global_vars_cache.go",
+    "domain/global_vars_cache_test.go"
   ],
   "triage": {
     "sources": [
@@ -61,8 +63,8 @@
     ],
     "evidence": [
       "evidence: // select ... order by (infoschema/perfschema/tables_test.go)",
-      "files: config/config.go, config/config.toml.example, config/config_test.go, domain/global_vars_cache.go, domain/global_vars_cache_test.go, executor/adapter.go, infoschema/perfschema/const.go, infoschema/perfschema/tables.go, infoschema/perfschema/tables_test.go, session/session.go, session/tidb.go, sessionctx/variable/session.go, sessionctx/variable/session_test.go, sessionctx/variable/sysvar.go, sessionctx/variable/sysvar_observer_test.go, sessionctx/variable/sysvar_observers.go, sessionctx/variable/sysvar_test.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, tidb-server/main.go, util/kvcache/simple_lru.go, util/kvcache/simple_lru_test.go, util/stmtsummary/statement_summary.go, util/stmtsummary/statement_summary_test.go"
+      "files: config/config.go, config/config.toml.example, infoschema/perfschema/const.go, infoschema/perfschema/tables.go, util/stmtsummary/statement_summary.go, executor/adapter.go, session/session.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, util/kvcache/simple_lru.go, tidb-server/main.go, infoschema/perfschema/tables_test.go, session/tidb.go, util/stmtsummary/statement_summary_test.go, config/config_test.go, sessionctx/variable/session_test.go, util/kvcache/simple_lru_test.go, sessionctx/variable/sysvar_observer_test.go, sessionctx/variable/sysvar_observers.go, sessionctx/variable/sysvar_test.go, domain/global_vars_cache.go, domain/global_vars_cache_test.go"
     ]
   },
-  "analysis": "PR title: infoschema, session: support for events_statements_summary_by_digest\nPR url: https://github.com/pingcap/tidb/pull/12017\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // select ... order by (infoschema/perfschema/tables_test.go)\nChanged files (21): config/config.go, config/config.toml.example, config/config_test.go, domain/global_vars_cache.go, domain/global_vars_cache_test.go, executor/adapter.go, infoschema/perfschema/const.go, infoschema/perfschema/tables.go, infoschema/perfschema/tables_test.go, session/session.go, session/tidb.go, sessionctx/variable/session_test.go, sessionctx/variable/sysvar.go, sessionctx/variable/sysvar_test.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, tidb-server/main.go, util/kvcache/simple_lru.go, util/kvcache/simple_lru_test.go, util/stmtsummary/statement_summary.go, util/stmtsummary/statement_summary_test.go\nPatch url: https://github.com/pingcap/tidb/pull/12017.patch\nPicked test: type=unit path=infoschema/perfschema/tables_test.go name=tables_test"
+  "analysis": "PR title: infoschema, session: support for events_statements_summary_by_digest\nPR url: https://github.com/pingcap/tidb/pull/12017\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // select ... order by (infoschema/perfschema/tables_test.go)\nChanged files (24): config/config.go, config/config.toml.example, infoschema/perfschema/const.go, infoschema/perfschema/tables.go, util/stmtsummary/statement_summary.go, executor/adapter.go, session/session.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, util/kvcache/simple_lru.go, tidb-server/main.go, infoschema/perfschema/tables_test.go, session/tidb.go, util/stmtsummary/statement_summary_test.go, config/config_test.go, sessionctx/variable/session_test.go, util/kvcache/simple_lru_test.go, sessionctx/variable/sysvar_observer_test.go, sessionctx/variable/sysvar_observers.go, sessionctx/variable/sysvar_test.go, domain/global_vars_cache.go, domain/global_vars_cache_test.go\nPatch url: https://github.com/pingcap/tidb/pull/12017.patch\nPicked test: type=unit path=infoschema/perfschema/tables_test.go name=tables_test"
 }

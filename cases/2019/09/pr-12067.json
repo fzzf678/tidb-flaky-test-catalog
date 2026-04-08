@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: implement disk-based hash join.",
+  "root_cause_explanation": "The flakiness is caused by a real data race in concurrent spill-to-disk signaling: the hash join spill action may be triggered from one goroutine while the row container is being used/checked from others, and a plain `bool` flag (`exceeded`) was accessed concurrently. The PR stabilizes it by making the spill trigger flag atomic (use `uint32` + `atomic.Load/Store`) and using safer memory-tracker action handoff APIs, preventing unsynchronized concurrent access under `-race`.",
   "module": "executor",
-  "fix_pattern": "executor: implement disk-based hash join",
+  "fix_pattern": "When a state flag is read/written by multiple goroutines (e.g. spill triggers), use atomic operations or locks instead of a plain `bool`, and update shared tracker actions via concurrency-safe APIs to prevent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12067",
     "https://github.com/pingcap/tidb/pull/12067.patch"
@@ -39,15 +39,19 @@
     "executor/join.go",
     "executor/join_test.go",
     "executor/joiner.go",
+    "go.mod",
     "planner/core/physical_plans.go",
     "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
     "sessionctx/variable/tidb_vars.go",
     "sessionctx/variable/varsutil_test.go",
+    "tools/check/go.mod",
+    "util/chunk/column.go",
+    "util/mock/context.go",
     "tidb-server/main.go",
     "util/memory/action.go",
     "util/memory/tracker.go",
-    "util/memory/tracker_test.go",
-    "util/mock/context.go"
+    "util/memory/tracker_test.go"
   ],
   "triage": {
     "sources": [
@@ -56,8 +60,8 @@
     ],
     "evidence": [
       "evidence: comment and fix potential data race",
-      "files: config/config.go, config/config.toml.example, executor/benchmark_test.go, executor/hash_table.go, executor/hash_table_test.go, executor/join.go, executor/join_test.go, executor/joiner.go, go.mod, planner/core/physical_plans.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, tidb-server/main.go, tools/check/go.mod, util/chunk/column.go, util/memory/action.go, util/memory/tracker.go, util/memory/tracker_test.go, util/mock/context.go"
+      "files: config/config.go, config/config.toml.example, executor/benchmark_test.go, executor/hash_table.go, executor/hash_table_test.go, executor/join.go, executor/join_test.go, executor/joiner.go, go.mod, planner/core/physical_plans.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, tools/check/go.mod, util/chunk/column.go, util/mock/context.go, tidb-server/main.go, util/memory/action.go, util/memory/tracker.go, util/memory/tracker_test.go"
     ]
   },
-  "analysis": "PR title: executor: implement disk-based hash join\nPR url: https://github.com/pingcap/tidb/pull/12067\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: comment and fix potential data race\nChanged files (17): config/config.go, config/config.toml.example, executor/benchmark_test.go, executor/hash_table.go, executor/hash_table_test.go, executor/join.go, executor/join_test.go, executor/joiner.go, planner/core/physical_plans.go, sessionctx/variable/session.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, tidb-server/main.go, util/memory/action.go, util/memory/tracker.go, util/memory/tracker_test.go, util/mock/context.go\nPatch url: https://github.com/pingcap/tidb/pull/12067.patch\nPicked test: type=unit path=executor/benchmark_test.go name=benchmark_test"
+  "analysis": "PR title: executor: implement disk-based hash join\nPR url: https://github.com/pingcap/tidb/pull/12067\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: comment and fix potential data race\nChanged files (21): config/config.go, config/config.toml.example, executor/benchmark_test.go, executor/hash_table.go, executor/hash_table_test.go, executor/join.go, executor/join_test.go, executor/joiner.go, go.mod, planner/core/physical_plans.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, tools/check/go.mod, util/chunk/column.go, util/mock/context.go, tidb-server/main.go, util/memory/action.go, util/memory/tracker.go, util/memory/tracker_test.go\nPatch url: https://github.com/pingcap/tidb/pull/12067.patch\nPicked test: type=unit path=executor/benchmark_test.go name=benchmark_test"
 }

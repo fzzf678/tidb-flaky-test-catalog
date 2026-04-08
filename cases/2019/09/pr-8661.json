@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: support index nested loop hash join.",
+  "root_cause_explanation": "The flakiness is caused by a real data race in concurrent join execution: IndexNestedLoopHashJoin runs multiple inner workers concurrently and previously shared mutable join state across workers. The patch explicitly fixes this by copying per-worker `indexRanges` (and related state) so concurrent goroutines do not mutate shared slices/maps, preventing `-race` failures and intermittent behavior.",
   "module": "executor",
-  "fix_pattern": "executor: support index nested loop hash join",
+  "fix_pattern": "When multiple worker goroutines run concurrently, do not share mutable slices/maps across workers. Deep-copy per-worker state (e.g. index ranges) or protect it with synchronization to avoid data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8661",
     "https://github.com/pingcap/tidb/pull/8661.patch"
@@ -32,11 +32,16 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/8661.patch",
   "changed_files": [
     "executor/builder.go",
-    "executor/index_lookup_hash_join.go",
     "executor/index_lookup_join.go",
     "executor/join_test.go",
     "planner/core/exhaust_physical_plans.go",
-    "planner/core/physical_plans.go"
+    "planner/core/physical_plans.go",
+    "executor/index_lookup_hash_join.go",
+    "executor/show.go",
+    "infoschema/tables.go",
+    "go.mod",
+    "go.sum",
+    "cmd/importer/parser.go"
   ],
   "triage": {
     "sources": [
@@ -45,8 +50,8 @@
     ],
     "evidence": [
       "evidence: fix data race",
-      "files: cmd/importer/parser.go, executor/builder.go, executor/index_lookup_hash_join.go, executor/index_lookup_join.go, executor/join_test.go, executor/show.go, go.mod, go.sum, infoschema/tables.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plans.go"
+      "files: executor/builder.go, executor/index_lookup_join.go, executor/join_test.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plans.go, executor/index_lookup_hash_join.go, executor/show.go, infoschema/tables.go, go.mod, go.sum, cmd/importer/parser.go"
     ]
   },
-  "analysis": "PR title: executor: support index nested loop hash join\nPR url: https://github.com/pingcap/tidb/pull/8661\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (6): executor/builder.go, executor/index_lookup_hash_join.go, executor/index_lookup_join.go, executor/join_test.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/8661.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+  "analysis": "PR title: executor: support index nested loop hash join\nPR url: https://github.com/pingcap/tidb/pull/8661\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (11): executor/builder.go, executor/index_lookup_join.go, executor/join_test.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plans.go, executor/index_lookup_hash_join.go, executor/show.go, infoschema/tables.go, go.mod, go.sum, cmd/importer/parser.go\nPatch url: https://github.com/pingcap/tidb/pull/8661.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
 }

@@ -17,27 +17,36 @@
   ],
   "failure_signature": "fix data race",
   "root_cause_categories": [
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: store/tikv: implement a `ttlManager` to update the TTL of a transaction.",
+  "root_cause_explanation": "The flakiness is caused by a real data race around background TTL keepalive: the `ttlManager` runs a goroutine and used `CommitMaxBackoff`, which unit tests may update concurrently (a known source of `-race` reports). The PR stabilizes it by avoiding the shared/mutable global backoff in the goroutine and switching to a dedicated pessimistic-lock backoff constant, eliminating the racy access pattern.",
   "module": "kv",
-  "fix_pattern": "store/tikv: implement a `ttlManager` to update the TTL of a transaction",
+  "fix_pattern": "Avoid reading/writing shared mutable globals from background goroutines in tests; pass immutable values into goroutines (or use dedicated constants) to prevent data races under `-race`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12177",
     "https://github.com/pingcap/tidb/pull/12177.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/12177.patch",
   "changed_files": [
-    "metrics/metrics.go",
-    "metrics/tikvclient.go",
-    "session/pessimistic_test.go",
+    "go.mod",
+    "go.sum",
+    "store/mockstore/mocktikv/mock_tikv_test.go",
+    "store/mockstore/mocktikv/mvcc.go",
     "store/mockstore/mocktikv/mvcc_leveldb.go",
+    "store/mockstore/mocktikv/rpc.go",
+    "store/tikv/lock_test.go",
+    "store/tikv/tikvrpc/tikvrpc.go",
     "store/tikv/2pc.go",
+    "store/tikv/region_request_test.go",
+    "tools/check/go.mod",
+    "session/pessimistic_test.go",
     "store/tikv/2pc_test.go",
-    "store/tikv/txn.go"
+    "store/tikv/txn.go",
+    "metrics/metrics.go",
+    "metrics/tikvclient.go"
   ],
   "triage": {
     "sources": [
@@ -46,8 +55,8 @@
     ],
     "evidence": [
       "evidence: fix data race",
-      "files: go.mod, go.sum, metrics/metrics.go, metrics/tikvclient.go, session/pessimistic_test.go, store/mockstore/mocktikv/mock_tikv_test.go, store/mockstore/mocktikv/mvcc.go, store/mockstore/mocktikv/mvcc_leveldb.go, store/mockstore/mocktikv/rpc.go, store/tikv/2pc.go, store/tikv/2pc_test.go, store/tikv/lock_test.go, store/tikv/region_request_test.go, store/tikv/tikvrpc/tikvrpc.go, store/tikv/txn.go, tools/check/go.mod"
+      "files: go.mod, go.sum, store/mockstore/mocktikv/mock_tikv_test.go, store/mockstore/mocktikv/mvcc.go, store/mockstore/mocktikv/mvcc_leveldb.go, store/mockstore/mocktikv/rpc.go, store/tikv/lock_test.go, store/tikv/tikvrpc/tikvrpc.go, store/tikv/2pc.go, store/tikv/region_request_test.go, tools/check/go.mod, session/pessimistic_test.go, store/tikv/2pc_test.go, store/tikv/txn.go, metrics/metrics.go, metrics/tikvclient.go"
     ]
   },
-  "analysis": "PR title: store/tikv: implement a `ttlManager` to update the TTL of a transaction\nPR url: https://github.com/pingcap/tidb/pull/12177\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (7): metrics/metrics.go, metrics/tikvclient.go, session/pessimistic_test.go, store/mockstore/mocktikv/mvcc_leveldb.go, store/tikv/2pc.go, store/tikv/2pc_test.go, store/tikv/txn.go\nPatch url: https://github.com/pingcap/tidb/pull/12177.patch\nPicked test: type=unit path=session/pessimistic_test.go name=pessimistic_test"
+  "analysis": "PR title: store/tikv: implement a `ttlManager` to update the TTL of a transaction\nPR url: https://github.com/pingcap/tidb/pull/12177\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (16): go.mod, go.sum, store/mockstore/mocktikv/mock_tikv_test.go, store/mockstore/mocktikv/mvcc.go, store/mockstore/mocktikv/mvcc_leveldb.go, store/mockstore/mocktikv/rpc.go, store/tikv/lock_test.go, store/tikv/tikvrpc/tikvrpc.go, store/tikv/2pc.go, store/tikv/region_request_test.go, tools/check/go.mod, session/pessimistic_test.go, store/tikv/2pc_test.go, store/tikv/txn.go, metrics/metrics.go, metrics/tikvclient.go\nPatch url: https://github.com/pingcap/tidb/pull/12177.patch\nPicked test: type=unit path=session/pessimistic_test.go name=pessimistic_test"
 }

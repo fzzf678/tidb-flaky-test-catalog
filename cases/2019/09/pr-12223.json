@@ -17,14 +17,14 @@
   ],
   "failure_signature": "fix data race in test cases",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: *: calculate GC safe point based on global min start timestamp.",
-  "module": "gc",
-  "fix_pattern": "*: calculate GC safe point based on global min start timestamp",
+  "root_cause_explanation": "The flakiness is caused by concurrent access to shared state in background reporting: `InfoSyncer` is used concurrently (e.g. session manager being set while `ReportMinStartTS` runs), and the session manager / minStartTS fields were accessed without synchronization, triggering `-race` in tests. The PR stabilizes it by using `atomic.Value` for the session manager and atomic load/store for `minStartTS`, making concurrent access safe.",
+  "module": "domain",
+  "fix_pattern": "When background goroutines report/refresh shared state, guard shared fields with atomics or locks (e.g. use `atomic.Value` for interface pointers and atomic load/store for timestamps) to prevent data races under `-race`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12223",
     "https://github.com/pingcap/tidb/pull/12223.patch"
@@ -32,15 +32,17 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/12223.patch",
   "changed_files": [
     "config/config.go",
-    "config/config.toml.example",
-    "domain/domain.go",
-    "domain/domain_test.go",
-    "domain/info.go",
-    "kv/kv.go",
-    "store/tikv/2pc.go",
     "store/tikv/gcworker/gc_worker.go",
+    "store/tikv/safepoint.go",
+    "config/config.toml.example",
+    "store/tikv/2pc.go",
     "store/tikv/gcworker/gc_worker_test.go",
-    "store/tikv/safepoint.go"
+    "domain/info.go",
+    "go.mod",
+    "tools/check/go.mod",
+    "domain/domain.go",
+    "kv/kv.go",
+    "domain/domain_test.go"
   ],
   "triage": {
     "sources": [
@@ -49,8 +51,8 @@
     ],
     "evidence": [
       "evidence: fix data race in test cases",
-      "files: config/config.go, config/config.toml.example, domain/domain.go, domain/domain_test.go, domain/info.go, go.mod, kv/kv.go, store/tikv/2pc.go, store/tikv/gcworker/gc_worker.go, store/tikv/gcworker/gc_worker_test.go, store/tikv/safepoint.go, tools/check/go.mod"
+      "files: config/config.go, store/tikv/gcworker/gc_worker.go, store/tikv/safepoint.go, config/config.toml.example, store/tikv/2pc.go, store/tikv/gcworker/gc_worker_test.go, domain/info.go, go.mod, tools/check/go.mod, domain/domain.go, kv/kv.go, domain/domain_test.go"
     ]
   },
-  "analysis": "PR title: *: calculate GC safe point based on global min start timestamp\nPR url: https://github.com/pingcap/tidb/pull/12223\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race in test cases\nChanged files (10): config/config.go, config/config.toml.example, domain/domain.go, domain/domain_test.go, domain/info.go, kv/kv.go, store/tikv/2pc.go, store/tikv/gcworker/gc_worker.go, store/tikv/gcworker/gc_worker_test.go, store/tikv/safepoint.go\nPatch url: https://github.com/pingcap/tidb/pull/12223.patch\nPicked test: type=unit path=domain/domain_test.go name=domain_test"
+  "analysis": "PR title: *: calculate GC safe point based on global min start timestamp\nPR url: https://github.com/pingcap/tidb/pull/12223\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race in test cases\nChanged files (12): config/config.go, store/tikv/gcworker/gc_worker.go, store/tikv/safepoint.go, config/config.toml.example, store/tikv/2pc.go, store/tikv/gcworker/gc_worker_test.go, domain/info.go, go.mod, tools/check/go.mod, domain/domain.go, kv/kv.go, domain/domain_test.go\nPatch url: https://github.com/pingcap/tidb/pull/12223.patch\nPicked test: type=unit path=domain/domain_test.go name=domain_test"
 }

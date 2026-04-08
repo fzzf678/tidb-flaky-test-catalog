@@ -15,16 +15,16 @@
   "symptoms": [
     "rand.Seed(0) (util/chunk/disk_test.go)"
   ],
-  "failure_signature": "rand.Seed(0) (util/chunk/disk_test.go)",
+  "failure_signature": "INSUFFICIENT_EVIDENCE: This PR adds utilities for disk-based hash join; no concrete intermittent flaky signature is provided in the case data.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR introduces utilities for disk-based hash join and related chunk/disk tracking code. The case data does not include a concrete intermittent failure signature or a targeted stabilization change, so keep it as needs-more-evidence rather than guessing nondeterminism categories.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12116",
     "https://github.com/pingcap/tidb/pull/12116.patch"
@@ -32,15 +32,16 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/12116.patch",
   "changed_files": [
     "util/chunk/codec.go",
+    "util/chunk/column.go",
     "util/chunk/column_test.go",
     "util/chunk/disk.go",
     "util/chunk/disk_test.go",
-    "util/chunk/list.go",
-    "util/chunk/list_test.go",
-    "util/chunk/mutrow.go",
     "util/disk/tracker.go",
     "util/memory/tracker.go",
-    "util/memory/tracker_test.go"
+    "util/memory/tracker_test.go",
+    "util/chunk/mutrow.go",
+    "util/chunk/list.go",
+    "util/chunk/list_test.go"
   ],
   "triage": {
     "sources": [
@@ -49,8 +50,8 @@
     ],
     "evidence": [
       "evidence: rand.Seed(0) (util/chunk/disk_test.go)",
-      "files: util/chunk/codec.go, util/chunk/column.go, util/chunk/column_test.go, util/chunk/disk.go, util/chunk/disk_test.go, util/chunk/list.go, util/chunk/list_test.go, util/chunk/mutrow.go, util/disk/tracker.go, util/memory/tracker.go, util/memory/tracker_test.go"
+      "files: util/chunk/codec.go, util/chunk/column.go, util/chunk/column_test.go, util/chunk/disk.go, util/chunk/disk_test.go, util/disk/tracker.go, util/memory/tracker.go, util/memory/tracker_test.go, util/chunk/mutrow.go, util/chunk/list.go, util/chunk/list_test.go"
     ]
   },
-  "analysis": "PR title: executor: utilities for disk-based hash join\nPR url: https://github.com/pingcap/tidb/pull/12116\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(0) (util/chunk/disk_test.go)\nChanged files (10): util/chunk/codec.go, util/chunk/column_test.go, util/chunk/disk.go, util/chunk/disk_test.go, util/chunk/list.go, util/chunk/list_test.go, util/chunk/mutrow.go, util/disk/tracker.go, util/memory/tracker.go, util/memory/tracker_test.go\nPatch url: https://github.com/pingcap/tidb/pull/12116.patch\nPicked test: type=unit path=util/chunk/disk_test.go name=disk_test"
+  "analysis": "PR title: executor: utilities for disk-based hash join\nPR url: https://github.com/pingcap/tidb/pull/12116\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(0) (util/chunk/disk_test.go)\nChanged files (11): util/chunk/codec.go, util/chunk/column.go, util/chunk/column_test.go, util/chunk/disk.go, util/chunk/disk_test.go, util/disk/tracker.go, util/memory/tracker.go, util/memory/tracker_test.go, util/chunk/mutrow.go, util/chunk/list.go, util/chunk/list_test.go\nPatch url: https://github.com/pingcap/tidb/pull/12116.patch\nPicked test: type=unit path=util/chunk/disk_test.go name=disk_test"
 }

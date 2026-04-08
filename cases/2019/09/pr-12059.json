@@ -15,17 +15,16 @@
   "symptoms": [
     "sql: \"select /*+ IGNORE_INDEX(t, c_d_e) */ c from t order by c\", (planner/core/physical_plan_test.go)"
   ],
-  "failure_signature": "sql: \"select /*+ IGNORE_INDEX(t, c_d_e) */ c from t order by c\", (planner/core/physical_plan_test.go)",
+  "failure_signature": "INSUFFICIENT_EVIDENCE: This PR adds/changes optimizer hints, but no concrete intermittent flaky signature is provided in the case data.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR introduces the `IGNORE_INDEX` hint (and renames `INDEX` to `USE_INDEX`) and updates planner hint handling/tests. The case data does not include a concrete intermittent failure signature or a targeted flaky-test stabilization change, so keep it as needs-more-evidence rather than guessing nondeterminism categories.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12059",
     "https://github.com/pingcap/tidb/pull/12059.patch"
@@ -34,11 +33,8 @@
   "changed_files": [
     "go.mod",
     "go.sum",
-    "planner/core/hints.go",
     "planner/core/logical_plan_builder.go",
-    "planner/core/physical_plan_test.go",
-    "planner/core/testdata/plan_suite_in.json",
-    "planner/core/testdata/plan_suite_out.json"
+    "planner/core/physical_plan_test.go"
   ],
   "triage": {
     "sources": [
@@ -50,5 +46,5 @@
       "files: go.mod, go.sum, planner/core/logical_plan_builder.go, planner/core/physical_plan_test.go"
     ]
   },
-  "analysis": "PR title: planner: add IGNORE_INDEX hint\nPR url: https://github.com/pingcap/tidb/pull/12059\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select /*+ IGNORE_INDEX(t, c_d_e) */ c from t order by c\", (planner/core/physical_plan_test.go)\nChanged files (7): go.mod, go.sum, planner/core/hints.go, planner/core/logical_plan_builder.go, planner/core/physical_plan_test.go, planner/core/testdata/plan_suite_in.json, planner/core/testdata/plan_suite_out.json\nPatch url: https://github.com/pingcap/tidb/pull/12059.patch\nPicked test: type=unit path=planner/core/physical_plan_test.go name=physical_plan_test"
+  "analysis": "PR title: planner: add IGNORE_INDEX hint\nPR url: https://github.com/pingcap/tidb/pull/12059\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select /*+ IGNORE_INDEX(t, c_d_e) */ c from t order by c\", (planner/core/physical_plan_test.go)\nChanged files (4): go.mod, go.sum, planner/core/logical_plan_builder.go, planner/core/physical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/12059.patch\nPicked test: type=unit path=planner/core/physical_plan_test.go name=physical_plan_test"
 }
