@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race for chunk resource channel in index merge join.",
+  "root_cause_explanation": "The code had a concurrency race around the chunk reuse channel used by IndexLookUpMergeJoin: closing the resource channel while another goroutine was receiving from it could lead to unsafe behavior. The fix avoids closing the joinChkResourceCh channels in Close(), and makes the receive path respect ctx.Done() so the worker can exit cleanly without racing on channel close.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race for chunk resource channel in index merge join",
+  "fix_pattern": "Avoid closing the chunk reuse channels and make receivers exit on ctx.Done() to prevent joinChkResourceCh close/receive races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18266",
     "https://github.com/pingcap/tidb/pull/18266.patch"

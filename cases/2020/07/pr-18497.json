@@ -17,14 +17,15 @@
   ],
   "failure_signature": "PR title: make TestSlowQuerySensitiveQuery stable.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "t_parallel_with_shared_state",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "TestSlowQuerySensitiveQuery mutates global configuration during execution, which can interfere with other tests when run in parallel and cause flakiness. The fix moves the test into a dedicated SerialSuites suite so the global config changes do not race with other tests.",
   "module": "executor",
-  "fix_pattern": "executor: try to make TestSlowQuerySensitiveQuery stable",
+  "fix_pattern": "Move TestSlowQuerySensitiveQuery into a SerialSuites suite to avoid parallel interference from global configuration changes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18497",
     "https://github.com/pingcap/tidb/pull/18497.patch"

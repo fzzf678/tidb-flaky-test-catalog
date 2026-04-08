@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body: leak tests are not stable because RPCClient routes requests into a closed unistore.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "server",
-  "fix_pattern": "mockstore: return error when store is closed",
+  "root_cause_explanation": "Leak tests were flaky because RPCClient could still route requests to a store that had already been closed, and the resulting behavior could leave goroutines stuck in Backoff. The fix adds a closed flag to RPCClient: Close() marks the client closed, and SendRequest returns context.Canceled when closed to break the backoff loop and avoid goroutine leaks.",
+  "module": "kv",
+  "fix_pattern": "Track RPCClient closed state and return context.Canceled on SendRequest after Close() to break Backoff and avoid leaked goroutines.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18377",
     "https://github.com/pingcap/tidb/pull/18377.patch"

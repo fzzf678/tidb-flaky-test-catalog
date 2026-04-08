@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR title: try to make TestSplitRegion stable.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "try to make TestSplitRegion stable",
+  "root_cause_explanation": "TestSplitRegion is sensitive to shared cluster/region state and can be flaky when run in parallel with other tests that touch the same global/shared resources. The fix moves the test into the serial split-table suite (testSplitTable) to avoid parallel interference.",
+  "module": "executor",
+  "fix_pattern": "Move TestSplitRegion into the serial split-table suite (testSplitTable) to avoid parallel interference on shared state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18688",
     "https://github.com/pingcap/tidb/pull/18688.patch"

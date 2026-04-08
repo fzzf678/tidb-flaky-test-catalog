@@ -13,20 +13,20 @@
     "name": "TestParallelDDLBeforeRunDDLJob"
   },
   "symptoms": [
-    "PR title: stabilize test TestParallelDDLBeforeRunDDLJob."
+    "TestParallelDDLBeforeRunDDLJob may hang forever due to a race between concurrent sessions around an atomic session counter."
   ],
-  "failure_signature": "PR title: stabilize test TestParallelDDLBeforeRunDDLJob.",
+  "failure_signature": "TestParallelDDLBeforeRunDDLJob may hang forever due to a race between concurrent sessions around an atomic session counter.",
   "root_cause_categories": [
-    "schema_change_race",
+    "async_timing_issue",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: stabilize test TestParallelDDLBeforeRunDDLJob.",
+  "root_cause_explanation": "TestParallelDDLBeforeRunDDLJob had a race between two goroutines/sessions in OnGetInfoSchemaExported: if session 1 stores the finished value into the shared atomic counter before session 2 reaches the `sessionCnt==2` check, session 2 can loop forever and the test hangs. The fix adds a short sleep before storing the finished value to make sure the other session can pass the first loop.",
   "module": "ddl",
-  "fix_pattern": "ddl: stabilize test TestParallelDDLBeforeRunDDLJob",
+  "fix_pattern": "Add a short sleep before storing the finished session counter to avoid hanging in the OnGetInfoSchemaExported loop.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18227",
     "https://github.com/pingcap/tidb/pull/18227.patch"
