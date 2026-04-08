@@ -17,14 +17,14 @@
   ],
   "failure_signature": "- c.Skip(\"unstable, skip it and fix it before 20210702\") | row := dbt.MustQuery(\"select * from \" + table + \" order by i\") (server/server_test.go)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a test-infra migration (moving tests to testify's `require`/`assert`) and retains the existing `t.Skip(\"unstable...\")` skip. There is no concrete flaky-test failure signature or targeted stabilization change to classify beyond the framework migration itself.",
+  "root_cause_explanation": "This PR is a test-infra migration: it migrates the Status API TLS test (`TestStatusAPIWithTLS`) from gocheck to `testing.T` + `testify/require` (and related `testkit` helpers). It also uses a dedicated testing server client that binds to ephemeral ports (port 0) to ensure each test uses a unique address. The change is primarily about modernizing/standardizing the test framework and making the test setup more isolated under concurrent execution.",
   "module": "server",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "fix_pattern": "Migrate gocheck-based tests to `testing` + `testify/require` and use isolated per-test server client/DSN helpers (ephemeral ports) for stable execution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29535",
     "https://github.com/pingcap/tidb/pull/29535.patch"

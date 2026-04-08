@@ -17,14 +17,14 @@
   ],
   "failure_signature": "_, err = tk.Exec(\"UPDATE t SET c2=16777215 WHERE c1>= -8388608 AND c1 < -9 ORDER BY c1 LIMIT 2\") (executor/write_serial_test.go)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a test-infra migration for `executor/write_test.go` (moving assertions to testify style). The recorded SQL statement already includes `ORDER BY` and is not a concrete flaky-test failure signature; there is no targeted stabilization mechanism identified beyond framework migration.",
+  "root_cause_explanation": "This PR is a test-infra migration: it migrates `executor/write_test.go` from gocheck to `testing.T` + `testify/require` (and adjusts supporting helpers, including splitting some cases into a serial test file). The change is primarily about modernizing/standardizing the test framework rather than changing executor behavior, so it is classified as `test_infra_migration`.",
   "module": "executor",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "fix_pattern": "Migrate gocheck-based tests to `testing` + `testify/require` and align testkit/helpers with the new framework (using serial test files when appropriate).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29953",
     "https://github.com/pingcap/tidb/pull/29953.patch"
