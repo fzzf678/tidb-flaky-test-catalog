@@ -13,18 +13,18 @@
     "name": "lock_test"
   },
   "symptoms": [
-    "+// The test takes too long under the race detector."
+    "The test is too slow under `go test -race` (race detector overhead) and can time out / become flaky"
   ],
-  "failure_signature": "+// The test takes too long under the race detector.",
+  "failure_signature": "test takes too long under the race detector (timeout/slow execution under -race)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: +// The test takes too long under the race detector.",
+  "root_cause_explanation": "The test was flaky due to timing/timeout sensitivity under the race detector: `-race` significantly slows execution, and this particular 2PC test is heavy enough to become unstable or exceed time limits when run with race instrumentation. This PR stabilizes it by moving the slow 2PC tests into a separate file/package and marking the slow test with a `!race` build tag so it is skipped under `go test -race`.",
   "module": "kv",
-  "fix_pattern": "+// The test takes too long under the race detector.",
+  "fix_pattern": "Isolate slow tests and exclude them from `-race` runs (e.g., `// +build !race`) to avoid race-detector-induced timeouts.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23330",
     "https://github.com/pingcap/tidb/pull/23330.patch"

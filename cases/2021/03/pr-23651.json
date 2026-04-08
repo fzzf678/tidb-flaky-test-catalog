@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from t2 where a > 10 or b is NULL order by a;\").Check(testkit.Rows(\"-1 <nil>\", \"1 <nil>\")) (planner/core/partition_pruner_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(\"select * from t2 where a > 10 or b is NULL order by a;\").Check(testkit.Rows(\"-1 <nil>\", \"1 <nil>\")) (planner/core/partition_pruner_test.go).",
-  "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"select * from t2 where a > 10 or b is NULL order by a;\").Check(testkit.Rows(\"-1 <nil>\", \"1 <nil>\")) (planner/core/partition_pruner_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic panic/correctness issue in partition range simplification and updates tests accordingly. The captured evidence line is a query assertion (with explicit `ORDER BY`), not a flaky failure signature, and the patch does not show a targeted stabilization change for flakiness. To avoid guessing, we mark this case as needing more evidence.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23651",
     "https://github.com/pingcap/tidb/pull/23651.patch"

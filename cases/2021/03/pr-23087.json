@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select (select t2.c_str from t2 where t2.c_str = t1.c_str and t2.c_int = 10 order by t2.c_str limit 1) x from t1;\").Check(testkit.Rows(\"<nil>\", \"goofy mestorf\")) (ddl/db_integration_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "async_schema_propagation",
-    "ddl_without_wait"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: tk.MustQuery(\"select (select t2.c_str from t2 where t2.c_str = t1.c_str and t2.c_int = 10 order by t2.c_str limit 1) x from t1;\").Check(testkit.Rows(\"<nil>\", \"goofy mestorf\")) (ddl/db_integration_test.go).",
-  "module": "executor",
-  "fix_pattern": "tk.MustQuery(\"select (select t2.c_str from t2 where t2.c_str = t1.c_str and t2.c_int = 10 order by t2.c_str limit 1) x from t1;\").Check(testkit.Rows(\"<nil>\", \"goofy mestorf\")) (ddl/db_integration_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a correctness issue in correlated-column range building for clustered-index (common-handle) tables and adds a new regression test for the issue. The captured evidence line is from the newly added test rather than an existing flaky failure signature, and the patch does not show a targeted stabilization change for flakiness. To avoid guessing, we mark this case as needing more evidence.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23087",
     "https://github.com/pingcap/tidb/pull/23087.patch"

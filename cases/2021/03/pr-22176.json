@@ -13,18 +13,18 @@
     "name": "executor_test"
   },
   "symptoms": [
-    "fix race"
+    "Go race detector reports a data race when setting snapshot staleness options (tikvSnapshot.isStaleness)"
   ],
-  "failure_signature": "fix race",
+  "failure_signature": "DATA RACE in store/tikv/snapshot.go (tikvSnapshot.SetOption / isStaleness)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix race.",
+  "root_cause_explanation": "The test was flaky due to unsynchronized concurrent access to snapshot state. In store/tikv, `tikvSnapshot.SetOption(kv.IsStalenessReadOnly, ...)` updated `isStaleness` without holding the snapshot mutex, which could race with concurrent reads/uses of the snapshot in request execution. This PR fixes the race by guarding the `isStaleness` assignment with `s.mu` lock/unlock.",
   "module": "kv",
-  "fix_pattern": "fix race",
+  "fix_pattern": "Protect `tikvSnapshot.isStaleness` with mutex when setting staleness-related options (avoid concurrent read/write data race).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22176",
     "https://github.com/pingcap/tidb/pull/22176.patch"

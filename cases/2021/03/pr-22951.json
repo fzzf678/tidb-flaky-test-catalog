@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select rule_id from information_schema.placement_policy order by rule_id\").Check(testkit.Rows( (infoschema/tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select rule_id from information_schema.placement_policy order by rule_id\").Check(testkit.Rows( (infoschema/tables_test.go).",
-  "module": "module_unknown",
-  "fix_pattern": "tk.MustQuery(\"select rule_id from information_schema.placement_policy order by rule_id\").Check(testkit.Rows( (infoschema/tables_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a functional bugfix for invalid placement-policy ObjectID handling and adds new tests for that behavior. The captured evidence line is an assertion from the newly added test (and it already has an explicit `ORDER BY`), so the previous nondeterministic-order classification does not match the patch. Without a concrete flaky failure signature, we conservatively mark it as needing more evidence.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22951",
     "https://github.com/pingcap/tidb/pull/22951.patch"

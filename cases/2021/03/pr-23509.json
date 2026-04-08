@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select /*+ agg_to_cop(), hash_agg()*/ count(*) from x1 where a >= any (select a from x2 where x1.a = x2.a) order by 1;\").Check(testkit.Rows(\"3\")) (executor/tiflash_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select /*+ agg_to_cop(), hash_agg()*/ count(*) from x1 where a >= any (select a from x2 where x1.a = x2.a) order by 1;\").Check(testkit.Rows(\"3\")) (executor/tiflash_test.go).",
-  "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"select /*+ agg_to_cop(), hash_agg()*/ count(*) from x1 where a >= any (select a from x2 where x1.a = x2.a) order by 1;\").Check(testkit.Rows(\"3\")) (executor/tiflash_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily fixes correctness of correlated columns handling in MPP apply and updates tests accordingly. The captured evidence line already includes an explicit `ORDER BY`, so the previous nondeterministic-order classification does not match the patch. Without a concrete flaky failure signature and a clear targeted stabilization change, we conservatively mark this case as needing more evidence.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23509",
     "https://github.com/pingcap/tidb/pull/23509.patch"

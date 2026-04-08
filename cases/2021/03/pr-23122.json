@@ -13,18 +13,18 @@
     "name": "TestUpdateWithTableReadLockWillFail"
   },
   "symptoms": [
-    "Merge branch 'master' into fix-race"
+    "Flaky behavior / race-detector failures due to mutating global config (`EnableTableLock`) directly inside a test"
   ],
-  "failure_signature": "Merge branch 'master' into fix-race",
+  "failure_signature": "DATA RACE / shared-state interference on global config `EnableTableLock`",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: Merge branch 'master' into fix-race.",
-  "module": "test_infra",
-  "fix_pattern": "Merge branch 'master' into fix-race",
+  "root_cause_explanation": "The test was flaky due to unsafe global configuration mutation: it directly set `config.GetGlobalConfig().EnableTableLock = true` and later restored it, which can race with other concurrent tests/goroutines reading the global config and can leak state across tests. This PR stabilizes it by switching to `config.UpdateGlobal(...)` (thread-safe update) and `config.RestoreFunc()` to reliably restore global state after the test.",
+  "module": "planner",
+  "fix_pattern": "Use `config.UpdateGlobal(...)` + `config.RestoreFunc()` instead of direct global config writes when toggling `EnableTableLock` in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23122",
     "https://github.com/pingcap/tidb/pull/23122.patch"

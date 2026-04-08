@@ -13,18 +13,18 @@
     "name": "conn_test"
   },
   "symptoms": [
-    "fix data race"
+    "Intermittent TiFlash I/O errors/timeouts cause batch-coprocessor or MPP requests to fail instead of falling back to TiKV"
   ],
-  "failure_signature": "fix data race",
+  "failure_signature": "TiFlashTimeout / ErrTiFlashServerTimeout leading to fallback/retry behavior differences",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "external_dependency"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "network_without_retry"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix data race.",
-  "module": "kv",
-  "fix_pattern": "fix data race",
+  "root_cause_explanation": "The test was flaky due to external dependency instability: TiFlash batch-coprocessor/MPP requests could hit transient I/O errors (including timeout-like errors) and fail without being reliably recognized by the TiFlash→TiKV fallback path. This PR stabilizes it by normalizing these I/O errors into `TiFlashTimeout` so the fallback function can consistently route the request to TiKV mode and retry there.",
+  "module": "copr",
+  "fix_pattern": "Normalize TiFlash I/O errors to `TiFlashTimeout` so fallback logic can detect them and retry in TiKV mode.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23078",
     "https://github.com/pingcap/tidb/pull/23078.patch"

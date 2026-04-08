@@ -13,18 +13,18 @@
     "name": "TestCMSketchCodingTopN"
   },
   "symptoms": [
-    "avoid race test for testMergeTopN | rand.Seed(time.Now().Unix()) (statistics/handle/update_test.go)"
+    "Go race detector reports data races in statistics tests due to shared suite-level fixtures (store/domain) and non-serial execution"
   ],
-  "failure_signature": "avoid race test for testMergeTopN | rand.Seed(time.Now().Unix()) (statistics/handle/update_test.go)",
+  "failure_signature": "DATA RACE in statistics test suite (non-serial suite/fixture sharing)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "test_suite_setup_issue"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: avoid race test for testMergeTopN | rand.Seed(time.Now().Unix()) (statistics/handle/update_test.go).",
+  "root_cause_explanation": "The test was flaky under `-race` due to shared suite-level fixtures being accessed concurrently across tests (global/suite bootstrap objects such as store/domain). This PR stabilizes it by moving the sensitive test(s) (e.g., `TestMergeTopN`) into a serial suite and introducing explicit suite setup/teardown to create and close isolated store/domain fixtures, reducing concurrent access and preventing race-detector failures.",
   "module": "statistics",
-  "fix_pattern": "avoid race test for testMergeTopN | rand.Seed(time.Now().Unix()) (statistics/handle/update_test.go)",
+  "fix_pattern": "Run race-sensitive tests in a serial suite and isolate suite fixtures (bootstrap per-suite store/domain + proper teardown) to avoid concurrent shared-state access.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23256",
     "https://github.com/pingcap/tidb/pull/23256.patch"
