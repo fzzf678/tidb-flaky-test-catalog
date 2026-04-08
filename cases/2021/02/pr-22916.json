@@ -9,22 +9,25 @@
   "pr_merged_at": "2021-02-24T21:04:03+08:00",
   "test": {
     "type": "unit",
-    "path": "session/session_fail_test.go",
+    "path": "store/tikv/snapshot_fail_test.go",
     "name": "TestRetryPointGetWithTS"
   },
   "symptoms": [
-    "store/tikv: fix unstable tests in snapshot_fail_test.go"
+    "TestRetryPointGetWithTS polluted shared KV state (leftover key k4) and had a failpoint lifetime race, affecting other tests."
   ],
-  "failure_signature": "store/tikv: fix unstable tests in snapshot_fail_test.go",
+  "failure_signature": "TestRetryPointGetWithTS polluted shared KV state (leftover key k4) and had a failpoint lifetime race, affecting other tests.",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution",
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_cleanup_between_tests",
+    "global_variable_mutation",
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: store/tikv: fix unstable tests in snapshot_fail_test.go.",
+  "root_cause_explanation": "The suite is flaky due to shared-state pollution and timing races: TestRetryPointGetWithTS wrote a fixed key (k4) and did not reliably clean it up, so later tests could observe polluted state. In addition, disabling the asyncCommitDoNothing failpoint too early could race with the code path reaching the failpoint, making the test behavior non-deterministic. This PR stabilizes the suite by adding per-test cleanup (delete keys / cleanup helper) and disabling failpoints only after the point-get assertion completes.",
   "module": "kv",
-  "fix_pattern": "store/tikv: fix unstable tests in snapshot_fail_test.go",
+  "fix_pattern": "Add per-test cleanup to remove written keys and keep failpoints enabled until after the relevant assertion; use cleanup helpers/defer to ensure isolation between tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22916",
     "https://github.com/pingcap/tidb/pull/22916.patch"

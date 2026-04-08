@@ -17,21 +17,21 @@
   ],
   "failure_signature": "tk.MustQuery(\"select b, avg(a) from t3 group by b order by 1, 2\").Check(testkit.Rows(\"0 2.0000\", \"1 <nil>\")) (executor/tiflash_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select b, avg(a) from t3 group by b order by 1, 2\").Check(testkit.Rows(\"0 2.0000\", \"1 <nil>\")) (executor/tiflash_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly fixes MPP AVG(decimal)/AVG(NULL) behavior and adds/updates tests. The captured evidence line already includes an explicit ORDER BY and does not indicate a concrete flaky failure signature or a clearly targeted stabilization for nondeterminism. To avoid guessing (e.g., attributing it to result-order instability without evidence), we conservatively mark this case as needing more evidence.",
   "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"select b, avg(a) from t3 group by b order by 1, 2\").Check(testkit.Rows(\"0 2.0000\", \"1 <nil>\")) (executor/tiflash_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22668",
     "https://github.com/pingcap/tidb/pull/22668.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/22668.patch",
   "changed_files": [
+    "executor/tiflash_test.go",
     "planner/core/task.go",
     "planner/core/testdata/integration_serial_suite_out.json"
   ],

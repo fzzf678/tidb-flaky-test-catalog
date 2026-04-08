@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"desc format = 'brief' select /*+ INL_HASH_JOIN(s) */ * from t join s on t.a=s.a order by t.a;\").Check(testkit.Rows( (executor/join_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"desc format = 'brief' select /*+ INL_HASH_JOIN(s) */ * from t join s on t.a=s.a order by t.a;\").Check(testkit.Rows( (executor/join_test.go).",
-  "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"desc format = 'brief' select /*+ INL_HASH_JOIN(s) */ * from t join s on t.a=s.a order by t.a;\").Check(testkit.Rows( (executor/join_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily changes planner behavior (decorrelating `LogicalApply` with inner join) and updates many plan/testdata outputs. The captured evidence line is an EXPLAIN assertion that already includes an explicit `ORDER BY`, so the previous nondeterministic-order classification does not match the patch. Without a concrete flaky failure signature and a clear targeted stabilization change, we conservatively mark this case as needing more evidence.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22649",
     "https://github.com/pingcap/tidb/pull/22649.patch"

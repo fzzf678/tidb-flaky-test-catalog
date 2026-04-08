@@ -13,19 +13,18 @@
     "name": "bench_test"
   },
   "symptoms": [
-    "try to fix the data race | rs, err := se.ExecuteInternal(ctx, \"select * from t order by col limit 50\") (session/bench_test.go)"
+    "Go race detector reports a data race involving session/statistics handle shared session-variable access"
   ],
-  "failure_signature": "try to fix the data race | rs, err := se.ExecuteInternal(ctx, \"select * from t order by col limit 50\") (session/bench_test.go)",
+  "failure_signature": "DATA RACE in statistics handle UpdateSessionVar / session initialization (shared session vars access)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: try to fix the data race | rs, err := se.ExecuteInternal(ctx, \"select * from t order by col limit 50\") (session/bench_test.go).",
+  "root_cause_explanation": "The test was flaky due to a data race on shared session-variable state used by background/statistics components. In particular, the statistics handle updated session variables (e.g., analyze version) while accessing global vars without holding the handle mutex, which could race with concurrent session usage. This PR stabilizes it by taking `h.mu` lock before reading global vars and updating session vars, ensuring the UpdateSessionVar path is synchronized and race-safe.",
   "module": "session",
-  "fix_pattern": "try to fix the data race | rs, err := se.ExecuteInternal(ctx, \"select * from t order by col limit 50\") (session/bench_test.go)",
+  "fix_pattern": "Acquire the statistics handle mutex before reading/updating shared session variables (e.g., analyze version) to avoid concurrent races with other goroutines using the same session context.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22652",
     "https://github.com/pingcap/tidb/pull/22652.patch"

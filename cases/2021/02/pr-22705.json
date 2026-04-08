@@ -13,18 +13,18 @@
     "name": "TestXXX"
   },
   "symptoms": [
-    "// Add the hook here to avoid data race."
+    "Some gocheck suites ran Test* methods twice due to suite embedding/inheritance, causing duplicate test execution."
   ],
-  "failure_signature": "// Add the hook here to avoid data race.",
+  "failure_signature": "Some gocheck suites ran Test* methods twice due to suite embedding/inheritance, causing duplicate test execution.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "test_suite_setup_issue"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: // Add the hook here to avoid data race.",
-  "module": "statistics",
-  "fix_pattern": "// Add the hook here to avoid data race.",
+  "root_cause_explanation": "This is a test-suite setup issue: embedding a base suite that implements Test* methods can cause gocheck to run those tests twice (especially when a derived/serial suite embeds another suite). Duplicate execution can lead to order-dependent interference and instability. This PR refactors the involved suites to embed shared fixtures in base structs (without Test* methods) and registers serial suites directly (e.g., SerialSuites(&suite{})), avoiding double runs.",
+  "module": "test_infra",
+  "fix_pattern": "Refactor gocheck suites so shared fixtures live in a base struct without Test* methods; register serial suites directly (SerialSuites(&suite{})) instead of embedding another suite that already defines Test* methods.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22705",
     "https://github.com/pingcap/tidb/pull/22705.patch"

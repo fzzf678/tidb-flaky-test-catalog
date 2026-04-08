@@ -13,18 +13,18 @@
     "name": "update_test"
   },
   "symptoms": [
-    "use lock to avoid race"
+    "Go race detector reports a data race when updating session analyze-version state in the statistics handle"
   ],
-  "failure_signature": "use lock to avoid race",
+  "failure_signature": "DATA RACE in statistics handle UpdateSessionVar (concurrent session vars access)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: use lock to avoid race.",
-  "module": "planner",
-  "fix_pattern": "use lock to avoid race",
+  "root_cause_explanation": "The test was flaky due to unsynchronized concurrent access to session-variable state inside the statistics handle. `Handle.UpdateSessionVar()` previously updated the analyze version through executing SQL on a shared session context, which could race with other goroutines using the same context/session variables. This PR stabilizes it by protecting the update with `h.mu` and by directly setting `SessionVars().AnalyzeVersion` under lock (instead of executing a `SET` statement).",
+  "module": "statistics",
+  "fix_pattern": "Guard statistics handle session-var updates with a mutex and update `AnalyzeVersion` directly under lock to avoid concurrent access races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22461",
     "https://github.com/pingcap/tidb/pull/22461.patch"
