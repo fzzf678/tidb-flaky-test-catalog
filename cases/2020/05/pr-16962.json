@@ -23,9 +23,9 @@
     "race_condition_in_async_code",
     "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: tikv: fix race modification when handle epoch not match.",
+  "root_cause_explanation": "Two concurrent resolve-lock requests could share the same PD response (region meta). The code decoded region keys in-place, which would mutate the shared response object and create a race/corruption when another request reads it. The fix introduces a shallow-copy decode path and uses it on RegionEpochNotMatch so the shared response is not modified.",
   "module": "kv",
-  "fix_pattern": "tikv: fix race modification when handle epoch not match",
+  "fix_pattern": "Avoid mutating shared PD responses: shallow-copy Region meta before decoding StartKey/EndKey when handling RegionEpochNotMatch.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16962",
     "https://github.com/pingcap/tidb/pull/16962.patch"

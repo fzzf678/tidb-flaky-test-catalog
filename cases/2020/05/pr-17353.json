@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: expression: fix data race when simpleRewriter rewrite ast.ColumnNameExpr concurrently.",
-  "module": "expression",
-  "fix_pattern": "expression: fix data race when simpleRewriter rewrite ast.ColumnNameExpr concurrently",
+  "root_cause_explanation": "Partition pruning could trigger a data race because simpleRewriter rewrote an ast.ColumnNameExpr by mutating the shared AST node, and the same AST could be accessed concurrently. The fix avoids sharing/mutating the AST in pruning: it removes the stored ast.ExprNode from the pruning struct and instead locates the partition column via schema/name index, eliminating concurrent rewrites of a shared ColumnNameExpr.",
+  "module": "planner",
+  "fix_pattern": "Avoid rewriting shared AST nodes concurrently: remove stored ast.ExprNode from pruning structs and resolve the partition column via schema index/name instead.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/17353",
     "https://github.com/pingcap/tidb/pull/17353.patch"
