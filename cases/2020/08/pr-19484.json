@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "planner/core/preprocess_test.go",
-    "name": "preprocess_test"
+    "name": "TestValidator"
   },
   "symptoms": [
-    "PR title: stable the test introduced by #18474."
+    "Leak/cleanup related flakes in preprocess tests (e.g., domain/store background goroutines not closed, causing `testleak` failures)."
   ],
-  "failure_signature": "PR title: stable the test introduced by #18474.",
+  "failure_signature": "`testleak` reports leaked goroutines due to missing/late `s.dom.Close()` / `s.store.Close()` in preprocess tests",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: stable the test introduced by #18474.",
+  "root_cause_explanation": "The test suite creates a domain/store that spawns background goroutines. When `s.dom.Close()` / `s.store.Close()` are not reliably executed for each test, leaked goroutines can be detected by `testleak` and cause intermittent CI failures. This PR stabilizes the tests by explicitly deferring `Close()` of `dom` and `store` inside each affected test (`TestValidator`, `TestForeignKey`) so cleanup is guaranteed even when test flow changes.",
   "module": "planner",
-  "fix_pattern": "planner: stable the test introduced by #18474",
+  "fix_pattern": "Ensure per-test cleanup of domain/store resources (defer `Close()` inside each test) to prevent goroutine leaks and `testleak` flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19484",
     "https://github.com/pingcap/tidb/pull/19484.patch"

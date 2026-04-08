@@ -13,18 +13,18 @@
     "name": "TestPanicInRecvLoop"
   },
   "symptoms": [
-    "PR title: make TestPanicInRecvLoop stable."
+    "`TestPanicInRecvLoop` intermittently hits deadline/connection establishment issues in the batch client under load, making the test unstable."
   ],
-  "failure_signature": "PR title: make TestPanicInRecvLoop stable.",
+  "failure_signature": "Deadline/connection timing instability in TiKV batch client during `TestPanicInRecvLoop` (e.g. context deadline exceeded while dialing/recv loop)",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: tikv: make TestPanicInRecvLoop stable.",
+  "root_cause_explanation": "`TestPanicInRecvLoop` depends on gRPC dialing and the TiKV batch client's send/recv loops. Under heavy load, connection establishment and deadline handling can be timing-sensitive, leading to intermittent `DeadlineExceeded`/dial-related failures. This PR stabilizes the test by making the RPC client's dial timeout configurable (so the test can use a shorter dial timeout) and by adding more annotated debug info for `DeadlineExceeded` errors in the batch client, improving determinism and debuggability.",
   "module": "kv",
-  "fix_pattern": "tikv: make TestPanicInRecvLoop stable",
+  "fix_pattern": "Make test timeouts deterministic: allow configuring a shorter dial timeout in `TestPanicInRecvLoop` and annotate `DeadlineExceeded` errors in batch send/recv loops for clearer failure signatures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18900",
     "https://github.com/pingcap/tidb/pull/18900.patch"

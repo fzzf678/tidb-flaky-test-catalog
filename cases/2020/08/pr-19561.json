@@ -13,18 +13,19 @@
     "name": "executor_test"
   },
   "symptoms": [
-    "PR title: fix unstable tests using failpoint."
+    "Failpoint-enabled executor tests were unstable when suites ran non-serially because failpoints are global and can interfere across tests."
   ],
-  "failure_signature": "PR title: fix unstable tests using failpoint.",
+  "failure_signature": "Cross-test interference from global failpoints when executor suites run concurrently (non-serial)",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "network_without_retry"
+    "global_variable_mutation",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: test: fix unstable tests using failpoint.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable tests using failpoint",
+  "root_cause_explanation": "Failpoints are global toggles that affect shared code paths. Several executor tests enabled failpoints but were registered under non-serial suites, so concurrent execution could observe each other's failpoint state and produce flaky failures. This PR stabilizes the suite by moving failpoint-dependent tests into `SerialSuites` (so they don't run concurrently with other tests) and by tightening error assertions to avoid nil/ordering races.",
+  "module": "executor",
+  "fix_pattern": "Run failpoint-enabled tests in serial suites (and ensure failpoints are enabled/disabled within test scope) to prevent global failpoint state from leaking across concurrent tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19561",
     "https://github.com/pingcap/tidb/pull/19561.patch"

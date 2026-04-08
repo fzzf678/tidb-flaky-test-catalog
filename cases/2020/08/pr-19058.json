@@ -20,11 +20,11 @@
     "shared_state_pollution"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: util: make rowContainer can spill again after calling reset.",
-  "module": "module_unknown",
-  "fix_pattern": "util: make rowContainer can spill again after calling reset.",
+  "root_cause_explanation": "`RowContainer.Reset()` did not reset the internal spill-to-disk action state (`actionSpill`). After a reset, the container could no longer spill again, so tests that relied on spilling behavior could become unstable (depending on memory usage and whether spilling was expected to happen). This PR stabilizes behavior by adding `SpillDiskAction.Reset()` (reset status + sync.Once) and calling it from `RowContainer.Reset()`, making subsequent spills work deterministically after reset.",
+  "module": "chunk",
+  "fix_pattern": "Reset internal spill action state when resetting `RowContainer` so spill-to-disk can be triggered again deterministically after `Reset()`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19058",
     "https://github.com/pingcap/tidb/pull/19058.patch"

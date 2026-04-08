@@ -13,18 +13,18 @@
     "name": "TestMemCount"
   },
   "symptoms": [
-    "PR title: skip TestMemCount test case to make race test more stable."
+    "`TestMemCount` could block for a very long time under `-race`, causing CI timeouts; this PR quarantines it by skipping under race."
   ],
-  "failure_signature": "PR title: skip TestMemCount test case to make race test more stable.",
+  "failure_signature": "Quarantine-only: `TestMemCount` is skipped under `-race` due to very long runtime / potential timeout",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: skip TestMemCount test case to make race test more stable.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This change only quarantines the flakiness by skipping `TestMemCount` when `-race` is enabled because the test can run extremely slowly and trigger CI timeouts. There is no targeted stabilization/root-cause fix in the patch beyond skipping, so we classify as insufficient evidence.",
   "module": "executor",
-  "fix_pattern": "executor: skip TestMemCount test case to make race test more stable",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19578",
     "https://github.com/pingcap/tidb/pull/19578.patch"

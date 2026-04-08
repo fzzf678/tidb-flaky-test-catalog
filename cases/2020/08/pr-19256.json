@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "store/tikv/2pc_fail_test.go",
-    "name": "2pc_fail_test"
+    "name": "TestFailPrewriteRegionError"
   },
   "symptoms": [
-    "PR title: skip a test case to make race test more stable."
+    "Race builds can be killed by OOM / excessive resource usage; this PR quarantines `TestFailPrewriteRegionError` by skipping it under `-race` to keep CI stable."
   ],
-  "failure_signature": "PR title: skip a test case to make race test more stable.",
+  "failure_signature": "Quarantine-only: `TestFailPrewriteRegionError` is skipped under `-race` due to OOM/resource exhaustion (process killed with no `FAIL:`)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: store/tikv: skip a test case to make race test more stable.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This change only quarantines the issue by skipping `TestFailPrewriteRegionError` under `-race` to reduce memory pressure / avoid OOM kills (no `FAIL:` in logs). There is no targeted stabilization or root-cause fix in the patch beyond skipping, so we classify it as insufficient evidence rather than guessing the underlying cause.",
   "module": "kv",
-  "fix_pattern": "store/tikv: skip a test case to make race test more stable",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19256",
     "https://github.com/pingcap/tidb/pull/19256.patch"
