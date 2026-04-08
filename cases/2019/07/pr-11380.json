@@ -20,12 +20,11 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state",
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: executor: refactor some methods of `Row` and `Chunk`.",
+  "root_cause_explanation": "The flakiness risk here is a Go DATA RACE when manipulating a shared `Chunk` from multiple goroutines: `PreAlloc`/`Insert` update row null-bitmaps at the byte level, so parallel inserts can race even if goroutines write different rows. This PR mitigates the risk by hiding these unsafe APIs (make them unexported and explicitly documented as test-only), reducing the chance they are used in concurrent code paths without proper synchronization.",
   "module": "executor",
-  "fix_pattern": "executor: refactor some methods of `Row` and `Chunk`",
+  "fix_pattern": "Avoid mutating a `Chunk` concurrently from multiple goroutines; hide/limit unsafe helper APIs and require explicit synchronization or redesigned data flow when parallel writes are needed.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11380",
     "https://github.com/pingcap/tidb/pull/11380.patch"
@@ -34,10 +33,10 @@
   "changed_files": [
     "util/chunk/chunk.go",
     "util/chunk/chunk_test.go",
-    "util/chunk/column.go",
-    "util/chunk/column_test.go",
     "util/chunk/list.go",
     "util/chunk/list_test.go",
+    "util/chunk/column.go",
+    "util/chunk/column_test.go",
     "util/chunk/row.go"
   ],
   "triage": {
@@ -47,8 +46,8 @@
     ],
     "evidence": [
       "evidence: // when the Insert() function is called parallelly, the data race on a byte",
-      "files: util/chunk/chunk.go, util/chunk/chunk_test.go, util/chunk/column.go, util/chunk/column_test.go, util/chunk/list.go, util/chunk/list_test.go, util/chunk/row.go"
+      "files: util/chunk/chunk.go, util/chunk/chunk_test.go, util/chunk/list.go, util/chunk/list_test.go, util/chunk/column.go, util/chunk/column_test.go, util/chunk/row.go"
     ]
   },
-  "analysis": "PR title: executor: refactor some methods of `Row` and `Chunk`\nPR url: https://github.com/pingcap/tidb/pull/11380\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // when the Insert() function is called parallelly, the data race on a byte\nChanged files (7): util/chunk/chunk.go, util/chunk/chunk_test.go, util/chunk/column.go, util/chunk/column_test.go, util/chunk/list.go, util/chunk/list_test.go, util/chunk/row.go\nPatch url: https://github.com/pingcap/tidb/pull/11380.patch\nPicked test: type=unit path=util/chunk/chunk_test.go name=chunk_test"
+  "analysis": "PR title: executor: refactor some methods of `Row` and `Chunk`\nPR url: https://github.com/pingcap/tidb/pull/11380\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // when the Insert() function is called parallelly, the data race on a byte\nChanged files (7): util/chunk/chunk.go, util/chunk/chunk_test.go, util/chunk/list.go, util/chunk/list_test.go, util/chunk/column.go, util/chunk/column_test.go, util/chunk/row.go\nPatch url: https://github.com/pingcap/tidb/pull/11380.patch\nPicked test: type=unit path=util/chunk/chunk_test.go name=chunk_test"
 }
