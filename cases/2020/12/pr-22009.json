@@ -10,21 +10,22 @@
   "test": {
     "type": "unit",
     "path": "util/disk/tempDir_test.go",
-    "name": "tempDir_test"
+    "name": "TestT"
   },
   "symptoms": [
-    "PR title: executor: fix unstable test Issue16696"
+    "The `util/disk` test is unstable when package tests run in parallel because they share a global temp-storage path and leftover files/directories can interfere across runs."
   ],
-  "failure_signature": "PR title: executor: fix unstable test Issue16696",
+  "failure_signature": "Order-dependent failures caused by shared `TempStoragePath` / leftover temp files in `util/disk` tests when packages run in parallel",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "global_variable_mutation",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: fix unstable test Issue16696.",
-  "module": "executor",
-  "fix_pattern": "executor: fix unstable test Issue16696",
+  "root_cause_explanation": "`TempStoragePath` is a global config used by temp-storage related code. When package tests run in parallel, sharing the same temp-storage directory (and leaving files from a previous run) can cause cross-test interference and flaky failures. This PR fixes the flakiness by setting `TempStoragePath` to a unique per-run temp dir and explicitly cleaning/recreating that directory before running the check suite.",
+  "module": "config",
+  "fix_pattern": "Isolate temp-storage state in tests: set a unique `TempStoragePath` (TempDir) and clean/recreate it to avoid cross-test interference from shared directories.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22009",
     "https://github.com/pingcap/tidb/pull/22009.patch"

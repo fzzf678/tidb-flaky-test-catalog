@@ -13,18 +13,18 @@
     "name": "sort_test"
   },
   "symptoms": [
-    "PR title: executor: add error trace to investigate unstable test Issue16696"
+    "TestIssue16696 is sensitive to global memory/oom configuration (e.g., `MemoryUsageAlarmRatio`) and can behave inconsistently depending on process-wide settings."
   ],
-  "failure_signature": "PR title: executor: add error trace to investigate unstable test Issue16696",
+  "failure_signature": "Unstable spill/oom-related test behavior in TestIssue16696 when global `MemoryUsageAlarmRatio` is non-zero; temp file errors lacked trace.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: add error trace to investigate unstable test Issue16696.",
+  "root_cause_explanation": "The test is affected by shared global state: `variable.MemoryUsageAlarmRatio` is a process-wide knob that can influence memory alarm/oom behavior and thus the spill-to-disk path used by TestIssue16696. If previous tests changed it, the test could behave inconsistently. This PR stabilizes/diagnoses the flake by saving/restoring `MemoryUsageAlarmRatio` (setting it to 0.0 during the test) and by adding error tracing for temp-file creation/open operations to make failures actionable.",
   "module": "executor",
-  "fix_pattern": "executor: add error trace to investigate unstable test Issue16696",
+  "fix_pattern": "Save+restore global `MemoryUsageAlarmRatio` around the test (set to 0.0 temporarily) and add error tracing for temp-file operations to improve diagnosability.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21668",
     "https://github.com/pingcap/tidb/pull/21668.patch"

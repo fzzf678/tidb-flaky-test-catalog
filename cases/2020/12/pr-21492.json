@@ -13,19 +13,18 @@
     "name": "TestAddPrimaryKeyRollback1"
   },
   "symptoms": [
-    "PR title: ddl: stabilize test TestAddPrimaryKeyRollback1"
+    "TestAddPrimaryKeyRollback1 intermittently fails because the expected duplicate-entry error message can vary (e.g. duplicate key '2038' vs '2039') under different timing/CPU conditions."
   ],
-  "failure_signature": "PR title: ddl: stabilize test TestAddPrimaryKeyRollback1",
+  "failure_signature": "Duplicate entry error message is unstable: \"[kv:1062]Duplicate entry '2038' for key 'PRIMARY'\" vs \"... '2039' ...\"",
   "root_cause_categories": [
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "assert_exact_error_message"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: stabilize test TestAddPrimaryKeyRollback1.",
+  "root_cause_explanation": "This test exercises DDL rollback under concurrent/random data changes. When a specific row (e.g. key 2038) is deleted during the randomized delete/insert loop, the duplicate key encountered first can change, leading to different (but equivalent) duplicate-entry error messages. Under constrained CPU/timing, this manifested as intermittent assertion mismatches on the exact duplicate key value. This PR stabilizes the test by skipping deletion of the specific row that would otherwise change which duplicate-entry error is observed first.",
   "module": "ddl",
-  "fix_pattern": "ddl: stabilize test TestAddPrimaryKeyRollback1",
+  "fix_pattern": "Avoid deleting a specific row selected by the randomized delete loop (skip `n == defaultBatchSize*2-10`) so the duplicate-entry error message remains stable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21492",
     "https://github.com/pingcap/tidb/pull/21492.patch"

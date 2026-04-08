@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "planner/core/cbo_test.go",
-    "name": "cbo_test"
+    "name": "TestIssue9805"
   },
   "symptoms": [
-    "PR title: executor: fix data race in extractTxnScope"
+    "Go race detector reports a DATA RACE: `session.(*TxnState).changeToInvalid()` write races with `executor.extractTxnScope()` reading `TxnState` in index lookup workers."
   ],
-  "failure_signature": "PR title: executor: fix data race in extractTxnScope",
+  "failure_signature": "WARNING: DATA RACE: `session.(*TxnState).changeToInvalid()` write vs `executor.extractTxnScope()` read (executor/builder.go:3974), triggered by `TestIssue9805`",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race in extractTxnScope.",
+  "root_cause_explanation": "`extractTxnScope` previously read the current transaction state (via `TxnState` / union store option) while index lookup workers were running. That read could race with concurrent transaction commit/cleanup that invalidates the transaction (`TxnState.changeToInvalid()`), triggering a Go data race and flaky failures (observed under `-race` in `TestIssue9805`). This PR fixes it by avoiding concurrent `TxnState` access: it stores the txn scope in `SessionVars.TxnCtx` and reads `TxnCtx.TxnScope` directly instead of calling `extractTxnScope(txn)`.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race in extractTxnScope",
+  "fix_pattern": "Avoid reading `TxnState` concurrently in `extractTxnScope`; use `SessionVars.TxnCtx.TxnScope` (precomputed txn scope) instead.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21929",
     "https://github.com/pingcap/tidb/pull/21929.patch"

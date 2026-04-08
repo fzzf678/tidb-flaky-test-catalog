@@ -13,18 +13,18 @@
     "name": "mpp"
   },
   "symptoms": [
-    "PR title: test: fix potential data race in mpp mock test"
+    "Potential Go data race in mock MPP handler due to concurrent access to `MPPTaskHandler.TunnelSet` (map)."
   ],
-  "failure_signature": "PR title: test: fix potential data race in mpp mock test",
+  "failure_signature": "WARNING: DATA RACE: concurrent access to `MPPTaskHandler.TunnelSet` in store/mockstore/unistore/cophandler/mpp.go",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix potential data race in mpp mock test.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix potential data race in mpp mock test",
+  "root_cause_explanation": "The mock MPP handler keeps `MPPTaskHandler.TunnelSet` as a map that can be read in `HandleEstablishConn` while being written in `registerTunnel`. Unprotected concurrent map access can trigger Go data races and make MPP mock tests flaky (especially under `-race`). This PR fixes it by introducing a mutex (`tunnelSetLock`) and locking around `TunnelSet` reads/writes.",
+  "module": "kv",
+  "fix_pattern": "Add a mutex to protect concurrent reads/writes of `MPPTaskHandler.TunnelSet` in the mock MPP handler.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21836",
     "https://github.com/pingcap/tidb/pull/21836.patch"

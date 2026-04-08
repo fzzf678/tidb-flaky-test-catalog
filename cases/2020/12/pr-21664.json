@@ -13,18 +13,20 @@
     "name": "TestPointGetReadLock"
   },
   "symptoms": [
-    "PR title: *: make TestPointGetReadLock stable"
+    "TestPointGetReadLock remains flaky due to stale schema/lock-cache visibility after lock/unlock DDLs and shared global config (`EnableTableLock`) interference."
   ],
-  "failure_signature": "PR title: *: make TestPointGetReadLock stable",
+  "failure_signature": "Intermittent EXPLAIN ANALYZE mismatch in TestPointGetReadLock (e.g., missing expected `num_rpc`) due to cache not released in time / shared state.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "schema_change_race",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "schema_version_race",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "*: make TestPointGetReadLock stable",
+  "root_cause_explanation": "TestPointGetReadLock is sensitive to metadata caching and shared global state. Table lock/unlock operations rely on schema/lock-cache updates that are not immediately visible unless the domain/InfoSchema is reloaded, and the test also toggles global config (`EnableTableLock`) which can interfere with other tests if run concurrently. This PR stabilizes the test by moving it to a serial suite, introducing a helper that runs lock/unlock DDLs and forces `domain.Reload()` after each, and restoring global config via `config.RestoreFunc()`.",
+  "module": "executor",
+  "fix_pattern": "Run the test in a serial suite; after each lock/unlock DDL execute `domain.Reload()` to refresh schema/lock cache; wrap global config updates with `config.RestoreFunc()` to avoid cross-test pollution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21664",
     "https://github.com/pingcap/tidb/pull/21664.patch"

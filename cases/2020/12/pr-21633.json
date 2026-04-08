@@ -9,23 +9,22 @@
   "pr_merged_at": "2020-12-10T15:04:53+08:00",
   "test": {
     "type": "unit",
-    "path": "ddl/ddl.go",
-    "name": "ddl"
+    "path": "ddl/restart_test.go",
+    "name": "TestTableResume"
   },
   "symptoms": [
-    "PR title: ddl: fix unstable restartWorker test"
+    "Unstable restartWorkers test: `doDDLJob` observes `d.ctx.Done()` but `d.ctx.Err()` can be nil because `d.ctx` was replaced concurrently."
   ],
-  "failure_signature": "PR title: ddl: fix unstable restartWorker test",
+  "failure_signature": "Log shows context done with missing error (nil `d.ctx.Err()`), breaking convention and causing flaky test behavior.",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix unstable restartWorker test.",
+  "root_cause_explanation": "The flakiness was caused by a concurrency race on DDL internal context: in tests, `restartWorkers` can replace `d.ctx` with a new `context.WithCancel(ctx)`. If `doDDLJob` selects on `<-d.ctx.Done()` while `d.ctx` is being replaced, `d.ctx.Err()` may become nil even though the done channel was observed, breaking the usual context contract and making the restart test unstable. This PR stabilizes the behavior by returning `context.Canceled` directly when the DDL context is done (instead of relying on `d.ctx.Err()`).",
   "module": "ddl",
-  "fix_pattern": "ddl: fix unstable restartWorker test",
+  "fix_pattern": "When `<-d.ctx.Done()` fires in `doDDLJob`, return `context.Canceled` directly instead of reading `d.ctx.Err()` (which may race with context replacement in tests).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21633",
     "https://github.com/pingcap/tidb/pull/21633.patch"

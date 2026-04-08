@@ -13,18 +13,18 @@
     "name": "session"
   },
   "symptoms": [
-    "PR title: session: fix a DATA RACE to make the CI more stable"
+    "Go race detector report: concurrent access to `SessionVars.InRestrictedSQL` when multiple domain background loops share the same session context."
   ],
-  "failure_signature": "PR title: session: fix a DATA RACE to make the CI more stable",
+  "failure_signature": "WARNING: DATA RACE (read: session.(*session).Parse; write: background loop toggling InRestrictedSQL)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: session: fix a DATA RACE to make the CI more stable.",
+  "root_cause_explanation": "The flakiness was caused by unsafe concurrent use of a shared session across background goroutines (e.g., TelemetryLoop and other periodic loaders). These loops can mutate session variables like `InRestrictedSQL` while other goroutines parse/execute statements with the same session, triggering the Go race detector. This PR fixes the race by creating separate sessions for TelemetryLoop and related background loading (e.g., blacklist loads), avoiding concurrent access to the same `SessionVars`.",
   "module": "session",
-  "fix_pattern": "session: fix a DATA RACE to make the CI more stable",
+  "fix_pattern": "Create separate sessions for TelemetryLoop / blacklist-loading background tasks instead of reusing the bootstrap session, avoiding concurrent access to `SessionVars`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21421",
     "https://github.com/pingcap/tidb/pull/21421.patch"

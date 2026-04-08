@@ -13,18 +13,18 @@
     "name": "TestPointGetReadLock"
   },
   "symptoms": [
-    "PR title: executor: make TestPointGetReadLock stable"
+    "TestPointGetReadLock intermittently fails because EXPLAIN ANALYZE output misses expected fields (e.g., `num_rpc`) when stale schema/lock-cache state is observed."
   ],
-  "failure_signature": "PR title: executor: make TestPointGetReadLock stable",
+  "failure_signature": "c.Assert(explain, Matches, \".*num_rpc.*\") but got \"[Point_Get_1 ...]\" (executor/point_get_test.go)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "schema_change_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "schema_version_race"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test was flaky due to metadata caching / schema version timing: after lock/unlock operations, schema reload and cache release are asynchronous, so the domain/InfoSchema cache may still reflect the old state when `EXPLAIN ANALYZE` runs. This can lead to unexpected plan/operator output (e.g., Point_Get without `num_rpc`) and intermittent assertion failures. This PR stabilizes the test by adding `s.dom.Reload()` around lock/unlock so the cache state is refreshed deterministically before assertions.",
   "module": "executor",
-  "fix_pattern": "executor: make TestPointGetReadLock stable",
+  "fix_pattern": "Force domain/InfoSchema reload (`s.dom.Reload()`) around lock/unlock before checking EXPLAIN ANALYZE output, avoiding stale schema/lock-cache visibility.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21624",
     "https://github.com/pingcap/tidb/pull/21624.patch"

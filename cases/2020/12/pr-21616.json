@@ -13,18 +13,18 @@
     "name": "plan_test"
   },
   "symptoms": [
-    "PR title: test: convert test to benchmard test to make ci stable"
+    "Time-based performance assertions in plan encode/decode tests occasionally exceed fixed thresholds on slower CI machines."
   ],
-  "failure_signature": "PR title: test: convert test to benchmard test to make ci stable",
+  "failure_signature": "c.Assert(time.Since(start).Seconds(), Less, 10.0) but got ~11.31s (planner/core/plan_test.go)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: convert test to benchmard test to make ci stable",
+  "root_cause_explanation": "The tests were flaky because they asserted strict wall-clock performance bounds (e.g., encode plan must finish within 10s), which is sensitive to CI machine load and hardware variability. This PR stabilizes the suite by converting these time-based tests into proper benchmarks (loop over `c.N` with `c.ResetTimer()`), removing fixed time thresholds from correctness tests.",
+  "module": "planner",
+  "fix_pattern": "Replace time-threshold assertions with benchmark-style loops (`c.ResetTimer(); for i := 0; i < c.N; i++ { ... }`) so performance is measured without causing flaky pass/fail.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21616",
     "https://github.com/pingcap/tidb/pull/21616.patch"

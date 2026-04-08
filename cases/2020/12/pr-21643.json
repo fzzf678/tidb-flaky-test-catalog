@@ -13,18 +13,19 @@
     "name": "pessimistic_test"
   },
   "symptoms": [
-    "PR title: test: stablize test case"
+    "TestOptimisticConflicts intermittently fails because lock-expire/heartbeat/resolve-lock timing can reorder under CI load."
   ],
-  "failure_signature": "PR title: test: stablize test case",
+  "failure_signature": "Timing race: resolve-lock request can arrive before heartbeat while lock expires (TestOptimisticConflicts).",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "global_variable_mutation",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: stablize test case",
+  "root_cause_explanation": "The test is timing-sensitive: the ordering of heartbeat vs resolve-lock requests (and lock expiry) can vary under CI load, causing intermittent failures. This PR mitigates the flake by increasing the pessimistic lock `tikv.ManagedLockTTL` for the duration of the test (and restoring it afterward) so that resolve-lock timeout is more likely to occur before the lock expires.",
+  "module": "session",
+  "fix_pattern": "Temporarily increase `tikv.ManagedLockTTL` within the test and restore it via defer to widen the timing window and reduce CI timing flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21643",
     "https://github.com/pingcap/tidb/pull/21643.patch"
