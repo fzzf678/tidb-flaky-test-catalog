@@ -17,14 +17,16 @@
   ],
   "failure_signature": "PR title: make TestSortInDisk more stable.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by"
+    "t_parallel_with_shared_state",
+    "global_variable_mutation",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: *: make test more TestSortInDisk stable.",
-  "module": "module_unknown",
-  "fix_pattern": "*: make test more TestSortInDisk stable",
+  "root_cause_explanation": "Disk-spill related executor tests (e.g., TestSortInDisk / TestMergeJoinInDisk) were flaky due to shared global state (OOMUseTmpStorage, spill actions) and insufficient isolation/cleanup across tests, especially when tests run concurrently. The fix forces deterministic spilling via failpoints, makes ActionSpill creation idempotent, and moves these tests into SerialSuites with explicit teardown cleanup (dropping tables/views/sequences).",
+  "module": "executor",
+  "fix_pattern": "Run spill-related tests in a serial suite, force deterministic spill via failpoints, and add teardown cleanup; make ActionSpill creation idempotent.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18424",
     "https://github.com/pingcap/tidb/pull/18424.patch"

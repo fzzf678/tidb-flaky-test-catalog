@@ -20,12 +20,11 @@
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
     "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix mix DDLs blocks 2*lease on unistore.",
+  "root_cause_explanation": "On unistore, MockSchemaSyncer.OwnerCheckAllVersions waited for selfSchemaVersion to become exactly equal to latestVer. When schema versions advance quickly (e.g., mixed DDLs), selfSchemaVersion can jump past latestVer, causing the exact-equality wait loop to block until timeout (2*lease / context deadline exceeded). The fix relaxes the check to `ver >= latestVer` so newer versions satisfy the wait and avoid unnecessary blocking.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix mix DDLs blocks 2*lease on unistore",
+  "fix_pattern": "Relax the MockSchemaSyncer OwnerCheckAllVersions condition from `== latestVer` to `>= latestVer` to avoid blocking when schema version advances past the expected value.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18468",
     "https://github.com/pingcap/tidb/pull/18468.patch"

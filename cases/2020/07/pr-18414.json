@@ -17,14 +17,16 @@
   ],
   "failure_signature": "PR title: make TestDispatchClientProtocol41 stable.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "external_dependency",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "hardcoded_port_or_resource",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: make TestDispatchClientProtocol41 stable",
+  "root_cause_explanation": "TestDispatchClientProtocol41 was flaky because it bound the server to a fixed port (4005) and did not guarantee the server was closed, which can lead to port/resource conflicts across test runs. The fix uses an ephemeral generated port (genPort) and defers server.Close() so the port is released reliably.",
+  "module": "server",
+  "fix_pattern": "Use an ephemeral port (genPort) and defer server.Close() to avoid port conflicts and leaked server resources in the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18414",
     "https://github.com/pingcap/tidb/pull/18414.patch"
