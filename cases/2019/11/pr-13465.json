@@ -17,14 +17,14 @@
   ],
   "failure_signature": "fix data race",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: bindinfo: support evolve plan.",
+  "root_cause_explanation": "The evolve-plan workflow introduced concurrent access to shared binding/cache state (e.g., cached binding record slices) and background goroutines that execute SQL with cancellation/timeouts. Without careful copying/cleanup, this can trigger Go race detector warnings. The fix deep-copies cached binding records and ensures the async SQL execution path properly closes recordsets / drains results after cancellation to avoid data races.",
   "module": "planner",
-  "fix_pattern": "bindinfo: support evolve plan",
+  "fix_pattern": "Avoid shared mutable state in binding caches (deep-copy slices) and ensure background goroutines/recordsets are properly closed/drained after cancel/timeout to eliminate races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13465",
     "https://github.com/pingcap/tidb/pull/13465.patch"

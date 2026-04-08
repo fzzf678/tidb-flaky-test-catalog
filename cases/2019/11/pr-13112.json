@@ -13,18 +13,18 @@
     "name": "config_test"
   },
   "symptoms": [
-    "fix data race"
+    "Go race detector reports a DATA RACE caused by global `PessimisticLockTTL` being written during test setup."
   ],
-  "failure_signature": "fix data race",
+  "failure_signature": "DATA RACE detected under `-race`, involving concurrent access to the global `PessimisticLockTTL` (written in suite/test setup in `store/tikv/2pc_test.go`).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: config: remove the pessimistic.ttl configure.",
+  "root_cause_explanation": "The flakiness is due to a real data race on shared global state: the tests mutate the global `PessimisticLockTTL` in setup, which can race with other concurrent test execution under `-race`. The PR stabilizes it by moving the global assignment into `SetUpSuite` (instead of per-test setup) and ensuring suite-level initialization is done once, avoiding concurrent global writes.",
   "module": "txn",
-  "fix_pattern": "config: remove the pessimistic.ttl configure",
+  "fix_pattern": "Avoid data races on global variables in tests: move global initialization to suite-level setup (run once) instead of per-test setup so concurrent tests don't write shared state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13112",
     "https://github.com/pingcap/tidb/pull/13112.patch"

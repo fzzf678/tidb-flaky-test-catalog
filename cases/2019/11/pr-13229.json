@@ -13,9 +13,9 @@
     "name": "db_test"
   },
   "symptoms": [
-    "ddl: address comments and fix data race | rows := s.mustQuery(c, \"select c1 from test_add_index where c3 >= ? order by c1 limit 3\", keys[index]) (ddl/db_test.go)"
+    "`ddl/db_test.go` queries a range with `LIMIT` but without a deterministic `ORDER BY`, then asserts a fixed row sequence, causing intermittent mismatches."
   ],
-  "failure_signature": "ddl: address comments and fix data race | rows := s.mustQuery(c, \"select c1 from test_add_index where c3 >= ? order by c1 limit 3\", keys[index]) (ddl/db_test.go)",
+  "failure_signature": "Row-order mismatch in `ddl/db_test.go` for `select c1 from test_add_index where c3 >= ? limit 3` when the test compares against a fixed expected order without enforcing ordering.",
   "root_cause_categories": [
     "nondeterministic_result_order"
   ],
@@ -23,9 +23,9 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced, especially for queries with `LIMIT`. This PR stabilizes it by adding `ORDER BY c1` to the query used for assertions so the returned rows are deterministic.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Add an explicit `ORDER BY` (or sort the results) before asserting exact row sequences, especially for queries using `LIMIT`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13229",
     "https://github.com/pingcap/tidb/pull/13229.patch"
@@ -52,9 +52,12 @@
     "ddl/serial_test.go",
     "executor/executor_test.go",
     "executor/show.go",
+    "go.mod",
+    "go.sum",
     "meta/meta.go",
     "meta/meta_test.go",
     "planner/core/preprocess.go",
+    "table/tables/index.go",
     "util/admin/admin.go",
     "util/admin/admin_test.go"
   ],

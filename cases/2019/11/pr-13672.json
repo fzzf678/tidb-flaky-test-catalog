@@ -13,18 +13,18 @@
     "name": "db_integration_test"
   },
   "symptoms": [
-    "go test -v -vet=off -p 5 -timeout 10m -race -count 1"
+    "DDL tests were slow, and the PR restructures/batches test DML to speed up execution; no concrete flaky failure signature is provided."
   ],
-  "failure_signature": "go test -v -vet=off -p 5 -timeout 10m -race -count 1",
+  "failure_signature": "INSUFFICIENT_EVIDENCE: The patch is primarily a performance optimization for DDL tests (batching inserts / reducing work); no targeted stabilization change for flaky behavior is identified.",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: speed up ddl tests.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR focuses on speeding up DDL tests by batching inserts and reducing per-iteration work. While that can indirectly reduce timeout-like instability, the available case data does not include a concrete intermittent failure signature or a targeted determinism fix, so avoid guessing a schema-race root cause and keep it as needs-more-evidence.",
   "module": "ddl",
-  "fix_pattern": "ddl: speed up ddl tests",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13672",
     "https://github.com/pingcap/tidb/pull/13672.patch"

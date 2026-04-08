@@ -17,15 +17,14 @@
   ],
   "failure_signature": "domain: fix data race in SchemaValidator",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: domain: fix data race in SchemaValidator.",
+  "root_cause_explanation": "The flakiness is due to a real concurrency data race: the test accessed `schemaValidator.latestSchemaVer` directly while other goroutines could update it, triggering `-race` failures. The PR stabilizes it by adding a thread-safe accessor (`LatestSchemaVersion`) guarded by an RWMutex and by using read locks for `IsStarted()`.",
   "module": "domain",
-  "fix_pattern": "domain: fix data race in SchemaValidator",
+  "fix_pattern": "Do not read/write shared fields directly across goroutines; provide thread-safe accessors guarded by mutex/RWMutex to avoid data races (especially for validator state).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13448",
     "https://github.com/pingcap/tidb/pull/13448.patch"

@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race in TestAnalyzeFastSample.",
+  "root_cause_explanation": "The flakiness is due to a real data race in `TestAnalyzeFastSample`: the test was running in a suite where shared state could be accessed concurrently. The PR stabilizes it by moving the test method to a different suite (`testFastAnalyze`), isolating it from the concurrent/shared-state execution that triggered the race.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race in TestAnalyzeFastSample",
+  "fix_pattern": "Move a race-prone test into an isolated/serial suite (or otherwise remove shared mutable state) to avoid concurrent access that triggers `-race` failures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13130",
     "https://github.com/pingcap/tidb/pull/13130.patch"

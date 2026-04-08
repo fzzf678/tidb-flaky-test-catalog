@@ -17,14 +17,14 @@
   ],
   "failure_signature": "This will cause `resetContextOfStmt` of the same `tk`, consequently, causing data race.",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl, test : fix CI with adding new tk to execute additional sql.",
+  "root_cause_explanation": "The flakiness is due to a real concurrency data race: the test executes additional SQL inside a DDL hook/callback while the main test continues, and reusing the same `testkit.TestKit` (`tk`) can concurrently call `resetContextOfStmt`, triggering `-race` failures. The PR stabilizes it by introducing a separate `tkInternal` dedicated to executing those additional SQL statements inside the callback, avoiding concurrent reuse of the same session/testkit.",
   "module": "ddl",
-  "fix_pattern": "ddl, test : fix CI with adding new tk to execute additional sql.",
+  "fix_pattern": "Avoid sharing a `TestKit`/session across concurrent goroutines/callbacks: create a separate `TestKit` (and session) for async hook SQL execution to prevent races like `resetContextOfStmt`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13447",
     "https://github.com/pingcap/tidb/pull/13447.patch"

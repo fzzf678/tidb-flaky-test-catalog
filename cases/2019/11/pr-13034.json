@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "ddl/db_test.go",
-    "name": "db_test"
+    "name": "TestSkipSchemaChecker"
   },
   "symptoms": [
-    "c.Skip(\"skip race test\")"
+    "Transaction commit can be affected by TiFlash replica status DDL diffs being treated as schema changes (schema checker should skip those DDL types)."
   ],
-  "failure_signature": "c.Skip(\"skip race test\")",
+  "failure_signature": "Schema checker incorrectly treats TiFlash replica status DDL diffs as schema changes, causing `domain.ErrInfoSchemaChanged`-like failures during transaction commit.",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: domain: avoid check schema changed when change is tiflash replica status.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR changes schema-diff handling to skip schema checker checks for TiFlash replica status updates and adds coverage. Without a concrete flaky failure signature or CI evidence that this was an intermittent test failure, keep it as needs-more-evidence.",
   "module": "domain",
-  "fix_pattern": "domain: avoid check schema changed when change is tiflash replica status",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13034",
     "https://github.com/pingcap/tidb/pull/13034.patch"

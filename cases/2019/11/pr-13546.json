@@ -13,18 +13,18 @@
     "name": "analyze_test"
   },
   "symptoms": [
-    "executor: fix unstable fast analyze test"
+    "Fast analyze sampling produces slightly different histogram/sample outputs across runs/CI, but the test asserted an exact expected string/value."
   ],
-  "failure_signature": "executor: fix unstable fast analyze test",
+  "failure_signature": "Assertion failure in `executor/analyze_test.go` when comparing exact sampled histogram/sample output (e.g. `tbl.String()` or sample values) that can vary run-to-run.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_test_input"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "randomized_test_input"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test was flaky because it asserted exact values/serialization of data produced by fast analyze sampling (histogram buckets / samples), which can vary depending on sampling randomness and runtime conditions. The PR stabilizes it by removing the exact string/value assertions and instead checking that the produced histogram is valid (bucket bounds are ordered and consistent).",
   "module": "executor",
-  "fix_pattern": "executor: fix unstable fast analyze test",
+  "fix_pattern": "Avoid asserting exact outputs from randomized/sampling-based logic; assert invariants (valid ordering/consistency) or control the randomness/seed instead.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13546",
     "https://github.com/pingcap/tidb/pull/13546.patch"

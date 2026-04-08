@@ -13,20 +13,19 @@
     "name": "tables_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select TYPE, NAME, `KEY`, VALUE from information_schema.tidb_cluster_config where `key`='key3.key4.nest4' order by type\").Check(testkit.Rows( (infoschema/tables_test.go)"
+    "The `information_schema.tidb_cluster_config` result rows can be nondeterministically ordered (e.g. only `ORDER BY type`), causing `Check(testkit.Rows(...))` assertions in `infoschema/tables_test.go` to intermittently fail."
   ],
-  "failure_signature": "tk.MustQuery(\"select TYPE, NAME, `KEY`, VALUE from information_schema.tidb_cluster_config where `key`='key3.key4.nest4' order by type\").Check(testkit.Rows( (infoschema/tables_test.go)",
+  "failure_signature": "Row-order mismatch in `infoschema/tables_test.go` for query like `select TYPE, NAME, `KEY`, VALUE ... order by type`, due to unordered map iteration / unstable key ordering in the underlying config-flattening logic.",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
     "missing_order_by",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by sorting the flattened config keys (and therefore result rows) to enforce deterministic ordering before assertions.",
   "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort map-derived/flattened keys (and thus result rows) to enforce deterministic ordering before assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13063",
     "https://github.com/pingcap/tidb/pull/13063.patch"

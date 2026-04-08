@@ -13,19 +13,18 @@
     "name": "prepare_test"
   },
   "symptoms": [
-    "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core"
+    "Tests become unstable when packages/suites run concurrently (e.g. `go test ... -p 10 -race`), due to shared state not safe for parallel execution."
   ],
   "failure_signature": "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code",
     "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: make several slow package unit test support run parallel.",
+  "root_cause_explanation": "The flakiness is caused by parallel execution with shared state: running multiple suites/packages concurrently can expose data races or unsafe shared state across tests. The PR stabilizes CI by marking specific suites as serial-only (`SerialSuites`) and moving a problematic test into a serial suite, so the overall package test execution can be parallelized safely without concurrent access to shared state.",
   "module": "test_infra",
-  "fix_pattern": "test: make several slow package unit test support run parallel",
+  "fix_pattern": "Avoid running shared-state tests in parallel: mark suites/tests as serial-only (e.g. `SerialSuites`) or isolate shared global state so package-level parallelism doesn't trigger races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13431",
     "https://github.com/pingcap/tidb/pull/13431.patch"

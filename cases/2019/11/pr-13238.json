@@ -17,16 +17,14 @@
   ],
   "failure_signature": "gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA= | tk.MustQuery(\"explain select /*+ INL_HASH_JOIN(s) */ * from t left join s on t.a=s.a order by t.pk\").Check(testkit.Rows( (executor/join_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds planner hint support for IndexHashJoin/IndexMergeJoin and updates related plan/EXPLAIN tests. The case evidence does not include a concrete flaky failure signature or a targeted stabilization change (it also contains a go.mod hash line), so avoid guessing the root cause.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13238",
     "https://github.com/pingcap/tidb/pull/13238.patch"

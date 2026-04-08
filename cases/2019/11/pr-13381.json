@@ -13,18 +13,19 @@
     "name": "syncer_test"
   },
   "symptoms": [
-    "*: stabilize some tests for CI"
+    "Tests intermittently fail in CI due to too-short timeouts / insufficient waiting for async components (schema syncer / schema validator) to become ready."
   ],
-  "failure_signature": "*: stabilize some tests for CI",
+  "failure_signature": "Timeout / readiness check failure in `ddl/util/syncer_test.go` (100ms context timeout) or `domain/domain_test.go` (bounded wait for `SchemaValidator.IsStarted()`), especially under slow CI.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "*: stabilize some tests for CI",
+  "root_cause_explanation": "The tests were flaky due to async timing variability in CI: the test used very short timeouts (e.g. 100ms) and bounded polling loops when waiting for schema-sync related state to become ready. Under slow/loaded CI this can exceed the timeout and fail intermittently. The PR stabilizes it by increasing the timeouts (e.g. 100ms → 1s / 20ms → 200ms) and waiting for the schema validator/syncer to start before asserting.",
+  "module": "ddl",
+  "fix_pattern": "Increase timeouts and wait for async components to be ready: replace too-short context timeouts / bounded polling with longer timeouts or wait-until-started logic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13381",
     "https://github.com/pingcap/tidb/pull/13381.patch"
