@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: store/gcworker: fix test data race.",
+  "root_cause_explanation": "The test was flaky due to a data race / unsafe initialization order: the storage Oracle was being replaced after bootstrapping, while other components could already be using it. This PR stabilizes it by introducing a helper to create the mock store with a provided Oracle, ensuring SetOracle happens before session bootstrap.",
   "module": "gc",
-  "fix_pattern": "store/gcworker: fix test data race",
+  "fix_pattern": "Ensure Oracle is set before bootstrapping by creating the mock store with a provided Oracle (CreateMockStoreWithOracle), avoiding concurrent use of a replaced Oracle.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27986",
     "https://github.com/pingcap/tidb/pull/27986.patch"

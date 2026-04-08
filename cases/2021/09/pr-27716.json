@@ -17,14 +17,15 @@
   ],
   "failure_signature": "// Changed from 10ms to 50ms to resist from unstable CI environment.",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: // Changed from 10ms to 50ms to resist from unstable CI environment.",
-  "module": "test_infra",
-  "fix_pattern": "// Changed from 10ms to 50ms to resist from unstable CI environment.",
+  "root_cause_explanation": "The test was flaky because it relied on a short fixed sleep to wait for an asynchronous cache admission/propagation step before asserting cache contents. Under slower CI conditions, the original sleep could be too short. This PR stabilizes it by increasing the sleep used for synchronization (10ms to 50ms) to tolerate slower environments.",
+  "module": "kv",
+  "fix_pattern": "Increase the fixed sleep used to wait for async cache state to settle (10ms→50ms) before assertions to reduce timing-related flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27716",
     "https://github.com/pingcap/tidb/pull/27716.patch"

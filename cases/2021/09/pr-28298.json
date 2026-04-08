@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rss, err := tk.Session().Execute(ctx, \"select * from earlyclose order by id\") (executor/seqtest/seq_executor_serial_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "missing_order_by"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: rss, err := tk.Session().Execute(ctx, \"select * from earlyclose order by id\") (executor/seqtest/seq_executor_serial_test.go).",
-  "module": "module_unknown",
-  "fix_pattern": "rss, err := tk.Session().Execute(ctx, \"select * from earlyclose order by id\") (executor/seqtest/seq_executor_serial_test.go)",
+  "root_cause_explanation": "The test suite was flaky due to issues around legacy go-check based test infrastructure and suite setup. This PR stabilizes it by migrating seqtest from pingcap/check to testify, adding a dedicated TestMain (testbridge + goleak) and restructuring the serial tests to follow standard Go testing patterns.",
+  "module": "executor",
+  "fix_pattern": "Migrate seqtest from go-check to testify and add TestMain/goleak verification to improve suite setup/teardown reliability and reduce framework-related flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28298",
     "https://github.com/pingcap/tidb/pull/28298.patch"

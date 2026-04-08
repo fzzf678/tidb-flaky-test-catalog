@@ -17,16 +17,14 @@
   ],
   "failure_signature": "planner: fix the unstable test TestAnalyzeGlobalStatsWithOpts",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "shared_state_pollution"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: planner: fix the unstable test TestAnalyzeGlobalStatsWithOpts.",
-  "module": "planner",
-  "fix_pattern": "planner: fix the unstable test TestAnalyzeGlobalStatsWithOpts",
+  "root_cause_explanation": "The test was flaky because histogram/statistics building does not guarantee an exact final bucket count, and the previous assertion tolerance was too tight, causing intermittent failures across runs/data distributions. This PR stabilizes it by widening the acceptable bucket-count delta and asserting bucket counts within a range (>= / <=) instead of assuming an almost-exact value.",
+  "module": "statistics",
+  "fix_pattern": "Relax histogram bucket-count assertions by widening the tolerance (delta) and checking that bucket counts fall within an expected range.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27734",
     "https://github.com/pingcap/tidb/pull/27734.patch"

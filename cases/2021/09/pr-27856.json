@@ -17,14 +17,14 @@
   ],
   "failure_signature": "lightning: fix unstable test TestGetDeleteTask and TestCheckSystemRequirement",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: lightning: fix unstable test TestGetDeleteTask and TestCheckSystemRequirement.",
+  "root_cause_explanation": "The test was flaky because it used a fixed sleep (100ms) to wait for an asynchronous task runner state transition before asserting HTTP handler results. Under load, the sleep could be insufficient and cause intermittent failures. This PR stabilizes it by replacing the fixed sleep with an explicit notification channel triggered when the task run starts.",
   "module": "lightning",
-  "fix_pattern": "lightning: fix unstable test TestGetDeleteTask and TestCheckSystemRequirement",
+  "fix_pattern": "Replace time.Sleep-based waiting with an explicit channel notification to deterministically wait for task-run state before assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27856",
     "https://github.com/pingcap/tidb/pull/27856.patch"
