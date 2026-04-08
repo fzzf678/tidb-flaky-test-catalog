@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: transaction: fix union select for update race.",
+  "root_cause_explanation": "`UNION ... SELECT ... FOR UPDATE` can execute child statements concurrently, which may call `LockKeys` concurrently. `LockKeys` was not thread-safe, so concurrent calls could race and lead to unexpected results and flaky behavior. This PR fixes the race by adding synchronization around the whole `LockKeys` method (not just map access), making lock acquisition deterministic under concurrent execution.",
   "module": "txn",
-  "fix_pattern": "transaction: fix union select for update race",
+  "fix_pattern": "Make `LockKeys` thread-safe for concurrent execution paths (e.g., UNION SELECT FOR UPDATE) by adding proper synchronization around the full method.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19006",
     "https://github.com/pingcap/tidb/pull/19006.patch"

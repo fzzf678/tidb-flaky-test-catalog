@@ -13,18 +13,18 @@
     "name": "leaktest"
   },
   "symptoms": [
-    "PR title: stabilize leak test."
+    "`testleak` intermittently reports leaked background goroutines (e.g. etcd MergeLogger outputLoop / badger / unistore safepoint loops) and fails the suite."
   ],
-  "failure_signature": "PR title: stabilize leak test.",
+  "failure_signature": "`util/testleak/leaktest.go` reports leaked goroutines such as `go.etcd.io/etcd/pkg/logutil.(*MergeLogger).outputLoop`",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "Some tests spawn long-lived background goroutines from dependencies (e.g. etcd MergeLogger output loop, badger workers, unistore safe point loops) that may still be running when `testleak` checks for leaks, causing intermittent false positives and flaky CI failures. This PR stabilizes leak testing by expanding the `interestingGoroutines()` ignore list/patterns to cover these known background goroutines so leak checks focus on actionable leaks.",
   "module": "test_infra",
-  "fix_pattern": "test: stabilize leak test",
+  "fix_pattern": "Reduce leak-test false positives by ignoring known long-lived background goroutines (etcd MergeLogger, badger, unistore loops) in `util/testleak/leaktest.go`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19526",
     "https://github.com/pingcap/tidb/pull/19526.patch"

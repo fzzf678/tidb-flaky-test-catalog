@@ -13,18 +13,19 @@
     "name": "TestPessimisticLockOnPartition"
   },
   "symptoms": [
-    "PR title: fix unstable TestPessimisticLockOnPartition."
+    "`TestPessimisticLockOnPartition` is unstable because a background goroutine may still be committing after the main test drops the table."
   ],
-  "failure_signature": "PR title: fix unstable TestPessimisticLockOnPartition.",
+  "failure_signature": "Async goroutine commit races with test teardown (DROP TABLE), leading to intermittent failures",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "race_condition_in_async_code",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: fix unstable TestPessimisticLockOnPartition.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable TestPessimisticLockOnPartition",
+  "root_cause_explanation": "The test spawns a goroutine that performs DML and `COMMIT` and uses a channel to coordinate the expected blocking/unblocking order. Previously, the main test only waited for part of the goroutine progress and could proceed to teardown (including dropping the table) while the goroutine was still running, so the final `COMMIT` could execute after the table was dropped. This PR stabilizes the test by adding an extra channel signal after `COMMIT` and waiting for it, ensuring the goroutine fully exits before teardown.",
+  "module": "session",
+  "fix_pattern": "Wait for background goroutines to fully finish (via channel/WaitGroup sync) before dropping tables or ending the test to avoid teardown races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18963",
     "https://github.com/pingcap/tidb/pull/18963.patch"

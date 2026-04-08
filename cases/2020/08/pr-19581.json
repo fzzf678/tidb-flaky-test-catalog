@@ -20,12 +20,11 @@
     "async_timing_issue"
   ],
   "review_smells": [
-    "insufficient_timeout",
-    "clock_skew_dependency"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: executor: accelerate TestMemCount.",
+  "root_cause_explanation": "`TestMemCount` was extremely slow (reported ~807s) and could easily hit CI timeouts, especially under `-race`. The slowness largely came from very large input sizes (e.g., ApproxCountDistinct with 100000 rows) and extra work in memory-tracking assertions. This PR stabilizes CI by reducing the workload of mem-count tests (smaller row counts, removing unnecessary expected-result plumbing) and by cleaning up memory-heavy executor state (e.g., clearing `kvRanges` on `TableReaderExecutor.Close()`), making the test run time predictable and avoiding timeout flakes.",
   "module": "executor",
-  "fix_pattern": "executor: accelerate TestMemCount",
+  "fix_pattern": "Reduce overly heavy test workloads (e.g., shrink input sizes for mem-count tests) so the test completes within CI time limits instead of timing out under load/`-race`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19581",
     "https://github.com/pingcap/tidb/pull/19581.patch"

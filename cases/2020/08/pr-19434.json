@@ -13,18 +13,22 @@
     "name": "TestPanicInRecvLoop"
   },
   "symptoms": [
-    "PR title: stable TestPanicInRecvLoop test."
+    "`TestPanicInRecvLoop` still fails under heavy load due to port/resource conflicts, global config interference, and tight timeouts around the recvLoop panic/recovery."
   ],
-  "failure_signature": "PR title: stable TestPanicInRecvLoop test.",
+  "failure_signature": "Load-dependent failures in `TestPanicInRecvLoop` (connection establishment/port issues or request timeouts after recvLoop panic)",
   "root_cause_categories": [
-    "external_dependency"
+    "external_dependency",
+    "shared_state_pollution",
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "hardcoded_port_or_resource",
+    "global_variable_mutation",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: tikv: stable TestPanicInRecvLoop test.",
+  "root_cause_explanation": "`TestPanicInRecvLoop` is a network/recvLoop test that spins up a mock gRPC service and injects failures via failpoints. It can be flaky under CI load due to: (1) port/resource conflicts when scanning a fixed port range, (2) shared global config mutation (e.g., changing `GrpcConnectionCount`) affecting other tests, and (3) tight timing windows for sending a request after a recvLoop panic/recovery. This PR stabilizes the test by listening on an ephemeral port (`127.0.0.1:0`), avoiding global config mutation by passing TiKV client options per-connection, and by giving the recvLoop more time / increasing request timeouts to make recovery deterministic.",
   "module": "kv",
-  "fix_pattern": "tikv: stable TestPanicInRecvLoop test",
+  "fix_pattern": "Stabilize network/recvLoop tests by isolating resources (use ephemeral ports), avoiding global config mutation (pass per-connection client opts), and widening timeouts so recvLoop panic/recovery has deterministic time to settle.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19434",
     "https://github.com/pingcap/tidb/pull/19434.patch"
