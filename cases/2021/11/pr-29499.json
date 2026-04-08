@@ -17,14 +17,15 @@
   ],
   "failure_signature": "Fix a unstable test",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "time_sleep_for_sync",
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: Fix a unstable test.",
+  "root_cause_explanation": "The test was flaky because it asserted that partition/table data is removed immediately after `DROP SCHEMA`, but the actual cleanup happens asynchronously via GC delete-range. This PR stabilizes it by waiting (with retries) for the corresponding `mysql.gc_delete_range_done` record before performing the post-drop data checks.",
   "module": "ddl",
-  "fix_pattern": "Fix a unstable test",
+  "fix_pattern": "Wait for GC delete-range completion (`mysql.gc_delete_range_done`) before checking that data is removed; add a retry loop with sleep to handle async cleanup.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29499",
     "https://github.com/pingcap/tidb/pull/29499.patch"

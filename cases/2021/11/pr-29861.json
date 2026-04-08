@@ -17,14 +17,14 @@
   ],
   "failure_signature": "- c.Skip(\"race test for this case takes too long time\")",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "test_infra_migration"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "deprecated_test_framework_usage"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: - c.Skip(\"race test for this case takes too long time\").",
-  "module": "test_infra",
-  "fix_pattern": "- c.Skip(\"race test for this case takes too long time\")",
+  "root_cause_explanation": "This PR is a test-infra migration: it converts `executor/prepared_test.go` from gocheck to `testing.T` + `testify/require` and aligns testkit/helpers with the new framework. It also retains a race-build skip for a long-running case (`t.Skip(\"race test ... takes too long\")`). The change is primarily about modernizing the test framework rather than changing executor behavior, so it is classified as `test_infra_migration`.",
+  "module": "executor",
+  "fix_pattern": "Migrate gocheck-based tests to `testing` + `testify/require` and align testkit/helpers with the new framework (keeping race-only skips where necessary).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29861",
     "https://github.com/pingcap/tidb/pull/29861.patch"

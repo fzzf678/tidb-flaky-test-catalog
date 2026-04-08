@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: // Since multiple inner workers run concurrently, we should copy join's indexRanges for every worker to avoid data race.",
-  "module": "planner",
-  "fix_pattern": "// Since multiple inner workers run concurrently, we should copy join's indexRanges for every worker to avoid data race.",
+  "root_cause_explanation": "The flakiness risk came from concurrent inner workers in IndexJoin sharing mutable range state (e.g., `indexRanges`) without proper isolation, which can lead to data races and nondeterministic behavior. This PR stabilizes it by ensuring each worker gets its own copy/rebuilt ranges (and by introducing a `MutableRanges` abstraction for plan-cache reuse) so concurrent workers do not race on shared mutable slices.",
+  "module": "executor",
+  "fix_pattern": "Avoid sharing mutable ranges across concurrent workers; copy/rebuild per-worker `indexRanges` (or equivalent) to prevent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29238",
     "https://github.com/pingcap/tidb/pull/29238.patch"

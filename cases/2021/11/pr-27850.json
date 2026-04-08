@@ -17,15 +17,14 @@
   ],
   "failure_signature": "s.mockDB.ExpectQuery(\"\\\\QSELECT table_name, column_name, column_type, generation_expression, extra FROM information_schema.columns WHERE table_schema = ? ORDER BY table_name, ordinal_position;\\\\E\"). (br/pkg/lightning/backend/tidb/tidb_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: s.mockDB.ExpectQuery(\"\\\\QSELECT table_name, column_name, column_type, generation_expression, extra FROM information_schema.columns WHERE table_schema = ?.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The test change updates a deterministic mock SQL expectation (the SELECT list now includes `generation_expression`) to match the updated Lightning TiDB-backend behavior. There is no concrete flaky-test failure signature or targeted stabilization mechanism to classify here.",
   "module": "lightning",
-  "fix_pattern": "s.mockDB.ExpectQuery(\"\\\\QSELECT table_name, column_name, column_type, generation_expression, extra FROM information_schema.columns WHERE table_schema = ? ORDER BY table_name, ordinal_position;\\\\E\"). (br/pkg/lightning/backend/tidb/tidb_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27850",
     "https://github.com/pingcap/tidb/pull/27850.patch"

@@ -9,7 +9,7 @@
   "pr_merged_at": "2021-11-16T17:33:08+08:00",
   "test": {
     "type": "unit",
-    "path": "br/pkg/lightning/lightning.go",
+    "path": "br/pkg/lightning/lightning_server_serial_test.go",
     "name": "TestRunServer"
   },
   "symptoms": [
@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: br: fix DATA RACE in the TestRunServer.",
-  "module": "br",
-  "fix_pattern": "br: fix DATA RACE in the TestRunServer",
+  "root_cause_explanation": "The test was flaky due to a data race between `RunServer()` initializing shared server state (`l.taskCfgs`) and concurrent HTTP handlers that read/write that state (race detector reported concurrent access). This PR stabilizes it by guarding `l.taskCfgs` with `l.serverLock` in `RunServer` and the request handlers.",
+  "module": "lightning",
+  "fix_pattern": "Protect shared Lightning server state (`taskCfgs`) with a mutex (`serverLock`) to avoid concurrent read/write races between server startup and HTTP handlers.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29836",
     "https://github.com/pingcap/tidb/pull/29836.patch"

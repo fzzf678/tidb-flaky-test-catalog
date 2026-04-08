@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race with RandSeed.",
+  "root_cause_explanation": "The test was flaky due to a data race on the global `executor.RandSeed`: tests and executor code could read/write this shared variable concurrently (race detector). This PR stabilizes it by using atomic load/store for `RandSeed` and updating tests to set it via `atomic.StoreInt64`.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race with RandSeed",
+  "fix_pattern": "Use atomic operations for shared global `RandSeed` (atomic load/store) to eliminate concurrent read/write races; update tests to set it atomically.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29965",
     "https://github.com/pingcap/tidb/pull/29965.patch"

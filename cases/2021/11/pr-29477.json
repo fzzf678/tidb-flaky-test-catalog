@@ -10,22 +10,21 @@
   "test": {
     "type": "unit",
     "path": "table/tables/cache_test.go",
-    "name": "cache_test"
+    "name": "TestCacheCondition"
   },
   "symptoms": [
-    "tk.MustQuery(\"select * from tmp1 where id>4 order by id\").Check(testkit.Rows( (table/tables/cache_test.go)"
+    "require.False(t, tk.HasPlan(\"select * from t2 where id>0\", \"UnionScan\")) (table/tables/cache_test.go)"
   ],
-  "failure_signature": "tk.MustQuery(\"select * from tmp1 where id>4 order by id\").Check(testkit.Rows( (table/tables/cache_test.go)",
+  "failure_signature": "require.False(t, tk.HasPlan(\"select * from t2 where id>0\", \"UnionScan\")) (table/tables/cache_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select * from tmp1 where id>4 order by id\").Check(testkit.Rows( (table/tables/cache_test.go).",
-  "module": "module_unknown",
-  "fix_pattern": "tk.MustQuery(\"select * from tmp1 where id>4 order by id\").Check(testkit.Rows( (table/tables/cache_test.go)",
+  "root_cause_explanation": "The test was flaky because cache-table notifications/data loading happen in another goroutine, so checking for `UnionScan` in the EXPLAIN output (or immediately asserting cache usage) is timing-dependent and can be intermittently wrong. This PR stabilizes the tests by waiting/retrying until cache usage is observed (via StatementContext state) before making assertions, and by adding a dedicated cache-condition test that avoids timing-sensitive EXPLAIN checks.",
+  "module": "planner",
+  "fix_pattern": "Avoid timing-sensitive EXPLAIN assertions for cache-table usage; use a retry loop and StatementContext state (e.g., CacheTableUsed) to wait for async cache notifications before asserting.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29477",
     "https://github.com/pingcap/tidb/pull/29477.patch"

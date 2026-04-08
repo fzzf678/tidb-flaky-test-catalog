@@ -17,15 +17,14 @@
   ],
   "failure_signature": "result = tk.MustQuery(\"explain format = 'brief' select * from tmp1 where id>4 order by id\") (table/tables/cache_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: result = tk.MustQuery(\"explain format = 'brief' select * from tmp1 where id>4 order by id\") (table/tables/cache_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic correctness issue around table cache usage within a transaction (cache [Start, Lease) vs txn.StartTS) and updates related tests. It does not present a concrete flaky-test failure signature nor a targeted stabilization mechanism to classify a specific flakiness root cause here.",
   "module": "txn",
-  "fix_pattern": "result = tk.MustQuery(\"explain format = 'brief' select * from tmp1 where id>4 order by id\") (table/tables/cache_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29443",
     "https://github.com/pingcap/tidb/pull/29443.patch"

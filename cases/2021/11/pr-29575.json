@@ -10,7 +10,7 @@
   "test": {
     "type": "unit",
     "path": "table/tables/cache_test.go",
-    "name": "cache_test"
+    "name": "TestCacheTableComplexRead"
   },
   "symptoms": [
     "Change UpdateLockForRead(ctx sessionctx.Context, ts uint64) to UpdateLockForRead(store kv.Storage, ts uint64) to avoid misuse for sessionctx.Context that can cause data race."
@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: Change UpdateLockForRead(ctx sessionctx.Context, ts uint64) to UpdateLockForRead(store kv.Storage, ts uint64) to avoid misuse for sessionctx.Context that can cause data race.",
+  "root_cause_explanation": "The test was flaky due to a concurrency/data-race risk in cache-table reads: `UpdateLockForRead` used `sessionctx.Context` and could misuse session-scoped state when the cache table is accessed concurrently. This PR stabilizes it by changing the API to accept `kv.Storage` and loading data from the original table inside a dedicated new transaction (`kv.RunInNewTxn`), avoiding non-thread-safe session context usage.",
   "module": "txn",
-  "fix_pattern": "Change UpdateLockForRead(ctx sessionctx.Context, ts uint64) to UpdateLockForRead(store kv.Storage, ts uint64) to avoid misuse for sessionctx.Context that can cause data race.",
+  "fix_pattern": "Avoid using `sessionctx.Context` in cache-table lock/data loading paths; pass `kv.Storage` and load original-table data in a new transaction to prevent concurrent session-state access (data race).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29575",
     "https://github.com/pingcap/tidb/pull/29575.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "server: fix unstable test TestDumpStatsAPI",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "external_dependency"
   ],
   "review_smells": [
-    "statistics_sensitive_test"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: server: fix unstable test TestDumpStatsAPI.",
+  "root_cause_explanation": "The test was flaky due to an environment/resource conflict: the mock server used a shared/default Unix socket path, which could collide across parallel tests or leftover files. This PR stabilizes it by assigning a unique socket path (under `/tmp/` with a UnixNano suffix) for the server instance.",
   "module": "server",
-  "fix_pattern": "server: fix unstable test TestDumpStatsAPI",
+  "fix_pattern": "Use a unique Unix socket path for the mock server instance to avoid conflicts with parallel tests or leftover socket files.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29835",
     "https://github.com/pingcap/tidb/pull/29835.patch"

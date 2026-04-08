@@ -13,18 +13,19 @@
     "name": "db_partition_test"
   },
   "symptoms": [
-    "// It appears in the main function to be set before any use of client-go to prevent data race."
+    "Tests asserted `DROP TABLE/INDEX` completion by scanning KV keys in a loop with a fixed time window (e.g. ~15s); under high CI load this could exceed the window and fail intermittently."
   ],
-  "failure_signature": "// It appears in the main function to be set before any use of client-go to prevent data race.",
+  "failure_signature": "Tests asserted `DROP TABLE/INDEX` completion by scanning KV keys in a loop with a fixed time window (e.g. ~15s); under high CI load this could exceed the window and fail intermittently.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout",
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: // It appears in the main function to be set before any use of client-go to prevent data race.",
-  "module": "test_infra",
-  "fix_pattern": "// It appears in the main function to be set before any use of client-go to prevent data race.",
+  "root_cause_explanation": "The tests were flaky because they used a time-bounded loop that repeatedly scanned KV keys to decide whether a `DROP TABLE` / `DROP INDEX` cleanup finished. This is load-sensitive and can time out intermittently on busy CI machines. This PR stabilizes the tests by checking the GC delete-range bookkeeping tables (e.g. `mysql.gc_delete_range_done`) instead of scanning keys with a fixed timeout.",
+  "module": "ddl",
+  "fix_pattern": "Replace time-bounded key-scanning loops with deterministic checks against GC delete-range bookkeeping (`mysql.gc_delete_range_done`) to avoid load-sensitive timeouts.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29651",
     "https://github.com/pingcap/tidb/pull/29651.patch"

@@ -9,24 +9,22 @@
   "pr_merged_at": "2021-11-08T16:11:04+08:00",
   "test": {
     "type": "unit",
-    "path": "ddl/db_cache_test.go",
-    "name": "new_character_set_builtin"
+    "path": "table/tables/cache_test.go",
+    "name": "TestCacheTableBasicScan"
   },
   "symptoms": [
     "result = tk.MustQuery(\"explain format = 'brief' select * from tmp1 where id>4 order by id\") (table/tables/cache_test.go)"
   ],
   "failure_signature": "result = tk.MustQuery(\"explain format = 'brief' select * from tmp1 where id>4 order by id\") (table/tables/cache_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: result = tk.MustQuery(\"explain format = 'brief' select * from tmp1 where id>4 order by id\") (table/tables/cache_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily adds cache-table write-operator support and introduces a new cache-table scan unit test (with explicit ORDER BY). There is no concrete flaky-test failure signature or targeted stabilization mechanism identified; the recorded 'evidence' is just a query in the newly added test.",
   "module": "planner",
-  "fix_pattern": "result = tk.MustQuery(\"explain format = 'brief' select * from tmp1 where id>4 order by id\") (table/tables/cache_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29444",
     "https://github.com/pingcap/tidb/pull/29444.patch"
