@@ -20,12 +20,11 @@
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "schema_version_race"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl, ci: force domain to reload schema before execute SQL.",
+  "root_cause_explanation": "Under high CPU load, schema updates can be observed late/stale in tests (e.g., due to timer/lease timing bias). These DDL tests executed schema-sensitive SQL/checks while the in-memory InfoSchema might not be refreshed yet. This PR stabilizes the tests by forcing `Domain.Reload()` before executing SQL and before checking table locks, ensuring the session sees an up-to-date schema version.",
   "module": "ddl",
-  "fix_pattern": "ddl, ci: force domain to reload schema before execute SQL.",
+  "fix_pattern": "Force `Domain.Reload()` in schema-sensitive DDL tests before executing SQL/checks to avoid stale InfoSchema under load.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19580",
     "https://github.com/pingcap/tidb/pull/19580.patch"

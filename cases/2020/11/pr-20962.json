@@ -13,19 +13,19 @@
     "name": "TestIssue20692"
   },
   "symptoms": [
-    "PR title: test: fix testPointGetSuite.TestIssue20692 timeout"
+    "`testPointGetSuite.TestIssue20692` intermittently times out due to racy ordering between concurrent sessions competing on pessimistic locks."
   ],
-  "failure_signature": "PR title: test: fix testPointGetSuite.TestIssue20692 timeout",
+  "failure_signature": "Timeout/hang in `TestIssue20692` when the tk3 UPDATE does not deterministically block behind tk2's pessimistic lock work",
   "root_cause_categories": [
     "async_timing_issue"
   ],
   "review_smells": [
-    "insufficient_timeout",
-    "clock_skew_dependency"
+    "race_condition_in_async_code",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: test: fix testPointGetSuite.TestIssue20692 timeout.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix testPointGetSuite.TestIssue20692 timeout",
+  "root_cause_explanation": "This test runs two concurrent goroutines (tk2 INSERT and tk3 UPDATE) and relies on tk3 being blocked by tk2's pessimistic lock state. The previous synchronization was timing-sensitive (sleep + ordering), so tk3 could acquire the lock too early (or not block as expected), leading to an eventual hang/timeout. This PR stabilizes it by enforcing a deterministic happens-before relationship with channels and by using a bounded `select` + `time.After(50ms)` to assert tk3 is still blocked before committing tk2.",
+  "module": "planner",
+  "fix_pattern": "Use deterministic channel synchronization between goroutines/sessions (instead of sleep-based ordering) to ensure the intended pessimistic-lock blocking happens and avoid timeouts.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/20962",
     "https://github.com/pingcap/tidb/pull/20962.patch"

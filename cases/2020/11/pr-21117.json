@@ -10,22 +10,21 @@
   "test": {
     "type": "unit",
     "path": "table/tables/tables_test.go",
-    "name": "tables_test"
+    "name": "TestTableFromMeta"
   },
   "symptoms": [
-    "PR body: CI sometimes hits \"Information schema is changed during the execution\" error; make test code more stable"
+    "CI sometimes hits `Information schema is changed during the execution ... [try again later]` in the `table/tables` test suite due to unstable suite/session state."
   ],
-  "failure_signature": "PR body: CI sometimes hits \"Information schema is changed during the execution\" error; make test code more stable",
+  "failure_signature": "`[domain:8028] Information schema is changed during the execution of the statement ... [try again later]` in `table/tables_test`",
   "root_cause_categories": [
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "schema_version_race",
-    "async_schema_propagation"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: table/tables: make the test case more stable.",
-  "module": "domain",
-  "fix_pattern": "table/tables: make the test case more stable",
+  "root_cause_explanation": "The `table/tables` suite reuses a session (`ts.se`). In `TestTableFromMeta`, the test started a new transaction via `NewTxn(...)` but did not ensure the underlying transaction state was fully initialized/clean before reading from `InfoSchema()`. That could leave the suite session in an inconsistent state and lead to confusing follow-up failures (e.g. `Information schema is changed during the execution ...`). This PR stabilizes the suite by explicitly calling `ts.se.Txn(true)` and asserting no error, ensuring the transaction is properly created before using `InfoSchema` APIs.",
+  "module": "table",
+  "fix_pattern": "Ensure suite sessions are in a clean transaction state before reading `InfoSchema`: call `Txn(true)` (and assert no error) after `NewTxn(...)` to avoid leaking inconsistent session state across tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21117",
     "https://github.com/pingcap/tidb/pull/21117.patch"
