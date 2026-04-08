@@ -13,18 +13,18 @@
     "name": "2pc"
   },
   "symptoms": [
-    "- // potencial data race in unit test since `CommitMaxBackoff` will be updated"
+    "- // potential data race in unit test since `CommitMaxBackoff` will be updated"
   ],
-  "failure_signature": "- // potencial data race in unit test since `CommitMaxBackoff` will be updated",
+  "failure_signature": "- // potential data race in unit test since `CommitMaxBackoff` will be updated",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: store: add missed KV variables when committing the secondary keys.",
+  "root_cause_explanation": "The flakiness risk is tied to concurrent/asynchronous execution during 2PC commit: secondary-key commits run in a background goroutine, and unit tests may update backoff-related variables (e.g. `CommitMaxBackoff`) which can trigger potential data races or inconsistent behavior if the backoffer is not constructed with the correct per-txn KV variables. The PR stabilizes this path by creating the secondary backoffer with the transaction variables (`NewBackoffer(...).WithVars(c.txn.vars)`), ensuring secondary commits use the same KV settings as the primary and reducing race-prone inconsistency in tests.",
   "module": "kv",
-  "fix_pattern": "store: add missed KV variables when committing the secondary keys",
+  "fix_pattern": "When launching background work (e.g. secondary-key commits) that depends on per-txn KV settings, propagate the transaction variables into the backoff/retry machinery (e.g. `WithVars(txn.vars)`) to keep behavior consistent and avoid race-prone test flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12458",
     "https://github.com/pingcap/tidb/pull/12458.patch"

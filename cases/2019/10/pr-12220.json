@@ -13,30 +13,33 @@
     "name": "bench_test"
   },
   "symptoms": [
-    "rand.Seed(int64(time.Now().UnixNano())) (expression/bench_test.go)"
+    "Benchmark helper uses time-based random seeding (`rand.Seed(time.Now().UnixNano())`), but the case data does not include a concrete flaky failure signature."
   ],
-  "failure_signature": "rand.Seed(int64(time.Now().UnixNano())) (expression/bench_test.go)",
+  "failure_signature": "INSUFFICIENT_EVIDENCE: Time-based random seeding is present in `expression/bench_test.go`, but no intermittent failure signature or targeted stabilization fix is provided.",
   "root_cause_categories": [
-    "async_timing_issue"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "clock_skew_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily adds vectorized expression evaluation support and includes a benchmark helper change that seeds randomness from the current time. The case data does not include a concrete flaky failure signature or a targeted stabilization change, so avoid guessing a timing root cause and keep it as needs-more-evidence.",
   "module": "expression",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12220",
     "https://github.com/pingcap/tidb/pull/12220.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/12220.patch",
   "changed_files": [
-    "expression/bench_test.go",
     "expression/chunk_executor.go",
+    "util/chunk/iterator.go",
+    "expression/bench_test.go",
     "expression/expression.go",
-    "types/datum_test.go",
+    "go.mod",
+    "tools/check/go.mod",
+    "util/chunk/chunk.go",
     "util/chunk/column.go",
-    "util/chunk/iterator.go"
+    "types/datum_test.go"
   ],
   "triage": {
     "sources": [
@@ -45,8 +48,8 @@
     ],
     "evidence": [
       "evidence: rand.Seed(int64(time.Now().UnixNano())) (expression/bench_test.go)",
-      "files: expression/bench_test.go, expression/chunk_executor.go, expression/expression.go, go.mod, tools/check/go.mod, types/datum_test.go, util/chunk/chunk.go, util/chunk/column.go, util/chunk/iterator.go"
+      "files: expression/chunk_executor.go, util/chunk/iterator.go, expression/bench_test.go, expression/expression.go, go.mod, tools/check/go.mod, util/chunk/chunk.go, util/chunk/column.go, types/datum_test.go"
     ]
   },
-  "analysis": "PR title: expression: make the selection executor support vectorized expression evaluation\nPR url: https://github.com/pingcap/tidb/pull/12220\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(int64(time.Now().UnixNano())) (expression/bench_test.go)\nChanged files (6): expression/bench_test.go, expression/chunk_executor.go, expression/expression.go, types/datum_test.go, util/chunk/column.go, util/chunk/iterator.go\nPatch url: https://github.com/pingcap/tidb/pull/12220.patch\nPicked test: type=unit path=expression/bench_test.go name=bench_test"
+  "analysis": "PR title: expression: make the selection executor support vectorized expression evaluation\nPR url: https://github.com/pingcap/tidb/pull/12220\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(int64(time.Now().UnixNano())) (expression/bench_test.go)\nChanged files (9): expression/chunk_executor.go, util/chunk/iterator.go, expression/bench_test.go, expression/expression.go, go.mod, tools/check/go.mod, util/chunk/chunk.go, util/chunk/column.go, types/datum_test.go\nPatch url: https://github.com/pingcap/tidb/pull/12220.patch\nPicked test: type=unit path=expression/bench_test.go name=bench_test"
 }

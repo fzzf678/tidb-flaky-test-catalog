@@ -9,22 +9,22 @@
   "pr_merged_at": "2019-10-28T11:50:00+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/ddl_test.go",
+    "path": "executor/seqtest/seq_executor_test.go",
     "name": "TestRenameTable"
   },
   "symptoms": [
     "Move `TestRenameTable` to `seq_executor_test` to avoid race."
   ],
-  "failure_signature": "Move `TestRenameTable` to `seq_executor_test` to avoid race.",
+  "failure_signature": "DATA RACE / cross-test interference when `TestRenameTable` runs concurrently; mitigated by moving it into the sequential executor test suite (`seq_executor_test`).",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: fix ddl_test and make auto id test stable.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix ddl_test and make auto id test stable",
+  "root_cause_explanation": "The flakiness is due to parallel execution with shared state: `TestRenameTable` (and related auto-ID/DDL tests) is not safe to run concurrently with other tests and can hit race/interference issues. The PR stabilizes it by moving `TestRenameTable` into the sequential executor test suite (`seq_executor_test`) and adjusting tests to avoid unsafe parallel behavior.",
+  "module": "executor",
+  "fix_pattern": "For tests that are not concurrency-safe, run them in a serial/seq suite (or isolate shared state) instead of allowing parallel execution that can trigger races and cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12931",
     "https://github.com/pingcap/tidb/pull/12931.patch"
@@ -32,7 +32,9 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/12931.patch",
   "changed_files": [
     "executor/ddl_test.go",
-    "go.sum"
+    "executor/seqtest/seq_executor_test.go",
+    "go.sum",
+    "res.txt"
   ],
   "triage": {
     "sources": [
@@ -44,5 +46,5 @@
       "files: executor/ddl_test.go, executor/seqtest/seq_executor_test.go, go.sum, res.txt"
     ]
   },
-  "analysis": "PR title: test: fix ddl_test and make auto id test stable\nPR url: https://github.com/pingcap/tidb/pull/12931\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Move `TestRenameTable` to `seq_executor_test` to avoid race.\nChanged files (2): executor/ddl_test.go, go.sum\nPatch url: https://github.com/pingcap/tidb/pull/12931.patch\nPicked test: type=unit path=executor/ddl_test.go name=TestRenameTable"
+  "analysis": "PR title: test: fix ddl_test and make auto id test stable\nPR url: https://github.com/pingcap/tidb/pull/12931\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Move `TestRenameTable` to `seq_executor_test` to avoid race.\nChanged files (4): executor/ddl_test.go, executor/seqtest/seq_executor_test.go, go.sum, res.txt\nPatch url: https://github.com/pingcap/tidb/pull/12931.patch\nPicked test: type=unit path=executor/seqtest/seq_executor_test.go name=TestRenameTable"
 }

@@ -13,7 +13,7 @@
     "name": "cluster"
   },
   "symptoms": [
-    "Merge branch 'master' into fix-split-test-race"
+    "Go race detector reports a DATA RACE in mocktikv split logic due to shared meta info being accessed concurrently without deep copy / proper synchronization."
   ],
   "failure_signature": "Merge branch 'master' into fix-split-test-race",
   "root_cause_categories": [
@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: mocktikv: fix data race in mocktikv split.",
-  "module": "module_unknown",
-  "fix_pattern": "mocktikv: fix data race in mocktikv split",
+  "root_cause_explanation": "The flakiness is due to a real concurrency data race in mocktikv split: shared meta information could be returned/used without a deep copy and accessed concurrently, triggering `-race` failures. The PR stabilizes it by locking around access and returning deep-copied meta info so callers don't race on shared mutable state.",
+  "module": "kv",
+  "fix_pattern": "Avoid sharing mutable meta/state across goroutines: use locks for shared structures and return deep copies to prevent concurrent mutation/read races in mock components.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12414",
     "https://github.com/pingcap/tidb/pull/12414.patch"
