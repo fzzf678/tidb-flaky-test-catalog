@@ -13,18 +13,18 @@
     "name": "analyze_test"
   },
   "symptoms": [
-    "fix race | Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)"
+    "fix race | schemaForVirtualColEval is built once and reused for sampling with virtual columns (executor/analyze.go)"
   ],
-  "failure_signature": "fix race | Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)",
+  "failure_signature": "fix race | schemaForVirtualColEval is built once and reused for sampling with virtual columns (executor/analyze.go)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix race | Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go).",
+  "root_cause_explanation": "A data race could occur when building/evaluating schema information for virtual columns during analyze sampling. The fix builds the schema once (in the executor builder) and stores it on `AnalyzeColumnsExec` (`schemaForVirtualColEval`) so concurrent sampling code paths reuse a stable schema instead of rebuilding shared mutable state.",
   "module": "statistics",
-  "fix_pattern": "fix race | Rng: rand.New(rand.NewSource(time.Now().UnixNano())), (statistics/sample_test.go)",
+  "fix_pattern": "Pre-build and reuse schema for virtual column evaluation (`schemaForVirtualColEval`) instead of rebuilding it in concurrent sampling code paths.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24999",
     "https://github.com/pingcap/tidb/pull/24999.patch"

@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl, executor: fix test race in terror",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl, executor: fix test race in terror.",
+  "root_cause_explanation": "`terror.NewStdErr` is not thread-safe and was being used outside of init-time, which could trigger data races in tests. The fix moves initialization into a safe init phase / package-level setup so it is not concurrently constructed/used.",
   "module": "ddl",
-  "fix_pattern": "ddl, executor: fix test race in terror",
+  "fix_pattern": "Initialize `terror.NewStdErr` in init/package scope (before concurrent use) to avoid thread-unsafe construction and resulting data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25405",
     "https://github.com/pingcap/tidb/pull/25405.patch"

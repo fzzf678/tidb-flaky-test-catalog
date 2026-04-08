@@ -17,14 +17,16 @@
   ],
   "failure_signature": "fix race test",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "race_condition_in_async_code",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix race test.",
-  "module": "module_unknown",
-  "fix_pattern": "fix race test",
+  "root_cause_explanation": "The tracecpu/TopSQL profile test relied on `time.Sleep` and had unsynchronized shared state (mock collector maps + toggling global config), which could both cause timing flakiness under load and trigger data races under `-race`. The fix replaces `Sleep` with a bounded wait for an expected collect count, updates global config via `config.StoreGlobalConfig`, and protects collector state with mutex/atomic counters.",
+  "module": "server",
+  "fix_pattern": "Replace `time.Sleep` with a bounded wait for expected collection progress, use `config.StoreGlobalConfig` for config toggles, and protect mock collector state with mutex/atomic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24892",
     "https://github.com/pingcap/tidb/pull/24892.patch"

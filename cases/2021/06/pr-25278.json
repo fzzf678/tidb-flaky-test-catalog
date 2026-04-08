@@ -17,14 +17,14 @@
   ],
   "failure_signature": "Improved test stability (flaky test)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test asserted warning/clienterror counts before the asynchronous update triggered by network send/row consumption was guaranteed to happen. The fix makes the test deterministic by explicitly reading/consuming the result set so the warning count is updated before assertions.",
   "module": "server",
-  "fix_pattern": "Improved test stability (flaky test)",
+  "fix_pattern": "Force result set consumption (read rows / drain ResultSet) before asserting on warning/clienterror counts so async updates are complete.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25278",
     "https://github.com/pingcap/tidb/pull/25278.patch"

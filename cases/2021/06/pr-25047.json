@@ -17,15 +17,14 @@
   ],
   "failure_signature": "+ c.Skip(\"exhaustive types test, skip race test\") | WINDOW w AS (ORDER BY col_5410, col_5411, col_5412, col_5413, col_5414, col_5415, col_5416, col_5417, col_5418, col_5419) (executor/partition_table_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: + c.Skip(\"exhaustive types test, skip race test\") | WINDOW w AS (ORDER BY col_5410, col_5411, col_5412, col_5413, col_5414, col_5415, col_5416, col_5417, col_5418, col_5419) (executor/partition_table_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes incorrect KVRange construction for partition tables (a correctness bug) and updates/extends related tests. The `c.Skip(...)` line in the patch is not a targeted stabilization fix for a flaky failure signature, so CI logs/repro are needed to determine whether any flakiness existed and why.",
   "module": "executor",
-  "fix_pattern": "+ c.Skip(\"exhaustive types test, skip race test\") | WINDOW w AS (ORDER BY col_5410, col_5411, col_5412, col_5413, col_5414, col_5415, col_5416, col_5417, col_5418, col_5419) (executor/partition_table_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25047",
     "https://github.com/pingcap/tidb/pull/25047.patch"

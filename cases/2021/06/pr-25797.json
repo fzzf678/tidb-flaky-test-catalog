@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + // It appears in the main function to be set before any use of client-go to prevent data race.",
-  "module": "module_unknown",
-  "fix_pattern": "+ // It appears in the main function to be set before any use of client-go to prevent data race.",
+  "root_cause_explanation": "Failpoint enablement for tikv/client-go needs to happen before any client-go usage; otherwise concurrent initialization can trigger data races. The fix enables client-go failpoints early (e.g., in main/test init) to ensure it is set before concurrent use.",
+  "module": "kv",
+  "fix_pattern": "Enable tikv/client-go failpoints before any client-go usage (early init) to avoid concurrent initialization data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25797",
     "https://github.com/pingcap/tidb/pull/25797.patch"

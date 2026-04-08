@@ -17,15 +17,14 @@
   ],
   "failure_signature": "fix encode cte plan race",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: fix encode cte plan race.",
+  "root_cause_explanation": "The plan encoder kept recorded CTE plan state across calls, causing a data race when used concurrently. The fix resets the recorded slice (`pn.ctes = pn.ctes[:0]`) so encoding does not reuse shared mutable state across goroutines.",
   "module": "planner",
-  "fix_pattern": "fix encode cte plan race",
+  "fix_pattern": "Reset recorded CTE plan state in the plan encoder (`pn.ctes = pn.ctes[:0]`) to avoid concurrent reuse of shared mutable state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25175",
     "https://github.com/pingcap/tidb/pull/25175.patch"

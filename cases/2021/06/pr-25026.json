@@ -17,16 +17,14 @@
   ],
   "failure_signature": "planner: try to fix some unstable test cases about partition table statistics",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+    "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: planner: try to fix some unstable test cases about partition table statistics.",
-  "module": "planner",
-  "fix_pattern": "planner: try to fix some unstable test cases about partition table statistics",
+  "root_cause_explanation": "Partition-statistics related tests shared DB/table names and state, causing cross-test interference and order-dependent flakes. The fix isolates tests by creating separate DBs/tables for each test case so they don't pollute each other.",
+  "module": "statistics",
+  "fix_pattern": "Use per-test unique DB/table names (and cleanup) to isolate partition statistics tests and avoid cross-test state pollution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25026",
     "https://github.com/pingcap/tidb/pull/25026.patch"
