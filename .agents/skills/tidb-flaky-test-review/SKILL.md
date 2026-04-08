@@ -85,6 +85,15 @@ For each issue you find:
 3. Prefer actionable, deterministic fixes (not “make it pass” band-aids).
 4. Never invent keys. If nothing matches well, use `unclassified` and explain the symptom.
 
+**Primary vs Supporting smell selection (required when multiple smells are found):**
+
+When you identify multiple smells in a single PR, you must designate exactly **1 primary_smell** and 0–3 **supporting_smells**:
+- **primary_smell**: the single smell most likely to be the **root cause** of flaky test failure. Selection rules:
+  1. Prefer the risk that this PR **newly introduces**, not pre-existing issues in the codebase.
+  2. When smells have a causal relationship (e.g., a goroutine race condition leads to adding `time.Sleep` as a workaround), choose the **cause** (`race_condition_in_async_code`) over the **symptom** (`time_sleep_for_sync`).
+  3. When no clear causal order exists, choose the smell whose `related_root_causes` in `review_smells.json` is at a higher/more fundamental level.
+- **supporting_smells**: additional real risks found in the same PR that are secondary or consequential. These provide useful context but are not the primary driver of flakiness.
+
 When evidence is weak, use:
 - `root_cause_categories: ["insufficient_evidence"]`
 - `review_smells: ["needs_more_evidence"]`
@@ -98,7 +107,8 @@ Use the smell definitions’ review questions and suggested fixes to write crisp
 
 Use this structure (keep it short; link to evidence):
 
-- **Finding**: `<smell_key>` — `<smell_title>`
+- **Primary Finding**: `<smell_key>` — `<smell_title>`
+- **Supporting Findings** (if any): `<smell_key_2>`, `<smell_key_3>` (0–3 additional smells)
 - **Impacted test(s)**: `<test identifier(s)>`
 - **Evidence**: `path:line` + short snippet
 - **Confidence**: `high` | `medium` | `low`
