@@ -31,12 +31,41 @@
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/12024.patch",
   "changed_files": [
-    "executor/benchmark_test.go",
+    "planner/core/logical_plan_builder.go",
     "executor/builder.go",
     "executor/index_lookup_merge_join.go",
-    "executor/join_test.go",
     "planner/core/exhaust_physical_plans.go",
     "planner/core/physical_plans.go",
+    "executor/join_test.go",
+    "executor/index_lookup_join.go",
+    "planner/core/cbo_test.go",
+    "cmd/explaintest/r/explain_complex.result",
+    "cmd/explaintest/r/explain_complex_stats.result",
+    "cmd/explaintest/r/explain_easy.result",
+    "cmd/explaintest/r/generated_columns.result",
+    "cmd/explaintest/r/index_join.result",
+    "cmd/explaintest/r/topn_push_down.result",
+    "cmd/explaintest/r/tpch.result",
+    "cmd/explaintest/r/explain_easy_stats.result",
+    "cmd/explaintest/r/subquery.result",
+    "executor/index_lookup_join_test.go",
+    "go.sum",
+    "planner/core/initialize.go",
+    "planner/core/logical_plan_test.go",
+    "planner/core/physical_plan_test.go",
+    "planner/core/stringer.go",
+    "planner/core/task.go",
+    "util/ranger/ranger_test.go",
+    "cmd/explaintest/r/access_path_selection.result",
+    "cmd/explaintest/r/black_list.result",
+    "cmd/explaintest/r/explain.result",
+    "cmd/explaintest/r/explain_stats.result",
+    "cmd/explaintest/r/partition_pruning.result",
+    "cmd/explaintest/r/select.result",
+    "cmd/explaintest/r/topn_pushdown.result",
+    "cmd/explaintest/r/window_function.result",
+    "log.txt",
+    "executor/benchmark_test.go",
     "planner/core/testdata/plan_suite_out.json"
   ],
   "triage": {
@@ -47,8 +76,8 @@
     ],
     "evidence": [
       "evidence: fix data race | tk.MustQuery(\"select /*+ TIDB_INLJ(t, s) */ t.a from t left join s on t.a = s.a order by t.a desc\").Check(testkit.Rows(\"148307968\", \"-277544960\", \"-277544960\", \"-1327693824\")) (executor/join_test.go)",
-      "files: cmd/explaintest/r/access_path_selection.result, cmd/explaintest/r/black_list.result, cmd/explaintest/r/explain.result, cmd/explaintest/r/explain_complex.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/explain_easy_stats.result, cmd/explaintest/r/explain_stats.result, cmd/explaintest/r/generated_columns.result, cmd/explaintest/r/index_join.result, cmd/explaintest/r/partition_pruning.result, cmd/explaintest/r/select.result, cmd/explaintest/r/subquery.result, cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/topn_pushdown.result, cmd/explaintest/r/tpch.result, cmd/explaintest/r/window_function.result, executor/benchmark_test.go, executor/builder.go, executor/index_lookup_join.go, executor/index_lookup_join_test.go, executor/index_lookup_merge_join.go, executor/join_test.go, go.sum, log.txt, planner/core/cbo_test.go, planner/core/exhaust_physical_plans.go, planner/core/initialize.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/physical_plan_test.go, planner/core/physical_plans.go, planner/core/stringer.go, planner/core/task.go, planner/core/testdata/plan_suite_out.json, util/ranger/ranger_test.go"
+      "files: planner/core/logical_plan_builder.go, executor/builder.go, executor/index_lookup_merge_join.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plans.go, executor/join_test.go, executor/index_lookup_join.go, planner/core/cbo_test.go, cmd/explaintest/r/explain_complex.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/generated_columns.result, cmd/explaintest/r/index_join.result, cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/tpch.result, cmd/explaintest/r/explain_easy_stats.result, cmd/explaintest/r/subquery.result, executor/index_lookup_join_test.go, go.sum, planner/core/initialize.go, planner/core/logical_plan_test.go, planner/core/physical_plan_test.go, planner/core/stringer.go, planner/core/task.go, util/ranger/ranger_test.go, cmd/explaintest/r/access_path_selection.result, cmd/explaintest/r/black_list.result, cmd/explaintest/r/explain.result, cmd/explaintest/r/explain_stats.result, cmd/explaintest/r/partition_pruning.result, cmd/explaintest/r/select.result, cmd/explaintest/r/topn_pushdown.result, cmd/explaintest/r/window_function.result, log.txt, executor/benchmark_test.go, planner/core/testdata/plan_suite_out.json"
     ]
   },
-  "analysis": "PR title: executor: support index lookup merge join in executor.\nPR url: https://github.com/pingcap/tidb/pull/12024\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix data race | tk.MustQuery(\"select /*+ TIDB_INLJ(t, s) */ t.a from t left join s on t.a = s.a order by t.a desc\").Check(testkit.Rows(\"148307968\", \"-277544960\", \"-277544960\", \"-1327693824\")) (executor/join_test.go)\nChanged files (7): executor/benchmark_test.go, executor/builder.go, executor/index_lookup_merge_join.go, executor/join_test.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plans.go, planner/core/testdata/plan_suite_out.json\nPatch url: https://github.com/pingcap/tidb/pull/12024.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+  "analysis": "PR title: executor: support index lookup merge join in executor.\nPR url: https://github.com/pingcap/tidb/pull/12024\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix data race | tk.MustQuery(\"select /*+ TIDB_INLJ(t, s) */ t.a from t left join s on t.a = s.a order by t.a desc\").Check(testkit.Rows(\"148307968\", \"-277544960\", \"-277544960\", \"-1327693824\")) (executor/join_test.go)\nChanged files (36): planner/core/logical_plan_builder.go, executor/builder.go, executor/index_lookup_merge_join.go, planner/core/exhaust_physical_plans.go, planner/core/physical_plans.go, executor/join_test.go, executor/index_lookup_join.go, planner/core/cbo_test.go, cmd/explaintest/r/explain_complex.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/generated_columns.result, cmd/explaintest/r/index_join.result, cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/tpch.result, cmd/explaintest/r/explain_easy_stats.result, cmd/explaintest/r/subquery.result, executor/index_lookup_join_test.go, go.sum, planner/core/initialize.go, planner/core/logical_plan_test.go, planner/core/physical_plan_test.go, planner/core/stringer.go, planner/core/task.go, util/ranger/ranger_test.go, cmd/explaintest/r/access_path_selection.result, cmd/explaintest/r/black_list.result, cmd/explaintest/r/explain.result, cmd/explaintest/r/explain_stats.result, cmd/explaintest/r/partition_pruning.result, cmd/explaintest/r/select.result, cmd/explaintest/r/topn_pushdown.result, cmd/explaintest/r/window_function.result, log.txt, executor/benchmark_test.go, planner/core/testdata/plan_suite_out.json\nPatch url: https://github.com/pingcap/tidb/pull/12024.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
 }
