@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR title: stable fail point test.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: stable fail point test",
+  "root_cause_explanation": "The test enabled a global failpoint that could also be exercised by background tasks, making the test outcome timing-dependent and unstable. The fix disables the failpoint immediately after the first timestamp fetch so the second getTimestampWithRetry() is not affected by other goroutines hitting the same failpoint path, making the t1 > t2 assertion deterministic.",
+  "module": "kv",
+  "fix_pattern": "Disable the failpoint as soon as it is no longer needed so background tasks cannot consume it and affect subsequent assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15928",
     "https://github.com/pingcap/tidb/pull/15928.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "PR title: unstable order; avoid sorting multiple times in mocktikv TopN executor.",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "external_dependency"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
     "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: mocktikv: avoid sorting multiple times with unstable order.",
+  "root_cause_explanation": "MockTiKV's TopN executor sorted intermediate results multiple times; because sorting of rows with equal keys is not guaranteed to be stable, repeated sorting could lead to an unstable output order across Next() calls and make LIMIT/OFFSET queries nondeterministic. The fix sorts the full input once after exhausting the child, then serves rows from the fixed ordered slice.",
   "module": "executor",
-  "fix_pattern": "mocktikv: avoid sorting multiple times with unstable order",
+  "fix_pattern": "Sort TopN results once after exhausting input, then read from the ordered slice to avoid unstable ordering across repeated sorts/Next() calls.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15898",
     "https://github.com/pingcap/tidb/pull/15898.patch"

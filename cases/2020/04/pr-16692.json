@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR title: make TestFromUnixTime stable in different timezone.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "external_dependency"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: make TestFromUnixTime stable in different timezone",
+  "root_cause_explanation": "TestFromUnixTime depended on the local timezone/environment (CI jobs could run under different timezones), causing expected timestamp strings to differ across environments. The fix forces the test to run with TimeZone set to UTC and updates expected results accordingly, removing dependence on the machine timezone.",
+  "module": "expression",
+  "fix_pattern": "Force the test timezone to UTC (sc.TimeZone=time.UTC) and update expected outputs to avoid environment/timezone-dependent failures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16692",
     "https://github.com/pingcap/tidb/pull/16692.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR title: make TestLoadDataMissingColumn stable.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "test:make TestLoadDataMissingColumn stable",
+  "root_cause_explanation": "TestLoadDataMissingColumn compared a full current-timestamp string including seconds; in CI there can be a small timing delta between the time written and the time read/checked, leading to 1-second mismatches and flaky failures. The fix avoids asserting the exact seconds value and only checks the stable hour/minute portion of the timestamp output.",
+  "module": "executor",
+  "fix_pattern": "Avoid asserting exact wall-clock seconds in tests using current timestamps; compare only stable fields (e.g., hour/minute) to prevent 1s timing flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16130",
     "https://github.com/pingcap/tidb/pull/16130.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR title: stabilify the result; makes greedy selectivity stable by sorting nodes (statistics/selectivity.go).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: statistics: fix repetitive selectivity accounting and stabilify the result.",
+  "root_cause_explanation": "Selectivity estimation used a greedy algorithm over candidate stats nodes, but the input order of indices could be nondeterministic (e.g., map/slice iteration order), leading to unstable selectivity results and confusing plan changes even when stats did not change. The fix sorts StatsNode candidates before the greedy search (with deterministic tie-breaking) and avoids choosing overlapping filter sets, making selectivity (and plan choice) stable across runs.",
   "module": "statistics",
-  "fix_pattern": "statistics: fix repetitive selectivity accounting and stabilify the result",
+  "fix_pattern": "Sort StatsNode candidates deterministically before greedy selectivity search (and avoid overlapping masks) to stabilize selectivity and downstream plan selection.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15536",
     "https://github.com/pingcap/tidb/pull/15536.patch"

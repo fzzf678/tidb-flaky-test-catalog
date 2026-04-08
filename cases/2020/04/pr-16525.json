@@ -17,14 +17,15 @@
   ],
   "failure_signature": "PR title: make test running serially.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "t_parallel_with_shared_state",
+    "plan_cache_dependency"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "Prepared plan cache related unit tests were unstable when run in parallel because they depend on global plan-cache state and other shared knobs, leading to cross-test interference. The fix moves these prepared plan cache tests into SerialSuites/serial suites so they run without parallel interference.",
   "module": "test_infra",
-  "fix_pattern": "test: fix unit test and make test running serially.",
+  "fix_pattern": "Move prepared plan cache related tests into SerialSuites/serial suites to avoid parallel interference on shared/global plan-cache state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16525",
     "https://github.com/pingcap/tidb/pull/16525.patch"

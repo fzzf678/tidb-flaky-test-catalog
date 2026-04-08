@@ -17,15 +17,15 @@
   ],
   "failure_signature": "PR title: stable global var test.",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "global_variable_mutation",
-    "shared_table_without_isolation"
+    "t_parallel_with_shared_state",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: test: stable global var test.",
-  "module": "test_infra",
-  "fix_pattern": "test: stable global var test",
+  "root_cause_explanation": "The concurrent oneflight test for GlobalVariableCache was timing-sensitive: if the load function returned too quickly, the key could be deleted and other goroutines might not be scheduled in time, making results unstable. The fix makes the suite run serially and adds explicit synchronization (wait group) plus a small sleep in the load function to reliably create the intended concurrent window and make the test deterministic.",
+  "module": "domain",
+  "fix_pattern": "Make the GlobalVariableCache oneflight test deterministic by running it serially and adding synchronization (and a small sleep) so concurrent goroutines reliably overlap.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16610",
     "https://github.com/pingcap/tidb/pull/16610.patch"
