@@ -17,24 +17,23 @@
   ],
   "failure_signature": "s.checkMemoryInfo(c, tk, \"explain analyze select * from t order by v\", false) (executor/explain_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds memory tracking for Projection executors and updates explain-analyze memory tests. It does not provide a concrete flaky failure signature or a targeted stabilization change, so keep this case as needs-more-evidence.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13914",
     "https://github.com/pingcap/tidb/pull/13914.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/13914.patch",
   "changed_files": [
-    "executor/adapter.go",
     "executor/explain_test.go",
-    "executor/projection.go"
+    "executor/projection.go",
+    "executor/adapter.go"
   ],
   "triage": {
     "sources": [
@@ -43,8 +42,8 @@
     ],
     "evidence": [
       "evidence: s.checkMemoryInfo(c, tk, \"explain analyze select * from t order by v\", false) (executor/explain_test.go)",
-      "files: executor/adapter.go, executor/explain_test.go, executor/projection.go"
+      "files: executor/explain_test.go, executor/projection.go, executor/adapter.go"
     ]
   },
-  "analysis": "PR title: executor: trace the memory usage of Projection executors\nPR url: https://github.com/pingcap/tidb/pull/13914\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: s.checkMemoryInfo(c, tk, \"explain analyze select * from t order by v\", false) (executor/explain_test.go)\nChanged files (3): executor/adapter.go, executor/explain_test.go, executor/projection.go\nPatch url: https://github.com/pingcap/tidb/pull/13914.patch\nPicked test: type=unit path=executor/explain_test.go name=explain_test"
+  "analysis": "PR title: executor: trace the memory usage of Projection executors\nPR url: https://github.com/pingcap/tidb/pull/13914\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: s.checkMemoryInfo(c, tk, \"explain analyze select * from t order by v\", false) (executor/explain_test.go)\nChanged files (3): executor/explain_test.go, executor/projection.go, executor/adapter.go\nPatch url: https://github.com/pingcap/tidb/pull/13914.patch\nPicked test: type=unit path=executor/explain_test.go name=explain_test"
 }

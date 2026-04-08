@@ -17,30 +17,31 @@
   ],
   "failure_signature": "tk.MustGetErr(\"select * from t order by b;\", \"[planner:1054]Unknown column 'b' in 'order clause'\") (table/tables/tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR changes planner/column resolution behavior for hidden columns and updates error handling/tests. It is a correctness/change-in-behavior patch rather than a targeted flaky-test stabilization with a concrete failure signature, so keep it as needs-more-evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14150",
     "https://github.com/pingcap/tidb/pull/14150.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/14150.patch",
   "changed_files": [
-    "ddl/db_change_test.go",
     "executor/builder.go",
     "executor/insert_common.go",
-    "expression/expression.go",
     "planner/core/logical_plan_builder.go",
     "planner/core/planbuilder.go",
     "table/column.go",
+    "ddl/db_change_test.go",
+    "expression/expression.go",
+    "go.sum",
     "table/tables/tables_test.go",
-    "util/testkit/testkit.go"
+    "util/testkit/testkit.go",
+    "table/tables/tables.go"
   ],
   "triage": {
     "sources": [
@@ -49,8 +50,8 @@
     ],
     "evidence": [
       "evidence: tk.MustGetErr(\"select * from t order by b;\", \"[planner:1054]Unknown column 'b' in 'order clause'\") (table/tables/tables_test.go)",
-      "files: ddl/db_change_test.go, executor/builder.go, executor/insert_common.go, expression/expression.go, go.sum, planner/core/logical_plan_builder.go, planner/core/planbuilder.go, table/column.go, table/tables/tables.go, table/tables/tables_test.go, util/testkit/testkit.go"
+      "files: executor/builder.go, executor/insert_common.go, planner/core/logical_plan_builder.go, planner/core/planbuilder.go, table/column.go, ddl/db_change_test.go, expression/expression.go, go.sum, table/tables/tables_test.go, util/testkit/testkit.go, table/tables/tables.go"
     ]
   },
-  "analysis": "PR title: planner/core: disallow using hidden column in insert statement\nPR url: https://github.com/pingcap/tidb/pull/14150\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustGetErr(\"select * from t order by b;\", \"[planner:1054]Unknown column 'b' in 'order clause'\") (table/tables/tables_test.go)\nChanged files (9): ddl/db_change_test.go, executor/builder.go, executor/insert_common.go, expression/expression.go, planner/core/logical_plan_builder.go, planner/core/planbuilder.go, table/column.go, table/tables/tables_test.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/14150.patch\nPicked test: type=unit path=table/tables/tables_test.go name=tables_test"
+  "analysis": "PR title: planner/core: disallow using hidden column in insert statement\nPR url: https://github.com/pingcap/tidb/pull/14150\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustGetErr(\"select * from t order by b;\", \"[planner:1054]Unknown column 'b' in 'order clause'\") (table/tables/tables_test.go)\nChanged files (11): executor/builder.go, executor/insert_common.go, planner/core/logical_plan_builder.go, planner/core/planbuilder.go, table/column.go, ddl/db_change_test.go, expression/expression.go, go.sum, table/tables/tables_test.go, util/testkit/testkit.go, table/tables/tables.go\nPatch url: https://github.com/pingcap/tidb/pull/14150.patch\nPicked test: type=unit path=table/tables/tables_test.go name=tables_test"
 }

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sort.Slice(orderedHandles, func(i, j int) bool { return orderedHandles[i] < orderedHandles[j] }) (executor/ddl_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test iterates table records/handles where iteration order is not guaranteed. Asserting on the raw iteration order is brittle and can lead to nondeterministic failures. The fix collects all handles and explicitly sorts them (`sort.Slice`) before asserting monotonic/continuous properties.",
+  "module": "executor",
+  "fix_pattern": "Collect results/handles first, then explicitly sort (e.g., `sort.Slice`) before making ordered assertions; do not rely on iteration order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13127",
     "https://github.com/pingcap/tidb/pull/13127.patch"
