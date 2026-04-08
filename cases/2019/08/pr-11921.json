@@ -17,15 +17,14 @@
   ],
   "failure_signature": "store/mockstore/mocktikv: fix DATA RACE to make unit test stable",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: store/mockstore/mocktikv: fix DATA RACE to make unit test stable.",
-  "module": "module_unknown",
-  "fix_pattern": "store/mockstore/mocktikv: fix DATA RACE to make unit test stable",
+  "root_cause_explanation": "MockTiKV `SplitRegion` RPC returned a pointer to mutable region meta directly. Concurrent mutation/reuse of that shared object could trigger a Go DATA RACE in unit tests. The fix returns a deep copy (`proto.Clone`) of the meta info before putting it into the RPC response.",
+  "module": "kv",
+  "fix_pattern": "Return deep-copied region meta (`proto.Clone`) in mocktikv RPC responses to avoid sharing mutable pointers across goroutines and eliminate DATA RACE.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11921",
     "https://github.com/pingcap/tidb/pull/11921.patch"

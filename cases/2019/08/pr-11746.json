@@ -17,22 +17,20 @@
   ],
   "failure_signature": "sql: \"select /*+ INDEX(t, c_d_e, f, g) */ * from t order by f\", (planner/core/physical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds support for `INDEX(...)` optimizer hints (feature work) and introduces new plan-string assertions in unit tests. It does not provide a flaky-test signature or a targeted stabilization change, so we classify it conservatively.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11746",
     "https://github.com/pingcap/tidb/pull/11746.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/11746.patch",
   "changed_files": [
-    "cmd/importer/parser.go",
     "planner/core/logical_plan_builder.go",
     "planner/core/physical_plan_test.go",
     "planner/core/planbuilder.go"
@@ -47,5 +45,5 @@
       "files: planner/core/logical_plan_builder.go, planner/core/physical_plan_test.go, planner/core/planbuilder.go"
     ]
   },
-  "analysis": "PR title: planner: add index optimizer hint\nPR url: https://github.com/pingcap/tidb/pull/11746\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select /*+ INDEX(t, c_d_e, f, g) */ * from t order by f\", (planner/core/physical_plan_test.go)\nChanged files (4): cmd/importer/parser.go, planner/core/logical_plan_builder.go, planner/core/physical_plan_test.go, planner/core/planbuilder.go\nPatch url: https://github.com/pingcap/tidb/pull/11746.patch\nPicked test: type=unit path=planner/core/physical_plan_test.go name=physical_plan_test"
+  "analysis": "PR title: planner: add index optimizer hint\nPR url: https://github.com/pingcap/tidb/pull/11746\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select /*+ INDEX(t, c_d_e, f, g) */ * from t order by f\", (planner/core/physical_plan_test.go)\nChanged files (3): planner/core/logical_plan_builder.go, planner/core/physical_plan_test.go, planner/core/planbuilder.go\nPatch url: https://github.com/pingcap/tidb/pull/11746.patch\nPicked test: type=unit path=planner/core/physical_plan_test.go name=physical_plan_test"
 }

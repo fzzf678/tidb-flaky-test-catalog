@@ -17,24 +17,23 @@
   ],
   "failure_signature": "sql: \"select t1.b from t t1 where t1.b = (select max(t2.a) from t t2 where t1.b=t2.b order by t1.a)\", (planner/core/logical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR optimizes decorrelation by eliminating top-level `Sort` in subqueries and updates plan tests/EXPLAIN outputs. It is a planner optimization/correctness change and does not provide an explicit flaky signature or targeted stabilization fix, so we classify it conservatively.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11935",
     "https://github.com/pingcap/tidb/pull/11935.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/11935.patch",
   "changed_files": [
-    "cmd/explaintest/r/select.result",
+    "planner/core/rule_decorrelate.go",
     "planner/core/logical_plan_test.go",
-    "planner/core/rule_decorrelate.go"
+    "cmd/explaintest/r/select.result"
   ],
   "triage": {
     "sources": [
@@ -43,8 +42,8 @@
     ],
     "evidence": [
       "evidence: sql: \"select t1.b from t t1 where t1.b = (select max(t2.a) from t t2 where t1.b=t2.b order by t1.a)\", (planner/core/logical_plan_test.go)",
-      "files: cmd/explaintest/r/select.result, planner/core/logical_plan_test.go, planner/core/rule_decorrelate.go"
+      "files: planner/core/rule_decorrelate.go, planner/core/logical_plan_test.go, cmd/explaintest/r/select.result"
     ]
   },
-  "analysis": "PR title: planner: eliminate top level Sort in subquery\nPR url: https://github.com/pingcap/tidb/pull/11935\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select t1.b from t t1 where t1.b = (select max(t2.a) from t t2 where t1.b=t2.b order by t1.a)\", (planner/core/logical_plan_test.go)\nChanged files (3): cmd/explaintest/r/select.result, planner/core/logical_plan_test.go, planner/core/rule_decorrelate.go\nPatch url: https://github.com/pingcap/tidb/pull/11935.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
+  "analysis": "PR title: planner: eliminate top level Sort in subquery\nPR url: https://github.com/pingcap/tidb/pull/11935\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select t1.b from t t1 where t1.b = (select max(t2.a) from t t2 where t1.b=t2.b order by t1.a)\", (planner/core/logical_plan_test.go)\nChanged files (3): planner/core/rule_decorrelate.go, planner/core/logical_plan_test.go, cmd/explaintest/r/select.result\nPatch url: https://github.com/pingcap/tidb/pull/11935.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
 }
