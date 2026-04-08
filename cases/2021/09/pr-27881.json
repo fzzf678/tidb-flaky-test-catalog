@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix race of hash join.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix race of hash join",
+  "root_cause_explanation": "The test was flaky due to a concurrency race around shallow-copying the hash join row container while other concurrent operations (e.g., spill) could contend. This PR stabilizes it by preparing per-worker shallow copies of the row container up-front (before starting probe workers) and then using the worker-local container during join.",
+  "module": "executor",
+  "fix_pattern": "Prepare per-worker row-container shallow copies before starting probe workers to avoid concurrent contention/races during hash join execution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27881",
     "https://github.com/pingcap/tidb/pull/27881.patch"

@@ -17,16 +17,14 @@
   ],
   "failure_signature": "fix unstable test case | tk.MustQuery(\"select digest, count(*) from `CLUSTER_SLOW_QUERY` group by digest order by digest\").Check(testkit.Rows(\"124acb3a0bec903176baca5f9da00b4e7512a41c93b417923f26502edeb324cc 1\", \"42a1c8aae6f133e934d4bf0147491709a8812ea05ff8819ec522780fe657b772 1\")) (infoschema/tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: fix unstable test case | tk.MustQuery(\"select digest, count(*) from `CLUSTER_SLOW_QUERY` group by digest order by digest\").Check(testkit.Rows(\"124acb3a0bec903176baca5f9da00b4e7512a41c93b417923f26502edeb324cc 1\", \"42a1c8a….",
-  "module": "test_infra",
-  "fix_pattern": "fix unstable test case | tk.MustQuery(\"select digest, count(*) from `CLUSTER_SLOW_QUERY` group by digest order by digest\").Check(testkit.Rows(\"124acb3a0bec903176baca5f9da00b4e7512a41c93b417923f26502edeb324cc 1\", \"42a1c8aae6f133e934d4bf0147491709a8812ea05ff8819ec522780fe657b772 1\")) (infoschema/tables_test.go)",
+  "root_cause_explanation": "The test was flaky because it relied on a stable result ordering from `CLUSTER_SLOW_QUERY` aggregations (e.g., grouping by digest) while asserting on row order/digest values. Without an explicit ORDER BY, the row order is not guaranteed and can vary between runs. This PR stabilizes the test by adding ORDER BY (and adjusting expected rows) to make the query results deterministic for the assertion.",
+  "module": "executor",
+  "fix_pattern": "Add an explicit ORDER BY (or otherwise sort results) for `CLUSTER_SLOW_QUERY` aggregation queries so the test assertion does not depend on nondeterministic row ordering.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28160",
     "https://github.com/pingcap/tidb/pull/28160.patch"

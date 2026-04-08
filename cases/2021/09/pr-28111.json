@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix unstable TestMemoryLeak",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "finalizer_timing_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: test: fix unstable TestMemoryLeak.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable TestMemoryLeak",
+  "root_cause_explanation": "The test was flaky because it asserted on heap/memory usage deltas that are sensitive to Go GC timing and heap reuse behavior (runtime.GC() does not guarantee memory will be reclaimed to a stable level within a fixed window). This PR mitigates the flake by increasing the number of init/close iterations and relaxing the heap-in-use upper bound (150MiB→300MiB) to better tolerate GC variability under CI.",
+  "module": "session",
+  "fix_pattern": "Relax memory-leak assertion bounds to tolerate GC timing/heap reuse variability under CI (increase iterations and raise the heap-in-use delta threshold).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28111",
     "https://github.com/pingcap/tidb/pull/28111.patch"

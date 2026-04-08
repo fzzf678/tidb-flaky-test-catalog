@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: if !sort.SliceIsSorted(data, lessFunc) { (table/temptable/main_test.go).",
-  "module": "txn",
-  "fix_pattern": "if !sort.SliceIsSorted(data, lessFunc) { (table/temptable/main_test.go)",
+  "root_cause_explanation": "The test was flaky because it relied on a stable iteration/order of kv entries, but the input slice order was not guaranteed. This PR stabilizes it by sorting the mocked retriever input data by key (if not already sorted) before building the retriever's internal structures, making iteration deterministic.",
+  "module": "session",
+  "fix_pattern": "Sort mocked retriever input entries by key before iterating/validating results to eliminate nondeterministic slice ordering.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28036",
     "https://github.com/pingcap/tidb/pull/28036.patch"

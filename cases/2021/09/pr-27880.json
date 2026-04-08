@@ -17,14 +17,14 @@
   ],
   "failure_signature": "- c.Skip(\"unstable, skip race test\")",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: - c.Skip(\"unstable, skip race test\").",
+  "root_cause_explanation": "The test suite was flaky because it assumed a fast startup/connection to the newly started TiDB process, but the retry budget could be insufficient under slower CI conditions. This PR stabilizes it by increasing the connection retry count (maxRetry 5→10) to tolerate slower startup.",
   "module": "test_infra",
-  "fix_pattern": "- c.Skip(\"unstable, skip race test\")",
+  "fix_pattern": "Increase TiDB connection retry budget during test setup (maxRetry 5→10) to tolerate slower CI startup and reduce intermittent connection failures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27880",
     "https://github.com/pingcap/tidb/pull/27880.patch"

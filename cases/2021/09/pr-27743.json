@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: sort.Slice(stores, func(i, j int) bool { return stores[i].Address < stores[j].Address }) (store/gcworker/gc_worker_serial_test.go).",
+  "root_cause_explanation": "The test was flaky because it assumed a stable ordering for an in-memory slice (stores returned by getStoresForGC), but the underlying order is not guaranteed. This PR stabilizes it by sorting the stores slice by address before making order-sensitive assertions/checks.",
   "module": "gc",
-  "fix_pattern": "sort.Slice(stores, func(i, j int) bool { return stores[i].Address < stores[j].Address }) (store/gcworker/gc_worker_serial_test.go)",
+  "fix_pattern": "Sort the stores slice (by address) before order-sensitive assertions to make the test deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27743",
     "https://github.com/pingcap/tidb/pull/27743.patch"
