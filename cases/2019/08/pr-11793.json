@@ -17,14 +17,14 @@
   ],
   "failure_signature": "+// TestFailPrewriteRegionError tests data race does not happen on retries",
   "root_cause_categories": [
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: tikv: do not update regionTxnSize on retries.",
+  "root_cause_explanation": "During prewrite retries, shared per-region bookkeeping (`regionTxnSize`) could be updated on retry paths, increasing the chance of concurrent mutation and DATA RACE. The fix avoids updating `regionTxnSize` on retries (only on the first attempt) and adds a failpoint-driven unit test that exercises concurrent prewrite retries to catch races.",
   "module": "kv",
-  "fix_pattern": "tikv: do not update regionTxnSize on retries",
+  "fix_pattern": "Avoid updating shared `regionTxnSize` on prewrite retries (guard by retry state) and add a failpoint-based test to exercise retry concurrency and prevent DATA RACE.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11793",
     "https://github.com/pingcap/tidb/pull/11793.patch"

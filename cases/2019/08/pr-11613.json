@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sql: \"SELECT NTH_VALUE(fieldA, ATAN(-1)) OVER (w1) AS 'ntile', fieldA, fieldB FROM ( SELECT a AS fieldA, b AS fieldB FROM t ) as te WINDOW w1 AS ( ORDER BY fieldB ASC, fieldA DESC )\", (planner/core/logical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes planner window-function argument validation and updates the explain-test harness/results (including treating `io.EOF` from `ReadAt` as non-fatal). These are correctness/test-tool changes, not an explicit flaky stabilization fix with a clear flaky signature, so we classify it conservatively.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11613",
     "https://github.com/pingcap/tidb/pull/11613.patch"
@@ -33,6 +32,8 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/11613.patch",
   "changed_files": [
     "cmd/explaintest/main.go",
+    "cmd/explaintest/r/window_function.result",
+    "expression/integration_test.go",
     "planner/core/logical_plan_builder.go",
     "planner/core/logical_plan_test.go"
   ],
@@ -46,5 +47,5 @@
       "files: cmd/explaintest/main.go, cmd/explaintest/r/window_function.result, expression/integration_test.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go"
     ]
   },
-  "analysis": "PR title: planner/core: check the window func arg first before checking window specs\nPR url: https://github.com/pingcap/tidb/pull/11613\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"SELECT NTH_VALUE(fieldA, ATAN(-1)) OVER (w1) AS 'ntile', fieldA, fieldB FROM ( SELECT a AS fieldA, b AS fieldB FROM t ) as te WINDOW w1 AS ( ORDER BY fieldB ASC, fieldA DESC )\", (planner/core/logical_plan_test.go)\nChanged files (3): cmd/explaintest/main.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11613.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
+  "analysis": "PR title: planner/core: check the window func arg first before checking window specs\nPR url: https://github.com/pingcap/tidb/pull/11613\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"SELECT NTH_VALUE(fieldA, ATAN(-1)) OVER (w1) AS 'ntile', fieldA, fieldB FROM ( SELECT a AS fieldA, b AS fieldB FROM t ) as te WINDOW w1 AS ( ORDER BY fieldB ASC, fieldA DESC )\", (planner/core/logical_plan_test.go)\nChanged files (5): cmd/explaintest/main.go, cmd/explaintest/r/window_function.result, expression/integration_test.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11613.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
 }

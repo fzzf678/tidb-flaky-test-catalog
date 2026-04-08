@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race of \"admin check table\".",
+  "root_cause_explanation": "The PR fixes a Go DATA RACE triggered by `admin check table/index` execution in executor tests. It adds `Close()` to `CheckTableExec` to close underlying sources and updates tests to use `ExecToErr`, ensuring proper cleanup and avoiding concurrent access to statement context/exec details from background workers.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race of \"admin check table\"",
+  "fix_pattern": "Add `Close()` for `CheckTableExec` to close all underlying sources and use `ExecToErr` in tests to ensure cleanup, preventing DATA RACE from concurrent executor/background work.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11568",
     "https://github.com/pingcap/tidb/pull/11568.patch"

@@ -13,18 +13,18 @@
     "name": "window_func_test"
   },
   "symptoms": [
-    "rand.Seed(time.Now().Unix()) (executor/aggfuncs/window_func_test.go)"
+    "PR body: reusing a `chunk.Chunk` across window executor `Next()` calls could break internal references (e.g., RANK/PERCENT_RANK) and lead to unstable results."
   ],
-  "failure_signature": "rand.Seed(time.Now().Unix()) (executor/aggfuncs/window_func_test.go)",
+  "failure_signature": "PR body: reusing a `chunk.Chunk` across window executor `Next()` calls could break internal references (e.g., RANK/PERCENT_RANK) and lead to unstable results.",
   "root_cause_categories": [
-    "async_timing_issue"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "clock_skew_dependency"
+    "unsafe_zero_copy_alias"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Some window functions stored references to `chunk.Row` / chunk-backed buffers in their partial results. When the parent executor reused the same `chunk.Chunk` and called `Reset()` for the next `Next()` call, the referenced memory could be mutated/reused, leading to unstable or wrong results. The fix copies/extracts row data into owned storage instead of keeping `chunk.Row` references, and adds tests that reset/pollute the source chunk to ensure no lingering aliasing.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Copy/extract row data into owned buffers instead of holding references to `chunk.Row`/chunk-backed memory; add tests that reset/pollute chunks to catch aliasing-induced instability.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11678",
     "https://github.com/pingcap/tidb/pull/11678.patch"
@@ -54,9 +54,9 @@
       "determinism_stabilization"
     ],
     "evidence": [
-      "evidence: rand.Seed(time.Now().Unix()) (executor/aggfuncs/window_func_test.go)",
+      "evidence: PR body: reusing a `chunk.Chunk` across window executor `Next()` calls could break internal references (e.g., RANK/PERCENT_RANK) and lead to unstable results.",
       "files: executor/aggfuncs/builder.go, executor/aggfuncs/func_cume_dist.go, executor/aggfuncs/func_lead_lag.go, executor/aggfuncs/func_lead_lag_test.go, executor/aggfuncs/func_ntile.go, executor/aggfuncs/func_percent_rank.go, executor/aggfuncs/func_rank.go, executor/aggfuncs/func_value.go, executor/aggfuncs/window_func_test.go, executor/benchmark_test.go, executor/window_test.go, session/tidb.go, types/mydecimal.go, types/mydecimal_test.go, util/chunk/chunk.go, util/chunk/row.go"
     ]
   },
-  "analysis": "PR title: executor: copy row data instead of refereeing chunk.Row in some window functions.\nPR url: https://github.com/pingcap/tidb/pull/11678\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(time.Now().Unix()) (executor/aggfuncs/window_func_test.go)\nChanged files (16): executor/aggfuncs/builder.go, executor/aggfuncs/func_cume_dist.go, executor/aggfuncs/func_lead_lag.go, executor/aggfuncs/func_lead_lag_test.go, executor/aggfuncs/func_ntile.go, executor/aggfuncs/func_percent_rank.go, executor/aggfuncs/func_rank.go, executor/aggfuncs/func_value.go, executor/aggfuncs/window_func_test.go, executor/benchmark_test.go, executor/window_test.go, session/tidb.go, types/mydecimal.go, types/mydecimal_test.go, util/chunk/chunk.go, util/chunk/row.go\nPatch url: https://github.com/pingcap/tidb/pull/11678.patch\nPicked test: type=unit path=executor/aggfuncs/window_func_test.go name=window_func_test"
+  "analysis": "PR title: executor: copy row data instead of refereeing chunk.Row in some window functions.\nPR url: https://github.com/pingcap/tidb/pull/11678\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: PR body: reusing a `chunk.Chunk` across window executor `Next()` calls could break internal references (e.g., RANK/PERCENT_RANK) and lead to unstable results.\nChanged files (16): executor/aggfuncs/builder.go, executor/aggfuncs/func_cume_dist.go, executor/aggfuncs/func_lead_lag.go, executor/aggfuncs/func_lead_lag_test.go, executor/aggfuncs/func_ntile.go, executor/aggfuncs/func_percent_rank.go, executor/aggfuncs/func_rank.go, executor/aggfuncs/func_value.go, executor/aggfuncs/window_func_test.go, executor/benchmark_test.go, executor/window_test.go, session/tidb.go, types/mydecimal.go, types/mydecimal_test.go, util/chunk/chunk.go, util/chunk/row.go\nPatch url: https://github.com/pingcap/tidb/pull/11678.patch\nPicked test: type=unit path=executor/aggfuncs/window_func_test.go name=window_func_test"
 }
