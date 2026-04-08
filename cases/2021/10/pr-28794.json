@@ -17,15 +17,15 @@
   ],
   "failure_signature": "ddl: make unstable test TestTruncatePartitionAndDropTable stable",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: make unstable test TestTruncatePartitionAndDropTable stable.",
+  "root_cause_explanation": "The test was flaky because TRUNCATE PARTITION / DROP TABLE triggers asynchronous delete-range GC, and the delete-range worker can be busy so old partition data may not be removed within a fixed wait window. This PR stabilizes it by polling the GC delete-range tracking table (e.g., `mysql.gc_delete_range_done`) for the old partition ID before asserting the KV prefix is gone, avoiding timing-dependent failures.",
   "module": "ddl",
-  "fix_pattern": "ddl: make unstable test TestTruncatePartitionAndDropTable stable",
+  "fix_pattern": "Wait for delete-range GC completion (via `mysql.gc_delete_range_done`) before asserting old partition KV prefixes are removed after TRUNCATE/DROP.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28794",
     "https://github.com/pingcap/tidb/pull/28794.patch"

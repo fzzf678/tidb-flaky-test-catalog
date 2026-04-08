@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "planner/core/cbo_test.go",
-    "name": "cbo_test"
+    "name": "TestOutdatedAnalyze"
   },
   "symptoms": [
     "// EnableStableResultMode if stabilize query results."
   ],
   "failure_signature": "// EnableStableResultMode if stabilize query results.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "plan_cache_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: // EnableStableResultMode if stabilize query results.",
-  "module": "planner",
-  "fix_pattern": "// EnableStableResultMode if stabilize query results.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The recorded comment (`EnableStableResultMode`) is not a flaky-test failure signature. This PR adds a session/global variable (`tidb_enable_pseudo_for_outdated_stats`) and updates stats/optimizer logic and related tests accordingly; it does not identify a targeted flaky stabilization mechanism to classify here.",
+  "module": "statistics",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28554",
     "https://github.com/pingcap/tidb/pull/28554.patch"

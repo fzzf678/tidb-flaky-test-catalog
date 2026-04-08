@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(fmt.Sprintf(\"select is_index, hist_id, stats_ver from mysql.stats_histograms where table_id = %d and stats_ver > 0 order by is_index, hist_id\", t1.Meta().ID)).Check( (executor/analyze_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(fmt.Sprintf(\"select is_index, hist_id, stats_ver from mysql.stats_histograms where table_id = %d and stats_ver > 0 order by is_index, hist_id\", t1.Meta().ID)).Check( (executor/analyze_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR implements `ANALYZE TABLE ... COLUMNS ...` and updates/extends related analyze/statistics code and tests. The cited query already includes an ORDER BY clause, and the available case data does not provide a concrete flaky-test failure signature or a targeted stabilization mechanism to classify.",
   "module": "statistics",
-  "fix_pattern": "tk.MustQuery(fmt.Sprintf(\"select is_index, hist_id, stats_ver from mysql.stats_histograms where table_id = %d and stats_ver > 0 order by is_index, hist_id\", t1.Meta().ID)).Check( (executor/analyze_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29024",
     "https://github.com/pingcap/tidb/pull/29024.patch"

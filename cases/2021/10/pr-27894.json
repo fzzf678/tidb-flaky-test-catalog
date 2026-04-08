@@ -9,22 +9,22 @@
   "pr_merged_at": "2021-10-09T14:25:25+08:00",
   "test": {
     "type": "unit",
-    "path": "ddl/ddl_worker_test.go",
-    "name": "ddl_worker_test"
+    "path": "ddl/placement_policy_test.go",
+    "name": "TestAlterDBPlacement"
   },
   "symptoms": [
     "fix unstable test"
   ],
   "failure_signature": "fix unstable test",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: fix unstable test.",
+  "root_cause_explanation": "The test was flaky due to leaked shared state between tests: placement policies (`x`/`y`) can persist across runs, so `CREATE PLACEMENT POLICY ...` may intermittently fail if previous tests left these objects behind. This PR stabilizes it by proactively dropping the policies if they already exist before/after the test.",
   "module": "ddl",
-  "fix_pattern": "fix unstable test",
+  "fix_pattern": "Drop placement policies (and other shared DB objects) with `IF EXISTS` before/after the test to avoid cross-test pollution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27894",
     "https://github.com/pingcap/tidb/pull/27894.patch"

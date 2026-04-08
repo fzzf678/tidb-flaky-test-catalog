@@ -20,12 +20,11 @@
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "plan_cache_dependency",
-    "assert_exact_plan_or_cost"
+    "plan_cache_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: planner: fix the unstable test `TestPrepareCacheChangingParamType `.",
+  "root_cause_explanation": "The test was flaky because it generates random FLOAT parameter strings for a prepared-plan-cache scenario, and using `%v` float formatting can produce unstable representations/precision that lead to inconsistent parsing/type conversion in the test. This PR stabilizes it by formatting floats with a fixed precision (`%.4f`) when constructing the random values.",
   "module": "planner",
-  "fix_pattern": "planner: fix the unstable test `TestPrepareCacheChangingParamType `",
+  "fix_pattern": "Format random FLOAT values with a fixed precision (`%.4f`) to make generated parameter strings stable in the prepared-plan-cache test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29197",
     "https://github.com/pingcap/tidb/pull/29197.patch"

@@ -9,22 +9,22 @@
   "pr_merged_at": "2021-10-21T18:34:46+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/infoschema_reader_test.go",
-    "name": "infoschema_reader_test"
+    "path": "statistics/handle/update_test.go",
+    "name": "TestCollectColumnStatsUsage"
   },
   "symptoms": [
     "sql: \"select * from t1 order by c\", (statistics/handle/update_test.go)"
   ],
   "failure_signature": "sql: \"select * from t1 order by c\", (statistics/handle/update_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: sql: \"select * from t1 order by c\", (statistics/handle/update_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The recorded SQL (`select * from t1 order by c`) is part of the test cases in `TestCollectColumnStatsUsage`, and already includes an explicit ORDER BY. This PR primarily adds support for `SHOW COLUMN_STATS_USAGE` and updates/extends related tests; there is no concrete flaky-test failure signature or targeted stabilization mechanism identified.",
   "module": "statistics",
-  "fix_pattern": "sql: \"select * from t1 order by c\", (statistics/handle/update_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28428",
     "https://github.com/pingcap/tidb/pull/28428.patch"

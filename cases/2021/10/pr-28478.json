@@ -9,23 +9,22 @@
   "pr_merged_at": "2021-10-09T17:33:24+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/explainfor_test.go",
-    "name": "explainfor_test"
+    "path": "planner/core/prepare_test.go",
+    "name": "TestPrepareCachePointGetInsert"
   },
   "symptoms": [
     "tk.MustQuery(\"select * from t2 order by a\").Check(testkit.Rows(\"1 1\")) (planner/core/prepare_test.go)"
   ],
   "failure_signature": "tk.MustQuery(\"select * from t2 order by a\").Check(testkit.Rows(\"1 1\")) (planner/core/prepare_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(\"select * from t2 order by a\").Check(testkit.Rows(\"1 1\")) (planner/core/prepare_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The recorded SQL assertion already includes an explicit ORDER BY and is part of a plan-cache correctness test. This PR primarily fixes point-get plan-cache behavior (and updates/extends plan-cache tests), but does not provide a concrete flaky-test failure signature or targeted stabilization mechanism to classify as a flaky root cause.",
   "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"select * from t2 order by a\").Check(testkit.Rows(\"1 1\")) (planner/core/prepare_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28478",
     "https://github.com/pingcap/tidb/pull/28478.patch"

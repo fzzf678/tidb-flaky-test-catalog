@@ -17,15 +17,15 @@
   ],
   "failure_signature": "tk.MustExec(\"prepare stmt from 'select * from IDT_MULTI15858STROBJSTROBJ where col2 <> ? and col1 not in (?, ?, ?) or col3 = ? order by 2;';\") (executor/explainfor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by"
+    "plan_cache_dependency",
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustExec(\"prepare stmt from 'select * from IDT_MULTI15858STROBJSTROBJ where col2 <> ?.",
+  "root_cause_explanation": "The test was flaky because a prepared plan was reused from the prepared plan cache but the ranges inside `PhysicalIndexMergeReader` were not rebuilt for new parameter values, causing EXPLAIN/range assertions to intermittently reflect stale ranges. This PR stabilizes it by rebuilding IndexMerge ranges during plan reuse and adding a regression test that executes the prepared statement with different parameters and verifies the rebuilt ranges.",
   "module": "planner",
-  "fix_pattern": "tk.MustExec(\"prepare stmt from 'select * from IDT_MULTI15858STROBJSTROBJ where col2 <> ? and col1 not in (?, ?, ?) or col3 = ? order by 2;';\") (executor/explainfor_test.go)",
+  "fix_pattern": "Rebuild `PhysicalIndexMergeReader` ranges when reusing prepared-plan-cache plans, and add a regression test that executes the prepared statement with different parameters and asserts the rebuilt ranges in EXPLAIN.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28774",
     "https://github.com/pingcap/tidb/pull/28774.patch"

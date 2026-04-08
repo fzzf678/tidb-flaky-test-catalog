@@ -22,9 +22,9 @@
   "review_smells": [
     "real_tikv_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: -# skip unstable test for temporary.",
+  "root_cause_explanation": "The lightning_duplicate_detection integration test depends on a real cluster and parses `run_sql` output to verify detected conflict rows. Output formatting differences (e.g., quoted `row_data`) and session-variable application made the comparison unstable, so the test was temporarily skipped. This PR stabilizes it by normalizing parsed output (strip quotes), ensuring session vars are applied after connecting, and removing the temporary skip to re-enable the test.",
   "module": "br",
-  "fix_pattern": "-# skip unstable test for temporary",
+  "fix_pattern": "Normalize `row_data` parsing in the test script (strip quotes) and apply session vars after DB connect; remove the temporary `exit 0` skip to re-enable the integration test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29225",
     "https://github.com/pingcap/tidb/pull/29225.patch"
