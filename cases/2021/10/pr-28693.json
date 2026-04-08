@@ -17,14 +17,14 @@
   ],
   "failure_signature": "+ // Add the hook here to avoid data race.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a test-infra migration/refactor for statistics integration tests. The referenced \"avoid data race\" comment alone is not a concrete flaky-test failure signature, and the available case data does not identify a specific stabilization mechanism beyond the migration itself.",
+  "root_cause_explanation": "The test was flaky due to shared global state mutation: the moved serial-only integration test (e.g., `TestOutdatedStatsCheck`) adjusts global knobs like `handle.AutoAnalyzeMinCnt` and global auto-analyze time sysvars, which can conflict with other tests when executed concurrently. This PR stabilizes the suite by moving these global-state-mutating checks into a dedicated serial test file/suite (`integration_serial_test.go` via `SerialSuites`), reducing cross-test interference and race-prone overlap.",
   "module": "statistics",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "fix_pattern": "Move tests that mutate global variables/sysvars into a serial-only suite (or otherwise prevent concurrent execution) to avoid cross-test interference and race-prone overlap.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28693",
     "https://github.com/pingcap/tidb/pull/28693.patch"
