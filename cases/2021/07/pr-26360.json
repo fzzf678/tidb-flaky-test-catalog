@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(`SELECT * FROM information_schema.user_privileges WHERE grantee=\"'usageuser'@'%'\" ORDER BY privilege_type`).Check(testkit.Rows(\"'usageuser'@'%' def BACKUP_ADMIN NO\", \"'usageuser'@'%' def SELECT YES\")) (executor/infoschema_reader_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(`SELECT * FROM information_schema.user_privileges WHERE grantee=\"'usageuser'@'%'\" ORDER BY privilege_type`).Check(testkit.Rows(\"'usageuser'@'%' def BACKUP_ADMIN NO\", \"'usageuser'@'%' def SELECT YES\")) (execu….",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a correctness/compatibility change (privilege formatting in SHOW GRANTS / information_schema.USER_PRIVILEGES). The available evidence does not indicate a targeted flaky-test stabilization change with a clear intermittent failure signature, so we conservatively classify it as insufficient evidence.",
   "module": "security",
-  "fix_pattern": "tk.MustQuery(`SELECT * FROM information_schema.user_privileges WHERE grantee=\"'usageuser'@'%'\" ORDER BY privilege_type`).Check(testkit.Rows(\"'usageuser'@'%' def BACKUP_ADMIN NO\", \"'usageuser'@'%' def SELECT YES\")) (executor/infoschema_reader_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26360",
     "https://github.com/pingcap/tidb/pull/26360.patch"

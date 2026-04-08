@@ -13,18 +13,18 @@
     "name": "TestAnalyzeFullSamplingOnIndexWithVirtualColumnOrPrefixColumn"
   },
   "symptoms": [
-    "+SKIP: analyze_test.go:1019: testSuite1.TestAnalyzeFullSamplingOnIndexWithVirtualColumnOrPrefixColumn (unstable, skip it and fix it before 20210624)"
+    "OptimizerUseInvisibleIndexes leaked after admin check table (util/admin/admin.go)"
   ],
-  "failure_signature": "+SKIP: analyze_test.go:1019: testSuite1.TestAnalyzeFullSamplingOnIndexWithVirtualColumnOrPrefixColumn (unstable, skip it and fix it before 20210624)",
+  "failure_signature": "OptimizerUseInvisibleIndexes leaked after admin check table (util/admin/admin.go)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "module_unknown",
-  "fix_pattern": "+SKIP: analyze_test.go:1019: testSuite1.TestAnalyzeFullSamplingOnIndexWithVirtualColumnOrPrefixColumn (unstable, skip it and fix it before 20210624)",
+  "root_cause_explanation": "The flakiness risk came from leaked global planner state: OptimizerUseInvisibleIndexes was set during admin check table/index but not restored, which can affect subsequent tests and make failures order-dependent. This PR stabilizes behavior by resetting that global state after the admin check path.",
+  "module": "planner",
+  "fix_pattern": "Reset OptimizerUseInvisibleIndexes after admin check table (util/admin/admin.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26233",
     "https://github.com/pingcap/tidb/pull/26233.patch"

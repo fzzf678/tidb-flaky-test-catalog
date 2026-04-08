@@ -17,15 +17,14 @@
   ],
   "failure_signature": "_, err := tk.Exec(\"select * from t where case when a < 0 then 1 else 2 end <= 1 order by 4;\") (planner/core/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: _, err := tk.Exec(\"select * from t where case when a < 0 then 1 else 2 end <= 1 order by 4;\") (planner/core/integration_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a correctness fix for hidden columns referenced by ORDER BY position expressions. The available evidence does not indicate a targeted flaky-test stabilization change with a clear intermittent failure signature, so we conservatively classify it as insufficient evidence.",
   "module": "planner",
-  "fix_pattern": "_, err := tk.Exec(\"select * from t where case when a < 0 then 1 else 2 end <= 1 order by 4;\") (planner/core/integration_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26473",
     "https://github.com/pingcap/tidb/pull/26473.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "txn, session, test: Try stabilize testTxnStateSerialSuite.TestCommitting",
   "root_cause_categories": [
-    "test_infra_migration"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "test_suite_setup_issue"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to instability introduced during test-infrastructure migration or refactoring (framework changes, fixtures/setup/teardown, or helper updates). This PR stabilizes it by: txn, session, test: Try stabilize testTxnStateSerialSuite.TestCommitting.",
+  "root_cause_explanation": "The test was flaky due to timing-sensitive synchronization (sleep-based failpoint delays) when asserting intermediate transaction states. This PR stabilizes it by switching failpoints from sleep(...) to pause + explicit Disable(), creating a deterministic barrier for commit/rollback state assertions.",
   "module": "txn",
-  "fix_pattern": "txn, session, test: Try stabilize testTxnStateSerialSuite.TestCommitting",
+  "fix_pattern": "Use failpoint pause + explicit disable as barrier (session/session_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26467",
     "https://github.com/pingcap/tidb/pull/26467.patch"

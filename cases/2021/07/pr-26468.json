@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: try to fix the unstable test `TestAnalyzeIncremental`",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+    "statistics_sensitive_test"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: planner: try to fix the unstable test `TestAnalyzeIncremental`.",
-  "module": "planner",
-  "fix_pattern": "planner: try to fix the unstable test `TestAnalyzeIncremental`",
+  "root_cause_explanation": "The test was flaky due to timing/eventual-consistency issues in statistics state: after updates/analyze operations, required histograms may not be loaded/ready when assertions run. This PR stabilizes it by explicitly calling LoadNeededHistograms() at key points before asserting on show stats_buckets and table stats.",
+  "module": "statistics",
+  "fix_pattern": "Call LoadNeededHistograms() before asserting stats buckets (executor/analyze_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26468",
     "https://github.com/pingcap/tidb/pull/26468.patch"

@@ -13,19 +13,18 @@
     "name": "bind_test"
   },
   "symptoms": [
-    "tk.MustQuery(`explain format=brief select a from t order by a desc limit 10`).Check(testkit.Rows( (planner/core/integration_test.go)"
+    "EXPLAIN plan for TopN pushdown varies due to cost estimation; mitigated via tidb_opt_limit_push_down_threshold"
   ],
-  "failure_signature": "tk.MustQuery(`explain format=brief select a from t order by a desc limit 10`).Check(testkit.Rows( (planner/core/integration_test.go)",
+  "failure_signature": "EXPLAIN plan for TopN pushdown varies due to cost estimation; mitigated via tidb_opt_limit_push_down_threshold",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(`explain format=brief select a from t order by a desc limit 10`).Check(testkit.Rows( (planner/core/integration_test.go).",
+  "root_cause_explanation": "The test/behavior was flaky because TopN pushdown is normally cost-based and can vary when cardinality/cost estimation is inaccurate, making exact plan/EXPLAIN assertions brittle. This PR stabilizes it by introducing tidb_opt_limit_push_down_threshold to force TopN/Limit pushdown when N is below a configured threshold.",
   "module": "planner",
-  "fix_pattern": "tk.MustQuery(`explain format=brief select a from t order by a desc limit 10`).Check(testkit.Rows( (planner/core/integration_test.go)",
+  "fix_pattern": "Introduce tidb_opt_limit_push_down_threshold to force TopN/Limit pushdown for small N",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26550",
     "https://github.com/pingcap/tidb/pull/26550.patch"

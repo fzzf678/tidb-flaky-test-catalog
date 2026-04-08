@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: fix the unstable test TestOrderedResultModeOnOtherOperators",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix the unstable test TestOrderedResultModeOnOtherOperators.",
+  "root_cause_explanation": "The test was flaky because it asserted an exact plan output for ordered-result-mode queries where the optimizer could produce different (but equivalent) plans, especially around window functions and sort stability. This PR stabilizes it by simplifying the query (removing one window field) and updating the expected plan output accordingly.",
   "module": "planner",
-  "fix_pattern": "planner: fix the unstable test TestOrderedResultModeOnOtherOperators",
+  "fix_pattern": "Simplify ordered-result-mode window query in testdata (remove one window field)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26481",
     "https://github.com/pingcap/tidb/pull/26481.patch"
