@@ -9,22 +9,23 @@
   "pr_merged_at": "2019-12-31T18:24:40+08:00",
   "test": {
     "type": "unit",
-    "path": "distsql/request_builder_test.go",
-    "name": "request_builder_test"
+    "path": "store/tikv/coprocessor_cache_test.go",
+    "name": "TestGetSet"
   },
   "symptoms": [
     "+ // Changed from 10ms to 50ms to resist from unstable CI environment."
   ],
   "failure_signature": "+ // Changed from 10ms to 50ms to resist from unstable CI environment.",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "hardcoded_port_or_resource"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: *: support caching coprocessor responses.",
-  "module": "module_unknown",
-  "fix_pattern": "*: support caching coprocessor responses",
+  "root_cause_explanation": "The coprocessor cache (ristretto) updates asynchronously; immediately reading after a `Set` may not observe the value yet. A very short sleep (10ms) was insufficient under slower CI, causing timing-dependent failures. The fix increases the wait (`time.Sleep`) to give the async cache time to settle before asserting.",
+  "module": "kv",
+  "fix_pattern": "Increase the wait for async cache visibility (e.g., `time.Sleep(10ms → 50ms)`) before assertions; prefer an Eventually/polling approach when feasible.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13824",
     "https://github.com/pingcap/tidb/pull/13824.patch"

@@ -20,11 +20,11 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix race of TestSkipWithGrant.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix race of TestSkipWithGrant",
+  "root_cause_explanation": "`TestSkipWithGrant` hit Go race detector warnings when executed concurrently with other gocheck suite tests (shared global state such as `privileges.SkipWithGrant`). The fix moves this test into a serial test suite so it does not run in parallel with other tests, avoiding shared-state races.",
+  "module": "session",
+  "fix_pattern": "Move the race-prone test into a serial suite to avoid concurrent execution on shared global state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13923",
     "https://github.com/pingcap/tidb/pull/13923.patch"

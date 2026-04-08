@@ -17,15 +17,14 @@
   ],
   "failure_signature": "session: fix CI data race in TestSchemaCheckerSQL",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: session: fix CI data race in TestSchemaCheckerSQL.",
+  "root_cause_explanation": "`TestSchemaCheckerSQL` toggles the package-level flag `session.SchemaChangedWithoutRetry` while other goroutines read it during transaction commit/retry handling, triggering Go race detector warnings. The fix makes the flag atomic by changing it from a plain bool to a `uint32` and using `atomic.LoadUint32`/`atomic.StoreUint32` in both production code and the test.",
   "module": "session",
-  "fix_pattern": "session: fix CI data race in TestSchemaCheckerSQL",
+  "fix_pattern": "Protect a concurrently-accessed global test flag with atomic operations (bool → uint32 + `atomic.Load/Store`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13859",
     "https://github.com/pingcap/tidb/pull/13859.patch"

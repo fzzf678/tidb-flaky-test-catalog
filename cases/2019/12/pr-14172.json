@@ -9,30 +9,33 @@
   "pr_merged_at": "2019-12-23T17:10:10+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/aggregate_test.go",
-    "name": "aggregate_test"
+    "path": "domain/domain_test.go",
+    "name": "TestInfo"
   },
   "symptoms": [
-    "+// Use atomic.Value to avoid data race in the test. | tk.MustQuery(\"select sum(a) from t1 group by b order by b;\").Check(testkit.Rows(\"<nil>\", \"3\", \"2\", \"2\")) (executor/aggregate_test.go)"
+    "Use atomic.Value to avoid data race in the test (domain/infosync global state)."
   ],
-  "failure_signature": "+// Use atomic.Value to avoid data race in the test. | tk.MustQuery(\"select sum(a) from t1 group by b order by b;\").Check(testkit.Rows(\"<nil>\", \"3\", \"2\", \"2\")) (executor/aggregate_test.go)",
+  "failure_signature": "Use atomic.Value to avoid data race in the test (domain/infosync global state).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "A data race could occur because `infosync` stored its global `InfoSyncer` in an unsynchronized global variable and tests could initialize/read it concurrently. The fix stores the global syncer in `atomic.Value` with get/set helpers (and initialization checks), eliminating concurrent init/read races that trigger the Go race detector.",
+  "module": "domain",
+  "fix_pattern": "Protect global `infosync` state with `atomic.Value` (plus explicit init checks) to avoid concurrent initialization/read data races in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14172",
     "https://github.com/pingcap/tidb/pull/14172.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/14172.patch",
   "changed_files": [
+    "domain/domain_test.go",
+    "domain/infosync/info.go",
     "executor/distsql.go",
+    "infoschema/cluster.go",
+    "server/http_handler.go",
     "sessionctx/stmtctx/stmtctx.go",
     "table/index.go",
     "types/json/binary_test.go"

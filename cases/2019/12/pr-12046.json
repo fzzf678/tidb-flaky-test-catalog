@@ -17,14 +17,14 @@
   ],
   "failure_signature": "fix map data race",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl : support ADMIN REPAIR TABLE to override bad tableInfo in meta & supply a REPAIR MODE for safely restart.",
-  "module": "ddl",
-  "fix_pattern": "ddl : support ADMIN REPAIR TABLE to override bad tableInfo in meta & supply a REPAIR MODE for safely restart.",
+  "root_cause_explanation": "The flakiness signal here is a Go race warning / concurrent map access risk: `domainutil.RepairInfo` kept repaired DB/table metadata in a plain map/slice and was accessed from multiple goroutines (domain/DDL paths and tests), leading to data races. The fix makes the shared map and list thread-safe by storing them in `atomic.Value` and using load→modify→store instead of unsynchronized direct access.",
+  "module": "domain",
+  "fix_pattern": "Make `domainutil.RepairInfo` thread-safe by moving the shared map/slice to `atomic.Value` (load→modify→store) to avoid concurrent map/slice access data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12046",
     "https://github.com/pingcap/tidb/pull/12046.patch"
@@ -34,6 +34,7 @@
     "config/config.go",
     "config/config.toml.example",
     "config/config_test.go",
+    "ddl/column.go",
     "ddl/db_test.go",
     "ddl/ddl.go",
     "ddl/ddl_api.go",
@@ -44,12 +45,14 @@
     "ddl/table.go",
     "domain/domain.go",
     "executor/ddl.go",
+    "go.sum",
     "infoschema/builder.go",
     "planner/core/planbuilder.go",
     "planner/core/preprocess.go",
     "tidb-server/main.go",
     "util/admin/admin.go",
     "util/admin/admin_test.go",
+    "util/domainutil/domain_vars.go",
     "util/domainutil/repair_vars.go"
   ],
   "triage": {
