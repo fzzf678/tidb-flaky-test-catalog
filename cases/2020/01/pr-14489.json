@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body: reduce the possibility of a test failure (shard row id bits test)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_test_input"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "randomized_test_input"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix shard row id bits test",
+  "root_cause_explanation": "The test depended on a probabilistic property of `shard_row_id_bits` / `AUTO_RANDOM` handle generation and could fail rarely. The PR reduces the failure probability by turning a single bulk INSERT (one transaction) into 100 separate INSERT statements (many transactions), effectively sampling handle/shard bits multiple times and lowering the chance of hitting the problematic edge case in one run.",
+  "module": "executor",
+  "fix_pattern": "Replace a single bulk INSERT with multiple individual INSERT statements to reduce probabilistic flakiness in `shard_row_id_bits` / `AUTO_RANDOM` related tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14489",
     "https://github.com/pingcap/tidb/pull/14489.patch"

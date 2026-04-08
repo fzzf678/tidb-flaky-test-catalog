@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix ManagedLockTTL race in test.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix ManagedLockTTL race in test",
+  "root_cause_explanation": "`ManagedLockTTL` is a global variable read/written concurrently by the TTL manager and tests, and CI detected a data race on it. The PR fixes the race by using `atomic.StoreUint64` / `atomic.LoadUint64` when reading and updating `ManagedLockTTL`, making the test and the TTL code thread-safe under parallel execution.",
+  "module": "txn",
+  "fix_pattern": "Use `atomic.StoreUint64` / `atomic.LoadUint64` for `ManagedLockTTL` to avoid concurrent read/write data races in tests and TTL manager code.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14407",
     "https://github.com/pingcap/tidb/pull/14407.patch"

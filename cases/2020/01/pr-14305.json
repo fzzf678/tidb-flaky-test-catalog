@@ -20,12 +20,12 @@
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
+    "schema_version_race",
     "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: make ddl test more stable.",
+  "root_cause_explanation": "Under high DDL concurrency, the DDL tests could hit transient information-schema change errors (e.g., \"Information schema is changed during the execution of the statement\") due to schema version/delta schema churn. The PR stabilizes the tests by increasing the global `tidb_max_delta_schema_count` in the DDL test suite to reduce these schema-change race failures.",
   "module": "ddl",
-  "fix_pattern": "ddl: make ddl test more stable",
+  "fix_pattern": "Increase `@@global.tidb_max_delta_schema_count` in DDL tests to reduce information-schema change errors under schema propagation churn.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14305",
     "https://github.com/pingcap/tidb/pull/14305.patch"
