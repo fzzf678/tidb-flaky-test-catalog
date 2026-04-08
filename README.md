@@ -5,6 +5,8 @@ This repository catalogs historical flaky-test fixes in TiDB as structured JSON 
 - `taxonomy.json`: root-cause taxonomy (stable keys) for classification and statistics
 - `review_smells.json`: reviewer-facing “review smells” (stable keys) for PR review checklists
 
+The primary goal is to help an AI agent identify flaky-test risk during PR review by applying the review-smells checklist and mapping findings to likely root-cause categories.
+
 For a human-readable checklist generated from `review_smells.json`, see `docs/review_checklist.md`.
 
 ## Key Concepts
