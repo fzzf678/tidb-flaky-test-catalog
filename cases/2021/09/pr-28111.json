@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix unstable TestMemoryLeak",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "finalizer_timing_dependency"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mitigates an unstable memory leak test by loosening the loop count and the memory upper bound, but it does not identify a concrete root cause or introduce a targeted stabilization mechanism. We record it as insufficient evidence rather than guessing the underlying reason for instability.",
+  "root_cause_explanation": "The test was flaky because it asserted on heap/memory usage deltas that are sensitive to Go GC timing and heap reuse behavior (runtime.GC() does not guarantee memory will be reclaimed to a stable level within a fixed window). This PR mitigates the flake by increasing the number of init/close iterations and relaxing the heap-in-use upper bound (150MiB→300MiB) to better tolerate GC variability under CI.",
   "module": "session",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "fix_pattern": "Relax memory-leak assertion bounds to tolerate GC timing/heap reuse variability under CI (increase iterations and raise the heap-in-use delta threshold).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28111",
     "https://github.com/pingcap/tidb/pull/28111.patch"
