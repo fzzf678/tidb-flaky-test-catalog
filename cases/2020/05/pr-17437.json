@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR title: fix failpoint race for analyze test.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix failpoint race for analyze test.",
+  "root_cause_explanation": "Analyze tests using failpoints were flaky because failpoint state is global and can race/interfere with other tests when suites run in parallel. The fix moves TestFailedAnalyzeRequest to a different suite intended for non-parallel execution, reducing cross-test interference from global failpoint enable/disable.",
   "module": "executor",
-  "fix_pattern": "executor: fix failpoint race for analyze test",
+  "fix_pattern": "Isolate the failpoint-based analyze test by moving it to a non-parallel test suite to avoid global failpoint interference across tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/17437",
     "https://github.com/pingcap/tidb/pull/17437.patch"

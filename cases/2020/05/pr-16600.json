@@ -17,25 +17,29 @@
   ],
   "failure_signature": "PR body: like function is not thread-safe and results in unstable errors.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The LIKE builtin was not thread-safe after introducing collation: a shared compiled pattern object could be reused/mutated concurrently when the same expression instance is evaluated by multiple goroutines (e.g., in projection/filter). The fix avoids mutating shared pattern state by using a per-evaluation pattern instance, making LIKE evaluation thread-safe under concurrent execution.",
   "module": "expression",
-  "fix_pattern": "expression: after introducing collation, the experssion should be thread-safe",
+  "fix_pattern": "Make LIKE evaluation thread-safe by avoiding concurrent mutation of shared pattern fields (use a per-evaluation pattern instance).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16600",
     "https://github.com/pingcap/tidb/pull/16600.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/16600.patch",
   "changed_files": [
+    "expression/bench_test.go",
     "expression/builtin_like.go",
     "expression/builtin_like_test.go",
     "expression/builtin_like_vec.go",
+    "expression/builtin_like_vec_test.go",
     "expression/builtin_test.go",
-    "expression/distsql_builtin.go"
+    "expression/distsql_builtin.go",
+    "planner/core/logical_plan_test.go",
+    "planner/core/rule_predicate_push_down.go"
   ],
   "triage": {
     "sources": [
