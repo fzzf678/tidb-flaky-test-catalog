@@ -17,16 +17,15 @@
   ],
   "failure_signature": "ddl: skip race test for Tests that change global config",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: skip race test for Tests that change global config.",
+  "root_cause_explanation": "Race tests failed frequently because the tests mutated global config (for example `TreatOldVersionUTF8AsUTF8MB4`) while background goroutines read the same configuration, triggering DATA RACE failures under `-race`. This PR mitigates the flakiness by skipping the affected tests when the race detector is enabled.",
   "module": "ddl",
-  "fix_pattern": "ddl: skip race test for Tests that change global config",
+  "fix_pattern": "Skip tests that mutate global config when running with `-race` (or refactor to avoid shared global state / make access thread-safe).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10855",
     "https://github.com/pingcap/tidb/pull/10855.patch"

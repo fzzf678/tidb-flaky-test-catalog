@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: Support LOCK/UNLOCK TABLES feature.",
-  "module": "txn",
-  "fix_pattern": "*: Support LOCK/UNLOCK TABLES feature",
+  "root_cause_explanation": "The test was flaky due to concurrent access to session table-lock state (`session.lockedTables`) without synchronization, which can trigger DATA RACE failures under `-race`. This PR stabilizes it by adding a mutex around `session.lockedTables` and guarding concurrent reads/writes during LOCK/UNLOCK TABLES handling and related background work.",
+  "module": "session",
+  "fix_pattern": "Protect `session.lockedTables` with a mutex to avoid concurrent map access/data races during LOCK/UNLOCK TABLES handling.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10343",
     "https://github.com/pingcap/tidb/pull/10343.patch"
@@ -41,16 +41,25 @@
     "ddl/table.go",
     "ddl/table_lock.go",
     "ddl/table_test.go",
+    "ddl/test.log]",
     "executor/ddl.go",
+    "go.mod",
+    "go.sum",
     "infoschema/infoschema.go",
     "infoschema/perfschema/const.go",
     "lock/lock.go",
+    "planner/core/logical_plan_test.go",
     "planner/core/optimizer.go",
     "planner/core/planbuilder.go",
     "planner/optimize.go",
     "session/session.go",
     "sessionctx/context.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "sessionctx/variable/varsutil.go",
     "table/table.go",
+    "table/tables/tables.go",
     "util/mock/context.go"
   ],
   "triage": {
@@ -63,5 +72,5 @@
       "files: config/config.go, config/config.toml.example, config/config_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/table.go, ddl/table_lock.go, ddl/table_test.go, ddl/test.log], executor/ddl.go, go.mod, go.sum, infoschema/infoschema.go, infoschema/perfschema/const.go, lock/lock.go, planner/core/logical_plan_test.go, planner/core/optimizer.go, planner/core/planbuilder.go, planner/optimize.go, session/session.go, sessionctx/context.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, table/table.go, table/tables/tables.go, util/mock/context.go"
     ]
   },
-  "analysis": "PR title: *: Support LOCK/UNLOCK TABLES feature\nPR url: https://github.com/pingcap/tidb/pull/10343\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race in test\nChanged files (21): config/config.go, config/config.toml.example, config/config_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/table.go, ddl/table_lock.go, ddl/table_test.go, executor/ddl.go, infoschema/infoschema.go, infoschema/perfschema/const.go, lock/lock.go, planner/core/optimizer.go, planner/core/planbuilder.go, planner/optimize.go, session/session.go, sessionctx/context.go, table/table.go, util/mock/context.go\nPatch url: https://github.com/pingcap/tidb/pull/10343.patch\nPicked test: type=unit path=config/config_test.go name=config_test"
+  "analysis": "PR title: *: Support LOCK/UNLOCK TABLES feature\nPR url: https://github.com/pingcap/tidb/pull/10343\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race in test\nChanged files (30): config/config.go, config/config.toml.example, config/config_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/table.go, ddl/table_lock.go, ddl/table_test.go, ddl/test.log], executor/ddl.go, go.mod, go.sum, infoschema/infoschema.go, infoschema/perfschema/const.go, lock/lock.go, planner/core/logical_plan_test.go, planner/core/optimizer.go, planner/core/planbuilder.go, planner/optimize.go, session/session.go, sessionctx/context.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, table/table.go, table/tables/tables.go, util/mock/context.go\nPatch url: https://github.com/pingcap/tidb/pull/10343.patch\nPicked test: type=unit path=config/config_test.go name=config_test"
 }

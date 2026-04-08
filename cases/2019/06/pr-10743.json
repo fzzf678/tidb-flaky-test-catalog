@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sort.Slice(stores, func(i, j int) bool { return stores[i].Address < stores[j].Address }) (store/tikv/gcworker/gc_worker_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "external_dependency"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it implicitly relied on nondeterministic ordering of stores/addresses when asserting which stores received UnsafeDestroyRange requests. This PR stabilizes the test by sorting the store list (and collected addresses) before comparison, removing order-dependent flakiness.",
   "module": "kv",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort slice results (stores/addresses) before assertions to avoid order-dependent flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10743",
     "https://github.com/pingcap/tidb/pull/10743.patch"

@@ -17,16 +17,15 @@
   ],
   "failure_signature": "ddl: fix data race",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix data race.",
+  "root_cause_explanation": "The test was flaky under `-race` because a global table-lock enable flag was read by background goroutines (for example bind-info loading) while DDL tests wrote to the same global config, triggering a DATA RACE. This PR stabilizes it by introducing an overridable `config.TableLockEnabled` hook and backing the test toggle with an atomic variable to make reads/writes race-free.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix data race",
+  "fix_pattern": "Avoid unsynchronized global-config reads/writes in tests; use an atomic-backed flag (or indirection hook) so background goroutines and tests can safely access the table-lock enable state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10900",
     "https://github.com/pingcap/tidb/pull/10900.patch"

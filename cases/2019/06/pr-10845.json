@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: session: init expensiveQueryHandle immediately after domain be initiated.",
+  "root_cause_explanation": "The test was flaky under `-race` because `ExpensiveQueryHandle` was initialized in the main goroutine while being read by background goroutines during bootstrap, triggering a DATA RACE. This PR stabilizes it by initializing `ExpensiveQueryHandle` immediately after the domain is created (before other background work) and adding a unit test to assert the handle is initialized.",
   "module": "session",
-  "fix_pattern": "session: init expensiveQueryHandle immediately after domain be initiated",
+  "fix_pattern": "Initialize shared handles (e.g. `ExpensiveQueryHandle`) before launching background workers to avoid init/read races, and add a unit test to guard the invariant.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10845",
     "https://github.com/pingcap/tidb/pull/10845.patch"

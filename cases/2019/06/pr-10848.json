@@ -17,16 +17,15 @@
   ],
   "failure_signature": "ddl: fix race in table lock config",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix race in table lock config.",
+  "root_cause_explanation": "The test was flaky under `-race` because DDL tests were mutating global config (`EnableTableLock`) while background goroutines read it, triggering DATA RACE failures. This PR stabilizes it by avoiding global-config toggles in concurrent tests (setting a stable default in suite setup) and isolating the enable/disable checks into a serial test with proper save/restore.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix race in table lock config",
+  "fix_pattern": "Avoid mutating global config in parallel tests; set a stable default in suite setup and isolate config toggling into a serial test with save/restore.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10848",
     "https://github.com/pingcap/tidb/pull/10848.patch"
