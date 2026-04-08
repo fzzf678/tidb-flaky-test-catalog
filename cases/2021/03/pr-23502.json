@@ -13,19 +13,19 @@
     "name": "TestDropPartitionStats"
   },
   "symptoms": [
-    "statistics: fix some unstable tests in global stats"
+    "Unstable tests in global-stats: `TestDropPartitionStats` and `TestMergeTopN` can fail intermittently due to shared state and overly strict assertions"
   ],
-  "failure_signature": "statistics: fix some unstable tests in global stats",
+  "failure_signature": "TestDropPartitionStats / TestMergeTopN intermittent failures",
   "root_cause_categories": [
     "shared_state_pollution"
   ],
   "review_smells": [
-    "global_variable_mutation",
+    "insufficient_cleanup_between_tests",
     "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: statistics: fix some unstable tests in global stats.",
+  "root_cause_explanation": "The tests were flaky due to shared state and brittle assertions. `TestDropPartitionStats` was unstable when executed in a non-serial suite and without fully isolating table state (e.g., missing `drop table if exists`), which can cause suite-order dependence. Additionally, `TestMergeTopN` used an overly strict comparison (`minTopNCnt > remainTopNMeta.Count`) that could legitimately be equal, causing intermittent failures. This PR stabilizes the suite by moving `TestDropPartitionStats` into the serial suite, adding explicit table cleanup, and relaxing the TopN assertion to allow equality.",
   "module": "statistics",
-  "fix_pattern": "statistics: fix some unstable tests in global stats",
+  "fix_pattern": "Run stateful tests serially, add explicit cleanup (`drop table if exists`), and avoid overly strict assertions (allow valid equality cases).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23502",
     "https://github.com/pingcap/tidb/pull/23502.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "Replace failpoint with hook to avoid unstable tests",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "network_without_retry"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: Replace failpoint with hook to avoid unstable tests.",
+  "root_cause_explanation": "The test was flaky due to shared/global state pollution: it relied on a global failpoint (`mockRequestLiveness`) to control request liveness behavior, which is inherently unstable when tests run concurrently or when failpoint state leaks across tests. This PR stabilizes it by replacing the global failpoint with a per-instance testing hook (`RegionCache.testingKnobs.mockRequestLiveness`), making the mocked liveness behavior local to the test and reducing cross-test interference.",
   "module": "kv",
-  "fix_pattern": "Replace failpoint with hook to avoid unstable tests",
+  "fix_pattern": "Replace global failpoint-based mocking with a per-instance testing hook (RegionCache testing knobs) to isolate state per test and avoid cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23244",
     "https://github.com/pingcap/tidb/pull/23244.patch"
@@ -32,6 +32,7 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/23244.patch",
   "changed_files": [
     "config/config.toml.example",
+    "config/config_test.go",
     "metrics/grafana/tidb.json",
     "store/tikv/backoff.go",
     "store/tikv/config/client.go",
@@ -39,7 +40,9 @@
     "store/tikv/region_cache.go",
     "store/tikv/region_cache_test.go",
     "store/tikv/region_request.go",
-    "store/tikv/region_request_test.go"
+    "store/tikv/region_request_test.go",
+    "store/tikv/tikvrpc/tikvrpc.go",
+    "tidb-server/main.go"
   ],
   "triage": {
     "sources": [

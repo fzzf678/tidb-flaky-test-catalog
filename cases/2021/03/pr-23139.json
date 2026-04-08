@@ -13,18 +13,18 @@
     "name": "aggregate_test"
   },
   "symptoms": [
-    "fix some race"
+    "Intermittent hang / race-prone behavior in aggregation executor tests when injecting random OOM panics (AggExec parallel hash agg) and the executor is not properly synchronized/closed"
   ],
-  "failure_signature": "fix some race",
+  "failure_signature": "hang forever / race in executor/aggregate (HashAggExec parallel workers + finalOutputCh lifecycle)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix some race.",
+  "root_cause_explanation": "The test was flaky due to concurrency hazards in async execution/cleanup: HashAggExec runs multiple worker goroutines and sends results/errors to `finalOutputCh`. When random OOM panics were injected, some paths could hang or race because producers/consumers and channel close timing were not strictly synchronized, and tests also didn't always close the record set after consuming rows. This PR stabilizes it by ensuring record sets are closed in the test, increasing `finalOutputCh` buffering, and only closing `finalOutputCh` after all relevant goroutines (fetch child + partial workers + final workers) have exited.",
   "module": "executor",
-  "fix_pattern": "fix some race",
+  "fix_pattern": "Ensure async worker goroutines are fully joined and output channels are closed only after all producers exit; close result sets in tests to stop background work and avoid hang/race conditions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23139",
     "https://github.com/pingcap/tidb/pull/23139.patch"

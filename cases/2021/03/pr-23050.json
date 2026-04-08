@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select distinct_count, null_count, tot_col_size, correlation=0 from mysql.stats_histograms where is_index=0 order by table_id asc\").Check( (statistics/handle/handle_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select distinct_count, null_count, tot_col_size, correlation=0 from mysql.stats_histograms where is_index=0 order by table_id asc\").Check( (statistics/handle/handle_test.go).",
-  "module": "statistics",
-  "fix_pattern": "tk.MustQuery(\"select distinct_count, null_count, tot_col_size, correlation=0 from mysql.stats_histograms where is_index=0 order by table_id asc\").Check( (statistics/handle/handle_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly changes global-stats/analyze behavior (and updates tests accordingly). The captured evidence line already includes an explicit `ORDER BY`, so the previous nondeterministic-order classification does not match the patch. Without a concrete flaky failure signature and a clear targeted stabilization change, we conservatively mark this case as needing more evidence.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23050",
     "https://github.com/pingcap/tidb/pull/23050.patch"

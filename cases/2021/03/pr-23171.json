@@ -17,15 +17,14 @@
   ],
   "failure_signature": "+ // Move this test to here to avoid race test. | result, err = s.execQuery(tk, \"select key_name, clustered from information_schema.tidb_indexes where table_name = 'tr' order by key_name\") (ddl/db_change_test.go)",
   "root_cause_categories": [
-    "external_dependency",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: + // Move this test to here to avoid race test.",
-  "module": "kv",
-  "fix_pattern": "+ // Move this test to here to avoid race test. | result, err = s.execQuery(tk, \"select key_name, clustered from information_schema.tidb_indexes where table_name = 'tr' order by key_name\") (ddl/db_change_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The PR is a large refactor/movement of TiKV option definitions and touches a very wide surface area. The captured evidence line is a comment about moving a test to avoid race tests, but the case metadata (e.g., test path/name) does not clearly align with a specific targeted stabilization change in the patch. Without a concrete flaky failure signature that ties to a narrow fix, we conservatively mark this case as needing more evidence.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23171",
     "https://github.com/pingcap/tidb/pull/23171.patch"

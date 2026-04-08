@@ -13,18 +13,18 @@
     "name": "snapshot_fail_test"
   },
   "symptoms": [
-    "fix race in test"
+    "Go race detector reports a data race on `twoPhaseCommitter.commitTS` accessed concurrently during point-get retry/resolve-lock tests"
   ],
-  "failure_signature": "fix race in test",
+  "failure_signature": "DATA RACE in store/tikv/2pc.go (twoPhaseCommitter.commitTS concurrent access)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix race in test.",
+  "root_cause_explanation": "The test was flaky due to a data race on shared commit state: `twoPhaseCommitter.commitTS` could be written by the commit path while the test concurrently read it to build a snapshot version, triggering race-detector failures and nondeterministic behavior. This PR fixes the race by using `atomic.StoreUint64` when setting `commitTS` and `atomic.LoadUint64` when reading it in the test.",
   "module": "kv",
-  "fix_pattern": "fix race in test",
+  "fix_pattern": "Make `commitTS` access thread-safe with atomic store/load to avoid concurrent read/write races in commit/retry code and tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23044",
     "https://github.com/pingcap/tidb/pull/23044.patch"

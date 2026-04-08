@@ -13,18 +13,18 @@
     "name": "pessimistic_test"
   },
   "symptoms": [
-    "fix race"
+    "Intermittent request timeouts when a region temporarily has no leader (e.g., leader steps down / hibernated region) and TiDB keeps querying the wrong peer"
   ],
-  "failure_signature": "fix race",
+  "failure_signature": "timeout / no-leader (NotLeader without leader) leading to repeated retries against the same peer",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "external_dependency"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "network_without_retry"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix race.",
+  "root_cause_explanation": "The test was flaky due to external cluster state changes: when a region had no leader (e.g., during joint-consensus changes or hibernated regions), TiDB could keep querying the same (now wrong) peer and repeatedly time out until the region was woken up. This PR stabilizes it by treating `no-leader` as a cache invalidation reason and always switching to a different peer/follower when encountering no-leader, avoiding long timeout loops.",
   "module": "kv",
-  "fix_pattern": "fix race",
+  "fix_pattern": "On `no-leader` errors, invalidate cached region leader info and retry against a different peer instead of repeatedly querying the same peer until timeout.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22449",
     "https://github.com/pingcap/tidb/pull/22449.patch"

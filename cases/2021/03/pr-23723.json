@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select /*+ nth_plan(2) */ t1.c1 from t t1 join t t2 on t1.c1 = t2.c3 order by t1.c1\").Check(testkit.Rows(\"1.00000\", \"1.00000\", \"1.00010\")) (executor/tiflash_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: tk.MustQuery(\"select /*+ nth_plan(2) */ t1.c1 from t t1 join t t2 on t1.c1 = t2.c3 order by t1.c1\").Check(testkit.Rows(\"1.00000\", \"1.00000\", \"1.00010\")) (executor/tiflash_test.go).",
-  "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"select /*+ nth_plan(2) */ t1.c1 from t t1 join t t2 on t1.c1 = t2.c3 order by t1.c1\").Check(testkit.Rows(\"1.00000\", \"1.00000\", \"1.00010\")) (executor/tiflash_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic correctness bug in planner join-key casting (shallow-copied expressions causing unintended cross-candidate mutation) and adds/updates tests to cover the issue. The captured evidence line is from the test case rather than an existing flaky failure signature, and the patch does not show a targeted stabilization change for flakiness. To avoid guessing, we mark this case as needing more evidence.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23723",
     "https://github.com/pingcap/tidb/pull/23723.patch"

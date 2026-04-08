@@ -17,14 +17,14 @@
   ],
   "failure_signature": "tk.MustExec(\"select * from t where t.a <= 5 order by a desc\") (statistics/handle/handle_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustExec(\"select * from t where t.a <= 5 order by a desc\") (statistics/handle/handle_test.go).",
-  "module": "statistics",
-  "fix_pattern": "tk.MustExec(\"select * from t where t.a <= 5 order by a desc\") (statistics/handle/handle_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly adds/updates tests for global-level statistics auto-analyze and feedback behavior. The captured evidence line is a `MustExec` statement with an explicit `ORDER BY` (not a flaky failure signature), and the patch does not show a targeted stabilization change for an existing flaky test. To avoid guessing, we mark this case as needing more evidence.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23181",
     "https://github.com/pingcap/tidb/pull/23181.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "rows := tk.MustQuery(\"select group_concat(sname order by sname) from t1 group by cid;\") (executor/aggregate_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: rows := tk.MustQuery(\"select group_concat(sname order by sname) from t1 group by cid;\") (executor/aggregate_test.go).",
-  "module": "executor",
-  "fix_pattern": "rows := tk.MustQuery(\"select group_concat(sname order by sname) from t1 group by cid;\") (executor/aggregate_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic panic/correctness issue in `GROUP_CONCAT` when `group_concat_max_len` is small and adds/updates tests for that behavior. The captured evidence line is not a flaky failure signature, and the patch does not show a targeted stabilization change for flakiness. To avoid guessing, we mark this case as needing more evidence.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23131",
     "https://github.com/pingcap/tidb/pull/23131.patch"

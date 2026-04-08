@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"SELECT error_number, error_count, warning_count FROM information_schema.client_errors_summary_by_user ORDER BY error_number\").Check(testkit.Rows(\"1365 1 0\")) (infoschema/tables_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: tk.MustQuery(\"SELECT error_number, error_count, warning_count FROM information_schema.client_errors_summary_by_user ORDER BY error_number\").Check(testkit.Rows(\"1365 1 0\")) (infoschema/tables_test.go).",
-  "module": "domain",
-  "fix_pattern": "tk.MustQuery(\"SELECT error_number, error_count, warning_count FROM information_schema.client_errors_summary_by_user ORDER BY error_number\").Check(testkit.Rows(\"1365 1 0\")) (infoschema/tables_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR introduces new Information Schema tables (client error summaries) and adds new tests for them. The catalog evidence line is an assertion from the newly added test rather than a clear flaky failure signature, and the patch does not show a targeted stabilization change for an existing flaky test. To avoid guessing, we mark this case as needing more evidence.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22382",
     "https://github.com/pingcap/tidb/pull/22382.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select t1.c1 from t t1 join t t2 on t1.c1 = t2.c1 order by t1.c1\").Check(testkit.Rows(\"1.00000\", \"1.00001\", \"1.00010\")) (executor/tiflash_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select t1.c1 from t t1 join t t2 on t1.c1 = t2.c1 order by t1.c1\").Check(testkit.Rows(\"1.00000\", \"1.00001\", \"1.00010\")) (executor/tiflash_test.go).",
-  "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"select t1.c1 from t t1 join t t2 on t1.c1 = t2.c1 order by t1.c1\").Check(testkit.Rows(\"1.00000\", \"1.00001\", \"1.00010\")) (executor/tiflash_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily fixes/extends MPP join behavior (decimal join key conversion) and updates tests accordingly. The captured evidence line already includes an explicit `ORDER BY`, so the previous nondeterministic-order classification does not match the patch. Without a concrete flaky failure signature and a clear targeted stabilization change, we conservatively mark this case as needing more evidence.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23191",
     "https://github.com/pingcap/tidb/pull/23191.patch"

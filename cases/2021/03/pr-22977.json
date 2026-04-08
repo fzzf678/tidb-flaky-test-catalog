@@ -13,18 +13,18 @@
     "name": "config_util_test"
   },
   "symptoms": [
-    "fix race test"
+    "Go race detector reports a data race due to concurrent reads/writes of the global config `Labels` map"
   ],
-  "failure_signature": "fix race test",
+  "failure_signature": "DATA RACE in config.Labels / config.GetGlobalConfig().Labels (concurrent map access)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix race test.",
-  "module": "module_unknown",
-  "fix_pattern": "fix race test",
+  "root_cause_explanation": "The test was flaky due to a data race on the global config: tests directly mutated `GetGlobalConfig().Labels[...]` (a shared map) while other goroutines/tests could read it concurrently, triggering race-detector failures and intermittent behavior. This PR stabilizes it by switching label mutations to `config.UpdateGlobal(...)` (with proper initialization/locking) and adding `config.RestoreFunc()` cleanup to avoid unsafe global state sharing between tests.",
+  "module": "config",
+  "fix_pattern": "Avoid direct writes to the shared global config map; use `config.UpdateGlobal(...)` + `config.RestoreFunc()` to mutate `Labels` safely and restore global state after the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22977",
     "https://github.com/pingcap/tidb/pull/22977.patch"
