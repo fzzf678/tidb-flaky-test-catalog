@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: move the `Handle` of stats to single package.",
+  "root_cause_explanation": "Stats cache entries were loaded from the shared `StatsCache` and then mutated in-place, which can race with concurrent readers. This PR stabilizes stats loading by copying the cached table stats (`table.Copy()`) before writing updates in `tableStatsFromStorage`.",
   "module": "statistics",
-  "fix_pattern": "*: move the `Handle` of stats to single package.",
+  "fix_pattern": "Use copy-on-write for shared cache objects: copy cached stats structures before mutating to avoid concurrent read/write races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10149",
     "https://github.com/pingcap/tidb/pull/10149.patch"
@@ -41,30 +41,42 @@
     "planner/core/cbo_test.go",
     "server/statistics_handler_test.go",
     "session/session.go",
+    "statistics/builder.go",
     "statistics/cmsketch.go",
     "statistics/cmsketch_test.go",
+    "statistics/dump.go",
     "statistics/feedback.go",
     "statistics/feedback_test.go",
     "statistics/handle.go",
-    "statistics/handle/bootstrap.go",
-    "statistics/handle/ddl.go",
-    "statistics/handle/ddl_test.go",
-    "statistics/handle/dump.go",
-    "statistics/handle/dump_test.go",
-    "statistics/handle/gc.go",
-    "statistics/handle/gc_test.go",
-    "statistics/handle/handle.go",
-    "statistics/handle/handle_test.go",
-    "statistics/handle/update.go",
-    "statistics/handle/update_list_test.go",
-    "statistics/handle/update_test.go",
+    "statistics/bootstrap.go",
+    "statistics/ddl.go",
+    "statistics/ddl_test.go",
+    "statistics/handler/dump.go",
+    "statistics/dump_test.go",
+    "statistics/gc.go",
+    "statistics/gc_test.go",
+    "statistics/handler/handle.go",
+    "statistics/handle_test.go",
+    "statistics/update.go",
+    "statistics/update_list_test.go",
+    "statistics/update_test.go",
     "statistics/histogram.go",
     "statistics/histogram_test.go",
     "statistics/selectivity.go",
     "statistics/selectivity_test.go",
     "statistics/statistics_test.go",
     "statistics/table.go",
-    "tidb-server/main.go"
+    "tidb-server/main.go",
+    "statistics/handler/update.go",
+    "statistics/handler/handle_test.go",
+    "statistics/handler/bootstrap.go",
+    "statistics/handler/ddl.go",
+    "statistics/handler/ddl_test.go",
+    "statistics/handler/dump_test.go",
+    "statistics/handler/gc.go",
+    "statistics/handler/gc_test.go",
+    "statistics/handler/update_list_test.go",
+    "statistics/handler/update_test.go"
   ],
   "triage": {
     "sources": [
@@ -73,8 +85,8 @@
     ],
     "evidence": [
       "evidence: + // We copy it before writing to avoid race.",
-      "files: cmd/importer/stats.go, distsql/request_builder.go, domain/domain.go, executor/load_stats.go, executor/seqtest/seq_executor_test.go, executor/table_reader.go, infoschema/tables_test.go, planner/core/cbo_test.go, server/statistics_handler_test.go, session/session.go, statistics/builder.go, statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/dump.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle.go, statistics/handle/bootstrap.go, statistics/handle/ddl.go, statistics/handle/ddl_test.go, statistics/handle/dump.go, statistics/handle/dump_test.go, statistics/handle/gc.go, statistics/handle/gc_test.go, statistics/handle/handle.go, statistics/handle/handle_test.go, statistics/handle/update.go, statistics/handle/update_list_test.go, statistics/handle/update_test.go, statistics/handler/bootstrap.go, statistics/handler/ddl.go, statistics/handler/ddl_test.go, statistics/handler/dump.go, statistics/handler/dump_test.go, statistics/handler/gc.go, statistics/handler/gc_test.go, statistics/handler/handle.go, statistics/handler/handle_test.go, statistics/handler/update.go, statistics/handler/update_list_test.go, statistics/handler/update_test.go, statistics/histogram.go, statistics/histogram_test.go, statistics/selectivity.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, tidb-server/main.go"
+      "files: cmd/importer/stats.go, distsql/request_builder.go, domain/domain.go, executor/load_stats.go, executor/seqtest/seq_executor_test.go, executor/table_reader.go, infoschema/tables_test.go, planner/core/cbo_test.go, server/statistics_handler_test.go, session/session.go, statistics/builder.go, statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/dump.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle.go, statistics/bootstrap.go, statistics/ddl.go, statistics/ddl_test.go, statistics/handler/dump.go, statistics/dump_test.go, statistics/gc.go, statistics/gc_test.go, statistics/handler/handle.go, statistics/handle_test.go, statistics/update.go, statistics/update_list_test.go, statistics/update_test.go, statistics/histogram.go, statistics/histogram_test.go, statistics/selectivity.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, tidb-server/main.go, statistics/handler/update.go, statistics/handler/handle_test.go, statistics/handler/bootstrap.go, statistics/handler/ddl.go, statistics/handler/ddl_test.go, statistics/handler/dump_test.go, statistics/handler/gc.go, statistics/handler/gc_test.go, statistics/handler/update_list_test.go, statistics/handler/update_test.go"
     ]
   },
-  "analysis": "PR title: *: move the `Handle` of stats to single package.\nPR url: https://github.com/pingcap/tidb/pull/10149\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + // We copy it before writing to avoid race.\nChanged files (34): cmd/importer/stats.go, distsql/request_builder.go, domain/domain.go, executor/load_stats.go, executor/seqtest/seq_executor_test.go, executor/table_reader.go, infoschema/tables_test.go, planner/core/cbo_test.go, server/statistics_handler_test.go, session/session.go, statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle.go, statistics/handle/bootstrap.go, statistics/handle/ddl.go, statistics/handle/ddl_test.go, statistics/handle/dump.go, statistics/handle/dump_test.go, statistics/handle/gc.go, statistics/handle/gc_test.go, statistics/handle/handle.go, statistics/handle/handle_test.go, statistics/handle/update.go, statistics/handle/update_list_test.go, statistics/handle/update_test.go, statistics/histogram.go, statistics/histogram_test.go, statistics/selectivity.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/10149.patch\nPicked test: type=unit path=executor/seqtest/seq_executor_test.go name=seq_executor_test"
+  "analysis": "PR title: *: move the `Handle` of stats to single package.\nPR url: https://github.com/pingcap/tidb/pull/10149\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + // We copy it before writing to avoid race.\nChanged files (46): cmd/importer/stats.go, distsql/request_builder.go, domain/domain.go, executor/load_stats.go, executor/seqtest/seq_executor_test.go, executor/table_reader.go, infoschema/tables_test.go, planner/core/cbo_test.go, server/statistics_handler_test.go, session/session.go, statistics/builder.go, statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/dump.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle.go, statistics/bootstrap.go, statistics/ddl.go, statistics/ddl_test.go, statistics/handler/dump.go, statistics/dump_test.go, statistics/gc.go, statistics/gc_test.go, statistics/handler/handle.go, statistics/handle_test.go, statistics/update.go, statistics/update_list_test.go, statistics/update_test.go, statistics/histogram.go, statistics/histogram_test.go, statistics/selectivity.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, tidb-server/main.go, statistics/handler/update.go, statistics/handler/handle_test.go, statistics/handler/bootstrap.go, statistics/handler/ddl.go, statistics/handler/ddl_test.go, statistics/handler/dump_test.go, statistics/handler/gc.go, statistics/handler/gc_test.go, statistics/handler/update_list_test.go, statistics/handler/update_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10149.patch\nPicked test: type=unit path=executor/seqtest/seq_executor_test.go name=seq_executor_test"
 }

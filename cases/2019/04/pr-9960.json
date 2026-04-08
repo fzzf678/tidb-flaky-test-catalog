@@ -17,16 +17,15 @@
   ],
   "failure_signature": "ddl: fix data race of config.TreatOldVersionUTF8AsUTF8MB4",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix data race of config.TreatOldVersionUTF8AsUTF8MB4.",
+  "root_cause_explanation": "Race detector reported a DATA RACE because the test mutates the global config flag `TreatOldVersionUTF8AsUTF8MB4` while background schema reload/infoschema building reads the same flag. This PR reduces the race window by short-circuiting on `tbInfo.Version` before reading the global config in `ConvertOldVersionUTF8ToUTF8MB4IfNeed`.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix data race of config.TreatOldVersionUTF8AsUTF8MB4",
+  "fix_pattern": "Reduce shared global config access (or make it thread-safe); avoid reading mutable global config in background goroutines when not needed (e.g., check table version first).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9960",
     "https://github.com/pingcap/tidb/pull/9960.patch"

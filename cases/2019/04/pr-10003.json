@@ -17,34 +17,36 @@
   ],
   "failure_signature": "resolve data race",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "race_condition_in_async_code",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: trace and control memory usage in DistSQL layer.",
+  "root_cause_explanation": "CI runs under `-race` can hit a data race because `registerHook()` replaces the global logger (`log.ReplaceGlobals`), which may be used concurrently by other goroutines/tests. This PR mitigates the flakiness by skipping the affected executor suite (and also skips another executor test noted unstable due to goroutine scheduling).",
   "module": "executor",
-  "fix_pattern": "executor: trace and control memory usage in DistSQL layer",
+  "fix_pattern": "Avoid mutating globals (like the process-wide logger) in tests; isolate/restore global state or skip such suites in CI when they are not race-safe.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10003",
     "https://github.com/pingcap/tidb/pull/10003.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/10003.patch",
   "changed_files": [
+    "distsql/request_builder.go",
+    "kv/kv.go",
+    "store/tikv/coprocessor.go",
     "distsql/distsql.go",
     "distsql/distsql_test.go",
-    "distsql/request_builder.go",
     "distsql/select_result.go",
-    "executor/chunk_size_control_test.go",
     "executor/distsql.go",
-    "executor/executor_required_rows_test.go",
-    "executor/executor_test.go",
     "executor/table_reader.go",
-    "kv/kv.go",
     "sessionctx/variable/session.go",
     "sessionctx/variable/tidb_vars.go",
-    "store/tikv/coprocessor.go",
-    "util/testleak/leaktest.go"
+    "executor/executor_test.go",
+    "executor/chunk_size_control_test.go",
+    "util/testleak/leaktest.go",
+    "executor/executor_required_rows_test.go"
   ],
   "triage": {
     "sources": [
@@ -53,8 +55,8 @@
     ],
     "evidence": [
       "evidence: resolve data race",
-      "files: distsql/distsql.go, distsql/distsql_test.go, distsql/request_builder.go, distsql/select_result.go, executor/chunk_size_control_test.go, executor/distsql.go, executor/executor_required_rows_test.go, executor/executor_test.go, executor/table_reader.go, kv/kv.go, sessionctx/variable/session.go, sessionctx/variable/tidb_vars.go, store/tikv/coprocessor.go, util/testleak/leaktest.go"
+      "files: distsql/request_builder.go, kv/kv.go, store/tikv/coprocessor.go, distsql/distsql.go, distsql/distsql_test.go, distsql/select_result.go, executor/distsql.go, executor/table_reader.go, sessionctx/variable/session.go, sessionctx/variable/tidb_vars.go, executor/executor_test.go, executor/chunk_size_control_test.go, util/testleak/leaktest.go, executor/executor_required_rows_test.go"
     ]
   },
-  "analysis": "PR title: executor: trace and control memory usage in DistSQL layer\nPR url: https://github.com/pingcap/tidb/pull/10003\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: resolve data race\nChanged files (14): distsql/distsql.go, distsql/distsql_test.go, distsql/request_builder.go, distsql/select_result.go, executor/chunk_size_control_test.go, executor/distsql.go, executor/executor_required_rows_test.go, executor/executor_test.go, executor/table_reader.go, kv/kv.go, sessionctx/variable/session.go, sessionctx/variable/tidb_vars.go, store/tikv/coprocessor.go, util/testleak/leaktest.go\nPatch url: https://github.com/pingcap/tidb/pull/10003.patch\nPicked test: type=unit path=distsql/distsql_test.go name=distsql_test"
+  "analysis": "PR title: executor: trace and control memory usage in DistSQL layer\nPR url: https://github.com/pingcap/tidb/pull/10003\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: resolve data race\nChanged files (14): distsql/request_builder.go, kv/kv.go, store/tikv/coprocessor.go, distsql/distsql.go, distsql/distsql_test.go, distsql/select_result.go, executor/distsql.go, executor/table_reader.go, sessionctx/variable/session.go, sessionctx/variable/tidb_vars.go, executor/executor_test.go, executor/chunk_size_control_test.go, util/testleak/leaktest.go, executor/executor_required_rows_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10003.patch\nPicked test: type=unit path=distsql/distsql_test.go name=distsql_test"
 }

@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: expression: check corCol in DisableParseJSONFlag4Expr.",
+  "root_cause_explanation": "DisableParseJSONFlag4Expr mutates `RetType.Flag` for expressions whose types may reference infoschema-backed FieldType objects; doing this for correlated columns risks races with other goroutines reading infoschema. This PR avoids the race by skipping `CorrelatedColumn` (like `Column`) and adds a unit test to lock in the behavior.",
   "module": "expression",
-  "fix_pattern": "expression: check corCol in DisableParseJSONFlag4Expr",
+  "fix_pattern": "Do not mutate infoschema-backed type objects in-place; early-return for Column/CorrelatedColumn or clone the FieldType before mutating.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10224",
     "https://github.com/pingcap/tidb/pull/10224.patch"

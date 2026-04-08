@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: make config items `Performance.*`, `OOMAction` and `MemQuotaQuery` support hot-reloading.",
-  "module": "server",
-  "fix_pattern": "*: make config items `Performance.*`, `OOMAction` and `MemQuotaQuery` support hot-reloading",
+  "root_cause_explanation": "Hot-reloading updates config-derived variables (e.g., `CommitMaxBackoff`) while other goroutines read them to construct backoff/commit logic, causing potential DATA RACE in tests under `-race`. This PR makes `CommitMaxBackoff` atomic and consistently uses `Load/Store` when reading/updating it.",
+  "module": "config",
+  "fix_pattern": "Wrap hot-reloaded config variables with atomics (or locks) and consistently use atomic Load/Store in both production code and tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10295",
     "https://github.com/pingcap/tidb/pull/10295.patch"
@@ -33,23 +33,31 @@
   "changed_files": [
     "config/config.go",
     "config/config_test.go",
-    "executor/seqtest/prepared_test.go",
-    "executor/seqtest/seq_executor_test.go",
+    "server/http_handler.go",
+    "tidb-server/main.go",
     "go.mod",
     "planner/core/cache.go",
-    "planner/core/cbo_test.go",
     "planner/core/optimizer.go",
-    "planner/core/point_get_plan_test.go",
-    "planner/core/prepare_test.go",
-    "server/http_handler.go",
-    "server/http_status.go",
     "session/session.go",
     "statistics/feedback.go",
     "statistics/handle/handle.go",
     "statistics/handle/update.go",
-    "statistics/handle/update_test.go",
     "statistics/table.go",
-    "tidb-server/main.go"
+    "ddl/ddl.go",
+    "ddl/ddl_worker.go",
+    "ddl/ddl_test.go",
+    "ddl/ddl_worker_test.go",
+    "planner/core/prepare_test.go",
+    "store/tikv/2pc.go",
+    "store/tikv/backoff.go",
+    "executor/seqtest/prepared_test.go",
+    "executor/seqtest/seq_executor_test.go",
+    "planner/core/point_get_plan_test.go",
+    "planner/core/cbo_test.go",
+    "statistics/handle/update_test.go",
+    "store/tikv/2pc_test.go",
+    "store/tikv/lock_test.go",
+    "server/http_status.go"
   ],
   "triage": {
     "sources": [
@@ -58,8 +66,8 @@
     ],
     "evidence": [
       "evidence: // potencial data race in unit test since `CommitMaxBackoff` will be updated",
-      "files: config/config.go, config/config_test.go, ddl/ddl.go, ddl/ddl_test.go, ddl/ddl_worker.go, ddl/ddl_worker_test.go, executor/seqtest/prepared_test.go, executor/seqtest/seq_executor_test.go, go.mod, planner/core/cache.go, planner/core/cbo_test.go, planner/core/optimizer.go, planner/core/point_get_plan_test.go, planner/core/prepare_test.go, server/http_handler.go, server/http_status.go, session/session.go, statistics/feedback.go, statistics/handle/handle.go, statistics/handle/update.go, statistics/handle/update_test.go, statistics/table.go, store/tikv/2pc.go, store/tikv/2pc_test.go, store/tikv/backoff.go, store/tikv/lock_test.go, tidb-server/main.go"
+      "files: config/config.go, config/config_test.go, server/http_handler.go, tidb-server/main.go, go.mod, planner/core/cache.go, planner/core/optimizer.go, session/session.go, statistics/feedback.go, statistics/handle/handle.go, statistics/handle/update.go, statistics/table.go, ddl/ddl.go, ddl/ddl_worker.go, ddl/ddl_test.go, ddl/ddl_worker_test.go, planner/core/prepare_test.go, store/tikv/2pc.go, store/tikv/backoff.go, executor/seqtest/prepared_test.go, executor/seqtest/seq_executor_test.go, planner/core/point_get_plan_test.go, planner/core/cbo_test.go, statistics/handle/update_test.go, store/tikv/2pc_test.go, store/tikv/lock_test.go, server/http_status.go"
     ]
   },
-  "analysis": "PR title: *: make config items `Performance.*`, `OOMAction` and `MemQuotaQuery` support hot-reloading\nPR url: https://github.com/pingcap/tidb/pull/10295\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // potencial data race in unit test since `CommitMaxBackoff` will be updated\nChanged files (19): config/config.go, config/config_test.go, executor/seqtest/prepared_test.go, executor/seqtest/seq_executor_test.go, go.mod, planner/core/cache.go, planner/core/cbo_test.go, planner/core/optimizer.go, planner/core/point_get_plan_test.go, planner/core/prepare_test.go, server/http_handler.go, server/http_status.go, session/session.go, statistics/feedback.go, statistics/handle/handle.go, statistics/handle/update.go, statistics/handle/update_test.go, statistics/table.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/10295.patch\nPicked test: type=unit path=config/config_test.go name=config_test"
+  "analysis": "PR title: *: make config items `Performance.*`, `OOMAction` and `MemQuotaQuery` support hot-reloading\nPR url: https://github.com/pingcap/tidb/pull/10295\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // potencial data race in unit test since `CommitMaxBackoff` will be updated\nChanged files (27): config/config.go, config/config_test.go, server/http_handler.go, tidb-server/main.go, go.mod, planner/core/cache.go, planner/core/optimizer.go, session/session.go, statistics/feedback.go, statistics/handle/handle.go, statistics/handle/update.go, statistics/table.go, ddl/ddl.go, ddl/ddl_worker.go, ddl/ddl_test.go, ddl/ddl_worker_test.go, planner/core/prepare_test.go, store/tikv/2pc.go, store/tikv/backoff.go, executor/seqtest/prepared_test.go, executor/seqtest/seq_executor_test.go, planner/core/point_get_plan_test.go, planner/core/cbo_test.go, statistics/handle/update_test.go, store/tikv/2pc_test.go, store/tikv/lock_test.go, server/http_status.go\nPatch url: https://github.com/pingcap/tidb/pull/10295.patch\nPicked test: type=unit path=config/config_test.go name=config_test"
 }
