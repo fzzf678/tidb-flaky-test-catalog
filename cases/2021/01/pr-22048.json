@@ -22,17 +22,30 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: // TableDeltaMap lock to prevent potential data race.",
+  "root_cause_explanation": "The flakiness was caused by a data race on shared transaction-context state (`TxnCtx.TableDeltaMap`) accessed across execution paths. This PR stabilizes it by introducing a dedicated mutex (`tdmLock`) in `TransactionContext` and using it to guard cleanup/clear of `TableDeltaMap`, preventing concurrent access races (especially under `-race`).",
   "module": "session",
-  "fix_pattern": "// TableDeltaMap lock to prevent potential data race",
+  "fix_pattern": "Introduce `TransactionContext.tdmLock` and guard `TableDeltaMap` cleanup/clearing with it to avoid concurrent access races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22048",
     "https://github.com/pingcap/tidb/pull/22048.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/22048.patch",
   "changed_files": [
+    "executor/executor_test.go",
+    "executor/prepared.go",
+    "executor/simple.go",
+    "go.mod",
+    "go.sum",
+    "kv/interface_mock_test.go",
+    "kv/kv.go",
     "session/session.go",
-    "session/session_test.go"
+    "session/session_test.go",
+    "sessionctx/context.go",
+    "sessionctx/variable/session.go",
+    "store/tikv/kv.go",
+    "store/tikv/txn.go",
+    "util/mock/context.go",
+    "util/mock/store.go"
   ],
   "triage": {
     "sources": [

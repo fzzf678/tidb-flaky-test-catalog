@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustExec(\"update t set col_2 = 47 where col_1 in ('aaaaa') order by col_1,col_2;\") (executor/clustered_index_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "external_dependency"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustExec(\"update t set col_2 = 47 where col_1 in ('aaaaa') order by col_1,col_2;\") (executor/clustered_index_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a correctness issue in UnionScan decoding for prefixed clustered indexes (always decode value first) and adds/updates tests. The cited SQL already includes an `ORDER BY`, and there is no concrete flaky failure signature or targeted stabilization change for nondeterminism in the case data, so we conservatively mark it as needing more evidence.",
   "module": "executor",
-  "fix_pattern": "tk.MustExec(\"update t set col_2 = 47 where col_1 in ('aaaaa') order by col_1,col_2;\") (executor/clustered_index_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22073",
     "https://github.com/pingcap/tidb/pull/22073.patch"

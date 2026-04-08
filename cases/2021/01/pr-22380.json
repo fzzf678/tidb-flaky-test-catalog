@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from information_schema.placement_policy order by REPLICAS\").Check(testkit.Rows(rows...)) (ddl/placement_sql_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: tk.MustQuery(\"select * from information_schema.placement_policy order by REPLICAS\").Check(testkit.Rows(rows...)) (ddl/placement_sql_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds support for placement rules when exchanging partitions and updates placement-related tests accordingly. The cited query already includes an explicit `ORDER BY`, and the case data does not provide a concrete flaky failure signature or a targeted stabilization change for nondeterminism, so we conservatively mark it as needing more evidence.",
   "module": "ddl",
-  "fix_pattern": "tk.MustQuery(\"select * from information_schema.placement_policy order by REPLICAS\").Check(testkit.Rows(rows...)) (ddl/placement_sql_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22380",
     "https://github.com/pingcap/tidb/pull/22380.patch"

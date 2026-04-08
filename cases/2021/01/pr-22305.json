@@ -17,14 +17,12 @@
   ],
   "failure_signature": "sort.Slice(partDefs, func(i, j int) bool { return partDefs[i].Name.L < partDefs[j].Name.L }) (ddl/placement_sql_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: sort.Slice(partDefs, func(i, j int) bool { return partDefs[i].Name.L < partDefs[j].Name.L }) (ddl/placement_sql_test.go).",
+  "root_cause_explanation": "The test generated expected output rows based on partition definitions whose order was not stable, causing intermittent mismatches when checking ordered query results. This PR stabilizes the assertion by sorting `partDefs` (partition definitions) by name before constructing the expected `rows`, making the comparison deterministic.",
   "module": "ddl",
   "fix_pattern": "sort.Slice(partDefs, func(i, j int) bool { return partDefs[i].Name.L < partDefs[j].Name.L }) (ddl/placement_sql_test.go)",
   "evidence_links": [
