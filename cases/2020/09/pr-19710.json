@@ -10,21 +10,22 @@
   "test": {
     "type": "unit",
     "path": "session/pessimistic_test.go",
-    "name": "pessimistic_test"
+    "name": "TestBatchPointGetLockIndex"
   },
   "symptoms": [
-    "PR title: test: try to stable some tests"
+    "Pessimistic-lock related tests can be flaky when the default managed-lock TTL is too small under CI load (lock expiry / lock wait races)."
   ],
-  "failure_signature": "PR title: test: try to stable some tests",
+  "failure_signature": "Intermittent lock wait/nowait assertions fail due to managed lock TTL expiring too quickly under load",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "global_variable_mutation",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: try to stable some tests",
+  "root_cause_explanation": "These pessimistic-lock tests depend on a managed-lock TTL (`tikv.ManagedLockTTL`). With a small default TTL, locks can expire or behave differently under slow/loaded CI, causing intermittent lock wait/nowait assertions to fail. This PR stabilizes the tests by increasing `tikv.ManagedLockTTL` to a larger value within the test scope (and restoring it afterward), widening the timing window for lock-related expectations.",
+  "module": "session",
+  "fix_pattern": "Increase the managed lock TTL for timing-sensitive pessimistic-lock tests (with save/restore) to avoid lock-expiry-related flakes under CI load.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19710",
     "https://github.com/pingcap/tidb/pull/19710.patch"

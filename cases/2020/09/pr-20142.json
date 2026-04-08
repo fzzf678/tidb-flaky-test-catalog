@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "executor/join_test.go",
-    "name": "join_test"
+    "name": "TestIssue18070"
   },
   "symptoms": [
-    "PR title: executor: fix data race in test"
+    "Go race detector can report a data race when a test directly mutates global config (`OOMAction`) while other goroutines/tests may read it."
   ],
-  "failure_signature": "PR title: executor: fix data race in test",
+  "failure_signature": "DATA RACE: direct mutation of `config.GetGlobalConfig().OOMAction` in `TestIssue18070` can race with concurrent readers",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race in test.",
+  "root_cause_explanation": "`config.GetGlobalConfig()` returns shared global configuration. `TestIssue18070` directly modified `OOMAction` by writing to the returned config struct, which is not safe under concurrent access and can trigger data races in `-race` (or cause flaky behavior if other tests read config concurrently). This PR fixes the race by updating the config via `config.UpdateGlobal(...)` (and restoring it via the same API), which is the thread-safe pattern for global config updates.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race in test",
+  "fix_pattern": "Use `config.UpdateGlobal(...)` (with save/restore) instead of direct global config struct mutation to avoid races in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/20142",
     "https://github.com/pingcap/tidb/pull/20142.patch"

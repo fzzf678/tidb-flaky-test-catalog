@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body: tmpDir may already be created by other spilling unit test, so init tempdir fails in this test",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "network_without_retry"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: util: fix unstable unit test testDiskSerialSuite.TestRemoveDir.",
-  "module": "module_unknown",
-  "fix_pattern": "util: fix unstable unit test testDiskSerialSuite.TestRemoveDir",
+  "root_cause_explanation": "The `util/disk` tests share a temp-storage directory (`TempStoragePath`). Another spilling-related test may create the temp dir first, so calling `InitializeTempDir()` (which assumes a clean/non-existent directory) can fail intermittently when the directory already exists. This PR stabilizes the test by switching to an idempotent init path (`CheckAndInitTempDir()`), which tolerates a pre-existing temp dir instead of failing.",
+  "module": "config",
+  "fix_pattern": "Make temp-dir initialization idempotent in tests: check whether `TempStoragePath` already exists and initialize it only when needed to avoid cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19762",
     "https://github.com/pingcap/tidb/pull/19762.patch"

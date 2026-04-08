@@ -13,18 +13,18 @@
     "name": "TestT"
   },
   "symptoms": [
-    "PR title: domain: make TestT more stable"
+    "`TestT` intermittently fails with `context deadline exceeded` when the timeout is too small under CI load."
   ],
-  "failure_signature": "PR title: domain: make TestT more stable",
+  "failure_signature": "`context deadline exceeded` in `domain/domain_test.go: testSuite.TestT` (OwnerCheckAllVersions)",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "`TestT` used `context.WithTimeout(..., 10*time.Millisecond)` for `OwnerCheckAllVersions`. Under slow/loaded CI, 10ms is too short and can hit `context deadline exceeded`, making the test flaky. This PR stabilizes the test by increasing the timeout to 100ms for both checks, widening the timing window while preserving the intended assertion.",
   "module": "domain",
-  "fix_pattern": "domain: make TestT more stable",
+  "fix_pattern": "Increase overly tight test timeouts (e.g. 10ms → 100ms) for schema sync checks to avoid load-dependent `context deadline exceeded` flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19879",
     "https://github.com/pingcap/tidb/pull/19879.patch"
