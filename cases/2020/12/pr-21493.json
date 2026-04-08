@@ -13,18 +13,18 @@
     "name": "TestSetVar"
   },
   "symptoms": [
-    "PR title: executor: stabilize test TestSetVar"
+    "TestIssue20874 toggles global collation mode (`collate.SetNewCollationEnabledForTest`) and can interfere with other concurrently running gocheck suites."
   ],
-  "failure_signature": "PR title: executor: stabilize test TestSetVar",
+  "failure_signature": "Order-dependent/cross-test interference when TestIssue20874 runs concurrently with other suites (global collation mode).",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The flakiness risk comes from shared global state: TestIssue20874 enables the new collation globally for the process and restores it via defer. When tests/suites run concurrently, this global toggle can affect other tests, causing order-dependent failures. This PR mitigates the issue by moving the test into a gocheck serial suite (`SerialSuites`), ensuring it does not run concurrently with other suites.",
   "module": "executor",
-  "fix_pattern": "executor: stabilize test TestSetVar",
+  "fix_pattern": "Move the global-state-toggling test into a serial suite (`SerialSuites`) so it doesn't run concurrently with other tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21493",
     "https://github.com/pingcap/tidb/pull/21493.patch"

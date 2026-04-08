@@ -13,18 +13,19 @@
     "name": "tables_test"
   },
   "symptoms": [
-    "PR title: table/tables: fix a DATA RACE in a unit test case"
+    "Go race detector report in TestConstraintCheckForUniqueIndex: concurrent commit/rollback paths race on the same transaction while a background goroutine performs inserts."
   ],
-  "failure_signature": "PR title: table/tables: fix a DATA RACE in a unit test case",
+  "failure_signature": "WARNING: DATA RACE between `tikvTxn.Commit()` and `tikvTxn.Rollback()` (table/tables/tables_test.go TestConstraintCheckForUniqueIndex).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "race_condition_in_async_code",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: table/tables: fix a DATA RACE in a unit test case.",
-  "module": "session",
-  "fix_pattern": "table/tables: fix a DATA RACE in a unit test case",
+  "root_cause_explanation": "The flakiness was caused by unsafe concurrency in the unit test: it starts a goroutine that runs SQL on `tk2` while the main goroutine commits/rolls back sessions, leading to a race between commit and rollback paths on the underlying transaction. This PR fixes the data race by simplifying the synchronization/expectation logic (asserting on the channel value indicating whether `tk2` is blocked) and by removing the explicit rollback calls that raced with the goroutine's operations.",
+  "module": "table",
+  "fix_pattern": "Simplify synchronization (channel-based expectation) and remove racy rollback calls that can overlap with goroutine SQL execution; keep the test assertion deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21733",
     "https://github.com/pingcap/tidb/pull/21733.patch"

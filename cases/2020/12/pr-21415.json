@@ -9,13 +9,13 @@
   "pr_merged_at": "2020-12-02T11:16:19+08:00",
   "test": {
     "type": "unit",
-    "path": "sessionctx/variable/session.go",
-    "name": "session"
+    "path": "executor/explainfor_test.go",
+    "name": "TestExplainFor"
   },
   "symptoms": [
-    "PR title: sessionctx/variable: fix a DATA RACE to make CI more stable"
+    "Go race detector report: concurrent write in `SessionVars.SetSystemVar()` mutating `config.GetGlobalConfig().EnableCollectExecutionInfo` while another goroutine reads global config during statement execution."
   ],
-  "failure_signature": "PR title: sessionctx/variable: fix a DATA RACE to make CI more stable",
+  "failure_signature": "WARNING: DATA RACE (write: SessionVars.SetSystemVar; read: executor.ResetContextOfStmt)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
@@ -23,9 +23,9 @@
     "race_condition_in_async_code",
     "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: sessionctx/variable: fix a DATA RACE to make CI more stable.",
+  "root_cause_explanation": "The flakiness was caused by a data race on global configuration: `SessionVars.SetSystemVar()` previously performed an in-place mutation of `config.GetGlobalConfig().EnableCollectExecutionInfo`, which could race with other goroutines reading the global config during statement execution. This PR fixes the race by copying the global config and updating it via `config.StoreGlobalConfig(&newConfig)`, which performs an atomic store.",
   "module": "session",
-  "fix_pattern": "sessionctx/variable: fix a DATA RACE to make CI more stable",
+  "fix_pattern": "Avoid in-place mutation of `config.GetGlobalConfig()`; copy the config struct, update the field, and publish via `config.StoreGlobalConfig(&newConfig)`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21415",
     "https://github.com/pingcap/tidb/pull/21415.patch"

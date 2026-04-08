@@ -13,18 +13,18 @@
     "name": "TestPointGetReadLock"
   },
   "symptoms": [
-    "PR title: executor: make TestPointGetReadLock stable"
+    "TestPointGetReadLock intermittently observes stale schema/lock-cache state after `unlock tables`, leading to unstable EXPLAIN ANALYZE output."
   ],
-  "failure_signature": "PR title: executor: make TestPointGetReadLock stable",
+  "failure_signature": "Unstable EXPLAIN ANALYZE after `unlock tables` due to async schema reload/cache release (TestPointGetReadLock).",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "schema_change_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "schema_version_race"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test was flaky due to metadata caching / schema version timing: schema reload and related cache release are asynchronous, so immediately after `unlock tables` the domain/InfoSchema cache might still reflect the old state. This caused `EXPLAIN ANALYZE` assertions in TestPointGetReadLock to intermittently see unexpected output. This PR stabilizes the test by forcing a domain schema reload (`s.dom.Reload()`) after `unlock tables` to ensure the cache is released before asserting.",
   "module": "executor",
-  "fix_pattern": "executor: make TestPointGetReadLock stable",
+  "fix_pattern": "Force domain/InfoSchema reload (`s.dom.Reload()`) after `unlock tables` (and before assertions) to avoid stale schema/lock-cache visibility.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21491",
     "https://github.com/pingcap/tidb/pull/21491.patch"
