@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: avoid data race.",
+  "root_cause_explanation": "The snapshot tests accessed commit timestamp state that can be updated concurrently (e.g., reading/writing `commitTS` directly), triggering data races under CI/race builds. This PR stabilizes the tests by using atomic load/store accessors for `commitTS` and updating the test to use the safe accessor (`GetCommitTS`) instead of direct field reads.",
   "module": "kv",
-  "fix_pattern": "avoid data race",
+  "fix_pattern": "Use atomic load/store accessors (and avoid direct field access) for concurrently-updated commit timestamp fields in TiKV test probes to eliminate data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23908",
     "https://github.com/pingcap/tidb/pull/23908.patch"

@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix data race.",
-  "module": "executor",
-  "fix_pattern": "fix data race",
+  "root_cause_explanation": "The KV resolveTS updater spawns goroutines in a loop and previously captured shared mutable state (e.g., store pointer/fields) without proper isolation, causing a data race. This PR fixes the race by copying the needed store fields (addr/storeID) per-iteration and passing them into the goroutine, and by avoiding shared pointer slices during the resolveTS update.",
+  "module": "kv",
+  "fix_pattern": "Avoid goroutine loop-variable/shared-state races by copying store fields per-iteration (addr/storeID) and passing them explicitly into resolveTS updater goroutines.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23866",
     "https://github.com/pingcap/tidb/pull/23866.patch"

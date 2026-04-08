@@ -9,24 +9,22 @@
   "pr_merged_at": "2021-04-28T12:59:56+08:00",
   "test": {
     "type": "unit",
-    "path": "config/config_util_test.go",
-    "name": "explain_easy"
+    "path": "executor/distsql_test.go",
+    "name": "TestPartitionTableRandomlyIndexLookUpReader"
   },
   "symptoms": [
     "+ c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go)"
   ],
   "failure_signature": "+ c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: + c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go).",
-  "module": "kv",
-  "fix_pattern": "+ c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR includes an exhaustive/random test that is skipped under race (`c.Skip(\"exhaustive types test, skip race test\")`). Skipping in race mode is quarantine/perf-related and does not provide enough evidence to assign a concrete flaky root cause.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24136",
     "https://github.com/pingcap/tidb/pull/24136.patch"

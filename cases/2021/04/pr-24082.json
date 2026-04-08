@@ -21,11 +21,12 @@
     "async_timing_issue"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "async_schema_propagation",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: store/tikv, session: Fix incorrect TestAsyncCommitWithSchemaChange and unstable Test1PCWithSchemaChange.",
-  "module": "kv",
-  "fix_pattern": "store/tikv, session: Fix incorrect TestAsyncCommitWithSchemaChange and unstable Test1PCWithSchemaChange",
+  "root_cause_explanation": "The schema-change transaction tests were unstable because they used fixed sleeps/failpoint timing (`sleep(1200)`) to coordinate DDL (`ALTER TABLE ... ADD INDEX`) with a concurrent commit, and did not strictly synchronize failpoint disable/DDL completion. This PR replaces sleep-based timing with a failpoint pause + channel synchronization, disables the failpoint strictly after the DDL finishes, and adjusts the async-commit failpoint usage so the commit result matches the actual commit behavior.",
+  "module": "txn",
+  "fix_pattern": "Replace sleep-based synchronization with failpoint pause + channel sync; disable failpoints strictly after DDL completion so DDL/commit ordering is deterministic in schema-change transaction tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24082",
     "https://github.com/pingcap/tidb/pull/24082.patch"

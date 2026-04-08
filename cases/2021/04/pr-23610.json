@@ -13,18 +13,18 @@
     "name": "fail_test"
   },
   "symptoms": [
-    "gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA="
+    "ln, err := net.Listen(\"unix\", \"new_session:0\") (owner/fail_test.go)"
   ],
-  "failure_signature": "gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=",
+  "failure_signature": "ln, err := net.Listen(\"unix\", \"new_session:0\") (owner/fail_test.go)",
   "root_cause_categories": [
-    "test_infra_migration"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "test_suite_setup_issue"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to instability introduced during test-infrastructure migration or refactoring (framework changes, fixtures/setup/teardown, or helper updates). This PR stabilizes it by: gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=.",
+  "root_cause_explanation": "The test used a fixed Unix socket path (`new_session:0`) and could fail if a leftover socket file existed from a previous run. This PR removes the existing file before `net.Listen` and asserts the listen succeeds, preventing file-artifact interference between runs.",
   "module": "test_infra",
-  "fix_pattern": "gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c/go.mod h1:3HH7i1SgMqlzxCcBmUHW657sD4Kvv9sC3HpL3YukzwA=",
+  "fix_pattern": "Remove any pre-existing Unix socket file before listening on the fixed socket name, and assert `net.Listen` succeeds to avoid leftover-file interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23610",
     "https://github.com/pingcap/tidb/pull/23610.patch"
