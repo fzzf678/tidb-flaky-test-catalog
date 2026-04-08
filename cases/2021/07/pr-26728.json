@@ -20,11 +20,12 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "t_parallel_with_shared_state",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + // Add the hook here to avoid data race.",
+  "root_cause_explanation": "The test was flaky due to parallel execution with shared state (shared domain/store and global auto-analyze settings), which can trigger data races and order-dependent failures. This PR stabilizes it by moving the outdated-stats check test into a SerialSuites context with its own bootstrapped store/domain and by explicitly setting/restoring related global auto-analyze time window variables.",
   "module": "statistics",
-  "fix_pattern": "+ // Add the hook here to avoid data race.",
+  "fix_pattern": "Move TestOutdatedStatsCheck to SerialSuites and isolate store/domain (statistics/integration_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26728",
     "https://github.com/pingcap/tidb/pull/26728.patch"

@@ -20,12 +20,11 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code",
-    "global_variable_mutation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: The current implementation for system variable is not good.",
+  "root_cause_explanation": "The flakiness/race risk came from concurrent access to shared SysVar objects. The previous implementation deep-copied (Clone) SysVar on every Get to avoid data races. This PR makes SysVar fields effectively immutable after creation and changes SetSysVar to re-register a new SysVar object, reducing the chance of shared mutable state races.",
   "module": "session",
-  "fix_pattern": "The current implementation for system variable is not good. To avoid DATA RACE in the unit test, it Clone() a new object every time.",
+  "fix_pattern": "Treat SysVar as immutable; SetSysVar re-registers a new SysVar (sessionctx/variable/sysvar.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26308",
     "https://github.com/pingcap/tidb/pull/26308.patch"

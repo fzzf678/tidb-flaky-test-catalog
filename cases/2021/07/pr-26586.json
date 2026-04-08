@@ -17,14 +17,14 @@
   ],
   "failure_signature": "variable: improve code coverage, fix unstable test",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: variable: improve code coverage, fix unstable test.",
-  "module": "server",
-  "fix_pattern": "variable: improve code coverage, fix unstable test",
+  "root_cause_explanation": "The test was flaky due to shared state pollution: it asserted on instance-scoped/global configuration values that can be modified concurrently by other parts of the server, making the test order-dependent. This PR stabilizes it by removing the flaky assertion (e.g., TiDBConfig/global config snapshot) while adding other coverage-focused tests.",
+  "module": "session",
+  "fix_pattern": "Remove flaky TiDBConfig/global-config assertion from sysvar test (sessionctx/variable/sysvar_test.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26586",
     "https://github.com/pingcap/tidb/pull/26586.patch"

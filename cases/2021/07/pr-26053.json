@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: delete remove to avoid data race.",
-  "module": "module_unknown",
-  "fix_pattern": "delete remove to avoid data race",
+  "root_cause_explanation": "The flakiness/race risk came from concurrent access to shared transaction/session state when committing local temporary table data. This PR avoids mutating the txn mem buffer while iterating (removes txnMemBuffer.Delete(key)) to reduce the risk of data races and iterator invalidation.",
+  "module": "session",
+  "fix_pattern": "Remove txnMemBuffer.Delete(key) while iterating (session/session.go)",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26053",
     "https://github.com/pingcap/tidb/pull/26053.patch"

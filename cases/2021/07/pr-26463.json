@@ -17,14 +17,14 @@
   ],
   "failure_signature": "planner: fix the unstable unit test TestTableFromMeta",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix the unstable unit test TestTableFromMeta.",
-  "module": "planner",
-  "fix_pattern": "planner: fix the unstable unit test TestTableFromMeta",
+  "root_cause_explanation": "The flakiness came from shared state pollution: the test modified read-only table metadata returned from InfoSchema (a shared object), which can conflict with background operations (e.g., auto-analyze) and other tests. This PR stabilizes it by cloning the table meta (tb.Meta().Clone()) before mutating it.",
+  "module": "domain",
+  "fix_pattern": "Clone table meta before mutation (tb.Meta().Clone())",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26463",
     "https://github.com/pingcap/tidb/pull/26463.patch"
