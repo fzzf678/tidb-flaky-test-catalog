@@ -9,8 +9,8 @@
   "pr_merged_at": "2021-06-04T22:56:29+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/set_test.go",
-    "name": "set_test"
+    "path": "util/topsql/tracecpu_test.go",
+    "name": "TestTopSQLReporter"
   },
   "symptoms": [
     "fix race test and ci lint"
@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix race test and ci lint.",
-  "module": "server",
-  "fix_pattern": "fix race test and ci lint",
+  "root_cause_explanation": "The TopSQL reporter tests concurrently stream data into a mock gRPC agent server while also reading/verifying the server-side `records` and digest→meta maps. Accessing these shared maps/slices without synchronization triggers `-race` failures. The fix adds a mutex to the mock agent server, guards map/slice reads and writes, and updates tests to use thread-safe getters instead of directly touching shared fields.",
+  "module": "topsql",
+  "fix_pattern": "Protect mock TopSQL agent server state (records/sqlMetas/planMetas) with a mutex and use thread-safe getters in tests instead of direct map/slice access.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24988",
     "https://github.com/pingcap/tidb/pull/24988.patch"

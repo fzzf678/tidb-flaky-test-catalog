@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: skip unstable test case TestApplyGoroutinePanic.",
+  "root_cause_explanation": "The `-race` CI reported a concrete data race in executor code while running `TestApplyGoroutinePanic` (see the race-detector stack in the PR body). This PR does not fix the underlying race; it quarantines the flake by conditionally skipping the test when `-race` is enabled, with a follow-up deadline to implement a real fix.",
   "module": "executor",
-  "fix_pattern": "executor: skip unstable test case TestApplyGoroutinePanic",
+  "fix_pattern": "Quarantine: conditionally `Skip` the test under `-race` builds (temporary workaround until the underlying executor race is fixed).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25180",
     "https://github.com/pingcap/tidb/pull/25180.patch"
