@@ -13,18 +13,18 @@
     "name": "analyze_test"
   },
   "symptoms": [
-    "fix a data race"
+    "Go race detector reports a DATA RACE caused by sharing mutable request/backoff state between goroutines in transaction-status related tests."
   ],
-  "failure_signature": "fix a data race",
+  "failure_signature": "DATA RACE detected under `-race`, e.g. a Backoffer (or similar mutable state) is used concurrently by a goroutine and the main test code in `store/tikv/lock_test.go`.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: store: upgrade the CheckTxnStatus API.",
+  "root_cause_explanation": "The flakiness is due to a real concurrency data race: the test shares mutable state (a Backoffer) across goroutines and uses it concurrently, which can trigger `-race` failures. The PR stabilizes it by ensuring each concurrent operation uses its own Backoffer instance instead of reusing a shared one.",
   "module": "kv",
-  "fix_pattern": "store: upgrade the CheckTxnStatus API",
+  "fix_pattern": "Avoid sharing mutable request/backoff objects across goroutines: allocate a new Backoffer per goroutine/call so concurrent operations don't race on shared state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13123",
     "https://github.com/pingcap/tidb/pull/13123.patch"
@@ -43,8 +43,10 @@
     "store/tikv/2pc.go",
     "store/tikv/2pc_test.go",
     "store/tikv/backoff.go",
+    "store/tikv/coprocessor.go",
     "store/tikv/lock_resolver.go",
-    "store/tikv/lock_test.go"
+    "store/tikv/lock_test.go",
+    "store/tikv/snapshot.go"
   ],
   "triage": {
     "sources": [
@@ -56,5 +58,5 @@
       "files: executor/analyze_test.go, go.mod, go.sum, session/session_test.go, store/mockstore/mocktikv/errors.go, store/mockstore/mocktikv/mock_tikv_test.go, store/mockstore/mocktikv/mvcc.go, store/mockstore/mocktikv/mvcc_leveldb.go, store/mockstore/mocktikv/rpc.go, store/tikv/2pc.go, store/tikv/2pc_test.go, store/tikv/backoff.go, store/tikv/coprocessor.go, store/tikv/lock_resolver.go, store/tikv/lock_test.go, store/tikv/snapshot.go"
     ]
   },
-  "analysis": "PR title: store: upgrade the CheckTxnStatus API\nPR url: https://github.com/pingcap/tidb/pull/13123\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix a data race\nChanged files (14): executor/analyze_test.go, go.mod, go.sum, session/session_test.go, store/mockstore/mocktikv/errors.go, store/mockstore/mocktikv/mock_tikv_test.go, store/mockstore/mocktikv/mvcc.go, store/mockstore/mocktikv/mvcc_leveldb.go, store/mockstore/mocktikv/rpc.go, store/tikv/2pc.go, store/tikv/2pc_test.go, store/tikv/backoff.go, store/tikv/lock_resolver.go, store/tikv/lock_test.go\nPatch url: https://github.com/pingcap/tidb/pull/13123.patch\nPicked test: type=unit path=executor/analyze_test.go name=analyze_test"
+  "analysis": "PR title: store: upgrade the CheckTxnStatus API\nPR url: https://github.com/pingcap/tidb/pull/13123\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix a data race\nChanged files (16): executor/analyze_test.go, go.mod, go.sum, session/session_test.go, store/mockstore/mocktikv/errors.go, store/mockstore/mocktikv/mock_tikv_test.go, store/mockstore/mocktikv/mvcc.go, store/mockstore/mocktikv/mvcc_leveldb.go, store/mockstore/mocktikv/rpc.go, store/tikv/2pc.go, store/tikv/2pc_test.go, store/tikv/backoff.go, store/tikv/coprocessor.go, store/tikv/lock_resolver.go, store/tikv/lock_test.go, store/tikv/snapshot.go\nPatch url: https://github.com/pingcap/tidb/pull/13123.patch\nPicked test: type=unit path=executor/analyze_test.go name=analyze_test"
 }

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "After https://github.com/pingcap/tidb/pull/13123, TestErrorRollback runs slower than before in the race test.",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: session,store/tikv: make CI more stable.",
+  "root_cause_explanation": "The flakiness was caused by timing sensitivity under `-race` / slower CI: after PR #13123, `TestErrorRollback` became slower, and lock-related tests (e.g. `TestBatchResolveLocks`) needed more timing slack (lock TTL) to avoid intermittent failures. This PR stabilizes CI by reducing the workload in `TestErrorRollback` and explicitly increasing the effective lock TTL used in `store/tikv/lock_test.go` so the tests tolerate slower execution.",
   "module": "session",
-  "fix_pattern": "session,store/tikv: make CI more stable",
+  "fix_pattern": "When tests become slow/flaky under `-race` or loaded CI, reduce per-test workload and increase timeouts/TTLs to provide sufficient timing slack (avoid relying on tight implicit timing assumptions).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13303",
     "https://github.com/pingcap/tidb/pull/13303.patch"

@@ -13,18 +13,18 @@
     "name": "TestStatementContext"
   },
   "symptoms": [
-    "executor: fix data race in TestStatementContext"
+    "Go race detector reports a DATA RACE when `TestStatementContext` mutates global config while other tests may read/write it concurrently."
   ],
-  "failure_signature": "executor: fix data race in TestStatementContext",
+  "failure_signature": "DATA RACE detected under `-race`, involving concurrent access to global config mutated in `executor/statement_context_test.go` (e.g. toggling `CheckMb4ValueInUTF8`).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race in TestStatementContext.",
+  "root_cause_explanation": "The flakiness is due to a real data race on shared global state: `TestStatementContext` updates global config (e.g. `CheckMb4ValueInUTF8`) and stores it back, which can race with other tests running concurrently under `-race`. The PR stabilizes it by copying the global config before mutation and storing a new config instance, avoiding concurrent in-place mutation of shared state.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race in TestStatementContext",
+  "fix_pattern": "Avoid mutating global config in-place in tests: copy the current config, apply the change on the copy, and store the new config instance (and restore as needed) to prevent concurrent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13169",
     "https://github.com/pingcap/tidb/pull/13169.patch"

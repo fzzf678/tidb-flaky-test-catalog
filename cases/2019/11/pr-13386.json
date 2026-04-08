@@ -13,18 +13,18 @@
     "name": "TestEarlyClose"
   },
   "symptoms": [
-    "go test -race -check.f TestEarlyClose"
+    "TestEarlyClose is slow under `-race` (large row counts / many iterations), which can contribute to timeout-like instability in CI."
   ],
-  "failure_signature": "go test -race -check.f TestEarlyClose",
+  "failure_signature": "INSUFFICIENT_EVIDENCE: No concrete flaky failure signature is provided; the patch primarily reduces test workload (N/loop count) to speed up execution.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: executor: speed up TestEarlyClose.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly speeds up `TestEarlyClose` by reducing the number of inserted rows and iterations. While that can help CI stability, the available case evidence does not include a concrete intermittent failure signature or a targeted determinism fix, so avoid guessing a nondeterminism root cause and keep it as needs-more-evidence.",
   "module": "executor",
-  "fix_pattern": "executor: speed up TestEarlyClose",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13386",
     "https://github.com/pingcap/tidb/pull/13386.patch"

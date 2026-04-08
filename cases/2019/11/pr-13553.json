@@ -13,18 +13,18 @@
     "name": "pessimistic_test"
   },
   "symptoms": [
-    "fix race"
+    "Go race detector reports a DATA RACE when tests mutate TiKV global knobs (e.g. `PrewriteMaxBackoff`) while other goroutines/tests may read them."
   ],
-  "failure_signature": "fix race",
+  "failure_signature": "DATA RACE detected under `-race`, involving concurrent access to global TiKV test knobs (e.g. `tikv.PrewriteMaxBackoff`) mutated in `session/pessimistic_test.go`.",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: pessimistic txn update forUpdateTS for concurrent insert.",
+  "root_cause_explanation": "The flakiness is due to a real data race on shared global state: the tests change global TiKV settings (e.g. `tikv.PrewriteMaxBackoff`) and if tests/goroutines run concurrently this can trigger `-race` failures or cross-test interference. The PR stabilizes it by moving the global assignment into suite setup and restoring it in suite teardown (with proper ordering), so the mutation is controlled and cleaned up reliably.",
   "module": "executor",
-  "fix_pattern": "executor: pessimistic txn update forUpdateTS for concurrent insert",
+  "fix_pattern": "Avoid data races from global test knobs: set global variables in suite-level setup (run once) and restore them in teardown, rather than mutating shared globals during concurrent test execution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13553",
     "https://github.com/pingcap/tidb/pull/13553.patch"

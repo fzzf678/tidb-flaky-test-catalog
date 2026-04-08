@@ -13,19 +13,18 @@
     "name": "executor_test"
   },
   "symptoms": [
-    "table, executor: fix data race for the partition table's hash code"
+    "Go race detector reports a DATA RACE when partition pruning expressions compute/cached hash codes lazily while being used concurrently."
   ],
-  "failure_signature": "table, executor: fix data race for the partition table's hash code",
+  "failure_signature": "DATA RACE detected under `-race`, involving concurrent access to expression hash-code caching used by partition pruning (`table/tables/partition.go`).",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: table, executor: fix data race for the partition table's hash code.",
+  "root_cause_explanation": "The flakiness is due to a real concurrency data race: partition pruning expressions may lazily compute/cache hash codes, and concurrent use can trigger `-race` failures. The PR stabilizes it by precomputing the expression hash code when generating the partition expressions (`expr.HashCode(...)`), and adds a concurrent query test to cover the race scenario.",
   "module": "executor",
-  "fix_pattern": "table, executor: fix data race for the partition table's hash code",
+  "fix_pattern": "Precompute/copy any lazily cached expression state (e.g. HashCode) during setup so concurrent queries don't race on shared mutable caches.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13421",
     "https://github.com/pingcap/tidb/pull/13421.patch"

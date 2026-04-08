@@ -13,19 +13,18 @@
     "name": "db_test"
   },
   "symptoms": [
-    "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl"
+    "A DDL test uses `rand.Intn(...)` to pick index-range cases, making the covered inputs nondeterministic and sometimes hitting problematic boundaries."
   ],
-  "failure_signature": "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/ddl",
+  "failure_signature": "Flaky assertion in `ddl/db_test.go` driven by randomized index selection (`rand.Intn`), where some random choices can produce unexpected range results.",
   "root_cause_categories": [
-    "schema_change_race"
+    "nondeterministic_test_input"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "randomized_test_input"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: optimize dll test.",
-  "module": "test_infra",
-  "fix_pattern": "test: optimize dll test",
+  "root_cause_explanation": "The test was flaky because it relied on randomized test inputs: using `rand.Intn(...)` to pick index-range cases can lead to nondeterministic coverage and sporadic failures when certain boundary indices are selected. The PR stabilizes it by replacing the random selection with deterministic boundary/step-based cases, making the test input predictable.",
+  "module": "ddl",
+  "fix_pattern": "Replace randomized test input (`rand.Intn`, time-based seeds, probabilistic picks) with deterministic, boundary-focused cases or a fixed seed so assertions are stable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13497",
     "https://github.com/pingcap/tidb/pull/13497.patch"

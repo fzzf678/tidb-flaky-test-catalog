@@ -15,16 +15,17 @@
   "symptoms": [
     "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core"
   ],
-  "failure_signature": "> go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core",
+  "failure_signature": "DATA RACE detected under `-race` when running planner/core + session tests in parallel (e.g. global `storeBootstrapped` map or shared suite state accessed concurrently).",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "t_parallel_with_shared_state",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: test: optimize session&planner/core unit test.",
+  "root_cause_explanation": "The flakiness is due to a real data race exposed by parallel test execution: running planner/core and session suites concurrently (e.g. `go test -p 10 -race ...`) can lead to concurrent access to shared global state (like the `storeBootstrapped` map) or shared suite data. The PR stabilizes it by adding proper locking for global state and marking specific suites/tests as serial-only (`SerialSuites`) so unsafe shared state isn't accessed concurrently.",
   "module": "test_infra",
-  "fix_pattern": "test: optimize session&planner/core unit test",
+  "fix_pattern": "Make parallel tests race-safe: guard global maps/state with locks, and mark suites/tests as serial-only (or isolate per-test state) when they cannot safely run concurrently.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13580",
     "https://github.com/pingcap/tidb/pull/13580.patch"
@@ -34,11 +35,13 @@
     "planner/core/physical_plan_test.go",
     "planner/core/prepare_test.go",
     "session/bootstrap_test.go",
+    "session/isolation_test.go",
     "session/session.go",
-    "session/session_fail_test.go",
-    "session/session_test.go",
     "session/tidb.go",
-    "session/tidb_test.go"
+    "session/tidb_test.go",
+    "ddl/db_test.go",
+    "session/session_fail_test.go",
+    "session/session_test.go"
   ],
   "triage": {
     "sources": [
@@ -50,5 +53,5 @@
       "files: ddl/db_test.go, planner/core/physical_plan_test.go, planner/core/prepare_test.go, session/bootstrap_test.go, session/isolation_test.go, session/session.go, session/session_fail_test.go, session/session_test.go, session/tidb.go, session/tidb_test.go"
     ]
   },
-  "analysis": "PR title: test: optimize session&planner/core unit test\nPR url: https://github.com/pingcap/tidb/pull/13580\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: > go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core\nChanged files (8): planner/core/physical_plan_test.go, planner/core/prepare_test.go, session/bootstrap_test.go, session/session.go, session/session_fail_test.go, session/session_test.go, session/tidb.go, session/tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/13580.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+  "analysis": "PR title: test: optimize session&planner/core unit test\nPR url: https://github.com/pingcap/tidb/pull/13580\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: > go test -v -vet=off -p 10 -race github.com/pingcap/tidb/planner/core\nChanged files (10): planner/core/physical_plan_test.go, planner/core/prepare_test.go, session/bootstrap_test.go, session/isolation_test.go, session/session.go, session/tidb.go, session/tidb_test.go, ddl/db_test.go, session/session_fail_test.go, session/session_test.go\nPatch url: https://github.com/pingcap/tidb/pull/13580.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
 }

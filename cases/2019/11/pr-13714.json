@@ -17,14 +17,14 @@
   ],
   "failure_signature": "+ // inner worker to avoid data race when the inner workers is running",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner, executor: build ColWithCmpFuncManager.TmpConstant for indexHashJoin.innerWorker individually.",
-  "module": "planner",
-  "fix_pattern": "planner, executor: build ColWithCmpFuncManager.TmpConstant for indexHashJoin.innerWorker individually",
+  "root_cause_explanation": "IndexHashJoin runs multiple inner-worker goroutines concurrently. Sharing temporary comparison state across workers can lead to concurrent mutation and data races. The fix builds `ColWithCmpFuncManager.TmpConstant` per inner worker so each goroutine has isolated state and does not race with others.",
+  "module": "executor",
+  "fix_pattern": "Allocate per-worker temporary state for concurrent inner workers; avoid sharing mutable buffers/constants across goroutines to prevent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/13714",
     "https://github.com/pingcap/tidb/pull/13714.patch"
