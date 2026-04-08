@@ -20,11 +20,11 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: util/admin: support admin check table on partition table.",
-  "module": "ddl",
-  "fix_pattern": "util/admin: support admin check table on partition table",
+  "root_cause_explanation": "The flakiness is due to a real data race on shared global state: the test directly mutated global config (`CheckMb4ValueInUTF8`) via `config.GetGlobalConfig()`, which can race with other concurrent tests under `-race`. The PR stabilizes it by copying the global config, updating the copy, and storing it back via `config.StoreGlobalConfig(...)` instead of mutating shared state in-place.",
+  "module": "executor",
+  "fix_pattern": "Avoid in-place mutation of global config in tests: copy the global config, modify the copy, and store it back (and restore if needed) to prevent concurrent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12796",
     "https://github.com/pingcap/tidb/pull/12796.patch"

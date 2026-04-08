@@ -20,12 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because result ordering depended on async execution details: IndexHashJoin runs inner workers concurrently and previously did not reliably preserve the required outer-row order when `ORDER BY` was present. This can lead to intermittent order mismatches depending on scheduling. The PR stabilizes it by adding a keep-outer-order execution path for IndexHashJoin (and regression tests asserting `keep order:true` in EXPLAIN).",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "When query semantics require a stable output order, ensure concurrent execution paths preserve/merge results deterministically (e.g. keep-outer-order mode) instead of relying on goroutine scheduling.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12349",
     "https://github.com/pingcap/tidb/pull/12349.patch"

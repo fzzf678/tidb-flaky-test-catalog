@@ -13,18 +13,18 @@
     "name": "adapter_test"
   },
   "symptoms": [
-    "+ // safe for data race in all the cases, the map of golang will throw panic when it's accessed in parallel."
+    "Concurrent access to a Go map (e.g. tables/cache maps) from multiple goroutines triggers data races or `concurrent map read and map write` panics."
   ],
-  "failure_signature": "+ // safe for data race in all the cases, the map of golang will throw panic when it's accessed in parallel.",
+  "failure_signature": "DATA RACE or `concurrent map read and map write` panic due to a map being accessed in parallel without synchronization.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: support cost model for tiflash table scan.",
+  "root_cause_explanation": "The flakiness is due to a real concurrency data race: some internal maps are accessed by multiple goroutines in parallel (e.g. index join accessing a `tables` map concurrently), which is unsafe in Go and can cause races/panics. The PR stabilizes it by adding proper synchronization (locking) around shared maps and/or ensuring concurrent code paths don't read/write the same map without protection.",
   "module": "planner",
-  "fix_pattern": "planner: support cost model for tiflash table scan",
+  "fix_pattern": "Protect shared Go maps/state in concurrent code: add locks or restructure so maps are not accessed concurrently (avoid `concurrent map read/write` races).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12868",
     "https://github.com/pingcap/tidb/pull/12868.patch"

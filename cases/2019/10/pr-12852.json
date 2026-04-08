@@ -13,18 +13,19 @@
     "name": "mock_test"
   },
   "symptoms": [
-    "// potential data race in unit test since `CommitMaxBackoff` will be updated"
+    "Kill command does not take effect when the killed session is blocked waiting for a pessimistic lock, leading to hangs/timeouts."
   ],
-  "failure_signature": "// potential data race in unit test since `CommitMaxBackoff` will be updated",
+  "failure_signature": "Session stuck waiting for pessimistic lock despite kill signal (e.g. no periodic check of `killed` flag during wait), causing long waits or timeouts.",
   "root_cause_categories": [
     "async_timing_issue"
   ],
   "review_smells": [
-    "async_wait_without_backoff"
+    "async_wait_without_backoff",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). Fixed waits without polling/backoff are brittle under CI timing jitter. This PR stabilizes it by: *: fix bug that the kill command doesn't work when the killed session is waiting for the pessimistic lock.",
+  "root_cause_explanation": "The flakiness is due to timing-sensitive asynchronous behavior: when a session is waiting for a pessimistic lock, it may sleep/retry internally and must periodically check the kill signal. Without checking the `killed` flag during the wait, a killed session can keep waiting and cause hangs/timeouts. The PR stabilizes it by threading the `killed` flag into lock acquisition and adding periodic checks during the waiting loop so the operation can abort promptly when killed.",
   "module": "txn",
-  "fix_pattern": "*: fix bug that the kill command doesn't work when the killed session is waiting for the pessimistic lock",
+  "fix_pattern": "When waiting/retrying in async lock acquisition, periodically check cancellation/kill flags and abort promptly (use bounded sleep/polling rather than uninterruptible waits).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12852",
     "https://github.com/pingcap/tidb/pull/12852.patch"

@@ -20,11 +20,11 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race in TestFastAnalyze.",
-  "module": "executor",
-  "fix_pattern": "executor: fix data race in TestFastAnalyze",
+  "root_cause_explanation": "The flakiness is due to a real data race on shared global configuration: `schemaLease`/`statsLease` are global variables that tests may update via `SetSchemaLease`/`SetStatsLease` while other goroutines read them when creating domains. The PR stabilizes it by storing the lease durations in atomic int64s and reading them via atomic loads, avoiding concurrent unsynchronized reads/writes.",
+  "module": "session",
+  "fix_pattern": "Protect shared global variables used across goroutines/tests: use atomic loads/stores (or proper locking) for global duration/config values like schema/stat leases to avoid `-race` failures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12910",
     "https://github.com/pingcap/tidb/pull/12910.patch"

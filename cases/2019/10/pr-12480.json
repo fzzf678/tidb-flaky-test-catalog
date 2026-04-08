@@ -15,17 +15,16 @@
   "symptoms": [
     "result = tk.MustQuery(\"select b, first_value(b) over (order by b RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) from t\") (executor/window_test.go)"
   ],
-  "failure_signature": "result = tk.MustQuery(\"select b, first_value(b) over (order by b RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) from t\") (executor/window_test.go)",
+  "failure_signature": "INSUFFICIENT_EVIDENCE: This PR rewrites window executor frame evaluation, but no concrete intermittent failure signature is provided in the case data.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "relying_on_map_iteration_order"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly refactors `WindowExec` so it does not return a chunk until a window frame is fully evaluated (fixing correctness/memory-reference behavior). The case data does not include a concrete flaky failure signature or a targeted stabilization fix pattern (e.g. ordering, timing, cleanup, or race guards), so keep it as needs-more-evidence rather than guessing the root cause taxonomy.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12480",
     "https://github.com/pingcap/tidb/pull/12480.patch"

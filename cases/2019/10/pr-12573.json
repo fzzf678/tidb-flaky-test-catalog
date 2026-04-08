@@ -13,19 +13,18 @@
     "name": "logical_plan_test"
   },
   "symptoms": [
-    "result: \"TableReader(Table(t))->Sort->Window(avg(cast(Column#1)) over(order by Column#1 asc, Column#2 desc range between unbounded preceding and current row))->Projection\", (planner/core/logical_plan_test.go)"
+    "The PR updates many plan/EXPLAIN golden outputs due to an `expression.Column` refactor, but no concrete flaky failure signature is provided."
   ],
-  "failure_signature": "result: \"TableReader(Table(t))->Sort->Window(avg(cast(Column#1)) over(order by Column#1 asc, Column#2 desc range between unbounded preceding and current row))->Projection\", (planner/core/logical_plan_test.go)",
+  "failure_signature": "INSUFFICIENT_EVIDENCE: Deterministic plan/EXPLAIN expectation updates due to refactor; no intermittent failure signature or targeted stabilization change is identified.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a refactor/correctness change (removing fields from `expression.Column`) which requires updating many plan/EXPLAIN golden outputs. The available case evidence does not include a concrete flaky failure signature or a targeted stabilization technique, so avoid guessing a nondeterminism root cause and keep it as needs-more-evidence.",
   "module": "expression",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/12573",
     "https://github.com/pingcap/tidb/pull/12573.patch"
