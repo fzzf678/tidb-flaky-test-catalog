@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: sort.Float64s(ret) (executor/aggregate_test.go).",
-  "module": "test_infra",
-  "fix_pattern": "sort.Float64s(ret) (executor/aggregate_test.go)",
+  "root_cause_explanation": "The test compared approximate floating-point results line-by-line after calling `testkit.Result.Sort()`, which sorts strings alphabetically. Small float formatting differences can change the string sort order, making the comparison flaky. The fix parses values as float64 and sorts numerically (`sort.Float64s`) before comparison.",
+  "module": "executor",
+  "fix_pattern": "Parse result strings into float64 and sort numerically (`sort.Float64s`) before doing line-by-line comparison.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25092",
     "https://github.com/pingcap/tidb/pull/25092.patch"

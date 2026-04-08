@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix a data race.",
+  "root_cause_explanation": "The test accessed the same TestKit/session from multiple goroutines while consuming a ResultSet, triggering a data race under `-race`. The fix uses a separate TestKit (`tk1`) for the goroutine that executes and reads the ResultSet, avoiding concurrent access to the same session state.",
   "module": "executor",
-  "fix_pattern": "fix a data race",
+  "fix_pattern": "Use a separate TestKit/session (`tk1`) when executing and consuming the ResultSet in a goroutine to avoid concurrent access to `tk.Se`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24769",
     "https://github.com/pingcap/tidb/pull/24769.patch"

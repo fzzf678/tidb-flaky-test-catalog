@@ -22,9 +22,9 @@
   "review_smells": [
     "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: r := mustExecSQL(c, se, `select original_sql, bind_sql, default_db, status, create_time from mysql.bind_info where source != 'builtin' order by create_time`) (session/bootstrap_test.go).",
+  "root_cause_explanation": "The test asserted on row order from `mysql.bind_info` without a stable ordering. The fix adds an explicit `ORDER BY create_time` so the result set order is deterministic before the assertion.",
   "module": "session",
-  "fix_pattern": "r := mustExecSQL(c, se, `select original_sql, bind_sql, default_db, status, create_time from mysql.bind_info where source != 'builtin' order by create_time`) (session/bootstrap_test.go)",
+  "fix_pattern": "Add `ORDER BY create_time` to the `mysql.bind_info` query before asserting on row order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25168",
     "https://github.com/pingcap/tidb/pull/25168.patch"

@@ -17,14 +17,16 @@
   ],
   "failure_signature": "Fix race condition.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "race_condition_in_async_code",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: Fix race condition.",
-  "module": "test_infra",
-  "fix_pattern": "Fix race condition.",
+  "root_cause_explanation": "Telemetry slow-query stats used global bucket maps that could be read/written concurrently, leading to data races. The fix adds a lock to protect shared state and also increases Prometheus query timeout to reduce timing-related flakes under load.",
+  "module": "telemetry",
+  "fix_pattern": "Protect shared slow-query bucket state with a lock (mutex/RWMutex) and increase Prometheus query timeout (e.g., 1s → 30s) to handle CI/load variability.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25006",
     "https://github.com/pingcap/tidb/pull/25006.patch"

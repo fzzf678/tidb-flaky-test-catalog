@@ -17,14 +17,14 @@
   ],
   "failure_signature": "+ // Because JSON key order is non-deterministic, this test is flaky.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "relying_on_map_iteration_order"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Map/dict iteration order is not stable across runs. This PR stabilizes it by: + // Because JSON key order is non-deterministic, this test is flaky.",
-  "module": "session",
-  "fix_pattern": "+ // Because JSON key order is non-deterministic, this test is flaky.",
+  "root_cause_explanation": "The test mutated global configuration (`CheckMb4ValueInUTF8`) without restoring it and also needed to run in a serial suite, causing order-dependent failures across the suite. The fix restores the original global value and moves the test (`TestPostSettings`) into `HTTPHandlerTestSerialSuite` to avoid cross-test interference.",
+  "module": "server",
+  "fix_pattern": "Restore mutated global config (`CheckMb4ValueInUTF8`) after the test and run `TestPostSettings` in `HTTPHandlerTestSerialSuite` (serial suite).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24807",
     "https://github.com/pingcap/tidb/pull/24807.patch"

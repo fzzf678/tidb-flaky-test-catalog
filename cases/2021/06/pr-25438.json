@@ -9,22 +9,22 @@
   "pr_merged_at": "2021-06-16T13:30:37+08:00",
   "test": {
     "type": "unit",
-    "path": "expression/builtin_info_test.go",
-    "name": "builtin_info_test"
+    "path": "server/server_test.go",
+    "name": "runTestEmptyRoles"
   },
   "symptoms": [
     "fix: unstable test"
   ],
   "failure_signature": "fix: unstable test",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: fix: unstable test.",
-  "module": "expression",
-  "fix_pattern": "fix: unstable test",
+  "root_cause_explanation": "The server tests used a shared MySQL user name (`authtest`) across multiple test paths, which can cause order-dependent failures when tests run concurrently or when cleanup is incomplete. The fix isolates the empty-roles test by switching to a dedicated user (`emptyroles`) and adding a dedicated test entry point (`TestEmptyRoles`), preventing cross-test interference.",
+  "module": "server",
+  "fix_pattern": "Use a dedicated user name (e.g., `emptyroles`) in the empty-roles server test instead of reusing a shared user (`authtest`).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25438",
     "https://github.com/pingcap/tidb/pull/25438.patch"
@@ -33,7 +33,9 @@
   "changed_files": [
     "expression/builtin_info.go",
     "expression/builtin_info_test.go",
-    "expression/builtin_info_vec.go"
+    "expression/builtin_info_vec.go",
+    "server/server_test.go",
+    "server/tidb_test.go"
   ],
   "triage": {
     "sources": [
@@ -45,5 +47,5 @@
       "files: expression/builtin_info.go, expression/builtin_info_test.go, expression/builtin_info_vec.go, server/server_test.go, server/tidb_test.go"
     ]
   },
-  "analysis": "PR title: expression: empty CURRENT_ROLE\nPR url: https://github.com/pingcap/tidb/pull/25438\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix: unstable test\nChanged files (3): expression/builtin_info.go, expression/builtin_info_test.go, expression/builtin_info_vec.go\nPatch series analyzed; see patch_url."
+  "analysis": "PR title: expression: empty CURRENT_ROLE\nPR url: https://github.com/pingcap/tidb/pull/25438\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix: unstable test\nChanged files (5): expression/builtin_info.go, expression/builtin_info_test.go, expression/builtin_info_vec.go, server/server_test.go, server/tidb_test.go\nPatch series analyzed; see patch_url."
 }

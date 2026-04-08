@@ -17,14 +17,16 @@
   ],
   "failure_signature": "Problem Summary: CTETestSuite.TestSpillToDisk is unstable. | \"select c1 from cte1 order by c1;\", rowNum) (executor/cte_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by"
+    "global_variable_mutation",
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Problem Summary: CTETestSuite.TestSpillToDisk is unstable.",
-  "module": "module_unknown",
-  "fix_pattern": "Problem Summary: CTETestSuite.TestSpillToDisk is unstable. | \"select c1 from cte1 order by c1;\", rowNum) (executor/cte_test.go)",
+  "root_cause_explanation": "`TestSpillToDisk` was timing- and interference-sensitive: it depended on background spill-to-disk completion and also mutated global config. The fix moves the test into a serial suite, restores global config via `config.RestoreFunc()`, and waits for spill actions to finish (e.g., `defer iterOutAction.WaitForTest()`).",
+  "module": "executor",
+  "fix_pattern": "Run the test in a serial suite, restore global config after mutation, and wait for spill-to-disk actions to finish (e.g., `WaitForTest()` on spill actions) before asserting.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25035",
     "https://github.com/pingcap/tidb/pull/25035.patch"

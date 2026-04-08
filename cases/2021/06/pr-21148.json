@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: avoid DATA RACE, fix CI.",
-  "module": "planner",
-  "fix_pattern": "avoid DATA RACE, fix CI",
+  "root_cause_explanation": "Under `-race`, `TestIssue20975UpdateNoChangeWithPartitionTable` hit a data race triggered by executor projection concurrency. The fix sets projection concurrency to 0 in the test session to avoid concurrent execution and eliminate the race-detector failure (with a TODO pointing to the underlying issue).",
+  "module": "executor",
+  "fix_pattern": "Set projection concurrency to 0 for the test session to avoid the `-race` data race (temporary workaround).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21148",
     "https://github.com/pingcap/tidb/pull/21148.patch"

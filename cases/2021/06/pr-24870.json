@@ -17,16 +17,14 @@
   ],
   "failure_signature": "fix data race | rows = tk.MustQuery(\"with recursive cte1(c1) as (select 1 union select 2 order by 1 limit 1 offset 1) select * from cte1\") (executor/cte_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: fix data race | rows = tk.MustQuery(\"with recursive cte1(c1) as (select 1 union select 2 order by 1 limit 1 offset 1) select * from cte1\") (executor/cte_test.go).",
+  "root_cause_explanation": "The flakiness was caused by a concurrency bug in `CTEExec.Next`: lock/unlock on the shared result table was not consistently handled, leading to data-race risk. The fix defers `e.resTbl.Unlock()` immediately after `e.resTbl.Lock()` so the critical section is always properly synchronized.",
   "module": "executor",
-  "fix_pattern": "fix data race | rows = tk.MustQuery(\"with recursive cte1(c1) as (select 1 union select 2 order by 1 limit 1 offset 1) select * from cte1\") (executor/cte_test.go)",
+  "fix_pattern": "Defer `e.resTbl.Unlock()` right after `e.resTbl.Lock()` in `CTEExec.Next` to ensure consistent synchronization.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24870",
     "https://github.com/pingcap/tidb/pull/24870.patch"

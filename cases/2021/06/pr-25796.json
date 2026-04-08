@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix two DATA RACE.",
+  "root_cause_explanation": "The code had teardown-order races: closing the store before the domain (and closing pools before background workers stopped) could lead to concurrent use-after-close and data races/log spam. The fix reorders teardown (close domain before store, wait on wg before closing pools) and adjusts worker wait ordering to avoid the two DATA RACE issues.",
   "module": "domain",
-  "fix_pattern": "fix two DATA RACE",
+  "fix_pattern": "Reorder teardown (close domain before store; wait for background wg before closing pools) and fix worker WaitGroup ordering to avoid concurrent use-after-close data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25796",
     "https://github.com/pingcap/tidb/pull/25796.patch"

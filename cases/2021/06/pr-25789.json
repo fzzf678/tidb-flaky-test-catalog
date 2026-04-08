@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + // report unexpected/unreasonable data race error on subIndexWorkerWg when running TestAnalyzeVirtualCol test.",
+  "root_cause_explanation": "The test triggered a data race under `-race` related to `subIndexWorkerWg` initialization/usage in analyze code paths. The fix initializes `subIndexWorkerWg` earlier (before concurrent use) and adds safeguards (e.g., nil histogram handling) so the test no longer races.",
   "module": "statistics",
-  "fix_pattern": "+ // report unexpected/unreasonable data race error on subIndexWorkerWg when running TestAnalyzeVirtualCol test",
+  "fix_pattern": "Initialize `subIndexWorkerWg` before concurrent worker use (to avoid `-race` reports) and add nil histogram safeguards during analyze.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/25789",
     "https://github.com/pingcap/tidb/pull/25789.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select x1.a, x.a from x1 left join (select x2.b a, x1.b from x1 join x2 on x1.a = x2.b union all select * from x1 ) x on x1.a = x.a order by x1.a\").Check(testkit.Rows(\"1 1\", \"1 1\", \"2 2\", \"2 2\", \"3 3\", \"4 4\", \"4 4\")) (executor/tiflash_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select x1.a, x.a from x1 left join (select x2.b a, x1.b from x1 join x2 on x1.a = x2.b union all select * from x1 ) x on x1.a = x.a order by x1.a\").Check(testkit.Rows(\"1 1\", \"1 1\", \"2 2\", \"2 2\", \"3 3\", \"4 4….",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds MPP support for UNION ALL and updates executor/tiflash test expectations accordingly. The patch does not show a targeted stabilization change for a flaky failure signature (the query already has ORDER BY); CI logs/repro are needed to determine whether any flakiness existed and why.",
   "module": "planner",
-  "fix_pattern": "tk.MustQuery(\"select x1.a, x.a from x1 left join (select x2.b a, x1.b from x1 join x2 on x1.a = x2.b union all select * from x1 ) x on x1.a = x.a order by x1.a\").Check(testkit.Rows(\"1 1\", \"1 1\", \"2 2\", \"2 2\", \"3 3\", \"4 4\", \"4 4\")) (executor/tiflash_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24287",
     "https://github.com/pingcap/tidb/pull/24287.patch"
