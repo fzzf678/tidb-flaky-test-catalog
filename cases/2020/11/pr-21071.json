@@ -13,18 +13,18 @@
     "name": "TestIntegrationCopCache"
   },
   "symptoms": [
-    "PR title: executor: fix unstable test of TestIntegrationCopCache"
+    "`TestIntegrationCopCache` is unstable because it asserts an exact `copr_cache_hit_ratio` value in `EXPLAIN ANALYZE` output."
   ],
-  "failure_signature": "PR title: executor: fix unstable test of TestIntegrationCopCache",
+  "failure_signature": "`EXPLAIN ANALYZE` output mismatch: expected exact `copr_cache_hit_ratio: 0.67` but runtime hit ratio can vary",
   "root_cause_categories": [
-    "external_dependency"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: fix unstable test of TestIntegrationCopCache.",
+  "root_cause_explanation": "The test checked `EXPLAIN ANALYZE` output by asserting a hard-coded substring `copr_cache_hit_ratio: 0.67`. That hit ratio is a runtime metric affected by execution/caching details and can legitimately vary across runs, making exact string assertions flaky. This PR stabilizes the test by parsing the numeric hit ratio and only asserting it is > 0 instead of matching an exact value.",
   "module": "executor",
-  "fix_pattern": "executor: fix unstable test of TestIntegrationCopCache",
+  "fix_pattern": "Avoid exact assertions on unstable `EXPLAIN ANALYZE` metrics; parse `copr_cache_hit_ratio` and assert a stable property (e.g., > 0).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/21071",
     "https://github.com/pingcap/tidb/pull/21071.patch"

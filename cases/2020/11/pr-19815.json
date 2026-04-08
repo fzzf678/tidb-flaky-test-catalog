@@ -13,19 +13,19 @@
     "name": "restart_test"
   },
   "symptoms": [
-    "PR title: ddl, test: fix deadloop in test about doDDLJob"
+    "DDL restart tests can hang/deadloop while waiting for `doDDLJob` / history job completion during worker restarts."
   ],
-  "failure_signature": "PR title: ddl, test: fix deadloop in test about doDDLJob",
+  "failure_signature": "Potential endless loop / hang in `ddl/restart_test.go` when polling history DDL job after `doDDLJob` returns `context.Canceled`",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl, test: fix deadloop in test about doDDLJob.",
+  "root_cause_explanation": "In `ddl/restart_test.go`, `runInterruptedJob` could enter an unbounded sleep/poll loop when `doDDLJob` returns `context.Canceled` during DDL worker restarts and the job is not found in history yet. That can lead to a deadloop/hang (or CI timeout). This PR stabilizes the test by handling `context.Canceled` explicitly: polling history with a sleep interval but adding a hard 1-minute deadline to avoid endless loops, and aligning restart/worker behavior so tasks can complete and report errors deterministically.",
   "module": "ddl",
-  "fix_pattern": "ddl, test: fix deadloop in test about doDDLJob",
+  "fix_pattern": "Make async waits bounded: handle `context.Canceled` in interrupted DDL job tests and add a maximum wait deadline to prevent endless polling loops.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19815",
     "https://github.com/pingcap/tidb/pull/19815.patch"
@@ -33,6 +33,7 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/19815.patch",
   "changed_files": [
     "ddl/ddl.go",
+    "ddl/ddl_worker.go",
     "ddl/restart_test.go"
   ],
   "triage": {
