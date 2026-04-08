@@ -10,21 +10,21 @@
   "test": {
     "type": "unit",
     "path": "store/tikv/2pc_test.go",
-    "name": "2pc_test"
+    "name": "TestAcquireFalseTimeoutLock"
   },
   "symptoms": [
-    "PR title: test: stable the test case"
+    "The test asserted an operation returns within a strict wall-clock budget (50ms), which can be violated under CI load."
   ],
-  "failure_signature": "PR title: test: stable the test case",
+  "failure_signature": "Wall-clock assertion too strict: `elapsed < 50*time.Millisecond` intermittently fails under load",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: stable the test case",
+  "root_cause_explanation": "This test used a strict wall-clock assertion (`elapsed < 50*time.Millisecond`) to validate a lock acquisition path returns “immediately”. Under high CPU load or slow CI, the operation can legitimately take longer than 50ms even if the behavior is correct, making the test flaky. This PR stabilizes the test by removing the time-interval assertion and only asserting the expected error behavior.",
+  "module": "kv",
+  "fix_pattern": "Avoid strict wall-clock assertions in tests; assert on functional behavior (errors/results) instead of requiring an operation to finish within a tiny time window.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19683",
     "https://github.com/pingcap/tidb/pull/19683.patch"

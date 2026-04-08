@@ -13,18 +13,18 @@
     "name": "TestCoprocessorOOMAction"
   },
   "symptoms": [
-    "PR title: executor: fix unstable TestCoprocessorOOMAction"
+    "`TestCoprocessorOOMAction` is unstable because the memory quota boundary is sensitive to asynchronous coprocessor response sizes/ordering."
   ],
-  "failure_signature": "PR title: executor: fix unstable TestCoprocessorOOMAction",
+  "failure_signature": "Non-deterministic OOM assertion: query may or may not hit `Out Of Memory Quota` depending on coprocessor response sizes/arrival order",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: fix unstable TestCoprocessorOOMAction.",
+  "root_cause_explanation": "`TestCoprocessorOOMAction` asserts the OOM action by setting a query memory quota and expecting `Out Of Memory Quota` to be triggered. The non-keep-order case was unstable because coprocessor response sizes and scheduling are asynchronous, so the same quota can be exceeded at different times (or not exceeded deterministically), leading to flaky outcomes. This PR stabilizes the test by enabling a failpoint to mock per-response memory consumption to a deterministic value and by tuning the quota boundary so OOM is triggered consistently before asserting the error.",
   "module": "executor",
-  "fix_pattern": "executor: fix unstable TestCoprocessorOOMAction",
+  "fix_pattern": "Make quota/consumption tests deterministic: mock coprocessor memory consumption via failpoints and tune the quota threshold so the OOM boundary is crossed consistently.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/20238",
     "https://github.com/pingcap/tidb/pull/20238.patch"

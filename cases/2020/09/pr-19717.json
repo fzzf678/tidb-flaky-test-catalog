@@ -13,18 +13,18 @@
     "name": "select_into_test"
   },
   "symptoms": [
-    "PR title: executor: fix file exists errors in tests for `select into outfile`"
+    "Tests for `SELECT ... INTO OUTFILE` intermittently fail with \"file exists\" errors due to outfile name/path collisions across runs."
   ],
-  "failure_signature": "PR title: executor: fix file exists errors in tests for `select into outfile`",
+  "failure_signature": "`select into outfile` tests fail with \"file exists\" when multiple runs share the same temp outfile name/path",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "external_dependency"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The tests wrote outfiles to `os.TempDir()` using fixed or partially-fixed filenames (e.g. `select-into-outfile.data`). When tests run concurrently or when leftover files exist from another run, the outfile path can collide and cause intermittent \"file exists\" failures. This PR stabilizes the tests by generating a unique per-test outfile path (`randomSelectFilePath`) so each test writes to an isolated filename.",
   "module": "executor",
-  "fix_pattern": "executor: fix file exists errors in tests for `select into outfile`",
+  "fix_pattern": "Avoid hard-coded/shared outfile names in tests; generate a unique per-test temp outfile path to prevent filesystem collisions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19717",
     "https://github.com/pingcap/tidb/pull/19717.patch"

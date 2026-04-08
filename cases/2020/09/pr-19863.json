@@ -22,9 +22,9 @@
   "review_smells": [
     "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: executor, util: fix TestGlobalMemoryTrackerOnCleanUp ci error.",
+  "root_cause_explanation": "`executor.GlobalMemoryUsageTracker` is a global tracker shared across tests. `TestGlobalMemoryTrackerOnCleanUp` tried to assert “Consume happened” by resetting and reading `maxConsumed`, but in `-race`/parallel test runs that global `maxConsumed` can be changed by other tests, making the assertion flaky. This PR stabilizes CI by removing the `maxConsumed`-based assertion and deleting the test-only `SetMaxConsumed` helper, avoiding reliance on shared mutable global state.",
   "module": "executor",
-  "fix_pattern": "executor, util: fix TestGlobalMemoryTrackerOnCleanUp ci error",
+  "fix_pattern": "Avoid asserting on shared global tracker state (`maxConsumed`) in tests; remove the `maxConsumed`-based assertion/test-only setter to prevent cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/19863",
     "https://github.com/pingcap/tidb/pull/19863.patch"
