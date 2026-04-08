@@ -13,18 +13,18 @@
     "name": "dump_test"
   },
   "symptoms": [
-    "// Ignore warnings to get rid of a data race here https://github.com/pingcap/tidb/issues/21393"
+    "Go race detector reports a data race between stats workers sharing a session (StmtCtx reset vs warning append) during auto analyze"
   ],
-  "failure_signature": "// Ignore warnings to get rid of a data race here https://github.com/pingcap/tidb/issues/21393",
+  "failure_signature": "DATA RACE in statistics handle workers (ResetContextOfStmt vs StmtCtx warnings append)",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: // Ignore warnings to get rid of a data race here https://github.com/pingcap/tidb/issues/21393.",
+  "root_cause_explanation": "The test was flaky due to a data race in the statistics handle: `updateStatsWorker()` and `autoAnalyzeWorker()` could share the same session, where one goroutine resets statement context while another appends warnings to `StmtCtx`, triggering race-detector failures (see issue #21393). This PR stabilizes it by executing auto analyze with the \"ignore warning\" option so warnings are not appended to the shared `StmtCtx`, avoiding the concurrent mutation that causes the race.",
   "module": "statistics",
-  "fix_pattern": "// Ignore warnings to get rid of a data race here https://github.com/pingcap/tidb/issues/21393",
+  "fix_pattern": "Avoid concurrent mutation of a shared session `StmtCtx` between stats workers (e.g., run auto analyze with ignore-warnings / isolate session state) to prevent ResetContext-vs-warning-append data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22636",
     "https://github.com/pingcap/tidb/pull/22636.patch"

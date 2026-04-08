@@ -17,15 +17,14 @@
   ],
   "failure_signature": "testKit.MustExec(\"select * from t where t.a <= 5 order by a desc\") (statistics/handle/update_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: testKit.MustExec(\"select * from t where t.a <= 5 order by a desc\") (statistics/handle/update_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly changes statistics/feedback compatibility behavior and adds/updates tests. The cited SQL (including an ORDER BY) is used to trigger feedback collection rather than to assert deterministic ordering, and the case lacks a concrete flaky failure signature. We conservatively mark this as insufficient evidence instead of attributing it to result order or plan instability.",
   "module": "statistics",
-  "fix_pattern": "testKit.MustExec(\"select * from t where t.a <= 5 order by a desc\") (statistics/handle/update_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22846",
     "https://github.com/pingcap/tidb/pull/22846.patch"
