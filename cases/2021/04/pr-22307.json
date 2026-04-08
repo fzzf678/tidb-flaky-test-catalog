@@ -17,16 +17,14 @@
   ],
   "failure_signature": "_, checkErr = tk.Exec(\"update t set a = 3 order by b;\") (ddl/db_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
     "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: _, checkErr = tk.Exec(\"update t set a = 3 order by b;\") (ddl/db_test.go).",
+  "root_cause_explanation": "The test executes `UPDATE ... ORDER BY b` while a DDL is dropping column `b` (via a DDL hook in `StateWriteOnly`). This is schema-state dependent and can appear intermittent as schema changes propagate and columns transition between states. This PR marks non-public columns as not accessible during name resolution, so the statement consistently fails with `Unknown column 'b'` during the DDL transition.",
   "module": "ddl",
-  "fix_pattern": "_, checkErr = tk.Exec(\"update t set a = 3 order by b;\") (ddl/db_test.go)",
+  "fix_pattern": "Treat non-public columns as not accessible during DDL (name resolution respects column state), so statements referencing the dropping column deterministically fail with `Unknown column` during the schema transition.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22307",
     "https://github.com/pingcap/tidb/pull/22307.patch"

@@ -17,16 +17,14 @@
   ],
   "failure_signature": "+ c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: + c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go).",
-  "module": "executor",
-  "fix_pattern": "+ c.Skip(\"exhaustive types test, skip race test\") | tk.MustQuery(\"select * from t where a>=1 and a<15 order by a\").Check(testkit.Rows(\"1 1\", \"2 2\", \"11 11\", \"12 12\")) (executor/distsql_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR implements executor feature support for partition tables and adds exhaustive/random tests that are skipped under race. The skip signal alone is not enough to identify a specific flaky root cause from the patch.",
+  "module": "test_infra",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24197",
     "https://github.com/pingcap/tidb/pull/24197.patch"

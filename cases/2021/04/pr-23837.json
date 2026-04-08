@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix data race.",
-  "module": "module_unknown",
-  "fix_pattern": "fix data race",
+  "root_cause_explanation": "Concurrent tests in unistore accessed shared state without synchronization (e.g., concurrent Put/Delete vs Get in MemStore; concurrent reads/writes of shared response fields), triggering data races in CI. This PR adds explicit locking (RWMutex) around the concurrent accesses, eliminating the data race.",
+  "module": "kv",
+  "fix_pattern": "Add explicit locking (RWMutex) around shared state accessed by concurrent goroutines in unistore tests to prevent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/23837",
     "https://github.com/pingcap/tidb/pull/23837.patch"

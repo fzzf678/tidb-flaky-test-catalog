@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select lead(col_13,1,NULL) over w from tbl_2 window w as (order by col_13)\").Check(testkit.Rows( (executor/window_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select lead(col_13,1,NULL) over w from tbl_2 window w as (order by col_13)\").Check(testkit.Rows( (executor/window_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes type inference for aggregation/window functions when the type is NULL and updates tests. The referenced query already specifies ORDER BY, and the patch is a functional correctness fix rather than a targeted stabilization for flaky behavior.",
   "module": "expression",
-  "fix_pattern": "tk.MustQuery(\"select lead(col_13,1,NULL) over w from tbl_2 window w as (order by col_13)\").Check(testkit.Rows( (executor/window_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24290",
     "https://github.com/pingcap/tidb/pull/24290.patch"

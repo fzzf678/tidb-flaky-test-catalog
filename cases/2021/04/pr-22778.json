@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"SELECT * FROM mysql.global_grants WHERE `Host` = '%' AND `User` = 'dyn' ORDER BY user,host,priv,with_grant_option\").Check(testkit.Rows(\"dyn % BACKUP_ADMIN N\")) (executor/grant_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "shared_state_pollution"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"SELECT * FROM mysql.global_grants WHERE `Host` = '%' AND `User` = 'dyn' ORDER BY user,host,priv,with_grant_option\").Check(testkit.Rows(\"dyn % BACKUP_ADMIN N\")) (executor/grant_test.go).",
-  "module": "test_infra",
-  "fix_pattern": "tk.MustQuery(\"SELECT * FROM mysql.global_grants WHERE `Host` = '%' AND `User` = 'dyn' ORDER BY user,host,priv,with_grant_option\").Check(testkit.Rows(\"dyn % BACKUP_ADMIN N\")) (executor/grant_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds Dynamic Privileges support and corresponding tests. The referenced query already has an explicit ORDER BY, and the patch does not contain a targeted determinism/stabilization change for a flaky-test issue.",
+  "module": "security",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22778",
     "https://github.com/pingcap/tidb/pull/22778.patch"

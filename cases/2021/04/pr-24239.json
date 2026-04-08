@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: fix DATA RACE CI problem.",
+  "root_cause_explanation": "`IndexMergeReader` starts background worker goroutines. The close path previously did not wait for all workers to exit (missing `idxWorkerWg.Wait()`), which can cause concurrent access to shared executor state and trigger data races in CI. This PR fixes the race by waiting for all worker goroutines in `Close()`; related tests also close result sets to avoid leaking concurrent work.",
   "module": "executor",
-  "fix_pattern": "fix DATA RACE CI problem",
+  "fix_pattern": "Wait for all IndexMergeReader worker goroutines (e.g., `idxWorkerWg`) to exit in `Close()` before returning; ensure tests close result sets to avoid concurrent work after teardown.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24239",
     "https://github.com/pingcap/tidb/pull/24239.patch"
