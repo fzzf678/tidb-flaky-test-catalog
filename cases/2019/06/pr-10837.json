@@ -13,33 +13,31 @@
     "name": "tables_test"
   },
   "symptoms": [
-    "tk.MustQuery(\"select * from information_schema.PROCESSLIST order by ID;\").Sort().Check( (infoschema/tables_test.go)"
+    "tk.MustQuery(\"select * from information_schema.PROCESSLIST order by ID;\").Sort().Check(...) (infoschema/tables_test.go)"
   ],
-  "failure_signature": "tk.MustQuery(\"select * from information_schema.PROCESSLIST order by ID;\").Sort().Check( (infoschema/tables_test.go)",
+  "failure_signature": "tk.MustQuery(\"select * from information_schema.PROCESSLIST order by ID;\").Sort().Check(...) (infoschema/tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "schema_change_race"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because PROCESSLIST-related results (especially `SHOW PROCESSLIST`) do not have a guaranteed output order, so order-dependent assertions can fail intermittently. This PR stabilizes it by sorting query results before assertions (adding `.Sort()` before `.Check()`).",
+  "module": "infoschema",
+  "fix_pattern": "Add `.Sort()` before `.Check()` (and/or ORDER BY where applicable) when asserting on results with non-guaranteed ordering (e.g., PROCESSLIST).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10837",
     "https://github.com/pingcap/tidb/pull/10837.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/10837.patch",
   "changed_files": [
-    "executor/show.go",
     "infoschema/tables.go",
     "infoschema/tables_test.go",
     "planner/core/logical_plans.go",
     "session/session.go",
-    "util/misc_test.go",
-    "util/processinfo.go"
+    "util/processinfo.go",
+    "executor/show.go",
+    "util/misc_test.go"
   ],
   "triage": {
     "sources": [
@@ -48,8 +46,8 @@
     ],
     "evidence": [
       "evidence: tk.MustQuery(\"select * from information_schema.PROCESSLIST order by ID;\").Sort().Check( (infoschema/tables_test.go)",
-      "files: executor/show.go, infoschema/tables.go, infoschema/tables_test.go, planner/core/logical_plans.go, session/session.go, util/misc_test.go, util/processinfo.go"
+      "files: infoschema/tables.go, infoschema/tables_test.go, planner/core/logical_plans.go, session/session.go, util/processinfo.go, executor/show.go, util/misc_test.go"
     ]
   },
-  "analysis": "PR title: *: add a column describing memory usage for table information_schema.processlist\nPR url: https://github.com/pingcap/tidb/pull/10837\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from information_schema.PROCESSLIST order by ID;\").Sort().Check( (infoschema/tables_test.go)\nChanged files (7): executor/show.go, infoschema/tables.go, infoschema/tables_test.go, planner/core/logical_plans.go, session/session.go, util/misc_test.go, util/processinfo.go\nPatch url: https://github.com/pingcap/tidb/pull/10837.patch\nPicked test: type=unit path=infoschema/tables_test.go name=tables_test"
+  "analysis": "PR title: *: add a column describing memory usage for table information_schema.processlist\nPR url: https://github.com/pingcap/tidb/pull/10837\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from information_schema.PROCESSLIST order by ID;\").Sort().Check( (infoschema/tables_test.go)\nChanged files (7): infoschema/tables.go, infoschema/tables_test.go, planner/core/logical_plans.go, session/session.go, util/processinfo.go, executor/show.go, util/misc_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10837.patch\nPicked test: type=unit path=infoschema/tables_test.go name=tables_test"
 }

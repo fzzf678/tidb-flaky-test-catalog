@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: domain: load stats when stats lease is 0.",
+  "root_cause_explanation": "The test was flaky under `-race` due to concurrent access to the statistics lease/state (for example `Handle.Lease`) from background stats workers and tests without proper synchronization. This PR stabilizes it by introducing thread-safe lease accessors (`Lease()`/`SetLease()`) and avoiding direct unsynchronized reads/writes, eliminating the DATA RACE.",
   "module": "domain",
-  "fix_pattern": "domain: load stats when stats lease is 0",
+  "fix_pattern": "Make stats lease/state access thread-safe (use accessor methods/atomic) to avoid concurrent read/write data races between background stats workers and tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10771",
     "https://github.com/pingcap/tidb/pull/10771.patch"

@@ -17,14 +17,15 @@
   ],
   "failure_signature": "stats: fix unstable test",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "async_timing_issue",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "statistics_sensitive_test"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: stats: fix unstable test.",
+  "root_cause_explanation": "The test was flaky because a background stats update goroutine could still run (and update cached stats) even when tests set `stats-lease` to 0, conflicting with explicit `Update` calls inside tests. The concurrent updates could overwrite each other and produce intermittent mismatched stats (e.g., row counts). This PR stabilizes tests by disabling the background stats goroutine in test mode (using a negative stats lease via `session.DisableStats4Test()`) and by adding missing error checks for stats operations.",
   "module": "statistics",
-  "fix_pattern": "stats: fix unstable test",
+  "fix_pattern": "Disable background stats update loops in tests (e.g. via `session.DisableStats4Test()` / negative stats lease) to avoid interference with explicit stats operations, and add error checks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10953",
     "https://github.com/pingcap/tidb/pull/10953.patch"

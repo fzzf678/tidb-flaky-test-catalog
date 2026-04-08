@@ -17,14 +17,14 @@
   ],
   "failure_signature": "sql: \"select * from t where t.a <= 5 order by a desc\", (statistics/handle/update_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily improves statistics code coverage by adding/updating tests. The case evidence is a test SQL snippet rather than an intermittent failure signature, so keep the conservative fallback classification rather than guessing nondeterminism categories.",
   "module": "statistics",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10606",
     "https://github.com/pingcap/tidb/pull/10606.patch"
@@ -32,21 +32,16 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/10606.patch",
   "changed_files": [
     "statistics/analyze_jobs_test.go",
-    "statistics/cmsketch.go",
     "statistics/cmsketch_test.go",
-    "statistics/estimate.go",
     "statistics/feedback.go",
     "statistics/feedback_test.go",
-    "statistics/handle/ddl.go",
-    "statistics/handle/dump.go",
-    "statistics/handle/gc.go",
-    "statistics/handle/gc_test.go",
-    "statistics/handle/handle.go",
     "statistics/handle/update.go",
     "statistics/handle/update_test.go",
-    "statistics/histogram.go",
-    "statistics/histogram_test.go",
-    "statistics/selectivity_test.go"
+    "statistics/selectivity_test.go",
+    "statistics/handle/ddl.go",
+    "statistics/handle/gc.go",
+    "statistics/handle/gc_test.go",
+    "statistics/handle/handle.go"
   ],
   "triage": {
     "sources": [
@@ -55,8 +50,8 @@
     ],
     "evidence": [
       "evidence: sql: \"select * from t where t.a <= 5 order by a desc\", (statistics/handle/update_test.go)",
-      "files: statistics/analyze_jobs_test.go, statistics/cmsketch_test.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle/ddl.go, statistics/handle/gc.go, statistics/handle/gc_test.go, statistics/handle/handle.go, statistics/handle/update.go, statistics/handle/update_test.go, statistics/selectivity_test.go"
+      "files: statistics/analyze_jobs_test.go, statistics/cmsketch_test.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle/update.go, statistics/handle/update_test.go, statistics/selectivity_test.go, statistics/handle/ddl.go, statistics/handle/gc.go, statistics/handle/gc_test.go, statistics/handle/handle.go"
     ]
   },
-  "analysis": "PR title: stats: improve code coverage\nPR url: https://github.com/pingcap/tidb/pull/10606\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t where t.a <= 5 order by a desc\", (statistics/handle/update_test.go)\nChanged files (16): statistics/analyze_jobs_test.go, statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/estimate.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle/ddl.go, statistics/handle/dump.go, statistics/handle/gc.go, statistics/handle/gc_test.go, statistics/handle/handle.go, statistics/handle/update.go, statistics/handle/update_test.go, statistics/histogram.go, statistics/histogram_test.go, statistics/selectivity_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10606.patch\nPicked test: type=unit path=statistics/handle/update_test.go name=update_test"
+  "analysis": "PR title: stats: improve code coverage\nPR url: https://github.com/pingcap/tidb/pull/10606\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t where t.a <= 5 order by a desc\", (statistics/handle/update_test.go)\nChanged files (11): statistics/analyze_jobs_test.go, statistics/cmsketch_test.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle/update.go, statistics/handle/update_test.go, statistics/selectivity_test.go, statistics/handle/ddl.go, statistics/handle/gc.go, statistics/handle/gc_test.go, statistics/handle/handle.go\nPatch url: https://github.com/pingcap/tidb/pull/10606.patch\nPicked test: type=unit path=statistics/handle/update_test.go name=update_test"
 }
