@@ -23,7 +23,7 @@
     "race_condition_in_async_code"
   ],
   "root_cause_explanation": "`ListInDisk.flush()` accessed `bufWriter.Buffered()`/`Flush()` without synchronization, so concurrent calls could race and trigger flaky failures under the race detector. This PR adds an RWMutex to guard the buffered check and serialize the flush, avoiding the race condition.",
-  "module": "executor",
+  "module": "chunk",
   "fix_pattern": "Protect ListInDisk buffer flush with a lock (RWMutex) to avoid concurrent access to bufWriter.Buffered()/Flush().",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14970",

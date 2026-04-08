@@ -23,7 +23,7 @@
     "race_condition_in_async_code"
   ],
   "root_cause_explanation": "TestPDConfHandler had an async ordering race: the reload callback could signal completion before the config manager goroutine stored the updated global config pointer, so an immediate check could read stale config. This PR waits for an additional reload tick (reloadWg2) to ensure the store has happened before asserting, removing the race window.",
-  "module": "server",
+  "module": "config",
   "fix_pattern": "Synchronize async reload/store ordering: wait for an additional reload tick (reloadWg2) so global config update is committed before assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15604",
