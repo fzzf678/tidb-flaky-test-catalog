@@ -20,11 +20,12 @@
     "concurrency_data_race"
   ],
   "review_smells": [
+    "t_parallel_with_shared_state",
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: failpoint: update failpoint.",
-  "module": "module_unknown",
-  "fix_pattern": "failpoint: update failpoint",
+  "root_cause_explanation": "TiDB tests can run different check suites in parallel (via CustomParallelSuiteFlag), but the global failpoint state in the pingcap/failpoint library used to have a data race between Enable() and Eval(). This PR stabilizes the test environment by bumping the failpoint dependency to a version that fixes the Enable/Eval data race under parallel execution.",
+  "module": "test_infra",
+  "fix_pattern": "Bump the pingcap/failpoint dependency to a version that fixes the global failpoint Enable/Eval data race under parallel test suites.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/17628",
     "https://github.com/pingcap/tidb/pull/17628.patch"

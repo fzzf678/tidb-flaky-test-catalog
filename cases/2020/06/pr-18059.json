@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix data race in distsql/select_result.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix data race in distsql/select_result",
+  "root_cause_explanation": "The code had a data race in distsql/select_result.go: selectResult.Close() could race with other goroutines accessing selectRespSize. The fix makes the response-size field atomic (Store/Load/Swap) to eliminate concurrent access races.",
+  "module": "executor",
+  "fix_pattern": "Make selectRespSize atomic (Store/Load/Swap) so selectResult.Close() does not race with concurrent accesses.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18059",
     "https://github.com/pingcap/tidb/pull/18059.patch"

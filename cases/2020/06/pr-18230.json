@@ -17,15 +17,15 @@
   ],
   "failure_signature": "PR title: delete unstable code that cause test failed in ddl.",
   "root_cause_categories": [
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "global_variable_mutation",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl, test: delete unstable code that cause test failed in ddl.",
+  "root_cause_explanation": "TestCommitWhenSchemaChange toggled the global flag `session.SchemaChangedWithoutRetry` using atomic.StoreUint32 without reliably resetting it on all paths, which can leak global state to other tests and cause flakiness. The fix removes the unstable toggling and/or ensures the flag is reset via a defer, and moves the test to a different suite to reduce cross-test interference.",
   "module": "ddl",
-  "fix_pattern": "ddl, test: delete unstable code that cause test failed in ddl",
+  "fix_pattern": "Avoid leaking `session.SchemaChangedWithoutRetry` across tests by resetting the global flag via defer (and isolating the test suite) instead of ad-hoc atomic toggles.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18230",
     "https://github.com/pingcap/tidb/pull/18230.patch"

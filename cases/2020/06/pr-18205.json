@@ -23,9 +23,9 @@
     "ddl_without_wait",
     "async_schema_propagation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: stabilize ddl tests.",
+  "root_cause_explanation": "Some DDL tests were flaky because they executed SQLs inside an OnJobUpdated hook before the schema had fully synchronized to the expected schema version/state (e.g., expecting DeleteOnly but observing WriteOnly). The fix waits for schema change completion (waitSchemaChanged) before invoking the hook, and refines related assertions/error messages to match the stable expected behavior.",
   "module": "ddl",
-  "fix_pattern": "ddl: stabilize ddl tests",
+  "fix_pattern": "Wait for schema synchronization (waitSchemaChanged) before running OnJobUpdated hook logic in DDL tests, and refine assertions to match the expected stable DDL state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18205",
     "https://github.com/pingcap/tidb/pull/18205.patch"
