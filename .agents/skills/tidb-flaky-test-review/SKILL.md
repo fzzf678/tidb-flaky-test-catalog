@@ -55,7 +55,9 @@ If you flag a smell, **read enough surrounding code** to avoid false positives:
 
 ### 2) Structural Smell Scan (Thorough)
 
-This skill requires **rigorous structural code analysis**, not superficial skimming. Analyze the control flow, concurrency models, and resource lifecycles:
+**IMPORTANT: This skill requires deep LLM reasoning, NOT keyword/pattern matching.** You must carefully read and understand the full PR diff, trace the control flow, understand the intent of the code changes, and reason about potential flaky risks based on semantic understanding. Do not simply scan for keywords like `time.Sleep` or `go func` and mechanically map them to smell keys. A keyword is only a starting point — you must understand the surrounding context (is the sleep inside a retry loop? is the goroutine properly synchronized?) before making any judgment.
+
+Analyze the control flow, concurrency models, and resource lifecycles:
 - Timing: `time.Sleep(...)`, small timeouts, polling without backoff
 - Concurrency: `t.Parallel()`, goroutines, shared/global state without cleanup
 - Determinism: missing `ORDER BY`, map iteration order, order-sensitive assertions
