@@ -13,18 +13,21 @@
     "name": "TestInnodbLockWaitTimeout"
   },
   "symptoms": [
-    "test: stabilize test case"
+    "Panic (nil pointer dereference) in TestInnodbLockWaitTimeout when the managed lock is resolved unexpectedly under TiKV."
   ],
-  "failure_signature": "test: stabilize test case",
+  "failure_signature": "Panic (nil pointer dereference) in TestInnodbLockWaitTimeout when the managed lock is resolved unexpectedly under TiKV.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue",
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout",
+    "global_variable_mutation",
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: stabilize test case",
+  "root_cause_explanation": "The test was flaky due to timing sensitivity and unsafe concurrency in the test code. With TiKV enabled, a short `tikv.ManagedLockTTL` (300ms) could allow the lock to be resolved earlier than expected, leading to a nil-pointer panic in the lock-wait-timeout test. The test also performed assertions inside goroutines, which is not safe for gocheck and can race. This PR stabilizes the test by temporarily increasing `tikv.ManagedLockTTL` during the test (and restoring it), and by collecting goroutine errors via a channel and asserting them in the main goroutine.",
+  "module": "session",
+  "fix_pattern": "Increase `tikv.ManagedLockTTL` during the lock-wait tests (restore after), and avoid gocheck assertions in goroutines by sending errors to a channel and asserting in the main goroutine.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22276",
     "https://github.com/pingcap/tidb/pull/22276.patch"

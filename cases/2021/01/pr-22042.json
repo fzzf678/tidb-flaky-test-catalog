@@ -17,15 +17,14 @@
   ],
   "failure_signature": "rows = dbt.mustQuery(\"select id,name from t order by id\") (server/server_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: rows = dbt.mustQuery(\"select id,name from t order by id\") (server/server_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR changes `LOAD DATA` behavior for partition tables (no-partition case becomes a warning instead of aborting) and updates server tests accordingly (e.g., checking `show warnings` and expected rows). The cited query already has `ORDER BY`, and the case lacks a concrete flaky failure signature or a targeted stabilization mechanism, so we conservatively mark it as needing more evidence.",
   "module": "executor",
-  "fix_pattern": "rows = dbt.mustQuery(\"select id,name from t order by id\") (server/server_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22042",
     "https://github.com/pingcap/tidb/pull/22042.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select distinct(_tidb_rowid) from point order by _tidb_rowid\").Check(testkit.Rows(\"1\", \"2\")) (executor/point_get_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select distinct(_tidb_rowid) from point order by _tidb_rowid\").Check(testkit.Rows(\"1\", \"2\")) (executor/point_get_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR mainly adds new unit tests around memory cache behavior for partition tables. The cited query already includes an `ORDER BY`, and the case data does not include a concrete flaky failure signature or a targeted stabilization change for nondeterminism, so we conservatively mark it as needing more evidence.",
   "module": "executor",
-  "fix_pattern": "tk.MustQuery(\"select distinct(_tidb_rowid) from point order by _tidb_rowid\").Check(testkit.Rows(\"1\", \"2\")) (executor/point_get_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22291",
     "https://github.com/pingcap/tidb/pull/22291.patch"
