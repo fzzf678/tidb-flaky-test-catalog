@@ -94,7 +94,15 @@ When you identify multiple smells in a single PR, you must designate exactly **1
   1. Prefer the risk that this PR **newly introduces**, not pre-existing issues in the codebase.
   2. When smells have a causal relationship (e.g., a goroutine race condition leads to adding `time.Sleep` as a workaround), choose the **cause** (`race_condition_in_async_code`) over the **symptom** (`time_sleep_for_sync`).
   3. When no clear causal order exists, choose the smell whose `related_root_causes` in `review_smells.json` is at a higher/more fundamental level.
+  4. **HARD**: `time_sleep_for_sync` is usually a symptom. If you can reasonably map the change to an underlying async/concurrency/schema/timeout smell (e.g., `race_condition_in_async_code`, `ddl_without_wait`, `async_schema_propagation`, `schema_version_race`, `insufficient_timeout`), that underlying smell MUST be `primary_smell` and `time_sleep_for_sync` MUST be supporting. Only choose `time_sleep_for_sync` as primary when the only newly introduced risk is adding a fixed sleep barrier in **test code** and no deeper cause is visible.
+  5. **HARD**: For order-sensitive assertions on query results, prioritize ordering smells. If a test asserts a fixed row order (e.g., `testkit.Rows(...)` / `require.Equal` on a row slice) and the query has no `ORDER BY` (and no explicit sort), `primary_smell` MUST be `missing_order_by`. Use `unsorted_result_assertion` as supporting (or as primary when ordering is assumed from non-query sources like Go map/slice iteration).
+  6. **HARD**: If the PR introduces/modifies concurrency structure (`go func`, channels, worker pools, `t.Parallel`) in or around tests, `primary_smell` SHOULD be `race_condition_in_async_code` (or `t_parallel_with_shared_state`) unless a clearer external-dependency smell dominates (e.g., `real_tikv_dependency`, `hardcoded_port_or_resource`).
+  7. **Guardrail**: `global_variable_mutation` is only for true global/package-level state (config/sysvars/failpoints/gofail/singletons). Do not use it for ordinary struct fields or local variables. If the main risk is cross-test pollution/cleanup, prefer `insufficient_cleanup_between_tests` as primary and keep `global_variable_mutation` as supporting.
 - **supporting_smells**: additional real risks found in the same PR that are secondary or consequential. These provide useful context but are not the primary driver of flakiness.
+
+Examples:
+- Example A: `go func(){...}; time.Sleep(...)` → primary=`race_condition_in_async_code`, supporting=`time_sleep_for_sync`
+- Example B: `tk.MustQuery("select ...").Check(testkit.Rows(...))` with no `ORDER BY` → primary=`missing_order_by`, supporting=`unsorted_result_assertion`
 
 When evidence is weak, use:
 - `root_cause_categories: ["insufficient_evidence"]`
@@ -105,32 +113,92 @@ When evidence is weak, use:
 
 Use the smell definitions’ review questions and suggested fixes to write crisp comments.
 
-## Review Comment Template
+## Review Comment Template (Interceptor Output)
 
-Use this structure (keep it short; link to evidence):
+Use this structure (keep it short; anchor to evidence; optimized so test authors can fix quickly):
 
 - **Primary Finding**: `<smell_key>` — `<smell_title>`
-- **Supporting Findings** (if any): `<smell_key_2>`, `<smell_key_3>` (0–3 additional smells)
 - **Impacted test(s)**: `<test identifier(s)>`
-- **Evidence**: `path:line` + short snippet
+- **Flaky mechanism**: 1–2 sentences describing the causal chain (root cause → nondeterministic behavior).
+- **Evidence**: `path:line` + short snippet (from this diff)
+- **Fix sketch (deterministic-first)**:
+  - 2–3 concrete steps. MUST include at least **1** item from the smell’s `suggested_fixes` in repo root `review_smells.json`, rewritten to match this PR.
+  - If `confidence != high`, label the fix as **likely options** and state what evidence would confirm.
+- **How to verify**:
+  - 1 concrete rerun recipe (e.g. `go test ./... -run TestXxx -count=50 -race`)
+- **Supporting Findings** (if any): `<smell_key_2>`, `<smell_key_3>` (0–3). Keep each supporting to 1 sentence mechanism + 1 fix.
 - **Confidence**: `high` | `medium` | `low`
-- **Why risky**: 1 sentence
-- **Questions**:
-  - Q1
-  - Q2
-- **Suggested fix**:
-  - Fix 1
-  - Fix 2
+- **Recommended action**: `blocker` | `non_blocker` | `needs_more_evidence`
+- **Questions (from `review_smells.json`)**:
+  - MUST include at least **1** item from the smell’s `review_questions`, rewritten to be PR-specific.
 - **(Optional) Root cause tags**: `<taxonomy_key1>, <taxonomy_key2>`
 
 Tone guidance (agent):
 - Prefer objective + collaborative wording (e.g. “It looks like…”, “This may be timing-sensitive because…”, “Could we…?”).
 - Avoid overconfident claims when evidence is weak; ask for CI links / failure signature / repro hints.
 
+Recommended action guidance (agent):
+- `blocker`: only when `confidence=high` and you provided a specific **mechanism + deterministic fix** (not just “increase timeout/add sleep”).
+- `needs_more_evidence`: when `confidence=medium/low` or key context is missing. List exactly what you need (CI failure signature/log, whether tests run in parallel, teardown/cleanup behavior, external deps).
+- `non_blocker`: when risk is real but already mitigated in this PR (still provide mechanism + fix sketch + verify).
+
 Confidence guidance (agent):
-- **high**: direct, unambiguous signal in diff (e.g. `time.Sleep` used for sync, `t.Parallel()` in tests with shared/global state, goroutine touching shared state without synchronization/join, hardcoded port/resource, order-sensitive assertion without sort/order-by).
-- **medium**: plausible smell but needs context to confirm (e.g. missing `ORDER BY` but assertion might sort elsewhere; timeout might be fine; async wait might already have backoff).
-- **low**: weak or indirect evidence; use `needs_more_evidence` / `insufficient_evidence` and ask for CI logs / failure signature / repro hints.
+- **high**: direct, unambiguous signal in diff (e.g. fixed `time.Sleep` used for sync, goroutine lifecycle not deterministically bounded, `t.Parallel()` with shared/global state, hardcoded port/resource, order-sensitive assertion without sort/order-by). Your fix sketch should be specific and deterministic-first.
+- **medium**: plausible smell but needs context to confirm (e.g. missing `ORDER BY` but assertion might sort elsewhere). Still provide a fix sketch as **likely options** and ask for the missing context.
+- **low**: weak or indirect evidence. Still provide a minimal safe fix option, but prefer `needs_more_evidence` and explicitly ask for CI logs / failure signature / repro hints before blocking.
+
+## Example Review Comments (Copy/Paste Style)
+
+### Example 1 — `missing_order_by` (+ `unsorted_result_assertion`)
+
+- **Primary Finding**: `missing_order_by` — Missing ORDER BY in SELECT queries
+- **Impacted test(s)**: `executor/diagnostics_test.go:TestInspectionResult` (PR 14114)
+- **Flaky mechanism**: The test asserts an exact row order for results from `SELECT * ...` queries, but the SQL has no `ORDER BY`. Without an explicit order, result ordering may vary with execution details (parallelism/chunk processing/storage scan order), making `result.Check(testkit.Rows(...))` intermittently fail.
+- **Evidence**:
+  - `executor/diagnostics_test.go`: `sql: "select * from information_schema.inspection_result ..."` (no `ORDER BY`) + `result.Check(testkit.Rows(cs.rows...))`
+- **Fix sketch (deterministic-first)**:
+  - Add an explicit `ORDER BY` clause on stable columns (e.g. `ORDER BY rule, item, type`) for each query under assertion. If keys can tie, add a tie-breaker to make ordering unique. (from `review_smells.json`: “Add explicit ORDER BY clause to the query”)
+  - If order is not part of the contract, make the assertion order-insensitive (e.g. `.Sort().Check(...)` or sort returned rows before checking). (from `review_smells.json`: “Use .Sort() before .Check() in test assertions”)
+- **How to verify**:
+  - `go test ./executor -check.f TestInspectionResult -count=50`
+- **Supporting Findings**: `unsorted_result_assertion`
+- **Confidence**: high
+- **Recommended action**: blocker
+- **Questions (from `review_smells.json`)**:
+  - Does this query need ordered results for the test assertion? If yes, can we add a stable `ORDER BY` here?
+
+### Example 2 — `race_condition_in_async_code` (+ `time_sleep_for_sync`)
+
+- **Primary Finding**: `race_condition_in_async_code` — Race condition in async code
+- **Impacted test(s)**: `util/topsql/reporter/pubsub_test.go:TestPubSubDataSink` (PR 31340)
+- **Flaky mechanism**: The test starts `ds.run()` in a background goroutine, then uses a fixed `time.Sleep(1 * time.Second)` as a synchronization barrier before asserting `mockStream.*` lengths. Under slow/loaded CI or different scheduling, the async goroutine may not have processed the data yet, causing assertions to race and fail intermittently.
+- **Evidence**:
+  - `util/topsql/reporter/pubsub_test.go`: `go func() { _ = ds.run() }()` + `time.Sleep(1 * time.Second)` + `assert.Len(t, mockStream.records, 1)` (etc.)
+- **Fix sketch (deterministic-first)**:
+  - Replace the fixed sleep with deterministic synchronization (e.g. a `sentCh`/callback in the mock stream to signal when `Send()` happens, then `select` with a bounded timeout). (from `review_smells.json`: “Use channels for goroutine communication” / “Replace sleep with channel/condition variable”)
+  - If a direct signal is hard, use a bounded wait loop / `require.Eventually` (reasonable interval + max timeout) rather than a single sleep. (from `review_smells.json`: “Use wait loop with backoff”)
+- **How to verify**:
+  - `go test ./util/topsql/reporter -run TestPubSubDataSink -count=50 -race`
+- **Supporting Findings**: `time_sleep_for_sync`
+- **Confidence**: high
+- **Recommended action**: blocker
+- **Questions (from `review_smells.json`)**:
+  - Is there a better synchronization mechanism than `time.Sleep()` here (channels/mutex/condition/event notification)?
+
+## Evaluation Notes (Optional)
+
+If you use this skill as a merge **interceptor**, success is not just “smell exact match”. Keep tracking:
+- **Recall**: do we consistently flag truly risky PRs as `risk`?
+- **Actionability**: can the test author fix the issue from the review comment alone?
+
+Suggested lightweight rubric (sample a small set of PRs, e.g. N=10; score each 0–2):
+- **Evidence specificity**: does the comment point to the exact changed test/statement (file/test/line) that causes risk?
+- **Mechanism clarity**: is the causal chain explained (cause vs symptom), without hand-waving?
+- **Fix executability**: are there deterministic-first steps that are directly implementable (not only “increase timeout/add sleep”)?
+
+Automatable checks (cheap regression guardrails):
+- Template compliance: comment includes Mechanism/Evidence/Fix/Verify + Recommended action.
+- Dictionary grounding: for the primary smell, includes at least 1 PR-specific question and 1 PR-specific fix derived from `review_smells.json`.
 
 ## Common High-Signal Smells (Representative Examples)
 

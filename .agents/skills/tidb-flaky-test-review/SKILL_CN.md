@@ -94,7 +94,15 @@ Agent 的目标是以最低的误报率捕获**本 PR 新引入的 flaky 风险*
   1. 优先选择本 PR **新引入**的风险，而非代码库中已存在的问题。
   2. 当 smell 之间存在因果关系时（如 goroutine 竞态导致需要加 `time.Sleep` 作为变通方案），选择**因**（`race_condition_in_async_code`）而非**果**（`time_sleep_for_sync`）。
   3. 当无法判断因果顺序时，选择 `review_smells.json` 中 `related_root_causes` 层级更高/更基础的那个。
+  4. **硬规则**：`time_sleep_for_sync` 通常是症状。只要同一 PR 还能合理映射到更底层的异步/并发/Schema/超时类 smell（如 `race_condition_in_async_code`、`ddl_without_wait`、`async_schema_propagation`、`schema_version_race`、`insufficient_timeout`），这些根因 smell 必须作为 `primary_smell`，`time_sleep_for_sync` 只能放 supporting。只有当唯一新增风险就是在**测试代码**里新增固定 sleep 作为同步屏障，且无法归因到更深层原因时，才允许 primary=`time_sleep_for_sync`。
+  5. **硬规则**：对查询结果做固定顺序断言时优先 ordering smell。若测试断言固定行序（如 `testkit.Rows(...)` / 对 row slice 做 `require.Equal`），且 query 无 `ORDER BY`（且无显式 sort），`primary_smell` 必须是 `missing_order_by`。`unsorted_result_assertion` 作为 supporting（或当顺序假设来自非 SQL 查询来源，如 Go map/slice 迭代时，可作为 primary）。
+  6. **硬规则**：如果 PR 在测试相关代码中新增/修改并发结构（`go func`、channel、worker pool、`t.Parallel` 等），`primary_smell` 应优先 `race_condition_in_async_code`（或 `t_parallel_with_shared_state`），除非更明确的外部依赖 smell 更主导（如 `real_tikv_dependency`、`hardcoded_port_or_resource`）。
+  7. **护栏**：`global_variable_mutation` 仅用于真实的全局/包级状态（config/sysvar/failpoint/gofail/singleton）。不要把普通 struct field 或局部变量当成 global。若主要风险是测试间污染/清理不彻底，primary 优先 `insufficient_cleanup_between_tests`，`global_variable_mutation` 放 supporting。
 - **supporting_smells**：在同一 PR 中发现的其他真实风险，属于次要或派生的。它们提供有用的上下文，但不是 flaky 的主要驱动因素。
+
+示例：
+- 示例 A：`go func(){...}; time.Sleep(...)` → primary=`race_condition_in_async_code`，supporting=`time_sleep_for_sync`
+- 示例 B：`tk.MustQuery("select ...").Check(testkit.Rows(...))` 且 query 无 `ORDER BY` → primary=`missing_order_by`，supporting=`unsorted_result_assertion`
 
 当证据较弱时，使用：
 - `root_cause_categories: ["insufficient_evidence"]`
@@ -105,32 +113,91 @@ Agent 的目标是以最低的误报率捕获**本 PR 新引入的 flaky 风险*
 
 使用 smell 定义中的 review 问题和建议修复来撰写简洁的评论。
 
-## Review 意见模板
+## Review 意见模板（拦截器输出）
 
-使用以下结构（保持简短；链接到证据）：
+使用以下结构（保持简短；必须能让作者直接按建议修）：
 
 - **主要发现 (Primary Finding)**：`<smell_key>` — `<smell_title>`
-- **辅助发现 (Supporting Findings)**（如有）：`<smell_key_2>`、`<smell_key_3>`（0-3 个额外 smell）
 - **受影响的测试**：`<测试标识符>`
-- **证据**：`path:line` + 简短代码片段
-- **置信度**：`high` | `medium` | `low`
-- **为什么有风险**：1 句话
-- **问题**：
-  - Q1
-  - Q2
-- **建议修复**：
-  - 修复 1
-  - 修复 2
+- **Flaky 机理 (Mechanism)**：1–2 句话讲清因果链（根因 → 为什么会不稳定）。
+- **证据 (Evidence)**：`path:line` + 简短代码片段（来自本次 diff）
+- **修复方案草图 (Fix sketch，优先确定性)**：
+  - 2–3 条可执行的步骤。必须至少包含 **1** 条来自 repo root `review_smells.json` 中该 smell 的 `suggested_fixes`，但要结合本 PR 改写成具体建议。
+  - 如果 `confidence != high`，把修复写成 **候选方案**，并说明“需要什么证据才能确认是哪一个原因/方案”。（修复建议仍然要给，不能只说不确定）
+- **如何验证 (How to verify)**：
+  - 1 条最小可复现/自证稳定的方法（例如：`go test ./... -run TestXxx -count=50 -race`）
+- **辅助发现 (Supporting Findings)**（如有）：`<smell_key_2>`、`<smell_key_3>`（0–3）。每个 supporting 只写 1 句机制 + 1 条 fix（避免评论膨胀）。
+- **置信度 (Confidence)**：`high` | `medium` | `low`
+- **推荐动作 (Recommended action)**：`blocker` | `non_blocker` | `needs_more_evidence`
+- **问题（来自 `review_smells.json`）**：
+  - 必须至少包含 **1** 条来自该 smell 的 `review_questions`，并改写成贴合本 PR 的具体问题。
 - **（可选）根因标签**：`<taxonomy_key1>, <taxonomy_key2>`
 
 语气指导（Agent）：
 - 使用客观 + 协作的措辞（如"看起来……"、"这可能是时序敏感的，因为……"、"我们能否……？"）。
 - 当证据较弱时避免过度自信的断言；要求提供 CI 链接 / 失败签名 / 复现提示。
 
+推荐动作指导（Agent）：
+- `blocker`：仅当 `confidence=high` 且你给出了明确的 **机制 + 可执行的确定性修复**（而不是“加大 timeout/加 sleep”）时才建议阻塞。
+- `needs_more_evidence`：当 `confidence=medium/low` 或缺少关键上下文时使用。必须明确列出需要补充的内容（CI failure signature/log、是否并行、teardown/cleanup、外部依赖状态等）。
+- `non_blocker`：风险存在但本 PR 已显式缓解/影响较小（仍需给机制 + fix sketch + verify）。
+
 置信度指导（Agent）：
-- **high**：diff 中直接、明确的信号（如 `time.Sleep` 用于同步、`t.Parallel()` 在有共享/全局状态的测试中、goroutine 访问共享状态但无同步/join、硬编码端口/资源、无 sort/order-by 的顺序敏感断言）。
-- **medium**：可能的 smell 但需要上下文确认（如缺少 `ORDER BY` 但断言可能在其他地方排序；超时可能是合理的；异步等待可能已有退避）。
-- **low**：弱或间接的证据；使用 `needs_more_evidence` / `insufficient_evidence` 并要求提供 CI 日志 / 失败签名 / 复现提示。
+- **high**：diff 中直接、明确的信号（如固定 `time.Sleep` 用于同步、goroutine 生命周期未被确定性约束、`t.Parallel()` + 共享/全局状态、硬编码端口/资源、无 sort/order-by 的顺序敏感断言）。修复建议要具体且优先确定性。
+- **medium**：可能的 smell 但需要上下文确认（如缺少 `ORDER BY` 但断言可能在其他地方排序）。仍需给出“候选修法”，并明确缺什么上下文来确认。
+- **low**：弱或间接的证据。仍给最小安全修法，但更推荐 `needs_more_evidence`，并明确要求 CI 日志 / 失败签名 / 复现提示后再阻塞。
+
+## 高质量评论示例（可直接复制改写）
+
+### 示例 1 — `missing_order_by`（+ `unsorted_result_assertion`）
+
+- **主要发现**：`missing_order_by` — Missing ORDER BY in SELECT queries
+- **受影响的测试**：`executor/diagnostics_test.go:TestInspectionResult`（PR 14114）
+- **Flaky 机理**：这里对 `SELECT * ...` 的返回结果做了**固定行序**断言，但 SQL 没有 `ORDER BY`。在不同执行/并发/内部遍历顺序下，结果行序可能变化，导致 `result.Check(testkit.Rows(...))` 偶发不一致。
+- **证据**：
+  - `executor/diagnostics_test.go`：`sql: "select * from information_schema.inspection_result ..."`（无 `ORDER BY`）+ `result.Check(testkit.Rows(cs.rows...))`
+- **修复方案草图（优先确定性）**：
+  - 为每条被断言顺序的查询补 `ORDER BY`（例如 `ORDER BY rule, item, type`），并在必要时补 tie-breaker 保证严格顺序。（参考 `review_smells.json`: “Add explicit ORDER BY clause to the query”）
+  - 若顺序本不重要，把断言改为对顺序不敏感（例如 `.Sort().Check(...)` 或在 check 前对结果排序）。（参考 `review_smells.json`: “Use .Sort() before .Check() in test assertions”）
+- **如何验证**：
+  - `go test ./executor -check.f TestInspectionResult -count=50`
+- **辅助发现**：`unsorted_result_assertion`
+- **置信度**：high
+- **推荐动作**：blocker
+- **问题（来自 `review_smells.json`）**：
+  - 这个用例是否确实需要“有序结果”来做断言？如果需要，是否可以在这里加稳定的 `ORDER BY`？
+
+### 示例 2 — `race_condition_in_async_code`（+ `time_sleep_for_sync`）
+
+- **主要发现**：`race_condition_in_async_code` — Race condition in async code
+- **受影响的测试**：`util/topsql/reporter/pubsub_test.go:TestPubSubDataSink`（PR 31340）
+- **Flaky 机理**：测试里把 `ds.run()` 放到 goroutine 异步跑，然后用固定 `time.Sleep(1s)` 作为“同步屏障”，再去断言 `mockStream` 收到的数据条数。在 CI 负载高/调度不同的情况下，1s 可能不够或时序变化，断言就会和异步处理竞争而偶发失败。
+- **证据**：
+  - `util/topsql/reporter/pubsub_test.go`：`go func() { _ = ds.run() }()` + `time.Sleep(1 * time.Second)` + `assert.Len(..., 1)`（等）
+- **修复方案草图（优先确定性）**：
+  - 用确定性同步替换 sleep：例如 mock stream 在 `Send()` 时通过 channel/回调发信号，测试等待该信号（带超时上界）。（参考 `review_smells.json`: “Use channels for goroutine communication” / “Replace sleep with channel/condition variable”）
+  - 若无法直接拿到事件信号，用有界 wait loop 或 `require.Eventually`（合理 interval + max timeout），避免“一次 sleep 赌运气”。（参考 `review_smells.json`: “Use wait loop with backoff”）
+- **如何验证**：
+  - `go test ./util/topsql/reporter -run TestPubSubDataSink -count=50 -race`
+- **辅助发现**：`time_sleep_for_sync`
+- **置信度**：high
+- **推荐动作**：blocker
+- **问题（来自 `review_smells.json`）**：
+  - 这里是否有比 `time.Sleep()` 更好的同步方式（channels/mutex/condition/event notification）？
+
+## 评测建议（可选）
+
+如果把这个 skill 当作合入前的 **拦截器**，成功标准不应只看 “smell 精准命中”，建议同时跟踪：
+- **Recall**：是否能稳定把真实引入 flaky 风险的 PR 判为 `risk`？
+- **评论可修复性（Actionability）**：作者是否能仅凭评论就定位问题并按建议修复？
+
+建议一个轻量抽样评分（例如抽 N=10 个 PR；每项 0–2 分）：
+- **证据具体性**：是否指向明确的变更点（文件/测试/行号/关键语句）？
+- **机理清晰度**：是否解释清楚因果链（根因 vs 症状），避免泛泛而谈？
+- **修复可执行性**：是否给出可直接实现的“确定性优先”步骤（而不是只提“加大 timeout/加 sleep”）？
+
+可自动化的低成本回归护栏：
+- 模板合规率：是否包含 Mechanism/Evidence/Fix/Verify + 推荐动作。\n- 字典落地：primary smell 至少包含 1 条来自 `review_smells.json` 的问题和 1 条修复建议，并且改写成贴合本 PR 的具体内容。
 
 ## 常见高信号 Smell（代表性示例）
 
