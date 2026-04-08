@@ -17,23 +17,26 @@
   ],
   "failure_signature": "+race: failpoint-enable",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: types: fix uint64 overflow bug in `ConvertJSONToFloat`.",
-  "module": "expression",
-  "fix_pattern": "types: fix uint64 overflow bug in `ConvertJSONToFloat`",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic uint64 overflow bug in `ConvertJSONToFloat` and includes unrelated build artifacts (`my_Makefile`, `nohup.out`). The case evidence is only a `+race: failpoint-enable` line and does not establish an intermittent flaky trigger, so keep the conservative fallback classification rather than guessing a concurrency root cause.",
+  "module": "types",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11355",
     "https://github.com/pingcap/tidb/pull/11355.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/11355.patch",
   "changed_files": [
-    "expression/integration_test.go",
+    "go.mod",
+    "my_Makefile",
+    "nohup.out",
     "types/convert.go",
     "types/convert_test.go",
+    "expression/integration_test.go",
     "types/datum_test.go"
   ],
   "triage": {
@@ -43,8 +46,8 @@
     ],
     "evidence": [
       "evidence: +race: failpoint-enable",
-      "files: expression/integration_test.go, go.mod, my_Makefile, nohup.out, types/convert.go, types/convert_test.go, types/datum_test.go"
+      "files: go.mod, my_Makefile, nohup.out, types/convert.go, types/convert_test.go, expression/integration_test.go, types/datum_test.go"
     ]
   },
-  "analysis": "PR title: types: fix uint64 overflow bug in `ConvertJSONToFloat`\nPR url: https://github.com/pingcap/tidb/pull/11355\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: +race: failpoint-enable\nChanged files (4): expression/integration_test.go, types/convert.go, types/convert_test.go, types/datum_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11355.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+  "analysis": "PR title: types: fix uint64 overflow bug in `ConvertJSONToFloat`\nPR url: https://github.com/pingcap/tidb/pull/11355\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: +race: failpoint-enable\nChanged files (7): go.mod, my_Makefile, nohup.out, types/convert.go, types/convert_test.go, expression/integration_test.go, types/datum_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11355.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
 }

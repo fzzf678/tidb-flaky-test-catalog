@@ -17,14 +17,14 @@
   ],
   "failure_signature": "we now cache now time value in stmtCtx, some tests become unstable",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The unit tests were unstable because time functions like NOW() can be cached in `StmtCtx`, and the test compared results against wall-clock time with tight bounds. Resetting the statement context at the wrong point could leave a stale cached timestamp in place and make the greater-equal/less-equal assertions intermittently fail. This PR stabilizes the tests by resetting `StmtCtx` after building the function and before evaluation so each assertion uses a fresh/consistent timestamp basis.",
   "module": "expression",
-  "fix_pattern": "expressions: make time func now related unit tests stable",
+  "fix_pattern": "Reset statement context at the right time (after getFunction, before eval) to avoid stale cached NOW()/CURRENT* values affecting time-based assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11412",
     "https://github.com/pingcap/tidb/pull/11412.patch"

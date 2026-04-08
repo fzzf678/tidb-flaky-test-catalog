@@ -17,15 +17,14 @@
   ],
   "failure_signature": "re = tk.MustQuery(\"select query from information_schema.slow_query order by time desc limit 1\") (infoschema/tables_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "unsafe_zero_copy_alias"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "domain",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because the slow-log parser performed shallow copies of buffered lines: when parsing long queries, the underlying buffer could be reused/overwritten, leading to corrupted SQL strings being observed later (and test assertions failing intermittently). This PR fixes the aliasing by explicitly copying the line bytes returned from `getOneLine`, preventing mutable backing-buffer reuse from leaking into parsed results.",
+  "module": "infoschema",
+  "fix_pattern": "Copy slow-log line bytes when reading/parsing (avoid shallow-copy aliasing of mutable buffers) so parsed SQL strings remain stable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11417",
     "https://github.com/pingcap/tidb/pull/11417.patch"

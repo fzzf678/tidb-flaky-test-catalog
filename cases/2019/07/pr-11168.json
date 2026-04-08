@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: expression: fix data race of rand function.",
+  "root_cause_explanation": "This PR fixes a Go DATA RACE when evaluating RAND() under parallel/vectorized execution. `builtinRandSig` holds a shared `*rand.Rand`, and cloned builtin funcs shared the same generator, so multiple projection workers could call `randGen.Float64()` concurrently (math/rand is not thread-safe), triggering race warnings and unstable behavior. The fix threads a shared mutex through cloned `builtinRandSig` instances and locks around `randGen.Float64()`; the test is adjusted to exercise small chunks and verify RAND(seed) deterministically.",
   "module": "expression",
-  "fix_pattern": "expression: fix data race of rand function",
+  "fix_pattern": "Guard shared RNG state with a mutex (share the mutex across cloned builtin funcs) to avoid concurrent calls into `math/rand`'s `rngSource`; add/adjust tests to exercise concurrent evaluation paths.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11168",
     "https://github.com/pingcap/tidb/pull/11168.patch"

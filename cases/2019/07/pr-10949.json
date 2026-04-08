@@ -17,14 +17,16 @@
   ],
   "failure_signature": "bindinfo: fix unstable test",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: bindinfo: fix unstable test.",
-  "module": "kv",
-  "fix_pattern": "bindinfo: fix unstable test",
+  "root_cause_explanation": "The test was flaky because bindinfo updates its global binding cache asynchronously (background update goroutine controlled by `bindinfo.Lease`). A previous test can drop bindings but the background update can repopulate the cache with stale SQL results, causing the next test to see unexpected bindings. This PR stabilizes the test by disabling the background updater in tests (`bindinfo.Lease = 0`).",
+  "module": "bindinfo",
+  "fix_pattern": "Disable bindinfo background updates in tests by setting `bindinfo.Lease = 0` to avoid stale async cache refresh racing with test cleanup.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10949",
     "https://github.com/pingcap/tidb/pull/10949.patch"

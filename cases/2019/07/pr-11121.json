@@ -17,16 +17,15 @@
   ],
   "failure_signature": "ddl: a better way to fix data race against #10900",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: a better way to fix data race against #10900.",
+  "root_cause_explanation": "The test was flaky due to a data race around table-lock-related global configuration used by DDL tests. The previous approach swapped global behavior via a shared atomic/global hook, which is racy under concurrent access. This PR stabilizes the tests by using `config.StoreGlobalConfig` with a copied config and restoring it via defer, avoiding racy global mutation patterns.",
   "module": "ddl",
-  "fix_pattern": "ddl: a better way to fix data race against #10900",
+  "fix_pattern": "Use `config.StoreGlobalConfig` with a local copy + defer restore instead of racy global hooks/atomics when toggling table-lock config in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11121",
     "https://github.com/pingcap/tidb/pull/11121.patch"
