@@ -17,14 +17,16 @@
   ],
   "failure_signature": "// potencial data race in unit test since `CommitMaxBackoff` will be updated",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "race_condition_in_async_code",
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "Hot-reloading updates config-derived variables (e.g., `CommitMaxBackoff`) while other goroutines read them to construct backoff/commit logic, causing potential DATA RACE in tests under `-race`. This PR makes `CommitMaxBackoff` atomic and consistently uses `Load/Store` when reading/updating it.",
+  "root_cause_explanation": "Hot-reloading can update config-derived global variables (e.g., `tikv.CommitMaxBackoff`, derived from `TiKVClient.CommitTimeout`) while other goroutines/tests read them to construct backoff/commit logic, which can trigger DATA RACE reports under `-race`. This PR reduces the risk by restricting `hotReloadConfigItems` to a small safe set (e.g., `Performance.*`, `OOMAction`, `MemQuotaQuery`) and removing `CommitTimeout/CommitMaxBackoff` from the reload path so the backoff limit is set at startup and not mutated concurrently.",
   "module": "config",
-  "fix_pattern": "Wrap hot-reloaded config variables with atomics (or locks) and consistently use atomic Load/Store in both production code and tests.",
+  "fix_pattern": "Only hot-reload config items that are safe to mutate at runtime; for shared global variables used across goroutines, either synchronize updates (atomic/locks + consistent reads) or avoid hot-reloading them (restrict the hot-reload list) to prevent concurrent mutation during tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10295",
     "https://github.com/pingcap/tidb/pull/10295.patch"
