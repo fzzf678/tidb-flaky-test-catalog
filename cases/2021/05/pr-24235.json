@@ -17,16 +17,15 @@
   ],
   "failure_signature": "Problem Summary: So `TestExprPushDownToFlash` failed on my local machine. It is unstable and hard to reproduce. The only questionable code is the failpoint in the `CanPushDownToXXX`, which is enabled by the global `func init()`. I don't know if it is caused by goroutine schedule, forking, race, execution order or whatever.",
   "root_cause_categories": [
-    "concurrency_data_race",
     "shared_state_pollution"
   ],
   "review_smells": [
     "global_variable_mutation",
-    "race_condition_in_async_code"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Global state must be reset/restored between tests. This PR stabilizes it by: Problem Summary: So `TestExprPushDownToFlash` failed on my local machine.",
+  "root_cause_explanation": "The test was unstable due to global state set up via `init()`/suite setup: a global failpoint was enabled at package init time and `timeutil.SetSystemTZ(\"system\")` (a `sync.Once`) depends on test execution order, making results order-dependent across suites. The PR moves these global side effects into `TestT` and disables the failpoint after running tests, reducing cross-suite interference.",
   "module": "expression",
-  "fix_pattern": "Problem Summary: So `TestExprPushDownToFlash` failed on my local machine. It is unstable and hard to reproduce. The only questionable code is the failpoint in the `CanPushDownToXXX`, which is enabled by the global `func init()`. I don't know if it is caused by goroutine schedule, forking, race, execution order or whatever.",
+  "fix_pattern": "Move global failpoint enable + `timeutil.SetSystemTZ(\"system\")` from `init()`/suite setup into `TestT`, and disable the failpoint after `TestingT(t)` to avoid leaking global state across tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24235",
     "https://github.com/pingcap/tidb/pull/24235.patch"

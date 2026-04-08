@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: fix the unstable test TestDML",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: fix the unstable test TestDML.",
+  "root_cause_explanation": "`TestDML` performs randomized DML operations on partition tables. With primary keys present, the random operation sequence could attempt to insert duplicated rows and trigger nondeterministic duplicate-key errors. The PR stabilizes the test by removing the primary key constraints from the test tables (not relevant to the test purpose), eliminating random duplicate-key failures.",
   "module": "executor",
-  "fix_pattern": "executor: fix the unstable test TestDML",
+  "fix_pattern": "Avoid randomness-triggered constraint failures in tests: remove or relax irrelevant constraints (e.g., drop primary keys) in randomized DML test tables so random operation sequences do not intermittently hit duplicate-key errors.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24960",
     "https://github.com/pingcap/tidb/pull/24960.patch"

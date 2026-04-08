@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: move EntriesCount and Size LazyTxn to prevent race.",
+  "root_cause_explanation": "A data race could occur when reading transaction state/TxnInfo while the transaction is running. `LazyTxn.Info()` and related fields (state/digest/block time/start_ts) plus MemDB size/count were accessed concurrently without a thread-safety guarantee. The PR makes the TxnInfo path thread-safe by using atomics for the fields used by `LazyTxn.Info()` and making MemDB size/count updates atomic, preventing concurrent read/write races.",
   "module": "txn",
-  "fix_pattern": "move EntriesCount and Size LazyTxn to prevent race",
+  "fix_pattern": "Make transaction info/state inspection thread-safe: use atomics for fields read by `LazyTxn.Info()` (start_ts/state/digest/block time) and atomic updates for MemDB count/size to avoid concurrent read/write races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22908",
     "https://github.com/pingcap/tidb/pull/22908.patch"

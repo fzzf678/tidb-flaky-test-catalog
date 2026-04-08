@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: The SysVar struct is not entirely immutable, since SEM (in tests) and server startup may modify the .Value for certain sysvars.",
-  "module": "server",
-  "fix_pattern": "The SysVar struct is not entirely immutable, since SEM (in tests) and server startup may modify the .Value for certain sysvars. This causes a data race because callers of `GetSysVar`/`GetSysVars` previously did not hold deep copied of the sysvars.",
+  "root_cause_explanation": "A data race could occur because `SysVar` values are not fully immutable: tests (SEM) or server startup may mutate `.Value`, while callers of `GetSysVar`/`GetSysVars` read the shared objects concurrently. The PR fixes the race by making `GetSysVar`/`GetSysVars` return deep-copied sysvar structs, so readers do not share mutable state with writers.",
+  "module": "session",
+  "fix_pattern": "Avoid sharing mutable sysvar objects across goroutines: have `GetSysVar`/`GetSysVars` return deep-copied `SysVar` structs so concurrent readers are isolated from writers that may mutate `.Value`.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24732",
     "https://github.com/pingcap/tidb/pull/24732.patch"

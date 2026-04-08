@@ -17,15 +17,14 @@
   ],
   "failure_signature": "| branch | `TestTiFlashFallback` | go test server package with race( exec `go test -v -vet=off -p 5 -timeout 20m -race` / `CI (Race Test Chunk #4)` locally) | `CI (Race Test Chunk #4)` | `CI (Leak Test Chunk #7)` | `CI (Unit Test Chunk #7)` |",
   "root_cause_categories": [
-    "concurrency_data_race",
     "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: | branch | `TestTiFlashFallback` | go test server package with race( exec `go test -v -vet=off -p 5 -timeout 20m -race` / `CI (Race Test Chunk #4)` locally) | `CI (Race Test Chunk #4)` | `CI (Leak Test Chunk #7)` | `CI (….",
+  "root_cause_explanation": "`TestTiFlashFallback` was extremely slow and could fail intermittently under CI/race time budgets because coprocessor backoff allowed a very large max sleep window. The PR stabilizes the test by introducing a failpoint (`ReduceCopNextMaxBackoff`) to drastically reduce `CopNextMaxBackoff` during the test, with proper cleanup (disable failpoint) afterward, making the test runtime predictable and fast.",
   "module": "server",
-  "fix_pattern": "| branch | `TestTiFlashFallback` | go test server package with race( exec `go test -v -vet=off -p 5 -timeout 20m -race` / `CI (Race Test Chunk #4)` locally) | `CI (Race Test Chunk #4)` | `CI (Leak Test Chunk #7)` | `CI (Unit Test Chunk #7)` |",
+  "fix_pattern": "Reduce backoff/time budgets in tests via scoped failpoints (e.g., `ReduceCopNextMaxBackoff` to lower `CopNextMaxBackoff`) and clean up after the test, so long backoff windows do not cause slow/flaky test runtime under CI/race.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24833",
     "https://github.com/pingcap/tidb/pull/24833.patch"

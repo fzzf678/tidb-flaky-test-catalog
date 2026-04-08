@@ -13,18 +13,18 @@
     "name": "TestExtractStartTs"
   },
   "symptoms": [
-    "Merge branch 'master' into unstable-test"
+    "`TestExtractStartTs` was unstable because it relied on staleness timestamps derived from the current physical time, which can change during test execution."
   ],
-  "failure_signature": "Merge branch 'master' into unstable-test",
+  "failure_signature": "`TestExtractStartTs` was unstable because it relied on staleness timestamps derived from the current physical time, which can change during test execution.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "Merge branch 'master' into unstable-test",
+  "root_cause_explanation": "The test derived staleness timestamps from the current physical time and assumed the value would not change within the test, which is not guaranteed and makes the test timing-dependent. The fix uses failpoints (`MockStalenessTimestamp` / `MockCurrentTimestamp`) to provide fixed time-related values during the test, eliminating dependence on wall-clock progression.",
+  "module": "kv",
+  "fix_pattern": "Freeze/mock time-based values in tests: use failpoints to return fixed current/staleness timestamps so assertions do not depend on wall-clock time changing during test execution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24585",
     "https://github.com/pingcap/tidb/pull/24585.patch"

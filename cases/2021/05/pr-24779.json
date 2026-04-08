@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: Fix unstable TestTiDBLastTxnInfoCommitMode",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: Fix unstable TestTiDBLastTxnInfoCommitMode.",
+  "root_cause_explanation": "The test was unstable because it tried to force async-commit fallback by mutating global config (`AsyncCommit.SafeWindow = 0`), but that does not deterministically guarantee fallback and also introduces shared global state into the test. The PR stabilizes the test by using the `invalidMaxCommitTS` failpoint to deterministically trigger fallback and by properly cleaning up (disable failpoint) after the test.",
   "module": "executor",
-  "fix_pattern": "executor: Fix unstable TestTiDBLastTxnInfoCommitMode",
+  "fix_pattern": "Avoid mutating global config to force behavior; use a scoped failpoint (e.g., `invalidMaxCommitTS`) to deterministically trigger async-commit fallback, and disable it via `defer`/cleanup after the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24779",
     "https://github.com/pingcap/tidb/pull/24779.patch"

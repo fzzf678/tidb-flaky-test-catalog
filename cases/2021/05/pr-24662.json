@@ -17,14 +17,14 @@
   ],
   "failure_signature": "When the CI is unstable, tidb-server may take a long time to start. This will cause the ping to fail.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "server",
-  "fix_pattern": "When the CI is unstable, tidb-server may take a long time to start. This will cause the ping to fail.",
+  "root_cause_explanation": "The integration ddl test pings a tidb-server during startup. Under slow/unstable CI, startup can exceed the test's retry budget, causing intermittent failures. The PR stabilizes the test by increasing the startup retry count (`retryCnt`) from 5 to 20 so the ping wait window is long enough on slower CI machines.",
+  "module": "test_infra",
+  "fix_pattern": "Increase startup retry/timeout budget for tidb-server readiness checks (e.g., bump retry count) so slow CI startup does not cause intermittent ping failures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24662",
     "https://github.com/pingcap/tidb/pull/24662.patch"

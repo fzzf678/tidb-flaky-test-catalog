@@ -17,16 +17,14 @@
   ],
   "failure_signature": "| branch | `go test -check.f TestBackwardCompatibility` | go test ddl package with race(`go test -v -vet=off -p 5 -timeout 20m -race`) | `TestBackwardCompatibility` execution time in running ddl package test with race |",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: | branch | `go test -check.f TestBackwardCompatibility` | go test ddl package with race(`go test -v -vet=off -p 5 -timeout 20m -race`) | `TestBackwardCompatibility` execution time in running ddl package test with race |.",
+  "root_cause_explanation": "`TestBackwardCompatibility` was slow/flaky under race/CI time budgets because it split the test table into too many regions (100), making subsequent DDL (add index) work heavier than needed. Under slower CI or race builds, that extra work could cause intermittent timeouts or excessive runtime. The PR stabilizes the test by reducing the split key count from 100 to 10, significantly speeding up execution.",
   "module": "ddl",
-  "fix_pattern": "| branch | `go test -check.f TestBackwardCompatibility` | go test ddl package with race(`go test -v -vet=off -p 5 -timeout 20m -race`) | `TestBackwardCompatibility` execution time in running ddl package test with race |",
+  "fix_pattern": "Reduce workload in long-running tests to fit CI/race time budgets (e.g., split fewer regions/keys) to avoid intermittent timeouts and excessive runtime variance.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24704",
     "https://github.com/pingcap/tidb/pull/24704.patch"
