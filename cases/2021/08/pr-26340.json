@@ -17,14 +17,14 @@
   ],
   "failure_signature": "fix unstable test",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds a status variable for last_plan_binding_update_time. The recorded flaky signal is generic and does not align with a concrete intermittent stabilization change in the patch, so we classify it as insufficient evidence.",
+  "root_cause_explanation": "`TestBindingLastUpdateTime` was flaky because it compared timestamps coming from different sources with different formatting/precision expectations (binding update time vs status variable), making the assertion timing/format sensitive. This PR stabilizes the test by deriving the binding update time via the bind handle (consistent formatting) and asserting it directly against the status variable, avoiding brittle string-splitting and precision mismatches.",
   "module": "planner",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "fix_pattern": "Avoid brittle exact equality checks on time strings across different sources/precisions; compare a consistently formatted time value (bind handle UpdateTime) or allow tolerance in time comparisons.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26340",
     "https://github.com/pingcap/tidb/pull/26340.patch"
