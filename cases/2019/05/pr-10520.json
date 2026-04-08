@@ -17,23 +17,22 @@
   ],
   "failure_signature": "ddl: fix a data race in the test code",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix a data race in the test code.",
+  "root_cause_explanation": "The test was flaky due to a data race from unsynchronized shared state used in failpoint injection. This PR stabilizes it by making the one-time failpoint behavior thread-safe via `atomic.CompareAndSwapUint32` on a shared flag.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix a data race in the test code",
+  "fix_pattern": "Replace a non-atomic shared \"once\" flag used by failpoint injection with an atomic CompareAndSwap guard to avoid concurrent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10520",
     "https://github.com/pingcap/tidb/pull/10520.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/10520.patch",
   "changed_files": [
-    "ddl/table.go"
+    "ddl/table.go",
+    "ddl/serial_test.go"
   ],
   "triage": {
     "sources": [
@@ -42,8 +41,8 @@
     ],
     "evidence": [
       "evidence: ddl: fix a data race in the test code",
-      "files: ddl/serial_test.go, ddl/table.go"
+      "files: ddl/table.go, ddl/serial_test.go"
     ]
   },
-  "analysis": "PR title: ddl: fix a data race in the test code\nPR url: https://github.com/pingcap/tidb/pull/10520\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix a data race in the test code\nChanged files (1): ddl/table.go\nPatch url: https://github.com/pingcap/tidb/pull/10520.patch\nPicked test: type=unit path=ddl/serial_test.go name=serial_test"
+  "analysis": "PR title: ddl: fix a data race in the test code\nPR url: https://github.com/pingcap/tidb/pull/10520\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix a data race in the test code\nChanged files (2): ddl/table.go, ddl/serial_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10520.patch\nPicked test: type=unit path=ddl/serial_test.go name=serial_test"
 }
