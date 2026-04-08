@@ -20,12 +20,12 @@
     "async_timing_issue"
   ],
   "review_smells": [
-    "async_wait_without_backoff",
-    "clock_skew_dependency"
+    "time_sleep_for_sync",
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). Fixed waits without polling/backoff are brittle under CI timing jitter. This PR stabilizes it by: binlog_test: fix unit test error in ci.",
+  "root_cause_explanation": "DDL binlog emission is asynchronous, and the test polls for the expected binlog with a short fixed sleep. Under CI load, the event may not be visible quickly enough. This PR increases the sleep interval in the polling loop (10ms → 30ms), reducing timing sensitivity.",
   "module": "ddl",
-  "fix_pattern": "binlog_test: fix unit test error in ci",
+  "fix_pattern": "Increase the fixed sleep interval in the binlog polling loop (10ms → 30ms).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15065",
     "https://github.com/pingcap/tidb/pull/15065.patch"

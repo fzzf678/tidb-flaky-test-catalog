@@ -20,11 +20,11 @@
     "async_timing_issue"
   ],
   "review_smells": [
-    "clock_skew_dependency"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: test: stable and speed up one test case.",
-  "module": "test_infra",
-  "fix_pattern": "test: stable and speed up one test case",
+  "root_cause_explanation": "The test asserted a strict wall-clock duration bound (elapsed < 350ms), which can intermittently fail under CI load or on slower machines. This PR removes the brittle elapsed-time assertion and adjusts test setup (including ManagedLockTTL) to make the timing behavior more stable.",
+  "module": "txn",
+  "fix_pattern": "Remove strict wall-clock duration assertion and adjust test setup (e.g., ManagedLockTTL) to reduce timing sensitivity under load.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15497",
     "https://github.com/pingcap/tidb/pull/15497.patch"

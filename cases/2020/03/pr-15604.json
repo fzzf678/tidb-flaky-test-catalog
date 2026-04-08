@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body explains TestPDConfHandler race (reloadFunc done before global config pointer Store), causing intermittent check failure.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: config: make the test `TestPDConfHandler` stable.",
-  "module": "module_unknown",
-  "fix_pattern": "config: make the test `TestPDConfHandler` stable",
+  "root_cause_explanation": "TestPDConfHandler had an async ordering race: the reload callback could signal completion before the config manager goroutine stored the updated global config pointer, so an immediate check could read stale config. This PR waits for an additional reload tick (reloadWg2) to ensure the store has happened before asserting, removing the race window.",
+  "module": "server",
+  "fix_pattern": "Synchronize async reload/store ordering: wait for an additional reload tick (reloadWg2) so global config update is committed before assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15604",
     "https://github.com/pingcap/tidb/pull/15604.patch"

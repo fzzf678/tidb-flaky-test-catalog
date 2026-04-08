@@ -18,14 +18,14 @@
   "failure_signature": "PR title: fix data race for plan cache",
   "root_cause_categories": [
     "concurrency_data_race",
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix data race for plan cache.",
+  "root_cause_explanation": "Tests mutated global prepared plan-cache configuration (PreparedPlanCacheCapacity/MemoryGuardRatio/MaxMemory), which can race with other goroutines/tests (e.g., when running with -race). This PR avoids global mutation by creating sessions with a per-session prepared plan cache (CreateSession4TestWithOpt + NewSimpleLRUCache), eliminating the data race.",
   "module": "session",
-  "fix_pattern": "*: fix data race for plan cache",
+  "fix_pattern": "Avoid mutating global PreparedPlanCache* vars in tests; create sessions with per-session PreparedPlanCache via CreateSession4TestWithOpt.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14756",
     "https://github.com/pingcap/tidb/pull/14756.patch"

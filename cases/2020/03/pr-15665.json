@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body: fix go routine leak due to forgetting to close domain and store.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test leaked background resources (domain/store/goroutines) by only closing the server instead of fully stopping the test server and its underlying components. This PR fixes the leak by deferring ds.stopServer(c), ensuring domain/store are properly closed and avoiding goroutine leakage across tests.",
   "module": "server",
-  "fix_pattern": "server: fix leak for test `TestDumpStatsAPI`",
+  "fix_pattern": "Ensure full teardown via suite stop helper (stopServer) rather than only closing the HTTP server; close domain/store to prevent goroutine leaks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15665",
     "https://github.com/pingcap/tidb/pull/15665.patch"

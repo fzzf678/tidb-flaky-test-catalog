@@ -17,15 +17,17 @@
   ],
   "failure_signature": "PR body: fix `binlog_test` CI error for sequence binlog; add wait time.",
   "root_cause_categories": [
-    "async_timing_issue"
+    "async_timing_issue",
+    "shared_state_pollution"
   ],
   "review_smells": [
+    "time_sleep_for_sync",
     "async_wait_without_backoff",
-    "clock_skew_dependency"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). Fixed waits without polling/backoff are brittle under CI timing jitter. This PR stabilizes it by: binlog_test: fix sequence binlog test error in CI.",
-  "module": "domain",
-  "fix_pattern": "binlog_test: fix sequence binlog test error in CI",
+  "root_cause_explanation": "Sequence/binlog events are produced asynchronously and the test relied on polling with fixed sleeps and shared pump payload state. Under CI load or cross-test interference, it could observe stale/extra payloads or miss the expected binlog within a short window. This PR clears the pump payloads at the start and adjusts polling retry/sleep to wait for the expected DDL binlog, reducing timing and shared-state sensitivity.",
+  "module": "ddl",
+  "fix_pattern": "Clear shared pump payloads at test start and adjust polling retry/sleep to wait for async DDL binlog to be visible.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15119",
     "https://github.com/pingcap/tidb/pull/15119.patch"

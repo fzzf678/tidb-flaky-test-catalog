@@ -17,15 +17,15 @@
   ],
   "failure_signature": "PR body says data race in `TestNoneAccessPathsFoundByIsolationRead`; make integration suite run serial (unparallel).",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code",
     "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix data race in `TestNoneAccessPathsFoundByIsolationRead`.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix data race in `TestNoneAccessPathsFoundByIsolationRead`",
+  "root_cause_explanation": "The integration suite contained tests that were not safe to run in parallel due to shared state, leading to data races (as reported in the PR body). This PR moves the problematic tests into SerialSuites so they run serially, avoiding parallel interference and the resulting data races.",
+  "module": "planner",
+  "fix_pattern": "Move the integration tests into SerialSuites (run unparallel) to avoid data races from shared state under parallel execution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15482",
     "https://github.com/pingcap/tidb/pull/15482.patch"

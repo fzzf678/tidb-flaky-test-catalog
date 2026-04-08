@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix AnalyzeStatus unit test data race.",
-  "module": "executor",
-  "fix_pattern": "executor: fix AnalyzeStatus unit test data race",
+  "root_cause_explanation": "Analyze job state/timestamps were updated without consistently holding the job mutex, which could lead to data races when jobs are read/sorted concurrently (e.g., in AnalyzeStatus-related tests). This PR expands locking to cover updates to job fields (including moving time.Now() inside the lock), eliminating the data race.",
+  "module": "statistics",
+  "fix_pattern": "Ensure AnalyzeJob fields (state/updateTime) are read/updated under the job mutex; avoid calling time.Now() and mutating job state outside the lock.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15481",
     "https://github.com/pingcap/tidb/pull/15481.patch"

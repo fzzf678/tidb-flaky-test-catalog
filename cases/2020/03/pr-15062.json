@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body: move testShowStatsSuite into SerialSuites (Fixes #14931).",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "statistics_sensitive_test"
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: executor: move testShowStatsSuite into SerialSuites.",
+  "root_cause_explanation": "The suite likely relies on shared/global state (e.g., statistics/system tables) and was flaky when running in parallel with other suites. This PR registers testShowStatsSuite as SerialSuites so it runs serially, avoiding cross-test interference.",
   "module": "executor",
-  "fix_pattern": "executor: move testShowStatsSuite into SerialSuites",
+  "fix_pattern": "Move suite into SerialSuites to avoid parallel execution interference on shared state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15062",
     "https://github.com/pingcap/tidb/pull/15062.patch"

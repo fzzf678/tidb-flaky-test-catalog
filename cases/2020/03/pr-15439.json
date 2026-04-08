@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body: the unit test of AnalyzeStatus is not robust.",
   "root_cause_categories": [
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: infoschema: make the unit test of AnalyzeStatus robust.",
+  "root_cause_explanation": "The test asserted exact rows from a shared system table (`information_schema.analyze_status`), which can contain entries from other tests and make strict row-count/content assertions flaky. This PR makes the test deterministic by using a unique table name and filtering/validating analyze_status by TABLE_NAME (presence/absence) instead of asserting the entire table contents.",
   "module": "domain",
-  "fix_pattern": "infoschema: make the unit test of AnalyzeStatus robust.",
+  "fix_pattern": "Use a unique table name and filter queries on shared system tables (analyze_status) instead of asserting exact full-table contents.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15439",
     "https://github.com/pingcap/tidb/pull/15439.patch"

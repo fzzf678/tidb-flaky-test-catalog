@@ -17,14 +17,15 @@
   ],
   "failure_signature": "PR title: stablize read lock check case.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "time_sleep_for_sync",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: test: stablize read lock check case.",
-  "module": "test_infra",
-  "fix_pattern": "test: stablize read lock check case",
+  "root_cause_explanation": "The test was timing-sensitive around pessimistic locking/commit. It relied on short sleeps and a strict wall-clock duration expectation, which can intermittently fail under CI load. This PR removes the brittle elapsed-time assertion, increases lock TTL / lock-wait timeout, and adjusts waits to make the behavior more stable.",
+  "module": "txn",
+  "fix_pattern": "Remove strict wall-clock duration assertion; widen lock TTL / lock-wait timeout and adjust waits to reduce timing sensitivity.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15094",
     "https://github.com/pingcap/tidb/pull/15094.patch"

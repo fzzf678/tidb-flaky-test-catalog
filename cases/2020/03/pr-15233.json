@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR title: fix occasional panic of baseline evolution.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner/bindinfo: fix occasional panic of baseline evolution.",
+  "root_cause_explanation": "Baseline evolution could panic due to a race on partially-initialized binding data: evolve tasks inserted a Binding with only ID set while the Hint field remained nil, creating a time window where a query could pick the verified plan from cache and hit a nil pointer dereference in Optimize -> GetFirstTableHints. This PR builds both the Binding ID and hints when adding evolve tasks, avoiding the panic window.",
   "module": "planner",
-  "fix_pattern": "planner/bindinfo: fix occasional panic of baseline evolution",
+  "fix_pattern": "Avoid publishing partially-initialized bindings: build Binding ID and hints when enqueueing evolve tasks so cached bindings are always valid.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15233",
     "https://github.com/pingcap/tidb/pull/15233.patch"

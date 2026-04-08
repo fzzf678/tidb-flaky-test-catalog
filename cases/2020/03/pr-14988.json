@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body: use random server port for the test instead of fixed 127.0.0.1:10100.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "external_dependency"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test started an HTTP server on a fixed port (127.0.0.1:10100), which can intermittently fail when the port is already in use (e.g., parallel tests or other processes). This PR switches to using a random/ephemeral port via httptest.NewServer and uses the returned URL, avoiding port conflicts.",
   "module": "server",
-  "fix_pattern": "store/helper: use random server port in test",
+  "fix_pattern": "Use httptest.NewServer (random/ephemeral port) instead of binding to a fixed host:port in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14988",
     "https://github.com/pingcap/tidb/pull/14988.patch"
