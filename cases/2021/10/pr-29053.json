@@ -17,14 +17,14 @@
   ],
   "failure_signature": "planner: fix the unstable test TestGCBindRecord",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix the unstable test TestGCBindRecord.",
+  "root_cause_explanation": "The test was flaky due to ordering of global-state mutation: `TestGCBindRecord` sets the global `bindinfo.Lease` to 0 for GC tests, but the mock domain/store was previously created before changing the lease, so the bind handle could observe the old lease and behave timing-dependently. This PR stabilizes it by setting `bindinfo.Lease` before creating the domain/store so the handle uses the intended lease.",
   "module": "planner",
-  "fix_pattern": "planner: fix the unstable test TestGCBindRecord",
+  "fix_pattern": "Set global `bindinfo.Lease` before initializing the mock domain/store (and restore it after the test) so the bind GC timing is deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/29053",
     "https://github.com/pingcap/tidb/pull/29053.patch"

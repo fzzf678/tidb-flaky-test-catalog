@@ -17,15 +17,14 @@
   ],
   "failure_signature": "- c.Skip(\"skip race test\") | tk.MustQuery(\"select a from tlist order by a\").Check(newtestkit.Rows(\"1\", \"2\", \"3\", \"4\", \"8\", \"9\")) (planner/core/integration_partition_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: - c.Skip(\"skip race test\") | tk.MustQuery(\"select a from tlist order by a\").Check(newtestkit.Rows(\"1\", \"2\", \"3\", \"4\", \"8\", \"9\")) (planner/core/integration_partition_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a test-infra migration for `planner/core/integration_partition_test.go` (moving from gocheck to testify). The presence of `skip race test` is a generic guard and the recorded SQL already includes ORDER BY; there is no concrete flaky-test failure signature or targeted stabilization mechanism identified beyond the migration/skip.",
   "module": "planner",
-  "fix_pattern": "- c.Skip(\"skip race test\") | tk.MustQuery(\"select a from tlist order by a\").Check(newtestkit.Rows(\"1\", \"2\", \"3\", \"4\", \"8\", \"9\")) (planner/core/integration_partition_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28543",
     "https://github.com/pingcap/tidb/pull/28543.patch"

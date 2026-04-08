@@ -17,14 +17,14 @@
   ],
   "failure_signature": "+ // Add the hook here to avoid data race.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: + // Add the hook here to avoid data race.",
+  "root_cause_explanation": "The test was flaky due to shared global state mutation: the moved serial-only integration test (e.g., `TestOutdatedStatsCheck`) adjusts global knobs like `handle.AutoAnalyzeMinCnt` and global auto-analyze time sysvars, which can conflict with other tests when executed concurrently. This PR stabilizes the suite by moving these global-state-mutating checks into a dedicated serial test file/suite (`integration_serial_test.go` via `SerialSuites`), reducing cross-test interference and race-prone overlap.",
   "module": "statistics",
-  "fix_pattern": "+ // Add the hook here to avoid data race.",
+  "fix_pattern": "Move tests that mutate global variables/sysvars into a serial-only suite (or otherwise prevent concurrent execution) to avoid cross-test interference and race-prone overlap.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28693",
     "https://github.com/pingcap/tidb/pull/28693.patch"

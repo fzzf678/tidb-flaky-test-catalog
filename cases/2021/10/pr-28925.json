@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: // Only one rebuild can be in progress at a time, this prevents a lost update race.",
+  "root_cause_explanation": "The test was flaky due to a race in shared metadata/session state: concurrent sysvar cache rebuilds could overlap (lost-update race) and lead to inconsistent sysvar values (including connection charset/collation) observed by the parser/executor, making charset-sensitive tests unstable. This PR stabilizes it by serializing sysvar cache rebuilds with a rebuild lock and by parsing SQL with explicit connection charset/collation parameters.",
   "module": "parser",
-  "fix_pattern": "// Only one rebuild can be in progress at a time, this prevents a lost update race",
+  "fix_pattern": "Serialize sysvar cache rebuilds (avoid lost-update races) and parse SQL with explicit connection charset/collation parameters so charset-sensitive tests observe consistent settings.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/28925",
     "https://github.com/pingcap/tidb/pull/28925.patch"
