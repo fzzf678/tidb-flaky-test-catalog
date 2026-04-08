@@ -15,27 +15,26 @@
   "symptoms": [
     "tk.MustQuery(\"explain select * from t where a > 10 order by _tidb_rowid\").Check(testkit.Rows( (executor/rowid_test.go)"
   ],
-  "failure_signature": "tk.MustQuery(\"explain select * from t where a > 10 order by _tidb_rowid\").Check(testkit.Rows( (executor/rowid_test.go)",
+  "failure_signature": "INSUFFICIENT_EVIDENCE: This PR changes planner behavior around `_tidb_rowid` keep-order plans, but no concrete intermittent flaky signature is provided in the case data.",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a planner/correctness change to treat `ExtraHandleColumn` as the handle for tables without a PK, affecting whether a `TableScan` can keep `_tidb_rowid` order (and related EXPLAIN output). The case data does not include a concrete intermittent failure signature or a targeted flaky-test stabilization change, so keep it as needs-more-evidence rather than guessing taxonomy.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11959",
     "https://github.com/pingcap/tidb/pull/11959.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/11959.patch",
   "changed_files": [
+    "executor/rowid_test.go",
+    "planner/core/logical_plans.go",
     "cmd/explaintest/r/access_path_selection.result",
-    "cmd/explaintest/t/access_path_selection.test",
-    "planner/core/logical_plans.go"
+    "cmd/explaintest/t/access_path_selection.test"
   ],
   "triage": {
     "sources": [
@@ -47,5 +46,5 @@
       "files: cmd/explaintest/r/access_path_selection.result, cmd/explaintest/t/access_path_selection.test, executor/rowid_test.go, planner/core/logical_plans.go"
     ]
   },
-  "analysis": "PR title: planner: use ExtraHandleColumn as PK when generating TablePath\nPR url: https://github.com/pingcap/tidb/pull/11959\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"explain select * from t where a > 10 order by _tidb_rowid\").Check(testkit.Rows( (executor/rowid_test.go)\nChanged files (3): cmd/explaintest/r/access_path_selection.result, cmd/explaintest/t/access_path_selection.test, planner/core/logical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/11959.patch\nPicked test: type=unit path=executor/rowid_test.go name=rowid_test"
+  "analysis": "PR title: planner: use ExtraHandleColumn as PK when generating TablePath\nPR url: https://github.com/pingcap/tidb/pull/11959\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"explain select * from t where a > 10 order by _tidb_rowid\").Check(testkit.Rows( (executor/rowid_test.go)\nChanged files (4): executor/rowid_test.go, planner/core/logical_plans.go, cmd/explaintest/r/access_path_selection.result, cmd/explaintest/t/access_path_selection.test\nPatch url: https://github.com/pingcap/tidb/pull/11959.patch\nPicked test: type=unit path=executor/rowid_test.go name=rowid_test"
 }

@@ -15,17 +15,16 @@
   "symptoms": [
     "tk.MustQuery(\"select t01.c1,t01.c2,t01.c3 from (select t1.*,@c3:=@c3+1 as c3 from (select t.*,@c3:=0 from t order by t.c1)t1)t01 where t01.c3=1 and t01.c2='d'\").Check(testkit.Rows()) (planner/core/integration_test.go)"
   ],
-  "failure_signature": "tk.MustQuery(\"select t01.c1,t01.c2,t01.c3 from (select t1.*,@c3:=@c3+1 as c3 from (select t.*,@c3:=0 from t order by t.c1)t1)t01 where t01.c3=1 and t01.c2='d'\").Check(testkit.Rows()) (planner/core/integration_test.go)",
+  "failure_signature": "INSUFFICIENT_EVIDENCE: This PR fixes predicate-pushdown correctness with subquery `setvar` evaluation; no concrete intermittent flaky signature is provided in the case data.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a logical correctness fix (predicate pushdown behavior when `setvar` is evaluated in a subquery). The case data does not include a concrete intermittent failure signature or a targeted stabilization fix pattern, so keep it as needs-more-evidence rather than guessing the root cause taxonomy.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11624",
     "https://github.com/pingcap/tidb/pull/11624.patch"
