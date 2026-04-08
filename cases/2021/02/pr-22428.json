@@ -13,18 +13,18 @@
     "name": "tiflash_test"
   },
   "symptoms": [
-    "fix data race"
+    "DATA RACE: concurrent access to MPPTaskHandler.TunnelSet in getAndActiveTunnel (missing tunnelSetLock)"
   ],
-  "failure_signature": "fix data race",
+  "failure_signature": "DATA RACE: concurrent TunnelSet map access in MPPTaskHandler.getAndActiveTunnel",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The only available signal is a vague \"fix data race\" note, while the PR itself is mainly a refactor of unistore cophandler MPP execution logic for unit tests. The patch does not provide a concrete flaky failure signature or a clearly targeted stabilization change that can be confidently mapped to a root-cause category, so we avoid guessing and mark it as needing more evidence.",
+  "root_cause_explanation": "The test was flaky due to a data race in the mock unistore MPP tunnel handling. `MPPTaskHandler.getAndActiveTunnel()` accessed the shared `TunnelSet` map and closed `connectedCh` without holding `tunnelSetLock`, which can race when multiple goroutines establish MPP connections in parallel during unit tests. This PR fixes the flakiness by locking around the `TunnelSet` lookup/activation path to make the tunnel lifecycle thread-safe under concurrent use.",
   "module": "test_infra",
-  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
+  "fix_pattern": "Add mutex protection (`tunnelSetLock`) around `MPPTaskHandler.TunnelSet` access in `getAndActiveTunnel()` to eliminate concurrent map/channel lifecycle races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/22428",
     "https://github.com/pingcap/tidb/pull/22428.patch"
