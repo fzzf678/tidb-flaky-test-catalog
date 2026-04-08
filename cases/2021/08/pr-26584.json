@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(`SELECT * FROM ts ORDER BY id`).Check(testkit.Rows(`1 0000-00-00 00:00:00`)) (executor/insert_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(`SELECT * FROM ts ORDER BY id`).Check(testkit.Rows(`1 0000-00-00 00:00:00`)) (executor/insert_test.go).",
-  "module": "test_infra",
-  "fix_pattern": "tk.MustQuery(`SELECT * FROM ts ORDER BY id`).Check(testkit.Rows(`1 0000-00-00 00:00:00`)) (executor/insert_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes invalid TIMESTAMP handling (bug fix) and adds/updates tests. The available evidence does not indicate a targeted flaky-test stabilization change with a clear intermittent failure signature, so we conservatively classify it as insufficient evidence.",
+  "module": "executor",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26584",
     "https://github.com/pingcap/tidb/pull/26584.patch"

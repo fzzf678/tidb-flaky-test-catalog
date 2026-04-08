@@ -17,14 +17,15 @@
   ],
   "failure_signature": "txn, session, test: Try to stabilize testTxnStateSerialSuite.TestRunning and TestBlocked",
   "root_cause_categories": [
-    "test_infra_migration"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "test_suite_setup_issue"
+    "race_condition_in_async_code",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to instability introduced during test-infrastructure migration or refactoring (framework changes, fixtures/setup/teardown, or helper updates). This PR stabilizes it by: txn, session, test: Try to stabilize testTxnStateSerialSuite.TestRunning and TestBlocked.",
+  "root_cause_explanation": "The tests were flaky due to timing-dependent coordination across goroutines and sleep-based synchronization (background work may still be running when the test returns, or sleeps may be insufficient under load). This PR stabilizes them by waiting for goroutines to finish, using deterministic pause hooks instead of sleeps when possible, and increasing sleeps only when unavoidable.",
   "module": "txn",
-  "fix_pattern": "txn, session, test: Try to stabilize testTxnStateSerialSuite.TestRunning and TestBlocked",
+  "fix_pattern": "Use deterministic synchronization (wait for goroutines; pause hooks) instead of fragile sleep-based timing, and increase time windows only when necessary.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27235",
     "https://github.com/pingcap/tidb/pull/27235.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 2\", \"100 102\")) (session/session_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 2\", \"100 102\")) (session/session_test.go).",
-  "module": "executor",
-  "fix_pattern": "tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 2\", \"100 102\")) (session/session_test.go)",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily adds tests for retrying DML on local temporary tables. The available evidence does not indicate a targeted flaky-test stabilization change with a clear intermittent failure signature, so we conservatively classify it as insufficient evidence.",
+  "module": "session",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27183",
     "https://github.com/pingcap/tidb/pull/27183.patch"

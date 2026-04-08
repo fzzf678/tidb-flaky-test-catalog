@@ -17,14 +17,14 @@
   ],
   "failure_signature": "statistics: fix two unstable tests",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "statistics_sensitive_test"
+    "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: statistics: fix two unstable tests.",
+  "root_cause_explanation": "The tests were flaky due to cross-test interference via shared statistics state/tables. This PR stabilizes them by moving the global-stats-with-options tests into a serial statistics suite, reducing concurrent access to shared stats tables and making the tests isolated/deterministic.",
   "module": "statistics",
-  "fix_pattern": "statistics: fix two unstable tests",
+  "fix_pattern": "Run stateful statistics tests in a serial suite to avoid cross-test interference through shared stats tables/state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27430",
     "https://github.com/pingcap/tidb/pull/27430.patch"

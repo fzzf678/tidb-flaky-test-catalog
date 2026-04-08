@@ -17,14 +17,15 @@
   ],
   "failure_signature": "executor: fix unstable TestSelectAsOf",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "clock_skew_dependency",
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: fix unstable TestSelectAsOf.",
-  "module": "executor",
-  "fix_pattern": "executor: fix unstable TestSelectAsOf",
+  "root_cause_explanation": "The test was flaky because it relied on `NOW()` + `sleep` to validate stale-read timestamp (TSO) accuracy, which is sensitive to CI scheduling/CPU jitter and wall-clock timing. This PR stabilizes it by injecting a deterministic `NOW()` value via failpoints and asserting against exact expected timestamps (removing tolerance-based checks), reducing sensitivity to clock skew and sleep timing variability.",
+  "module": "txn",
+  "fix_pattern": "Avoid NOW()+sleep timing assertions; inject deterministic NOW() and assert exact expected timestamps/TSOs to reduce clock/scheduling jitter sensitivity.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27163",
     "https://github.com/pingcap/tidb/pull/27163.patch"

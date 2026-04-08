@@ -17,14 +17,14 @@
   ],
   "failure_signature": "A bug in the sysvar cache identified by flaky test cases has been fixed.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "The test was flaky due to a lost-update race in the sysvar cache: concurrent cache rebuilds could overlap, and an earlier fetch could finish last and overwrite newer sysvar values. This PR stabilizes it by serializing sysvar cache rebuilds with a dedicated rebuild mutex (separate from the RW lock protecting the maps) and by re-enabling previously skipped sysvar-related tests.",
   "module": "domain",
-  "fix_pattern": "A bug in the sysvar cache identified by flaky test cases has been fixed.",
+  "fix_pattern": "Serialize sysvar cache rebuilds with a rebuild lock (avoid lost-update races) and remove temporary c.Skip() quarantine in sysvar-related tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26714",
     "https://github.com/pingcap/tidb/pull/26714.patch"

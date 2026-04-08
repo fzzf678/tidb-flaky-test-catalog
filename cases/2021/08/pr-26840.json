@@ -17,14 +17,14 @@
   ],
   "failure_signature": "executor: fix unstable TestStaleSelect",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: fix unstable TestStaleSelect.",
+  "root_cause_explanation": "The test was flaky due to timing-dependent stale-read behavior and wall-clock based timestamp calculations. This PR stabilizes it by moving `TestStaleSelect` into a serial suite (reducing interference) and by removing the most timing-fragile \"dynamic timestamp\" stale-select subcases which depended on `CURRENT_TIMESTAMP - INTERVAL ...` computed from runtime deltas.",
   "module": "executor",
-  "fix_pattern": "executor: fix unstable TestStaleSelect",
+  "fix_pattern": "Run stale-read tests in a serial suite and avoid wall-clock delta based dynamic timestamp assertions that are sensitive to timing jitter.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26840",
     "https://github.com/pingcap/tidb/pull/26840.patch"

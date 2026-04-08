@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: fix the unstable test TestForAnalyzeStatus",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+    "async_wait_without_backoff"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: planner: fix the unstable test TestForAnalyzeStatus.",
-  "module": "planner",
-  "fix_pattern": "planner: fix the unstable test TestForAnalyzeStatus",
+  "root_cause_explanation": "The test was flaky due to async timing between `ANALYZE` completion and in-memory statistics being fully loaded/visible to subsequent queries (e.g. reading analyze status). This PR stabilizes it by explicitly synchronizing after `ANALYZE` (assert no warnings and force-load needed histograms) before proceeding with assertions, and by removing the temporary skip.",
+  "module": "statistics",
+  "fix_pattern": "After ANALYZE, explicitly synchronize stats visibility (check warnings and load needed histograms) before asserting on analyze status.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27113",
     "https://github.com/pingcap/tidb/pull/27113.patch"
