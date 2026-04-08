@@ -20,12 +20,11 @@
     "async_timing_issue"
   ],
   "review_smells": [
-    "async_wait_without_backoff",
     "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). Fixed waits without polling/backoff are brittle under CI timing jitter. This PR stabilizes it by: test: stable lock wait test.",
-  "module": "test_infra",
-  "fix_pattern": "test: stable lock wait test",
+  "root_cause_explanation": "The lock-wait test asserted on a narrow timing window using `time.Since(start)` at assertion time, which could include extra scheduling delay and make the check flaky on CI. The PR stabilizes it by measuring the duration around the actual SQL execution (inside the goroutine) and asserting on that captured duration.",
+  "module": "session",
+  "fix_pattern": "Measure the lock-wait duration around the SQL execution (inside the goroutine) instead of using `time.Since(start)` at assertion time to reduce CI timing jitter.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14925",
     "https://github.com/pingcap/tidb/pull/14925.patch"

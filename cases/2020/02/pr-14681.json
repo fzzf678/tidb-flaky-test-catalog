@@ -17,14 +17,15 @@
   ],
   "failure_signature": "PR body: tests have global side effects (config.GetGlobalConfig().Security.SkipGrantTable / MemQuotaQuery) causing other tests fail when run in parallel; fix by making suites serial.",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by"
+    "global_variable_mutation",
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: executor: fix executor tests for TestFlushPrivilegesPanic and TestSortSpillDisk.",
+  "root_cause_explanation": "Some executor tests mutated global state (`config.GetGlobalConfig().Security.SkipGrantTable`, `MemQuotaQuery`) and could break other tests when the package runs in parallel. The PR stabilizes the suite by moving these side-effecting tests into `SerialSuites`, isolating the global mutations and preventing cross-test interference.",
   "module": "executor",
-  "fix_pattern": "executor: fix executor tests for TestFlushPrivilegesPanic and TestSortSpillDisk",
+  "fix_pattern": "Move the global-state-mutating tests into `SerialSuites` so `SkipGrantTable` / `MemQuotaQuery` changes do not affect other parallel tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14681",
     "https://github.com/pingcap/tidb/pull/14681.patch"

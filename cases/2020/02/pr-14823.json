@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body: shard_bits of AUTO_RANDOM handles are not all zero (instead of requiring each handle non-zero).",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_test_input"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "randomized_test_input"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix the CI problem in TestAutoRandomBitsData",
+  "root_cause_explanation": "The test asserted a probabilistic property of `AUTO_RANDOM` handles: it required every handle's `shard_bits` to be non-zero. In practice, some handles can legitimately have zero shard bits, so the strict assertion could fail intermittently. The PR stabilizes the test by relaxing the check to \"shard_bits are not all zero\" across the set, turning a probabilistic assertion into a deterministic invariant.",
+  "module": "executor",
+  "fix_pattern": "Relax the assertion for `AUTO_RANDOM` handles from \"each handle has non-zero shard_bits\" to \"shard_bits are not all zero\" to avoid probabilistic flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14823",
     "https://github.com/pingcap/tidb/pull/14823.patch"

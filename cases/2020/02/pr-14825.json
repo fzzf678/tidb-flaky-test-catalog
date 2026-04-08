@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body: \"Data race found in `TestDisableTxnAutoRetry`.\"",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix data race in TestDisableTxnAutoRetry.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix data race in TestDisableTxnAutoRetry",
+  "root_cause_explanation": "`TestDisableTxnAutoRetry` mutated global config (`TxnLocalLatches.Enabled`) and could race/interfere with other tests. The PR stabilizes it by updating the global config via `config.StoreGlobalConfig(...)` and restoring the original config with `defer`, reducing cross-test pollution and avoiding concurrent global-state races.",
+  "module": "session",
+  "fix_pattern": "Update `TxnLocalLatches.Enabled` via `config.StoreGlobalConfig(...)` and defer-restore the original global config to avoid leaking global mutations across tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14825",
     "https://github.com/pingcap/tidb/pull/14825.patch"

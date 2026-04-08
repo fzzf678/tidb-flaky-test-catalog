@@ -20,12 +20,11 @@
     "shared_state_pollution"
   ],
   "review_smells": [
-    "global_variable_mutation",
     "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: test: fix `TestAggToCopHint`.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix `TestAggToCopHint`",
+  "root_cause_explanation": "The test relied on the shared system table `mysql.opt_rule_blacklist` to control optimizer rules, but other tests could modify the same table and cause intermittent failures. The PR stabilizes the test by removing the dependency on `mysql.opt_rule_blacklist` and using a dedicated local table setup for the assertion.",
+  "module": "planner",
+  "fix_pattern": "Avoid using the shared `mysql.opt_rule_blacklist` table; create a local table in the test to remove cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14741",
     "https://github.com/pingcap/tidb/pull/14741.patch"

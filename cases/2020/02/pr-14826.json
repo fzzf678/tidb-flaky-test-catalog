@@ -17,14 +17,15 @@
   ],
   "failure_signature": "PR body lists Windows-specific nondeterminism/behavior differences (imprecise time.Now(), os.Remove() fails if file still open, unix socket addr issues).",
   "root_cause_categories": [
-    "async_timing_issue"
+    "external_dependency"
   ],
   "review_smells": [
-    "clock_skew_dependency"
+    "clock_skew_dependency",
+    "hardcoded_port_or_resource"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: *: fix unit tests on the windows platform.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix unit tests on the windows platform",
+  "root_cause_explanation": "The failures were environment-dependent: Windows has different semantics and precision for time, file deletion, and unix sockets (and lacks some Linux tools like `sysctl`). The PR stabilizes tests on Windows by adding OS guards/build tags, closing files before `os.Remove`, handling low-precision `time.Now().UnixNano()` behavior, and skipping unix-socket / sysctl-dependent assertions on Windows.",
+  "module": "config",
+  "fix_pattern": "Add Windows-specific guards/build tags and adjust tests to tolerate Windows behavior differences (time precision, file removal, unix socket address, missing sysctl).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14826",
     "https://github.com/pingcap/tidb/pull/14826.patch"
