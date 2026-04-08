@@ -17,15 +17,14 @@
   ],
   "failure_signature": "PR title: make TestCoprocessorStreamRecvTimeout stable.",
   "root_cause_categories": [
-    "async_timing_issue"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "insufficient_timeout",
-    "clock_skew_dependency"
+    "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: store/tikv: make TestCoprocessorStreamRecvTimeout more stable.",
+  "root_cause_explanation": "TestCoprocessorStreamRecvTimeout was flaky because it used a generic table name (`t`) in the shared `test` database; when tests run in parallel, other tests may create/alter/drop the same table name and interfere with this test. The fix renames the table to a dedicated name (`cop_stream_timeout`) to avoid cross-test collisions on shared schema objects.",
   "module": "kv",
-  "fix_pattern": "store/tikv: make TestCoprocessorStreamRecvTimeout more stable",
+  "fix_pattern": "Use a dedicated table name (cop_stream_timeout) instead of the generic `t` to avoid cross-test schema collisions under parallel execution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/17867",
     "https://github.com/pingcap/tidb/pull/17867.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR title: fix testleak in TestIntegration.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "TestIntegration leaked resources because it did not close the mock store and domain, which could leave background goroutines running and make leak checks flaky. In addition, the leak-test mechanism based on goroutine stack snapshots can produce false positives when a goroutine enters/leaves a function between BeforeTest and AfterTest. The fix adds proper store/domain Close() defers and uses the shared util/testleak helpers consistently to reduce both real leaks and false-positive leak reports.",
   "module": "test_infra",
-  "fix_pattern": "test: fix testleak in TestIntegration",
+  "fix_pattern": "Close store/domain in TestIntegration and rely on util/testleak BeforeTest/AfterTest helpers to reduce leaked goroutines and false-positive leak reports.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/17667",
     "https://github.com/pingcap/tidb/pull/17667.patch"

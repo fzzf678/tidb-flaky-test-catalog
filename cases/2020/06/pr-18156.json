@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR title: make TestUpdateLeader3 stable.",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: test: make TestUpdateLeader3 stable.",
-  "module": "test_infra",
-  "fix_pattern": "test: make TestUpdateLeader3 stable",
+  "root_cause_explanation": "TestUpdateLeader3 was flaky because it asserted that the resolved follower address was non-empty, but the address resolution happens asynchronously in a background goroutine and can temporarily return an empty string. The fix removes the overly strict non-empty assertions and keeps the essential check that the resolved address differs from the expected store3 address.",
+  "module": "kv",
+  "fix_pattern": "Remove brittle non-empty address assertions; keep only the assertions that the resolved address differs from the target store address.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/18156",
     "https://github.com/pingcap/tidb/pull/18156.patch"

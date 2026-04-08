@@ -24,9 +24,9 @@
     "race_condition_in_async_code",
     "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix data race caused by update global config.",
+  "root_cause_explanation": "Many tests mutate the process-wide global config, which can race with other tests under parallel execution and cause data races / cross-test interference. This PR introduces config.UpdateGlobal() and config.RestoreFunc(), and updates tests to use them so global config changes are applied and restored in a consistent, race-safe way.",
   "module": "test_infra",
-  "fix_pattern": "test: fix data race caused by update global config",
+  "fix_pattern": "Use config.UpdateGlobal() + config.RestoreFunc() for global config mutations in tests to avoid data races and ensure the original config is restored.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/17964",
     "https://github.com/pingcap/tidb/pull/17964.patch"
