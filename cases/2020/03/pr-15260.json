@@ -18,14 +18,15 @@
   "failure_signature": "PR title: fix the data race on TestDataForTableStatsField/TestPartitionsTable.",
   "root_cause_categories": [
     "concurrency_data_race",
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation",
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix the data race on TestDataForTableStatsField and TestPartitionsTable.",
+  "root_cause_explanation": "The tests and stats cache logic involved shared/global state (including `TableStatsCacheExpiry`) and could race under concurrent execution. This PR improves locking around the stats cache and moves the tests that mutate the global expiry into a serial suite, avoiding data races caused by parallel interference.",
   "module": "executor",
-  "fix_pattern": "executor: fix the data race on TestDataForTableStatsField and TestPartitionsTable",
+  "fix_pattern": "Improve locking around stats cache and run tests that mutate `TableStatsCacheExpiry` in SerialSuites to avoid parallel data races; restore global state after the test.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15260",
     "https://github.com/pingcap/tidb/pull/15260.patch"

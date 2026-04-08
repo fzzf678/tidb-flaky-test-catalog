@@ -22,15 +22,16 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix AnalyzeStatus unit test data race.",
-  "module": "executor",
-  "fix_pattern": "executor: fix AnalyzeStatus unit test data race",
+  "root_cause_explanation": "Analyze job state/timestamps were updated without consistently holding the job mutex, which could lead to data races when jobs are read/sorted concurrently (e.g., in AnalyzeStatus-related tests). This PR expands locking to cover updates to job fields (including moving time.Now() inside the lock), eliminating the data race.",
+  "module": "statistics",
+  "fix_pattern": "Ensure AnalyzeJob fields (state/updateTime) are read/updated under the job mutex; avoid calling time.Now() and mutating job state outside the lock.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15481",
     "https://github.com/pingcap/tidb/pull/15481.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/15481.patch",
   "changed_files": [
+    "executor/infoschema_reader_test.go",
     "statistics/analyze_jobs.go"
   ],
   "triage": {
@@ -41,8 +42,8 @@
     "evidence": [
       "evidence: PR title: fix AnalyzeStatus unit test data race.",
       "evidence: diff expands locking to cover updates to AnalyzeJob state/timestamps (e.g., lock before setting job.updateTime/State; move time.Now inside job mutex) (statistics/analyze_jobs.go).",
-      "files: statistics/analyze_jobs.go"
+      "files: executor/infoschema_reader_test.go, statistics/analyze_jobs.go"
     ]
   },
-  "analysis": "PR title: executor: fix AnalyzeStatus unit test data race\nPR url: https://github.com/pingcap/tidb/pull/15481\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: fix AnalyzeStatus unit test data race.\nChanged files (1): statistics/analyze_jobs.go\nPatch url: https://github.com/pingcap/tidb/pull/15481.patch\nPicked test: type=unit path=statistics/analyze_jobs.go name=analyze_jobs"
+  "analysis": "PR title: executor: fix AnalyzeStatus unit test data race\nPR url: https://github.com/pingcap/tidb/pull/15481\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: PR title: fix AnalyzeStatus unit test data race.\nChanged files (2): executor/infoschema_reader_test.go, statistics/analyze_jobs.go\nPatch url: https://github.com/pingcap/tidb/pull/15481.patch\nPicked test: type=unit path=statistics/analyze_jobs.go name=analyze_jobs"
 }

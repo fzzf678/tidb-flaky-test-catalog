@@ -17,14 +17,16 @@
   ],
   "failure_signature": "PR title: fix the unstable test `TestPDConfHandler`.",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code",
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: config: fix the unstable test `TestPDConfHandler`.",
-  "module": "kv",
-  "fix_pattern": "config: fix the unstable test `TestPDConfHandler`",
+  "root_cause_explanation": "The test involved asynchronous config reload/register callbacks. It previously relied on real time/interval scheduling, which can race under CI timing variance. This PR injects a controllable timeAfter channel and uses WaitGroups to deterministically wait for register and reload events; it also runs the suite in SerialSuites to avoid parallel interference.",
+  "module": "config",
+  "fix_pattern": "Inject a controllable timeAfter channel and wait for register/reload via WaitGroups; run the suite serially to avoid parallel interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/15332",
     "https://github.com/pingcap/tidb/pull/15332.patch"
