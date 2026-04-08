@@ -17,15 +17,14 @@
   ],
   "failure_signature": "\"order by t3.id\").Check(testkit.Rows(\"1 <nil> case1\", \"2 z case1\")) (session/session_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic correctness issue in constant-folding for `CASE WHEN` under outer join simplification and adds regression tests. The available case data does not show an intermittent flaky signature or a nondeterminism trigger, so keep the conservative fallback classification rather than guessing a flaky root cause.",
   "module": "expression",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11105",
     "https://github.com/pingcap/tidb/pull/11105.patch"
@@ -33,7 +32,8 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/11105.patch",
   "changed_files": [
     "expression/constant_fold.go",
-    "expression/integration_test.go"
+    "expression/integration_test.go",
+    "session/session_test.go"
   ],
   "triage": {
     "sources": [
@@ -45,5 +45,5 @@
       "files: expression/constant_fold.go, expression/integration_test.go, session/session_test.go"
     ]
   },
-  "analysis": "PR title: expression, session: handle `CASE WHEN` specially when folding constant during outerJoin Simplification\nPR url: https://github.com/pingcap/tidb/pull/11105\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"order by t3.id\").Check(testkit.Rows(\"1 <nil> case1\", \"2 z case1\")) (session/session_test.go)\nChanged files (2): expression/constant_fold.go, expression/integration_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11105.patch\nPicked test: type=unit path=session/session_test.go name=session_test"
+  "analysis": "PR title: expression, session: handle `CASE WHEN` specially when folding constant during outerJoin Simplification\nPR url: https://github.com/pingcap/tidb/pull/11105\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"order by t3.id\").Check(testkit.Rows(\"1 <nil> case1\", \"2 z case1\")) (session/session_test.go)\nChanged files (3): expression/constant_fold.go, expression/integration_test.go, session/session_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11105.patch\nPicked test: type=unit path=session/session_test.go name=session_test"
 }

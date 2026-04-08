@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sql: \"select t1.a, t1.b from t t1 left join t t2 on t1.a = t2.a order by t2.a\", (planner/core/logical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily fixes/extends the outer join elimination rule and updates explain tests/results. The available case data does not show a concrete intermittent flaky signature or a targeted stabilization change; it appears to be a planner correctness/optimizer behavior update, so keep the conservative fallback classification rather than guessing nondeterminism categories.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11160",
     "https://github.com/pingcap/tidb/pull/11160.patch"
@@ -34,9 +33,11 @@
   "changed_files": [
     "cmd/explaintest/r/explain_complex.result",
     "cmd/explaintest/t/explain_complex.test",
+    "go.sum",
     "planner/core/logical_plan_test.go",
     "planner/core/plan.go",
-    "planner/core/rule_join_elimination.go"
+    "planner/core/rule_join_elimination.go",
+    "planner/core/rule_join_elimination_test.go"
   ],
   "triage": {
     "sources": [
@@ -48,5 +49,5 @@
       "files: cmd/explaintest/r/explain_complex.result, cmd/explaintest/t/explain_complex.test, go.sum, planner/core/logical_plan_test.go, planner/core/plan.go, planner/core/rule_join_elimination.go, planner/core/rule_join_elimination_test.go"
     ]
   },
-  "analysis": "PR title: planner: fix bugs and make it more effective in outer join elimination rule.\nPR url: https://github.com/pingcap/tidb/pull/11160\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select t1.a, t1.b from t t1 left join t t2 on t1.a = t2.a order by t2.a\", (planner/core/logical_plan_test.go)\nChanged files (5): cmd/explaintest/r/explain_complex.result, cmd/explaintest/t/explain_complex.test, planner/core/logical_plan_test.go, planner/core/plan.go, planner/core/rule_join_elimination.go\nPatch url: https://github.com/pingcap/tidb/pull/11160.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
+  "analysis": "PR title: planner: fix bugs and make it more effective in outer join elimination rule.\nPR url: https://github.com/pingcap/tidb/pull/11160\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select t1.a, t1.b from t t1 left join t t2 on t1.a = t2.a order by t2.a\", (planner/core/logical_plan_test.go)\nChanged files (7): cmd/explaintest/r/explain_complex.result, cmd/explaintest/t/explain_complex.test, go.sum, planner/core/logical_plan_test.go, planner/core/plan.go, planner/core/rule_join_elimination.go, planner/core/rule_join_elimination_test.go\nPatch url: https://github.com/pingcap/tidb/pull/11160.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
 }

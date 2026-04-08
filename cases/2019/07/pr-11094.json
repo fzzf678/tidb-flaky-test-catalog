@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from t use index(idx) where b = 1 order by b, a\").Check(testkit.Rows(\"1 1\", \"9223372036854775808 1\")) (executor/executor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily fixes planner correctness for unsigned primary keys (pushdown behavior) and adds/updates tests. The case evidence is a test SQL snippet rather than an intermittent failure signature, so keep the conservative fallback classification rather than guessing nondeterminism categories.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11094",
     "https://github.com/pingcap/tidb/pull/11094.patch"

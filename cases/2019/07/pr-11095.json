@@ -17,15 +17,15 @@
   ],
   "failure_signature": "planner/core: stabilize the execution order of window functions | sql: \"select sum(a) over (partition by a order by b), sum(b) over (order by a, b, c), sum(c) over(partition by a order by c), sum(d) over() from t\", (planner/core/logical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order",
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because the planner grouped window functions in a Go map and iterated over it, so the execution order of window functions (and the resulting logical plan string) could vary between runs due to randomized map iteration order. This PR stabilizes plan construction by deterministically sorting window specifications (partition/order clauses) before building window operators.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort window specifications/functions deterministically (avoid Go map iteration order) when building window operators to keep plan output stable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/11095",
     "https://github.com/pingcap/tidb/pull/11095.patch"
