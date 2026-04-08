@@ -20,12 +20,12 @@
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "async_schema_propagation",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: increase `SchemaOutOfDateRetryTimes` for robust test.",
+  "root_cause_explanation": "Under high DDL concurrency in unit tests, schema propagation can lag and trigger transient \"schema out of date\" errors. The PR makes the DDL tests more robust by increasing `SchemaOutOfDateRetryTimes` in the `ddl` test package, effectively giving schema sync more retry budget under CI timing jitter.",
   "module": "ddl",
-  "fix_pattern": "ddl: increase `SchemaOutOfDateRetryTimes` for robust test",
+  "fix_pattern": "Increase `domain.SchemaOutOfDateRetryTimes` in `ddl` tests to reduce transient schema-out-of-date failures under high concurrency.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14976",
     "https://github.com/pingcap/tidb/pull/14976.patch"

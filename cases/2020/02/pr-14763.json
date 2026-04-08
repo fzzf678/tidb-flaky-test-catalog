@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body: small float64 may format like \"3.2425e-05\"; appending \"00\" makes exponent parse fail (ErrTruncated).",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "nondeterministic_test_input"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "randomized_test_input"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unit test TestInDecimal",
+  "root_cause_explanation": "The test generated random float values and formatted them via `fmt.Sprintf(\"%v\", ...)`. For sufficiently small floats, `fmt` uses scientific notation (e.g., `3.2425e-05`), and appending zeros could turn the exponent into an invalid decimal string, causing intermittent `ErrTruncated` parse errors depending on random inputs. The PR stabilizes the test by generating deterministic decimal strings (integer part + fraction) to avoid scientific notation.",
+  "module": "expression",
+  "fix_pattern": "Avoid float64 `%v` formatting for random inputs; generate deterministic decimal strings (e.g., `fmt.Sprintf(\"%d.%d\", ...)`) to prevent scientific-notation edge cases.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14763",
     "https://github.com/pingcap/tidb/pull/14763.patch"

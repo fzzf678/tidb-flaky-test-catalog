@@ -37,6 +37,26 @@
       "status": "active"
     },
     {
+      "key": "randomized_test_input",
+      "title": "Randomized test input / probabilistic assertion",
+      "description": "Tests that generate random inputs (math/rand) or rely on probabilistic properties without controlling the seed or making the assertion deterministic.",
+      "why_risky": "Random inputs can occasionally hit rare edge cases (e.g., scientific notation, zero shard bits, rounding/overflow), and probabilistic assertions can fail rarely. This makes failures intermittent and hard to reproduce.",
+      "review_questions": [
+        "Does the test generate random inputs (math/rand) without a fixed seed or a per-test rand.Source?",
+        "Could random values hit edge cases that break parsing/formatting or assertions?",
+        "Can we replace randomness with deterministic test vectors, or log the seed to make failures reproducible?"
+      ],
+      "suggested_fixes": [
+        "Replace randomness with deterministic test vectors (table-driven inputs)",
+        "Use a fixed seed or per-test rand.Source and log the seed on failure",
+        "Avoid probabilistic assertions; assert deterministic invariants or accept equivalent outcomes"
+      ],
+      "related_root_causes": ["nondeterministic_test_input"],
+      "applies_to": ["unit", "integration"],
+      "severity": 2,
+      "status": "active"
+    },
+    {
       "key": "missing_order_by",
       "title": "Missing ORDER BY in SELECT queries",
       "description": "SELECT queries without explicit ORDER BY may return results in non-deterministic order, causing assertions to fail intermittently.",

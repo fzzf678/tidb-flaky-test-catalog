@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body explains integration test failures when lock-related global variables are set small; lock ttl may expire in CI.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: case: make TestSkipLargeTxnLock more stable.",
+  "root_cause_explanation": "The test computed a small lock TTL based on lock-related global variables tuned for speed, which could cause locks to expire under slower CI/integration environments and fail intermittently. The PR stabilizes the test by setting `committer.lockTTL` to a constant (original default) so the lock does not expire during the test.",
   "module": "txn",
-  "fix_pattern": "case: make TestSkipLargeTxnLock more stable",
+  "fix_pattern": "Use a constant/default lock TTL for the test (instead of deriving a tiny TTL from speed-tuned globals) to avoid lock expiry under CI timing jitter.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14879",
     "https://github.com/pingcap/tidb/pull/14879.patch"

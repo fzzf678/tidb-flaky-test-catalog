@@ -20,11 +20,11 @@
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "test_suite_setup_issue"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl:Revert \"ddl: speed up ddl test\".",
+  "root_cause_explanation": "High concurrency in the DDL test suites increased the chance of schema/DDL race and intermittent failures. This PR stabilizes the suite by reverting the earlier test-suite split/sharding change to reduce concurrency and restore the previous (more stable) test layout.",
   "module": "ddl",
-  "fix_pattern": "ddl:Revert \"ddl: speed up ddl test\"",
+  "fix_pattern": "Revert the DDL test-suite sharding/splitting change to reduce concurrency and avoid intermittent DDL/schema race failures.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14658",
     "https://github.com/pingcap/tidb/pull/14658.patch"

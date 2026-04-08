@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR title/merge commit says \"make unit test TestOptimisticConflicts more stable\".",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "After an expected commit failure in `TestOptimisticConflicts`, the session could remain in a transaction state; subsequent DDL (`TRUNCATE TABLE`) needs to commit first and could fail intermittently. The PR stabilizes the test by explicitly rolling back before running the DDL, and also avoids shared-key collisions in another snapshot test by using unique KV keys.",
   "module": "session",
-  "fix_pattern": "session: make unit test TestOptimisticConflicts more stable",
+  "fix_pattern": "Rollback the session after the expected commit failure before running DDL, and use unique KV keys in snapshot tests to avoid cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14746",
     "https://github.com/pingcap/tidb/pull/14746.patch"

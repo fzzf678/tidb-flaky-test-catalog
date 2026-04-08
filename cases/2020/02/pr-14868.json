@@ -20,12 +20,12 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code",
-    "global_variable_mutation"
+    "global_variable_mutation",
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix DATA RACE in TestParseSlowLogFile.",
+  "root_cause_explanation": "`TestParseSlowLogFile` mutated a global variable (`variable.MaxOfMaxAllowedPacket`) and could trigger data races or cross-test interference when the package tests ran in parallel. The PR stabilizes it by moving the global-state-changing part into a `SerialSuite`, isolating the mutation from parallel tests.",
   "module": "executor",
-  "fix_pattern": "executor: fix DATA RACE in TestParseSlowLogFile",
+  "fix_pattern": "Move `TestParseSlowLogFile` (which mutates `variable.MaxOfMaxAllowedPacket`) into a `SerialSuite` to avoid parallel global-state races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14868",
     "https://github.com/pingcap/tidb/pull/14868.patch"

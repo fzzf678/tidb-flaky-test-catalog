@@ -17,15 +17,14 @@
   ],
   "failure_signature": "PR body mentions leak check \"failed to find leaked go routines\" and a ddl test \"forgot to close mvccStore\" causing goroutine leak.",
   "root_cause_categories": [
-    "schema_change_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: test: fix a bug for leak check.",
+  "root_cause_explanation": "A DDL test leaked goroutines by not closing its MVCC store, and the leak-check helper could mistakenly re-initialize the baseline goroutine set after `BeforeTest()`, hiding leaked goroutines. The PR adds proper `mvccStore.Close()` cleanup and fixes leaktest initialization so leaked goroutines are detected reliably.",
   "module": "test_infra",
-  "fix_pattern": "test: fix a bug for leak check",
+  "fix_pattern": "Close the MVCC store with defer and fix leaktest baseline initialization to reliably detect leaked goroutines.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14592",
     "https://github.com/pingcap/tidb/pull/14592.patch"

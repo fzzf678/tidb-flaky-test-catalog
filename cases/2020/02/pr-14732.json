@@ -23,9 +23,9 @@
     "global_variable_mutation",
     "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Global state must be reset/restored between tests. This PR stabilizes it by: types: fix decimal tests failed.",
+  "root_cause_explanation": "The decimal tests mutated a global variable (`wordBufLen`) and could fail intermittently when the package tests ran in parallel. The PR stabilizes the suite by moving the global-state-mutating tests into a `SerialSuites` suite so they no longer race/interfere with other tests.",
   "module": "expression",
-  "fix_pattern": "types: fix decimal tests failed",
+  "fix_pattern": "Move the `wordBufLen`-mutating tests (`TestShift`, `TestFromString`) into `SerialSuites` to avoid parallel interference on global state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14732",
     "https://github.com/pingcap/tidb/pull/14732.patch"

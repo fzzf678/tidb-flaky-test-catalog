@@ -20,11 +20,12 @@
     "shared_state_pollution"
   ],
   "review_smells": [
-    "shared_table_without_isolation"
+    "global_variable_mutation",
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. This PR stabilizes it by: test: fix random \"IsolationRead\" fails.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix random \"IsolationRead\" fails",
+  "root_cause_explanation": "`IsolationRead` is a global server config that affects all tests in the suite. Running this suite in parallel could leak the modified config and cause unrelated tests to fail intermittently. The PR makes the suite serial and restores `IsolationRead.Engines` after the test, reducing cross-test interference.",
+  "module": "planner",
+  "fix_pattern": "Run the suite as `SerialSuites` and restore `config.GetGlobalConfig().IsolationRead.Engines` immediately after the test to avoid leaking global config across tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14615",
     "https://github.com/pingcap/tidb/pull/14615.patch"
