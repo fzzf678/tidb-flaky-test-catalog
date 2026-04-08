@@ -23,9 +23,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: 3.",
+  "root_cause_explanation": "A data race could occur in region cache store resolution: `asyncCheckAndResolveLoop()` and `initResolve()` could concurrently resolve and mutate the unresolved-store state, leading to nondeterministic behavior and potential races in tests. The PR stabilizes this by ensuring unresolved stores are only resolved by `initResolve()`, filtering peers on tombstone/dropped stores, and adding backoff in region initialization to make resolution retries more robust.",
   "module": "kv",
-  "fix_pattern": "3. Fix data race between `asyncCheckAndResolveLoop()` and `initResolve()`. Now `unresolved` stores will only be resolved by `initResolve()`.",
+  "fix_pattern": "Remove concurrent unresolved-store resolution: gate unresolved-store resolution to `initResolve()` (avoid races with `asyncCheckAndResolveLoop()`), and add backoff/retry + filtering for tombstone/dropped stores to make region cache initialization deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24726",
     "https://github.com/pingcap/tidb/pull/24726.patch"

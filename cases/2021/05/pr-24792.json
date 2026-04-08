@@ -17,14 +17,14 @@
   ],
   "failure_signature": "tk.MustGetErrCode(\"with recursive cte(n) as (select 1 union (select * from cte order by n)) select * from cte;\", errno.ErrNotSupportedYet) (expression/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: tk.MustGetErrCode(\"with recursive cte(n) as (select 1 union (select * from cte order by n)) select * from cte;\", errno.ErrNotSupportedYet) (expression/integration_test.go).",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily feature work (build plan for CTE) and the referenced error-code assertion is not a reliable flaky failure signature or targeted stabilization change. CI failure logs/repro are needed to attribute any intermittent behavior to a specific root cause.",
   "module": "planner",
-  "fix_pattern": "tk.MustGetErrCode(\"with recursive cte(n) as (select 1 union (select * from cte order by n)) select * from cte;\", errno.ErrNotSupportedYet) (expression/integration_test.go)",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24792",
     "https://github.com/pingcap/tidb/pull/24792.patch"

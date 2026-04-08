@@ -17,14 +17,14 @@
   ],
   "failure_signature": "test: fix unstable TestIssue20658",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: test: fix unstable TestIssue20658.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable TestIssue20658",
+  "root_cause_explanation": "`TestIssue20658` generates randomized test data and then asserts the aggregated `samp_var()` results. When a group contains only one element, `samp_var()` returns NULL, but the test previously assumed it must always be a float. This made the test intermittently fail depending on the random distribution. The fix makes the assertion tolerant of `<nil>`/NULL results when both expected and actual are NULL.",
+  "module": "executor",
+  "fix_pattern": "Handle randomized test data in assertions: accept `<nil>`/NULL results from `samp_var()` (when group size is 1) and only parse/compare floats when both sides are non-nil.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24425",
     "https://github.com/pingcap/tidb/pull/24425.patch"

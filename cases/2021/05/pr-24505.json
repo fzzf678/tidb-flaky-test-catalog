@@ -13,20 +13,18 @@
     "name": "session_test"
   },
   "symptoms": [
-    "fix data race | tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 1\", \"100 102\")) (session/session_test.go)"
+    "fix data race | refactor temp table KV filtering during commit to avoid unsafe txn buffer mutations (session/session.go)"
   ],
-  "failure_signature": "fix data race | tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 1\", \"100 102\")) (session/session_test.go)",
+  "failure_signature": "fix data race | refactor temp table KV filtering during commit to avoid unsafe txn buffer mutations (session/session.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: fix data race | tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 1\", \"100 102\")) (session/session_test.go).",
+  "root_cause_explanation": "A data race could occur in the commit path while filtering global temporary table key-values out of the transaction mem-buffer. The previous implementation deleted keys while reusing/cleaning staging buffers and updating entries count/size, which could race with other transaction operations. The PR refactors the logic into `removeTempTableFromBuffer()`, resets/cleans up buffers and flushes statement buffers in a safer order before commit, reducing concurrent unsafe access.",
   "module": "session",
-  "fix_pattern": "fix data race | tk.MustQuery(\"select a, b from normal_table order by a\").Check(testkit.Rows(\"1 1\", \"100 102\")) (session/session_test.go)",
+  "fix_pattern": "Refactor temp table KV filtering during commit into a dedicated helper that cleans up transaction buffers (`txn.cleanup`) and flushes statement buffers (`flushStmtBuf`) in a safe order to avoid races while deleting keys and updating entries count/size.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/24505",
     "https://github.com/pingcap/tidb/pull/24505.patch"
