@@ -24,9 +24,9 @@
     "global_variable_mutation",
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Global state must be reset/restored between tests. This PR stabilizes it by: executor: fix DATA RACE caused by change the global logger when testing.",
+  "root_cause_explanation": "OOM tests changed the process-wide global logger during execution, which could race with other tests logging concurrently and trigger race detector failures. The fix moves OOM tests into a dedicated sequential suite and uses a mutex-protected log capturer, reducing shared global logger interference across parallel tests.",
   "module": "executor",
-  "fix_pattern": "executor: fix DATA RACE caused by change the global logger when testing",
+  "fix_pattern": "Isolate OOM tests into a sequential suite and protect global logger capture with a mutex to avoid data races when replacing/using the global logger.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16722",
     "https://github.com/pingcap/tidb/pull/16722.patch"

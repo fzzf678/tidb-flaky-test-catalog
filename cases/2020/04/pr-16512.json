@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: Use a function to get the ONE, ZERO and NULL and fix the clone.",
-  "module": "module_unknown",
-  "fix_pattern": "*: Use a function to get the ONE, ZERO and NULL and fix the clone.",
+  "root_cause_explanation": "A race detector failure was caused by shared mutable global Constants (One/Zero/Null) and insufficient cloning: multiple goroutines could mutate shared collation/coercibility info on the same Constant instance. The fix replaces shared global constants with constructors (NewOne/NewZero/NewNull) and updates Clone/constant folding paths to create fresh Constant instances, eliminating shared-state mutation races.",
+  "module": "expression",
+  "fix_pattern": "Avoid shared mutable Constant instances: replace global One/Zero/Null with constructors and ensure Clone creates fresh constants to eliminate collation/coercibility data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16512",
     "https://github.com/pingcap/tidb/pull/16512.patch"

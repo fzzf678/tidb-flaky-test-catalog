@@ -23,9 +23,9 @@
     "plan_cache_dependency",
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: test: skip plan cache for prepared stmt's cache tests.",
-  "module": "test_infra",
-  "fix_pattern": "test: skip plan cache for prepared stmt's cache tests",
+  "root_cause_explanation": "Prepared statement plan-cache tests were flaky because the global prepared plan cache enablement state can be changed concurrently, causing tests to unexpectedly hit cached physical plans. The fix sets PreparedAst.UseCache=false for these prepared statements so the tests always build fresh plans and are not affected by concurrent plan cache state.",
+  "module": "executor",
+  "fix_pattern": "Disable prepared plan cache usage (PreparedAst.UseCache=false) in these tests so they are not affected by concurrent/global plan cache state.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16378",
     "https://github.com/pingcap/tidb/pull/16378.patch"

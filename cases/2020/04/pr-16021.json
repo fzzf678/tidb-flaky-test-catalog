@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: try to fix race.",
-  "module": "test_infra",
-  "fix_pattern": "test: try to fix race",
+  "root_cause_explanation": "A race detector failure was triggered around parser/terror error handling during DDL tests: constructing a new error via Class().New could race on shared internal maps/state. The fix switches to Class().Synthesize when rewriting cancelled DDL job errors, avoiding the shared map mutation/read race observed under concurrent execution.",
+  "module": "ddl",
+  "fix_pattern": "Avoid terror error construction races by using Class().Synthesize (instead of Class().New) when rewriting cancelled DDL job errors.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16021",
     "https://github.com/pingcap/tidb/pull/16021.patch"

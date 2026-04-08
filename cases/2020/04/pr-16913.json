@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR title: stable test cases.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
-  "module": "test_infra",
-  "fix_pattern": "test: stable test cases",
+  "root_cause_explanation": "These tests were flaky due to overly tight timing assumptions: a lock-wait timeout duration check used a narrow upper bound (<= 1.1s) that can be exceeded under CI load, and another test asserted a specific retryable error shape. The fix relaxes the duration upper bound (to 3s) and removes the overly strict retry assertion to reduce timing-related flakes.",
+  "module": "txn",
+  "fix_pattern": "Relax tight timing assertions (e.g., lock-wait duration upper bound) and remove overly strict retry-shape checks to reduce CI timing flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16913",
     "https://github.com/pingcap/tidb/pull/16913.patch"

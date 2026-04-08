@@ -20,12 +20,11 @@
     "async_timing_issue"
   ],
   "review_smells": [
-    "insufficient_timeout",
-    "clock_skew_dependency"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky due to timing-sensitive asynchronous behavior (background tasks/events not fully settled). This PR stabilizes it by: test: enlarge timeout for test.",
-  "module": "test_infra",
-  "fix_pattern": "test: enlarge timeout for test",
+  "root_cause_explanation": "The test waited for an async schema-version update event with a very short timeout (100ms), which is too tight under CI load and can lead to spurious timeouts. The fix increases the time.After timeout to 3s to make the wait window sufficient and reduce timing flakes.",
+  "module": "ddl",
+  "fix_pattern": "Increase the async wait timeout (time.After) from 100ms to 3s to reduce CI timing flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16464",
     "https://github.com/pingcap/tidb/pull/16464.patch"

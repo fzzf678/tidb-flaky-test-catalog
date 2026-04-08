@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR title: tests may fail because of concurrency.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state"
+    "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: test: fix tests which may fail because of concurrency.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix tests which may fail because of concurrency",
+  "root_cause_explanation": "These tests were flaky due to cross-test interference on shared schema objects: running in parallel, other tests could leave behind tables with the same names, causing CREATE TABLE statements to fail. The fix proactively drops the relevant tables (DROP TABLE IF EXISTS ...) before creating them, ensuring isolation even when other tests run concurrently.",
+  "module": "expression",
+  "fix_pattern": "Add `DROP TABLE IF EXISTS` before `CREATE TABLE` in affected tests to avoid cross-test table-name collisions under parallel execution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16446",
     "https://github.com/pingcap/tidb/pull/16446.patch"

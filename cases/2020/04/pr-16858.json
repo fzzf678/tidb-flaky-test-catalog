@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body: fix unstable result when select distinct enum/set column.",
   "root_cause_categories": [
-    "insufficient_evidence"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "needs_more_evidence"
+    "unsafe_zero_copy_alias"
   ],
-  "root_cause_explanation": "Insufficient evidence to determine the underlying root cause from the available case data; needs CI logs or a reliable repro.",
+  "root_cause_explanation": "Enum/Set values could reference underlying shared data instead of owning a copy, so later mutations or reuse could lead to unstable DISTINCT/aggregation results. The fix adds deep-copy semantics (Copy()) for Enum/Set and ensures executor aggregation (firstRow) uses Copy() to avoid aliasing shared underlying data.",
   "module": "executor",
-  "fix_pattern": "executor, types: copy enum/set instead of refer the underlying data",
+  "fix_pattern": "Deep-copy Enum/Set values (Copy()) instead of referencing underlying shared data, and use Copy() in executor paths to avoid aliasing-induced unstable results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16858",
     "https://github.com/pingcap/tidb/pull/16858.patch"

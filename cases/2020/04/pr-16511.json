@@ -17,14 +17,16 @@
   ],
   "failure_signature": "PR title: make TestTransactionOnAddDropColumn stable.",
   "root_cause_categories": [
-    "schema_change_race"
+    "schema_change_race",
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "async_schema_propagation",
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: make TestTransactionOnAddDropColumn and TestTransactionWithWriteOnlyColumn stable.",
+  "root_cause_explanation": "These DDL transaction tests were flaky because schema propagation/loading can lag behind the DDL job state: the test could start/commit a transaction while the schema was still updating, triggering Information schema is changed errors. The fix increases the DDL schema lease (100ms -> 600ms) in the test suite setup to give TiDB more time to load/sync schema and reduce timing-related flakes.",
   "module": "ddl",
-  "fix_pattern": "ddl: make TestTransactionOnAddDropColumn and  TestTransactionWithWriteOnlyColumn  stable",
+  "fix_pattern": "Increase the schema lease in the DDL test suite (100ms -> 600ms) to reduce schema-propagation timing flakes in transaction-on-DDL tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/16511",
     "https://github.com/pingcap/tidb/pull/16511.patch"
