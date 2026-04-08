@@ -17,14 +17,15 @@
   ],
   "failure_signature": "executor: fix several analyze related unstable tests",
   "root_cause_categories": [
-    "external_dependency"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "global_variable_mutation",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: executor: fix several analyze related unstable tests.",
-  "module": "executor",
-  "fix_pattern": "executor: fix several analyze related unstable tests",
+  "root_cause_explanation": "The tests were flaky due to leaked/shared state: they modified global statistics knobs (e.g. `statistics.FeedbackProbability`), depended on analyze-version switching behavior, and reused shared stats tables without full cleanup, leading to cross-test interference when running concurrently. This PR stabilizes them by moving the stateful tests into a serial suite, cleaning shared stats tables where needed, and ordering the analyze-version flows to avoid fragile version switching.",
+  "module": "statistics",
+  "fix_pattern": "Isolate tests that mutate global statistics settings into serial suites and reset/clean shared stats state (and order analyze-version transitions deterministically) to avoid cross-test interference.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26875",
     "https://github.com/pingcap/tidb/pull/26875.patch"

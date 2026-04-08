@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sort.Slice(tasks, func(i, j int) bool { (br/pkg/lightning/restore/meta_manager_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "shared_state_pollution"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: sort.Slice(tasks, func(i, j int) bool { (br/pkg/lightning/restore/meta_manager_test.go).",
+  "root_cause_explanation": "The test was flaky because it assumed a deterministic ordering of a task slice (e.g., asserting `tasks[j].taskID == j`) even though the returned order was not guaranteed. This PR stabilizes the assertion by sorting the tasks by `taskID` before checking their sequence.",
   "module": "lightning",
-  "fix_pattern": "sort.Slice(tasks, func(i, j int) bool { (br/pkg/lightning/restore/meta_manager_test.go)",
+  "fix_pattern": "Sort slices before order-sensitive assertions (e.g., sort tasks by taskID before checking sequence).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27082",
     "https://github.com/pingcap/tidb/pull/27082.patch"

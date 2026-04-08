@@ -17,14 +17,14 @@
   ],
   "failure_signature": "*: fix the date race in `TestCharsetFeature`",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix the date race in `TestCharsetFeature`.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix the date race in `TestCharsetFeature`",
+  "root_cause_explanation": "The test was flaky because it toggled a global charset/collation feature flag inside the test body, which can race with other tests reading the same global state. This PR stabilizes it by moving the flag enable/disable into serial suite setup/teardown so the global knob is not concurrently mutated across tests.",
+  "module": "executor",
+  "fix_pattern": "Avoid mutating global feature flags inside individual tests; enable/disable global knobs in serial suite setup/teardown to prevent cross-test races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27477",
     "https://github.com/pingcap/tidb/pull/27477.patch"

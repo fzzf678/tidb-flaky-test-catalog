@@ -20,12 +20,11 @@
     "shared_state_pollution"
   ],
   "review_smells": [
-    "global_variable_mutation",
     "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: test: fix unstable test TestAnalyzeGlobalStatsWithOpts2.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix unstable test TestAnalyzeGlobalStatsWithOpts2",
+  "root_cause_explanation": "The test was flaky because it queried shared stats tables by `partition_name` only (e.g. `p0/p1`), which can match rows from other tests/tables and lead to cross-test contamination in `show stats_topn` / `show stats_buckets`. This PR stabilizes it by filtering these checks with both `table_name` and `partition_name` so the assertions only observe the intended table's statistics.",
+  "module": "statistics",
+  "fix_pattern": "Filter stats inspection queries by both `table_name` and `partition_name` to avoid cross-test pollution in shared stats tables.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26921",
     "https://github.com/pingcap/tidb/pull/26921.patch"

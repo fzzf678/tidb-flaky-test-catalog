@@ -17,14 +17,14 @@
   ],
   "failure_signature": "br,test: fix data race for parquet test",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: br,test: fix data race for parquet test.",
-  "module": "br",
-  "fix_pattern": "br,test: fix data race for parquet test",
+  "root_cause_explanation": "The test was flaky because it modified the global `time.Local` timezone during the test, which can leak into (and race with) other tests running in the same process. This PR stabilizes it by removing the `time.Local` mutation and keeping the parquet various-types test self-contained.",
+  "module": "lightning",
+  "fix_pattern": "Do not mutate global `time.Local` in tests; keep timezone-sensitive parsing tests self-contained to avoid cross-test state pollution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27482",
     "https://github.com/pingcap/tidb/pull/27482.patch"

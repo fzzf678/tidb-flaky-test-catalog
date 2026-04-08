@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: When I tried to figure out the DATA RACE in https://github.com/pingcap/tidb/pull/26241, I found those problems.",
+  "root_cause_explanation": "The test was flaky due to a resource leak that became a data race after statement context reuse: some tests used `tk.Exec(...)` and ignored/forgot to close the returned recordset, leaving background executor goroutines still referencing the old `StmtCtx`. Subsequent statements reused `StmtCtx` and raced with the leaked goroutine. This PR stabilizes the suite by ensuring recordsets are properly closed and resources are released so background work cannot outlive the test step.",
   "module": "executor",
-  "fix_pattern": "When I tried to figure out the DATA RACE in https://github.com/pingcap/tidb/pull/26241, I found those problems.",
+  "fix_pattern": "Close/consume recordsets returned by `Exec` (avoid leaking background executor goroutines) so statement-context reuse cannot race with prior statements.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26909",
     "https://github.com/pingcap/tidb/pull/26909.patch"

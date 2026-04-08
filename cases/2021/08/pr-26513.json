@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ddl: fix unstable tests",
   "root_cause_categories": [
-    "schema_change_race"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "assert_exact_error_message"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix unstable tests.",
+  "root_cause_explanation": "The test was flaky because it used randomized row deletions while also expecting a deterministic duplicate-key error message. Deleting certain rows changes the duplicated entry values embedded in the error text, so exact error assertions can fail intermittently. This PR stabilizes the test by skipping deletions of the specific rows that would change the duplicate error message and by re-enabling the previously skipped tests.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix unstable tests",
+  "fix_pattern": "Avoid test randomness that changes duplicate-key error message content (skip deleting specific rows that affect the duplicated-entry values) and remove temporary test skips.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26513",
     "https://github.com/pingcap/tidb/pull/26513.patch"

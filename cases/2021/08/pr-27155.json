@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: fix data race for TestIssue23872",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix data race for TestIssue23872.",
+  "root_cause_explanation": "The test was flaky due to a data race caused by leaking recordsets: it used `tk.Exec(...)` and then accessed `rs.Fields()` without closing the recordset, which can leave background work still referencing shared statement context. This PR stabilizes it by explicitly closing the returned recordsets after use, preventing leaked goroutines/resources from racing with subsequent statements.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix data race for TestIssue23872",
+  "fix_pattern": "Close recordsets returned by `Exec` after reading fields/results to avoid leaked background work and statement-context races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27155",
     "https://github.com/pingcap/tidb/pull/27155.patch"

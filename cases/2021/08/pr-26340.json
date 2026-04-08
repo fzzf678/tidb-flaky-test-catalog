@@ -17,14 +17,14 @@
   ],
   "failure_signature": "fix unstable test",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "clock_skew_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: fix unstable test.",
-  "module": "server",
-  "fix_pattern": "fix unstable test",
+  "root_cause_explanation": "`TestBindingLastUpdateTime` was flaky because it compared timestamps coming from different sources with different formatting/precision expectations (binding update time vs status variable), making the assertion timing/format sensitive. This PR stabilizes the test by deriving the binding update time via the bind handle (consistent formatting) and asserting it directly against the status variable, avoiding brittle string-splitting and precision mismatches.",
+  "module": "planner",
+  "fix_pattern": "Avoid brittle exact equality checks on time strings across different sources/precisions; compare a consistently formatted time value (bind handle UpdateTime) or allow tolerance in time comparisons.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26340",
     "https://github.com/pingcap/tidb/pull/26340.patch"

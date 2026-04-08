@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(`select * from t where a < X'0D' order by a`).Check(testkit.Rows(\"\\x0B\", \"\\x0C\")) (ddl/db_partition_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: tk.MustQuery(`select * from t where a < X'0D' order by a`).Check(testkit.Rows(\"\\x0B\", \"\\x0C\")) (ddl/db_partition_test.go).",
+  "root_cause_explanation": "The test was flaky due to non-deterministic row ordering when checking query results without a stable ordering guarantee. This PR stabilizes it by adding an explicit `ORDER BY` clause so the test assertions observe deterministic output ordering.",
   "module": "ddl",
-  "fix_pattern": "tk.MustQuery(`select * from t where a < X'0D' order by a`).Check(testkit.Rows(\"\\x0B\", \"\\x0C\")) (ddl/db_partition_test.go)",
+  "fix_pattern": "Add explicit ORDER BY in test queries where result order is asserted.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26987",
     "https://github.com/pingcap/tidb/pull/26987.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: fix the unstable test case TestListPartitionOrderLimit",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner: fix the unstable test case TestListPartitionOrderLimit.",
+  "root_cause_explanation": "The test was flaky due to unstable ordering under `ORDER BY ... LIMIT` when the ordering column can contain duplicated values (ties), and due to order-sensitive assertions without sorting. This PR stabilizes it by generating non-duplicated values for the ORDER BY column in randomized test data (avoid ties under LIMIT) and by sorting results before checking where appropriate.",
   "module": "planner",
-  "fix_pattern": "planner: fix the unstable test case TestListPartitionOrderLimit",
+  "fix_pattern": "Avoid ORDER BY ties in randomized test data used with LIMIT (make ordering keys unique) and sort results before order-sensitive assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26839",
     "https://github.com/pingcap/tidb/pull/26839.patch"

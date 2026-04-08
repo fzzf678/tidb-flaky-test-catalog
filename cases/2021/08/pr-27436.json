@@ -17,14 +17,14 @@
   ],
   "failure_signature": "*: fix unstable test testSerialSuite.TestTemporaryTableNoNetwork",
   "root_cause_categories": [
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "network_without_retry"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: *: fix unstable test testSerialSuite.TestTemporaryTableNoNetwork.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix unstable test testSerialSuite.TestTemporaryTableNoNetwork",
+  "root_cause_explanation": "The test was flaky due to a goroutine/data-race issue in the test harness: it started a goroutine that referenced shared variables (e.g. `err`) and could still be running when the test returned. This PR stabilizes it by using a `WaitGroup` to wait for the goroutine to finish and by avoiding capturing/asserting the goroutine's `err` via shared variables, preventing data races under `-race`.",
+  "module": "executor",
+  "fix_pattern": "Wait for background goroutines to finish (WaitGroup) and avoid sharing `err`/mutable state across goroutines in tests to prevent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27436",
     "https://github.com/pingcap/tidb/pull/27436.patch"

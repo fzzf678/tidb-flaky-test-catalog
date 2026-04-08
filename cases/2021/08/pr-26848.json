@@ -17,15 +17,14 @@
   ],
   "failure_signature": "planner: fix the unstable test case TestAnalyzeIncremental",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "statistics_sensitive_test",
-    "assert_exact_plan_or_cost"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: planner: fix the unstable test case TestAnalyzeIncremental.",
-  "module": "planner",
-  "fix_pattern": "planner: fix the unstable test case TestAnalyzeIncremental",
+  "root_cause_explanation": "The test was flaky due to implicit dependence on the ambient `tidb_analyze_version` setting (incremental analyze is not supported under stats-ver2). When this session/global configuration differs across runs or is influenced by other tests, the test can behave inconsistently (e.g., warnings or different behavior). This PR stabilizes it by explicitly setting `@@session.tidb_analyze_version` to a supported value and asserting no warnings during incremental analyze.",
+  "module": "statistics",
+  "fix_pattern": "Set/restore relevant session variables explicitly in tests (e.g. `@@session.tidb_analyze_version`) to avoid cross-test configuration dependency and unexpected warnings.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/26848",
     "https://github.com/pingcap/tidb/pull/26848.patch"

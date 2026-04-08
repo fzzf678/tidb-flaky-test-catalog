@@ -17,14 +17,15 @@
   ],
   "failure_signature": "Related unstable integration test: [lightning_checkpoint_engines_order](https://ci.pingcap.net/blue/organizations/jenkins/br_ghpr_unit_and_integration_test/detail/br_ghpr_unit_and_integration_test/5389/pipeline).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue",
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Related unstable integration test: [lightning_checkpoint_engines_order](https://ci.pingcap.net/blue/organizations/jenkins/br_ghpr_unit_and_integration_test/detail/br_ghpr_unit_and_integration_test/5389/pipeline).",
+  "root_cause_explanation": "The test was flaky due to an async ordering issue in Lightning checkpoint persistence: status checkpoints were saved asynchronously, so an engine could be cleaned up (or the process could exit) before the checkpoint update was durable. After restart, verification could fail due to missing checkpoint state. This PR stabilizes it by making status checkpoint updates synchronous (wait for the update to finish and propagate errors) before proceeding with cleanup.",
   "module": "lightning",
-  "fix_pattern": "Related unstable integration test: [lightning_checkpoint_engines_order](https://ci.pingcap.net/blue/organizations/jenkins/br_ghpr_unit_and_integration_test/detail/br_ghpr_unit_and_integration_test/5389/pipeline).",
+  "fix_pattern": "Make status checkpoint persistence synchronous (wait for checkpoint DB update and handle errors) before engine cleanup/exit to avoid async ordering races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/27096",
     "https://github.com/pingcap/tidb/pull/27096.patch"
