@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: only retry needed regions when get region row count.",
+  "root_cause_explanation": "The test was flaky due to a data race in fast-analyze concurrency (signaling `wg.Done()` before clearing pending work in a channel). This PR stabilizes it by reordering the cleanup so the channel is drained before calling `wg.Done()`.",
   "module": "executor",
-  "fix_pattern": "executor: only retry needed regions when get region row count",
+  "fix_pattern": "Fix goroutine synchronization by draining/clearing pending channel items before calling WaitGroup.Done().",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10429",
     "https://github.com/pingcap/tidb/pull/10429.patch"

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sql: \"select * from (select *, NULL as xxx from t) t order by xxx\", (planner/core/physical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR appears to be a deterministic correctness fix (window by-item NULL handling) and adds regression tests, but does not show a targeted flaky-test stabilization pattern, so we conservatively mark it as insufficient evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10488",
     "https://github.com/pingcap/tidb/pull/10488.patch"

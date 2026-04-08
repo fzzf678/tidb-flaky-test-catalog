@@ -17,15 +17,14 @@
   ],
   "failure_signature": "store: fix data race in mock PD timeout error",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "async_timing_issue"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: store: fix data race in mock PD timeout error.",
+  "root_cause_explanation": "The test was flaky due to a data race caused by a shared global \"once\" flag used in failpoint injection. This PR stabilizes it by removing the global flag and using a deterministic failpoint sequence (`1*return(true)->return(false)`) to mock exactly once without racy shared state.",
   "module": "kv",
-  "fix_pattern": "store: fix data race in mock PD timeout error",
+  "fix_pattern": "Remove shared global mutable state from failpoint injection; use a deterministic failpoint sequence to mock exactly once and avoid concurrent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10514",
     "https://github.com/pingcap/tidb/pull/10514.patch"

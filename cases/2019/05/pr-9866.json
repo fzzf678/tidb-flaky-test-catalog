@@ -9,23 +9,22 @@
   "pr_merged_at": "2019-05-23T16:40:00+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/window_test.go",
-    "name": "window_test"
+    "path": "planner/core/logical_plan_test.go",
+    "name": "logical_plan_test"
   },
   "symptoms": [
-    "remove unstable test | result = tk.MustQuery(\"select sum(a) over w, sum(b) over w from t window w as (order by a)\") (executor/window_test.go)"
+    "sql: \"select row_number() over w, sum(c) over w from t window w as (order by a)\" had a brittle exact plan assertion in TestWindowFunction (planner/core/logical_plan_test.go)."
   ],
-  "failure_signature": "remove unstable test | result = tk.MustQuery(\"select sum(a) over w, sum(b) over w from t window w as (order by a)\") (executor/window_test.go)",
+  "failure_signature": "sql: \"select row_number() over w, sum(c) over w from t window w as (order by a)\" had a brittle exact plan assertion in TestWindowFunction (planner/core/logical_plan_test.go).",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it asserted an exact logical plan string for window functions, and the planner can produce different-but-equivalent window operator shapes. This PR stabilizes it by removing the unstable exact-plan cases and adding stable executor-level result assertions instead.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Replace brittle exact plan assertions with stable result checks (remove unstable logical plan test cases and add executor-level query result checks).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9866",
     "https://github.com/pingcap/tidb/pull/9866.patch"
@@ -57,9 +56,9 @@
       "determinism_stabilization"
     ],
     "evidence": [
-      "evidence: remove unstable test | result = tk.MustQuery(\"select sum(a) over w, sum(b) over w from t window w as (order by a)\") (executor/window_test.go)",
+      "evidence: remove unstable exact-plan assertion for window functions (planner/core/logical_plan_test.go)",
       "files: executor/builder.go, executor/window.go, executor/window_test.go, planner/core/exhaust_physical_plans.go, planner/core/explain.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/physical_plans.go, planner/core/planbuilder.go, planner/core/resolve_indices.go, planner/core/rule_column_pruning.go, planner/core/rule_eliminate_projection.go, planner/core/stats.go, planner/core/stringer.go, planner/core/util.go"
     ]
   },
-  "analysis": "PR title: planner, executor: merge window functions with same specification name\nPR url: https://github.com/pingcap/tidb/pull/9866\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: remove unstable test | result = tk.MustQuery(\"select sum(a) over w, sum(b) over w from t window w as (order by a)\") (executor/window_test.go)\nChanged files (17): executor/builder.go, executor/window.go, executor/window_test.go, planner/core/exhaust_physical_plans.go, planner/core/explain.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/physical_plans.go, planner/core/planbuilder.go, planner/core/resolve_indices.go, planner/core/rule_column_pruning.go, planner/core/rule_eliminate_projection.go, planner/core/stats.go, planner/core/stringer.go, planner/core/util.go\nPatch url: https://github.com/pingcap/tidb/pull/9866.patch\nPicked test: type=unit path=executor/window_test.go name=window_test"
+  "analysis": "PR title: planner, executor: merge window functions with same specification name\nPR url: https://github.com/pingcap/tidb/pull/9866\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: remove unstable exact-plan assertion for window functions (planner/core/logical_plan_test.go)\nChanged files (17): executor/builder.go, executor/window.go, executor/window_test.go, planner/core/exhaust_physical_plans.go, planner/core/explain.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/physical_plans.go, planner/core/planbuilder.go, planner/core/resolve_indices.go, planner/core/rule_column_pruning.go, planner/core/rule_eliminate_projection.go, planner/core/stats.go, planner/core/stringer.go, planner/core/util.go\nPatch url: https://github.com/pingcap/tidb/pull/9866.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
 }
