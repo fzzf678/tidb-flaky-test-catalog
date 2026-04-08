@@ -9,8 +9,8 @@
   "pr_merged_at": "2020-01-20T15:15:04+08:00",
   "test": {
     "type": "unit",
-    "path": "WARNING: DATA RACE",
-    "name": "WARNING: DATA RACE"
+    "path": "store/tikv/gcworker/gc_worker_test.go",
+    "name": "TestMergeLockScanner"
   },
   "symptoms": [
     "PR body: race in mergeLockScanner can cause CI fail (WARNING: DATA RACE)"
@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: store: fix another race in mergeLockScanner.",
-  "module": "kv",
-  "fix_pattern": "store: fix another race in mergeLockScanner",
+  "root_cause_explanation": "`mergeLockScanner` started background scan goroutines in a loop and logged a loop variable captured by the closure. Under concurrent execution, this could trigger a data race and misleading log output. The PR fixes the race by logging the per-iteration temporary variable (`store1`) instead of the captured loop variable.",
+  "module": "gc",
+  "fix_pattern": "Avoid closure-capturing the loop variable in `mergeLockScanner` by using a per-iteration temp (`store1`) in the goroutine/logging path.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14549",
     "https://github.com/pingcap/tidb/pull/14549.patch"

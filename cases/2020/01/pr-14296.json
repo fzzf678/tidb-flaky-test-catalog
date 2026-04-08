@@ -9,23 +9,23 @@
   "pr_merged_at": "2020-01-09T15:12:46+08:00",
   "test": {
     "type": "unit",
-    "path": "executor/ddl_test.go",
-    "name": "ddl_test"
+    "path": "server/server.go",
+    "name": "setSystemTimeZoneVariable"
   },
   "symptoms": [
-    "// only the first will actually do setSystemTimeZoneVariable, thus we can avoid data race. (server/server.go)"
+    "PR enables parallel unit test runs (`-check.p true`) and fixes a data race by guarding `setSystemTimeZoneVariable` with `sync.Once` (server/server.go)."
   ],
-  "failure_signature": "// only the first will actually do setSystemTimeZoneVariable, thus we can avoid data race. (server/server.go)",
+  "failure_signature": "PR enables parallel unit test runs (`-check.p true`) and fixes a data race by guarding `setSystemTimeZoneVariable` with `sync.Once` (server/server.go).",
   "root_cause_categories": [
     "concurrency_data_race"
   ],
   "review_smells": [
     "global_variable_mutation",
-    "race_condition_in_async_code"
+    "t_parallel_with_shared_state"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Global state must be reset/restored between tests. This PR stabilizes it by: server, tikv: enable unit test run parallel and add parallel flag for go coverage test.",
+  "root_cause_explanation": "Enabling parallel check-suite runs (`-check.p true`) exposed shared global state races. In particular, multiple servers could concurrently update the global `system_time_zone` sysvar, causing a data race. The PR stabilizes parallel unit test runs by guarding `setSystemTimeZoneVariable` with `sync.Once` and by moving side-effecting suites into `SerialSuites` to avoid cross-test interference.",
   "module": "server",
-  "fix_pattern": "server, tikv: enable unit test run parallel and add parallel flag for go coverage test",
+  "fix_pattern": "Guard `setSystemTimeZoneVariable` with `sync.Once` and move side-effecting suites to `SerialSuites` to make parallel `-check.p` unit-test runs safe.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14296",
     "https://github.com/pingcap/tidb/pull/14296.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "PR body: reduce leak check failures by whitelisting async-terminated goroutines",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "unsorted_result_assertion"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: test: add some goroutines to leak check white list.",
+  "root_cause_explanation": "Leak-check failures were often false positives: some dependencies (e.g., gRPC / goleveldb) spawn background goroutines that may terminate asynchronously and can outlive the main test goroutine briefly. The PR stabilizes leak checking by adding these known background goroutines to the leaktest ignore/whitelist so they don't cause intermittent failures.",
   "module": "test_infra",
-  "fix_pattern": "test: add some goroutines to leak check white list",
+  "fix_pattern": "Whitelist known dependency background goroutines in `leaktest` to avoid false-positive leak-check failures due to async goroutine termination timing.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/14538",
     "https://github.com/pingcap/tidb/pull/14538.patch"
