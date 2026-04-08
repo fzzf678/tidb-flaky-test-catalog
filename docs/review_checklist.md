@@ -37,6 +37,9 @@ Each item includes: what to look for → why it is risky → what questions to a
 - [ ] **Relying on Go map iteration order** (`relying_on_map_iteration_order`)
 - [ ] **Unsorted result assertion** (`unsorted_result_assertion`)
 
+### nondeterministic_test_input
+- [ ] **Randomized test input / probabilistic assertion** (`randomized_test_input`)
+
 ### schema_change_race
 - [ ] **DDL without wait for completion** (`ddl_without_wait`)
 - [ ] **Schema version race** (`schema_version_race`)
@@ -77,6 +80,26 @@ Each item includes: what to look for → why it is risky → what questions to a
 - Prefer deterministic synchronization/ordering over pure sleeps or large timeout increases
 - If only mitigation is possible, quarantine explicitly and file a follow-up issue to root-cause
 - Improve failure signature collection (assertions/logs) so the case can be re-triaged later
+
+### Randomized test input / probabilistic assertion
+
+**Key:** `randomized_test_input`
+
+**Related Root Causes:** nondeterministic_test_input
+
+**Description:** Tests that generate random inputs (math/rand) or rely on probabilistic properties without controlling the seed or making the assertion deterministic.
+
+**Why Risky:** Random inputs can occasionally hit rare edge cases (e.g., scientific notation, zero shard bits, rounding/overflow), and probabilistic assertions can fail rarely. This makes failures intermittent and hard to reproduce.
+
+**Review Questions:**
+- Does the test generate random inputs (math/rand) without a fixed seed or a per-test rand.Source?
+- Could random values hit edge cases that break parsing/formatting or assertions?
+- Can we replace randomness with deterministic test vectors, or log the seed to make failures reproducible?
+
+**Suggested Fixes:**
+- Replace randomness with deterministic test vectors (table-driven inputs)
+- Use a fixed seed or per-test rand.Source and log the seed on failure
+- Avoid probabilistic assertions; assert deterministic invariants or accept equivalent outcomes
 
 ### Missing ORDER BY in SELECT queries
 
