@@ -17,38 +17,44 @@
   ],
   "failure_signature": "fix data race",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "plan_cache_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Plan-cache/lease/background refresh can introduce timing-dependent behavior. This PR stabilizes it by: plan, tidb: support plan cache for SELECT statement.",
+  "root_cause_explanation": "The flakiness was caused by a Go data race introduced by plan cache reuse: cached plans/structures (e.g., index ranges inside IndexLookup/plan nodes) were shared across executions and could be mutated while being reused, triggering race-detector failures in the unit test suite. This PR stabilizes it by avoiding unsafe sharing of mutable structures (e.g., cloning index ranges before use) and refactoring cached statement/plan values so reused plans are treated as immutable snapshots.",
   "module": "planner",
-  "fix_pattern": "plan, tidb: support plan cache for SELECT statement",
+  "fix_pattern": "Avoid sharing mutable plan objects across cached executions: deep-clone mutable fields (e.g., index ranges) before mutation/use and treat cached plans as immutable snapshots.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4644",
     "https://github.com/pingcap/tidb/pull/4644.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/4644.patch",
   "changed_files": [
+    "plan/cache/key.go",
+    "plan/cache/lru.go",
+    "plan/cache/lru_test.go",
+    "session.go",
+    "ast/ast.go",
     "config/config.go",
     "config/config.toml.example",
-    "ddl/ddl_db_change_test.go",
     "executor/adapter.go",
-    "executor/builder.go",
     "executor/compiler.go",
     "executor/prepared.go",
-    "plan/cache/key.go",
+    "expression/builtin_info.go",
+    "expression/constant_fold.go",
+    "plan/cacheable_checker.go",
+    "tidb-server/main.go",
     "plan/cache/sharded_lru.go",
     "plan/cache/simple_lru.go",
     "plan/cache/simple_lru_test.go",
     "plan/cache/value.go",
-    "plan/cacheable_checker.go",
-    "plan/cacheable_checker_test.go",
-    "session.go",
-    "tidb-server/main.go",
+    "ddl/ddl_db_change_test.go",
+    "executor/executor_test.go",
     "tidb.go",
-    "util/types/range.go"
+    "executor/builder.go",
+    "util/types/range.go",
+    "plan/cacheable_checker_test.go"
   ],
   "triage": {
     "sources": [
@@ -57,8 +63,8 @@
     ],
     "evidence": [
       "evidence: fix data race",
-      "files: ast/ast.go, config/config.go, config/config.toml.example, ddl/ddl_db_change_test.go, executor/adapter.go, executor/builder.go, executor/compiler.go, executor/executor_test.go, executor/prepared.go, expression/builtin_info.go, expression/constant_fold.go, plan/cache/key.go, plan/cache/lru.go, plan/cache/lru_test.go, plan/cache/sharded_lru.go, plan/cache/simple_lru.go, plan/cache/simple_lru_test.go, plan/cache/value.go, plan/cacheable_checker.go, plan/cacheable_checker_test.go, session.go, tidb-server/main.go, tidb.go, util/types/range.go"
+      "files: plan/cache/key.go, plan/cache/lru.go, plan/cache/lru_test.go, session.go, ast/ast.go, config/config.go, config/config.toml.example, executor/adapter.go, executor/compiler.go, executor/prepared.go, expression/builtin_info.go, expression/constant_fold.go, plan/cacheable_checker.go, tidb-server/main.go, plan/cache/sharded_lru.go, plan/cache/simple_lru.go, plan/cache/simple_lru_test.go, plan/cache/value.go, ddl/ddl_db_change_test.go, executor/executor_test.go, tidb.go, executor/builder.go, util/types/range.go, plan/cacheable_checker_test.go"
     ]
   },
-  "analysis": "PR title: plan, tidb: support plan cache for SELECT statement\nPR url: https://github.com/pingcap/tidb/pull/4644\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (18): config/config.go, config/config.toml.example, ddl/ddl_db_change_test.go, executor/adapter.go, executor/builder.go, executor/compiler.go, executor/prepared.go, plan/cache/key.go, plan/cache/sharded_lru.go, plan/cache/simple_lru.go, plan/cache/simple_lru_test.go, plan/cache/value.go, plan/cacheable_checker.go, plan/cacheable_checker_test.go, session.go, tidb-server/main.go, tidb.go, util/types/range.go\nPatch url: https://github.com/pingcap/tidb/pull/4644.patch\nPicked test: type=unit path=ddl/ddl_db_change_test.go name=ddl_db_change_test"
+  "analysis": "PR title: plan, tidb: support plan cache for SELECT statement\nPR url: https://github.com/pingcap/tidb/pull/4644\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (24): plan/cache/key.go, plan/cache/lru.go, plan/cache/lru_test.go, session.go, ast/ast.go, config/config.go, config/config.toml.example, executor/adapter.go, executor/compiler.go, executor/prepared.go, expression/builtin_info.go, expression/constant_fold.go, plan/cacheable_checker.go, tidb-server/main.go, plan/cache/sharded_lru.go, plan/cache/simple_lru.go, plan/cache/simple_lru_test.go, plan/cache/value.go, ddl/ddl_db_change_test.go, executor/executor_test.go, tidb.go, executor/builder.go, util/types/range.go, plan/cacheable_checker_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4644.patch\nPicked test: type=unit path=ddl/ddl_db_change_test.go name=ddl_db_change_test"
 }

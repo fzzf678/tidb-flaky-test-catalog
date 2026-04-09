@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: exectuor: fix data race in test.",
-  "module": "module_unknown",
-  "fix_pattern": "exectuor: fix data race in test",
+  "root_cause_explanation": "The test was flaky due to a Go data race in the test helper client: the `syncLog` flag was read in `SendReq` while being toggled by the test without synchronization, triggering race-detector failures. This PR stabilizes the test by moving `syncLog` under the existing mutex and reading it under RLock before comparing with request flags.",
+  "module": "test_infra",
+  "fix_pattern": "Protect shared test-helper state with synchronization (move mutable flags under mutex/atomic; read under lock) to prevent race-detector flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4714",
     "https://github.com/pingcap/tidb/pull/4714.patch"
