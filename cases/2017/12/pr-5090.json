@@ -17,15 +17,14 @@
   ],
   "failure_signature": "result = tk.MustQuery(\"select a, bit_xor(a) from t group by a order by a\") (expression/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds support for the BIT_XOR aggregation function (including tipb updates, planner/expression changes, and integration tests). The patch does not provide a concrete flaky failure signature or a targeted stabilization change for an intermittent failure, so we conservatively classify it as needs-more-evidence.",
   "module": "expression",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5090",
     "https://github.com/pingcap/tidb/pull/5090.patch"
@@ -33,11 +32,14 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/5090.patch",
   "changed_files": [
     "ast/functions.go",
-    "expression/aggregation/agg_to_pb.go",
     "expression/aggregation/aggregation.go",
     "expression/aggregation/bit_xor.go",
+    "plan/logical_plan_builder.go",
+    "_vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go",
+    "expression/aggregation/agg_to_pb.go",
     "expression/integration_test.go",
-    "plan/physical_plans.go"
+    "plan/physical_plans.go",
+    "store/tikv/coprocessor.go"
   ],
   "triage": {
     "sources": [
@@ -46,8 +48,8 @@
     ],
     "evidence": [
       "evidence: result = tk.MustQuery(\"select a, bit_xor(a) from t group by a order by a\") (expression/integration_test.go)",
-      "files: _vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go, ast/functions.go, expression/aggregation/agg_to_pb.go, expression/aggregation/aggregation.go, expression/aggregation/bit_xor.go, expression/integration_test.go, plan/logical_plan_builder.go, plan/physical_plans.go, store/tikv/coprocessor.go"
+      "files: ast/functions.go, expression/aggregation/aggregation.go, expression/aggregation/bit_xor.go, plan/logical_plan_builder.go, _vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go, expression/aggregation/agg_to_pb.go, expression/integration_test.go, plan/physical_plans.go, store/tikv/coprocessor.go"
     ]
   },
-  "analysis": "PR title: expression, plan: support builtin aggregation function 'bit_xor'\nPR url: https://github.com/pingcap/tidb/pull/5090\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select a, bit_xor(a) from t group by a order by a\") (expression/integration_test.go)\nChanged files (6): ast/functions.go, expression/aggregation/agg_to_pb.go, expression/aggregation/aggregation.go, expression/aggregation/bit_xor.go, expression/integration_test.go, plan/physical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/5090.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+  "analysis": "PR title: expression, plan: support builtin aggregation function 'bit_xor'\nPR url: https://github.com/pingcap/tidb/pull/5090\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select a, bit_xor(a) from t group by a order by a\") (expression/integration_test.go)\nChanged files (9): ast/functions.go, expression/aggregation/aggregation.go, expression/aggregation/bit_xor.go, plan/logical_plan_builder.go, _vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go, expression/aggregation/agg_to_pb.go, expression/integration_test.go, plan/physical_plans.go, store/tikv/coprocessor.go\nPatch url: https://github.com/pingcap/tidb/pull/5090.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
 }

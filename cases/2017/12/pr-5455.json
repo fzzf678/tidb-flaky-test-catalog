@@ -17,15 +17,14 @@
   ],
   "failure_signature": "result.Sort().Check(testkit.Rows(\"1\", \"2\", \"3\")) (executor/join_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "unsafe_zero_copy_alias"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky due to unsafe zero-copy aliasing: NewIndexLookUpJoin.Next() built a DatumRow from chunk rows without copying bytes/string datums, so returned values could share the same underlying chunk buffer and be overwritten on subsequent iterations, producing wrong/unstable results (e.g., all rows becoming \"3\"). This PR stabilizes it by deep-copying each datum (using Copy()) before returning it to the caller.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Deep-copy datums/byte slices when returning rows from chunk-backed executors (e.g., Copy()) to avoid zero-copy aliasing and unstable results.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5455",
     "https://github.com/pingcap/tidb/pull/5455.patch"
