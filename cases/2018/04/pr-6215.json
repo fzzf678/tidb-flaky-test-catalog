@@ -17,14 +17,14 @@
   ],
   "failure_signature": "testSQL = `select * from test order by i;` (executor/write_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The PR title/body and .patch describe a correctness/behavior fix (insert ignore in a transaction block), but do not provide a clear flaky-test failure signature or targeted stabilization change. We avoid guessing the flakiness root cause.",
   "module": "kv",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6215",
     "https://github.com/pingcap/tidb/pull/6215.patch"
@@ -34,6 +34,7 @@
     "executor/admin.go",
     "executor/write.go",
     "executor/write_test.go",
+    "kv/mock.go",
     "kv/txn.go"
   ],
   "triage": {
@@ -46,5 +47,5 @@
       "files: executor/admin.go, executor/write.go, executor/write_test.go, kv/mock.go, kv/txn.go"
     ]
   },
-  "analysis": "PR title: kv: merge batch get results to fix insert ignore in a transaction block\nPR url: https://github.com/pingcap/tidb/pull/6215\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: testSQL = `select * from test order by i;` (executor/write_test.go)\nChanged files (4): executor/admin.go, executor/write.go, executor/write_test.go, kv/txn.go\nPatch url: https://github.com/pingcap/tidb/pull/6215.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
+  "analysis": "PR title: kv: merge batch get results to fix insert ignore in a transaction block\nPR url: https://github.com/pingcap/tidb/pull/6215\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: testSQL = `select * from test order by i;` (executor/write_test.go)\nChanged files (5): executor/admin.go, executor/write.go, executor/write_test.go, kv/mock.go, kv/txn.go\nPatch url: https://github.com/pingcap/tidb/pull/6215.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
 }

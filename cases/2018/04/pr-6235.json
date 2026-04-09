@@ -17,14 +17,14 @@
   ],
   "failure_signature": "testSQL = `select * from test order by i;` (executor/write_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The PR title/body and .patch describe a correctness/behavior change (insert on duplicate update) but do not provide a clear flaky-test failure signature or a targeted stabilization change. We avoid guessing the flakiness root cause.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6235",
     "https://github.com/pingcap/tidb/pull/6235.patch"
@@ -32,7 +32,8 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/6235.patch",
   "changed_files": [
     "executor/write.go",
-    "executor/write_test.go"
+    "executor/write_test.go",
+    "server/conn.go"
   ],
   "triage": {
     "sources": [
@@ -44,5 +45,5 @@
       "files: executor/write.go, executor/write_test.go, server/conn.go"
     ]
   },
-  "analysis": "PR title: executor: fix insert on duplicate update\nPR url: https://github.com/pingcap/tidb/pull/6235\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: testSQL = `select * from test order by i;` (executor/write_test.go)\nChanged files (2): executor/write.go, executor/write_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6235.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
+  "analysis": "PR title: executor: fix insert on duplicate update\nPR url: https://github.com/pingcap/tidb/pull/6235\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: testSQL = `select * from test order by i;` (executor/write_test.go)\nChanged files (3): executor/write.go, executor/write_test.go, server/conn.go\nPatch url: https://github.com/pingcap/tidb/pull/6235.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
 }

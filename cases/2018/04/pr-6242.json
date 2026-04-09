@@ -20,10 +20,9 @@
     "schema_change_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "schema_version_race"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: remove the unstable check.",
+  "root_cause_explanation": "The test was flaky due to a schema-version race: it compared a DDL job's SchemaVersion against the system schema version, but cancelled jobs in the DDL job list could update the system schema version asynchronously, making the check unstable. This PR removes the unstable check and tightens job-queue emptiness checks to avoid the race.",
   "module": "ddl",
   "fix_pattern": "ddl: remove the unstable check",
   "evidence_links": [

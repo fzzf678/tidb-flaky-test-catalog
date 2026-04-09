@@ -17,13 +17,12 @@
   ],
   "failure_signature": "store/tikv/latch: fix a data race in test code",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: store/tikv/latch: fix a data race in test code.",
+  "root_cause_explanation": "The test was flaky due to a data race (race detector warning) in latch acquisition when the txn scheduler runs transactions concurrently. This PR fixes the latch test/code to synchronize access and eliminate the concurrent read/write.",
   "module": "kv",
   "fix_pattern": "store/tikv/latch: fix a data race in test code",
   "evidence_links": [
