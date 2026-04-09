@@ -22,9 +22,9 @@
   "review_smells": [
     "assert_exact_plan_or_cost"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: planner/core: use stable sort to make CI stable.",
+  "root_cause_explanation": "The join reorder logic used an unstable sort; when row-count ties occurred, the join group ordering (and thus the chosen plan/EXPLAIN) could vary across runs. This PR stabilizes it by switching to sort.SliceStable to make tie-breaking deterministic.",
   "module": "planner",
-  "fix_pattern": "planner/core: use stable sort to make CI stable",
+  "fix_pattern": "Use stable sort/deterministic tie-breakers in optimizer to avoid plan nondeterminism.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8650",
     "https://github.com/pingcap/tidb/pull/8650.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "fix a potential sporadic CI error due to the PR #8339 | tk.MustExec(`prepare stmt from 'select * from t order by ? asc'`) (executor/prepared_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "nondeterministic_plan_selection"
   ],
   "review_smells": [
-    "missing_order_by"
+    "plan_cache_dependency"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "Prepared statements with parameter markers in ORDER BY / GROUP BY were incorrectly considered cacheable, so prepared plan cache could reuse a plan with stale parameter handling; depending on cache hit/miss, results/errors could vary. This PR stabilizes it by marking such statements non-cacheable and handling param markers correctly during prepare/execute.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Disable prepared plan caching for statements with param markers in ORDER BY / GROUP BY (avoid plan cache dependency).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8206",
     "https://github.com/pingcap/tidb/pull/8206.patch"
@@ -37,9 +37,12 @@
     "expression/util.go",
     "planner/core/cacheable_checker.go",
     "planner/core/cacheable_checker_test.go",
-    "planner/core/errors.go",
     "planner/core/expression_rewriter.go",
     "planner/core/logical_plan_builder.go",
+    "sessionctx/variable/session.go",
+    "executor/executor.go",
+    "sessionctx/stmtctx/stmtctx.go",
+    "planner/core/errors.go",
     "planner/core/point_get_plan.go"
   ],
   "triage": {
@@ -50,8 +53,8 @@
     ],
     "evidence": [
       "evidence: fix a potential sporadic CI error due to the PR #8339 | tk.MustExec(`prepare stmt from 'select * from t order by ? asc'`) (executor/prepared_test.go)",
-      "files: executor/executor.go, executor/prepared.go, executor/prepared_test.go, expression/simple_rewriter.go, expression/util.go, planner/core/cacheable_checker.go, planner/core/cacheable_checker_test.go, planner/core/errors.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, planner/core/point_get_plan.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session.go"
+      "files: executor/prepared.go, executor/prepared_test.go, expression/simple_rewriter.go, expression/util.go, planner/core/cacheable_checker.go, planner/core/cacheable_checker_test.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, sessionctx/variable/session.go, executor/executor.go, sessionctx/stmtctx/stmtctx.go, planner/core/errors.go, planner/core/point_get_plan.go"
     ]
   },
-  "analysis": "PR title: plan: support `?` in Order By / Group By / Limit Offset clauses\nPR url: https://github.com/pingcap/tidb/pull/8206\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix a potential sporadic CI error due to the PR #8339 | tk.MustExec(`prepare stmt from 'select * from t order by ? asc'`) (executor/prepared_test.go)\nChanged files (10): executor/prepared.go, executor/prepared_test.go, expression/simple_rewriter.go, expression/util.go, planner/core/cacheable_checker.go, planner/core/cacheable_checker_test.go, planner/core/errors.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, planner/core/point_get_plan.go\nPatch url: https://github.com/pingcap/tidb/pull/8206.patch\nPicked test: type=unit path=executor/prepared_test.go name=prepared_test"
+  "analysis": "PR title: plan: support `?` in Order By / Group By / Limit Offset clauses\nPR url: https://github.com/pingcap/tidb/pull/8206\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix a potential sporadic CI error due to the PR #8339 | tk.MustExec(`prepare stmt from 'select * from t order by ? asc'`) (executor/prepared_test.go)\nChanged files (13): executor/prepared.go, executor/prepared_test.go, expression/simple_rewriter.go, expression/util.go, planner/core/cacheable_checker.go, planner/core/cacheable_checker_test.go, planner/core/expression_rewriter.go, planner/core/logical_plan_builder.go, sessionctx/variable/session.go, executor/executor.go, sessionctx/stmtctx/stmtctx.go, planner/core/errors.go, planner/core/point_get_plan.go\nPatch url: https://github.com/pingcap/tidb/pull/8206.patch\nPicked test: type=unit path=executor/prepared_test.go name=prepared_test"
 }
