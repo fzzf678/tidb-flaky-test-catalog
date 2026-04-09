@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: build and use count-min sketch.",
+  "root_cause_explanation": "The flakiness was caused by a Go data race in the statistics cache/handle: table statistics objects can be read concurrently while the stats worker refreshes them from storage or writes new stats, and mutating a shared cached `Table` without copying can trigger race detector failures. This PR stabilizes it by using a copy-on-write approach (copy the cached table stats before updating histograms/CM sketch and related fields) so readers never observe concurrent in-place mutations.",
   "module": "statistics",
-  "fix_pattern": "*: build and use count-min sketch",
+  "fix_pattern": "Use copy-on-write / deep copy of cached stats objects before mutation (e.g., `table.copy()` before updating) to avoid data races under concurrent reads.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5042",
     "https://github.com/pingcap/tidb/pull/5042.patch"
@@ -40,14 +40,14 @@
     "statistics/builder.go",
     "statistics/cmsketch.go",
     "statistics/cmsketch_test.go",
-    "statistics/handle.go",
     "statistics/handle_test.go",
     "statistics/histogram.go",
     "statistics/sample.go",
     "statistics/sample_test.go",
     "statistics/statistics_test.go",
     "statistics/table.go",
-    "store/tikv/mock-tikv/analyze.go"
+    "store/tikv/mock-tikv/analyze.go",
+    "statistics/handle.go"
   ],
   "triage": {
     "sources": [
@@ -56,8 +56,8 @@
     ],
     "evidence": [
       "evidence: // We copy it before writing to avoid race.",
-      "files: bootstrap.go, domain/domain.go, executor/aggregate_test.go, executor/analyze.go, executor/builder.go, session.go, statistics/builder.go, statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/handle.go, statistics/handle_test.go, statistics/histogram.go, statistics/sample.go, statistics/sample_test.go, statistics/statistics_test.go, statistics/table.go, store/tikv/mock-tikv/analyze.go"
+      "files: bootstrap.go, domain/domain.go, executor/aggregate_test.go, executor/analyze.go, executor/builder.go, session.go, statistics/builder.go, statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/handle_test.go, statistics/histogram.go, statistics/sample.go, statistics/sample_test.go, statistics/statistics_test.go, statistics/table.go, store/tikv/mock-tikv/analyze.go, statistics/handle.go"
     ]
   },
-  "analysis": "PR title: *: build and use count-min sketch\nPR url: https://github.com/pingcap/tidb/pull/5042\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // We copy it before writing to avoid race.\nChanged files (17): bootstrap.go, domain/domain.go, executor/aggregate_test.go, executor/analyze.go, executor/builder.go, session.go, statistics/builder.go, statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/handle.go, statistics/handle_test.go, statistics/histogram.go, statistics/sample.go, statistics/sample_test.go, statistics/statistics_test.go, statistics/table.go, store/tikv/mock-tikv/analyze.go\nPatch url: https://github.com/pingcap/tidb/pull/5042.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+  "analysis": "PR title: *: build and use count-min sketch\nPR url: https://github.com/pingcap/tidb/pull/5042\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // We copy it before writing to avoid race.\nChanged files (17): bootstrap.go, domain/domain.go, executor/aggregate_test.go, executor/analyze.go, executor/builder.go, session.go, statistics/builder.go, statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/handle_test.go, statistics/histogram.go, statistics/sample.go, statistics/sample_test.go, statistics/statistics_test.go, statistics/table.go, store/tikv/mock-tikv/analyze.go, statistics/handle.go\nPatch url: https://github.com/pingcap/tidb/pull/5042.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
 }

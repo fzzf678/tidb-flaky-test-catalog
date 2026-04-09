@@ -20,11 +20,12 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order",
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it assumed a deterministic order for schema/database listings returned by the HTTP status server (`/schema`), but the underlying schema list order is not guaranteed (it can vary across runs/implementations). This PR stabilizes the test by sorting the returned schema names before assertions (and by asserting on stable schema metadata), avoiding reliance on incidental iteration/list ordering.",
   "module": "server",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Sort list results (e.g., schema/db names) before assertions; avoid relying on incidental iteration order of returned collections.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5256",
     "https://github.com/pingcap/tidb/pull/5256.patch"

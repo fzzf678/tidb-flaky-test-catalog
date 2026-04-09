@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rs, err := tk.Exec(\"select * from chk order by k\") (new_session_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR refactors IndexLookupReader to support chunk-based execution and decouples internal workers, touching a large amount of executor/distsql code and adding new tests. The patch does not clearly show a targeted stabilization fix for an intermittent/flaky failure (it is largely a feature/refactor for execution format), so we conservatively classify it as needs-more-evidence.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5206",
     "https://github.com/pingcap/tidb/pull/5206.patch"

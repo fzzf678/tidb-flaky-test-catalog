@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rs, err := se.Execute(goCtx, \"select * from t order by col limit 50\") (bench_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR starts OpenTracing from `server.dispatch()` and refactors the SQL execution interface to `Execute(ctx, sql)` across server/session/executor code. The change is broad and does not clearly indicate a targeted stabilization fix for an intermittent/flaky failure; the case evidence string is not a concrete flaky failure signature. We conservatively classify it as needs-more-evidence.",
+  "module": "server",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5027",
     "https://github.com/pingcap/tidb/pull/5027.patch"

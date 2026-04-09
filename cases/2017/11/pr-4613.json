@@ -17,30 +17,47 @@
   ],
   "failure_signature": "executor,sessionctx:fix data race for set IgnoreTruncate in Statement… | // test order by (executor/aggregate_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR introduces/supports ONLY_FULL_GROUP_BY SQL mode and fixes a join panic bug, touching a broad set of executor/session/planner components and tests. The case evidence string is not a concrete flaky failure signature, and the patch does not clearly show a targeted stabilization fix for an intermittent failure, so we conservatively classify it as needs-more-evidence.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4613",
     "https://github.com/pingcap/tidb/pull/4613.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/4613.patch",
   "changed_files": [
+    "executor/write.go",
+    "executor/write_test.go",
+    "executor/builder.go",
+    "parser/parser.y",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plans.go",
+    "ast/dml.go",
+    "plan/planbuilder.go",
+    "plan/plans.go",
+    "executor/executor.go",
+    "sessionctx/variable/session.go",
+    "executor/prepared.go",
+    "bootstrap.go",
     "executor/aggregate_test.go",
+    "executor/executor_test.go",
     "executor/join_test.go",
-    "executor/show_test.go",
     "mysql/const.go",
+    "plan/cbo_test.go",
+    "plan/explain_test.go",
+    "session.go",
+    "session_test.go",
+    "sessionctx/variable/sysvar.go",
+    "expression/integration_test.go",
     "mysql/errcode.go",
     "mysql/errname.go",
     "mysql/state.go",
-    "plan/logical_plan_builder.go",
-    "plan/planbuilder.go",
-    "sessionctx/variable/sysvar.go"
+    "executor/show_test.go"
   ],
   "triage": {
     "sources": [
@@ -50,8 +67,8 @@
     ],
     "evidence": [
       "evidence: executor,sessionctx:fix data race for set IgnoreTruncate in Statement… | // test order by (executor/aggregate_test.go)",
-      "files: ast/dml.go, bootstrap.go, executor/aggregate_test.go, executor/builder.go, executor/executor.go, executor/executor_test.go, executor/join_test.go, executor/prepared.go, executor/show_test.go, executor/write.go, executor/write_test.go, expression/integration_test.go, mysql/const.go, mysql/errcode.go, mysql/errname.go, mysql/state.go, parser/parser.y, plan/cbo_test.go, plan/explain_test.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/planbuilder.go, plan/plans.go, session.go, session_test.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go"
+      "files: executor/write.go, executor/write_test.go, executor/builder.go, parser/parser.y, plan/logical_plan_builder.go, plan/logical_plans.go, ast/dml.go, plan/planbuilder.go, plan/plans.go, executor/executor.go, sessionctx/variable/session.go, executor/prepared.go, bootstrap.go, executor/aggregate_test.go, executor/executor_test.go, executor/join_test.go, mysql/const.go, plan/cbo_test.go, plan/explain_test.go, session.go, session_test.go, sessionctx/variable/sysvar.go, expression/integration_test.go, mysql/errcode.go, mysql/errname.go, mysql/state.go, executor/show_test.go"
     ]
   },
-  "analysis": "PR title: Support SQLMode ONLY_FULL_GROUP_BY and fix a join panic bug\nPR url: https://github.com/pingcap/tidb/pull/4613\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: executor,sessionctx:fix data race for set IgnoreTruncate in Statement… | // test order by (executor/aggregate_test.go)\nChanged files (10): executor/aggregate_test.go, executor/join_test.go, executor/show_test.go, mysql/const.go, mysql/errcode.go, mysql/errname.go, mysql/state.go, plan/logical_plan_builder.go, plan/planbuilder.go, sessionctx/variable/sysvar.go\nPatch url: https://github.com/pingcap/tidb/pull/4613.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+  "analysis": "PR title: Support SQLMode ONLY_FULL_GROUP_BY and fix a join panic bug\nPR url: https://github.com/pingcap/tidb/pull/4613\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: executor,sessionctx:fix data race for set IgnoreTruncate in Statement… | // test order by (executor/aggregate_test.go)\nChanged files (27): executor/write.go, executor/write_test.go, executor/builder.go, parser/parser.y, plan/logical_plan_builder.go, plan/logical_plans.go, ast/dml.go, plan/planbuilder.go, plan/plans.go, executor/executor.go, sessionctx/variable/session.go, executor/prepared.go, bootstrap.go, executor/aggregate_test.go, executor/executor_test.go, executor/join_test.go, mysql/const.go, plan/cbo_test.go, plan/explain_test.go, session.go, session_test.go, sessionctx/variable/sysvar.go, expression/integration_test.go, mysql/errcode.go, mysql/errname.go, mysql/state.go, executor/show_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4613.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
 }

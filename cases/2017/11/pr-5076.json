@@ -17,14 +17,14 @@
   ],
   "failure_signature": "zipf := rand.NewZipf(rand.New(rand.NewSource(seed)), s, 1, imax) (statistics/cmsketch_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "nondeterministic_test_input"
   ],
   "review_smells": [
-    "statistics_sensitive_test"
+    "randomized_test_input"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it used randomized input (Zipf distribution seeded by the current time), so the generated CMSketch/error distribution varied across runs and the probabilistic assertion could intermittently fail. This PR stabilizes the test by switching to constant seeds for the random generator (and slightly adjusting the assertion threshold) so the test input and expected error bounds are deterministic.",
   "module": "statistics",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Use deterministic test input: replace time-based randomness with fixed seeds (or log/accept a seed) so probabilistic tests become reproducible and stable.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5076",
     "https://github.com/pingcap/tidb/pull/5076.patch"

@@ -20,12 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky due to nondeterministic result ordering: it relied on `testkit.Result.Sort()` to stabilize the `SHOW` output order, but the `Sort()` comparator was buggy (not providing a strict total order when a field is greater), so sorting could be inconsistent and the subsequent `.Check()` could intermittently fail. This PR fixes `Result.Sort()` to implement a proper ordering and adds a dedicated unit test for the helper.",
   "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Ensure the result-sorting helper implements a strict total order (fix comparator) and add a unit test to prevent nondeterministic sort outcomes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5044",
     "https://github.com/pingcap/tidb/pull/5044.patch"
