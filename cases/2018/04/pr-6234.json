@@ -22,7 +22,7 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix data race.",
+  "root_cause_explanation": "The test was flaky due to a data race: a global plan cache enablement flag was read/written concurrently (race detector warning). This PR moves the flag into SessionVars (session-scoped) and avoids global mutation in tests, eliminating the concurrent access.",
   "module": "session",
   "fix_pattern": "*: fix data race",
   "evidence_links": [

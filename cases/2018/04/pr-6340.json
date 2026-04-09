@@ -17,12 +17,12 @@
   ],
   "failure_signature": "A data race is found in the CI:",
   "root_cause_categories": [
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: store/tikv: make LockKeys() function thread safe.",
+  "root_cause_explanation": "The test was flaky due to a data race (race detector warning) in tikvTxn.LockKeys(): SelectLock executors could call txn.LockKeys() concurrently (e.g., under HashLeftJoin), and both goroutines modified shared txn state. This PR makes LockKeys thread-safe to eliminate the concurrent mutation.",
   "module": "kv",
   "fix_pattern": "store/tikv: make LockKeys() function thread safe",
   "evidence_links": [

@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: rename `NewRange` to `Range`.",
-  "module": "module_unknown",
-  "fix_pattern": "*: rename `NewRange` to `Range`.",
+  "root_cause_explanation": "The test was flaky due to a data race risk: multiple IndexLookUpJoin inner workers run concurrently and shared range objects via indexRanges, leading to concurrent access to mutable state. This PR clones the ranges for each inner worker (ran.Clone()) to avoid sharing mutable objects across goroutines and eliminate the data race.",
+  "module": "executor",
+  "fix_pattern": "Clone per-worker indexRanges to avoid data race in concurrent inner workers.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6368",
     "https://github.com/pingcap/tidb/pull/6368.patch"
