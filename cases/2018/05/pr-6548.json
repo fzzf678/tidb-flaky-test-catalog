@@ -24,19 +24,19 @@
     "race_condition_in_async_code",
     "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: binloginfo: fix a data race on global.Config() in the unit test.",
+  "root_cause_explanation": "The test was flaky due to a data race on shared global configuration: the unit test mutated `global.Config().Binlog.IgnoreError` while binlog writing could concurrently read it in another goroutine. The patch stabilizes it by decoupling runtime behavior from direct global-config reads (using atomic flags / explicit setters) so tests no longer mutate shared global config concurrently.",
   "module": "test_infra",
-  "fix_pattern": "binloginfo: fix a data race on global.Config() in the unit test",
+  "fix_pattern": "Avoid concurrent reads/writes of global config; use atomic flags or local copies configured once, and keep tests from mutating shared globals during concurrent execution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6548",
     "https://github.com/pingcap/tidb/pull/6548.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/6548.patch",
   "changed_files": [
-    "server/http_handler.go",
     "sessionctx/binloginfo/binloginfo.go",
     "sessionctx/binloginfo/binloginfo_test.go",
-    "tidb-server/main.go"
+    "tidb-server/main.go",
+    "server/http_handler.go"
   ],
   "triage": {
     "sources": [
@@ -45,8 +45,8 @@
     ],
     "evidence": [
       "evidence: binloginfo: fix a data race on global.Config() in the unit test",
-      "files: server/http_handler.go, sessionctx/binloginfo/binloginfo.go, sessionctx/binloginfo/binloginfo_test.go, tidb-server/main.go"
+      "files: sessionctx/binloginfo/binloginfo.go, sessionctx/binloginfo/binloginfo_test.go, tidb-server/main.go, server/http_handler.go"
     ]
   },
-  "analysis": "PR title: binloginfo: fix a data race on global.Config() in the unit test\nPR url: https://github.com/pingcap/tidb/pull/6548\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: binloginfo: fix a data race on global.Config() in the unit test\nChanged files (4): server/http_handler.go, sessionctx/binloginfo/binloginfo.go, sessionctx/binloginfo/binloginfo_test.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/6548.patch\nPicked test: type=unit path=sessionctx/binloginfo/binloginfo_test.go name=binloginfo_test"
+  "analysis": "PR title: binloginfo: fix a data race on global.Config() in the unit test\nPR url: https://github.com/pingcap/tidb/pull/6548\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: binloginfo: fix a data race on global.Config() in the unit test\nChanged files (4): sessionctx/binloginfo/binloginfo.go, sessionctx/binloginfo/binloginfo_test.go, tidb-server/main.go, server/http_handler.go\nPatch url: https://github.com/pingcap/tidb/pull/6548.patch\nPicked test: type=unit path=sessionctx/binloginfo/binloginfo_test.go name=binloginfo_test"
 }
