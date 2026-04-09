@@ -20,9 +20,9 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it relied on nondeterministic ordering of extracted expressions (afterFunc). The list ordering was not guaranteed, but the test asserted on the formatted slice directly. This PR stabilizes the test by sorting the slice (sort.Slice by HashCode) before assertions.",
   "module": "expression",
   "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
   "evidence_links": [
@@ -37,13 +37,14 @@
     "expression/constant_propagation.go",
     "expression/expression.go",
     "expression/expression_test.go",
-    "expression/integration_test.go",
     "expression/scalar_function.go",
     "expression/scalar_function_test.go",
-    "expression/util.go",
     "plan/eliminate_projection.go",
+    "plan/logical_plan_builder.go",
     "plan/plan.go",
-    "plan/predicate_push_down.go"
+    "plan/predicate_push_down.go",
+    "expression/util.go",
+    "expression/integration_test.go"
   ],
   "triage": {
     "sources": [
@@ -52,8 +53,8 @@
     ],
     "evidence": [
       "evidence: sort.Slice(afterFunc, func(i, j int) bool { (expression/integration_test.go)",
-      "files: expression/column.go, expression/column_test.go, expression/constant.go, expression/constant_propagation.go, expression/expression.go, expression/expression_test.go, expression/integration_test.go, expression/scalar_function.go, expression/scalar_function_test.go, expression/util.go, plan/eliminate_projection.go, plan/logical_plan_builder.go, plan/plan.go, plan/predicate_push_down.go"
+      "files: expression/column.go, expression/column_test.go, expression/constant.go, expression/constant_propagation.go, expression/expression.go, expression/expression_test.go, expression/scalar_function.go, expression/scalar_function_test.go, plan/eliminate_projection.go, plan/logical_plan_builder.go, plan/plan.go, plan/predicate_push_down.go, expression/util.go, expression/integration_test.go"
     ]
   },
-  "analysis": "PR title: expression, plan: extract the same part from DNF's leaves.\nPR url: https://github.com/pingcap/tidb/pull/5831\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Slice(afterFunc, func(i, j int) bool { (expression/integration_test.go)\nChanged files (13): expression/column.go, expression/column_test.go, expression/constant.go, expression/constant_propagation.go, expression/expression.go, expression/expression_test.go, expression/integration_test.go, expression/scalar_function.go, expression/scalar_function_test.go, expression/util.go, plan/eliminate_projection.go, plan/plan.go, plan/predicate_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/5831.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+  "analysis": "PR title: expression, plan: extract the same part from DNF's leaves.\nPR url: https://github.com/pingcap/tidb/pull/5831\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Slice(afterFunc, func(i, j int) bool { (expression/integration_test.go)\nChanged files (14): expression/column.go, expression/column_test.go, expression/constant.go, expression/constant_propagation.go, expression/expression.go, expression/expression_test.go, expression/scalar_function.go, expression/scalar_function_test.go, plan/eliminate_projection.go, plan/logical_plan_builder.go, plan/plan.go, plan/predicate_push_down.go, expression/util.go, expression/integration_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5831.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
 }

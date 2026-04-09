@@ -17,14 +17,14 @@
   ],
   "failure_signature": "\"select a from multiexec where b = ? order by b\") (new_session_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a server/prepared-statement correctness fix (subquery error). The case does not provide a flaky-test failure signature or a targeted stabilization change, so we avoid guessing a nondeterministic-order root cause category.",
   "module": "server",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5761",
     "https://github.com/pingcap/tidb/pull/5761.patch"
@@ -32,7 +32,14 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/5761.patch",
   "changed_files": [
     "executor/prepared_test.go",
+    "new_session_test.go",
+    "server/conn.go",
+    "server/conn_stmt.go",
+    "server/driver.go",
+    "server/driver_tidb.go",
     "session.go",
+    "tidb_test.go",
+    "util/kvencoder/kv_encoder.go",
     "util/testkit/testkit.go"
   ],
   "triage": {
@@ -45,5 +52,5 @@
       "files: executor/prepared_test.go, new_session_test.go, server/conn.go, server/conn_stmt.go, server/driver.go, server/driver_tidb.go, session.go, tidb_test.go, util/kvencoder/kv_encoder.go, util/testkit/testkit.go"
     ]
   },
-  "analysis": "PR title: server: fix sub query error in prepare statement\nPR url: https://github.com/pingcap/tidb/pull/5761\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"select a from multiexec where b = ? order by b\") (new_session_test.go)\nChanged files (3): executor/prepared_test.go, session.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/5761.patch\nPicked test: type=unit path=new_session_test.go name=new_session_test"
+  "analysis": "PR title: server: fix sub query error in prepare statement\nPR url: https://github.com/pingcap/tidb/pull/5761\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"select a from multiexec where b = ? order by b\") (new_session_test.go)\nChanged files (10): executor/prepared_test.go, new_session_test.go, server/conn.go, server/conn_stmt.go, server/driver.go, server/driver_tidb.go, session.go, tidb_test.go, util/kvencoder/kv_encoder.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/5761.patch\nPicked test: type=unit path=new_session_test.go name=new_session_test"
 }
