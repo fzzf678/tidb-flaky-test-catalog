@@ -17,14 +17,14 @@
   ],
   "failure_signature": "wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
   "root_cause_categories": [
-    "external_dependency"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: store/tikv: remove dependency on `tidb` from `store/tikv`.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR refactors the `store/tikv` package to remove its dependency on `tidb` (a broad architectural decoupling) and updates many related tests. The patch does not clearly indicate a targeted stabilization fix for an intermittent/flaky failure, so we conservatively classify it as needs-more-evidence.",
   "module": "kv",
-  "fix_pattern": "store/tikv: remove dependency on `tidb` from `store/tikv`.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4932",
     "https://github.com/pingcap/tidb/pull/4932.patch"
@@ -32,6 +32,12 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/4932.patch",
   "changed_files": [
     "cmd/benchdb/main.go",
+    "store/tikv/gc_worker.go",
+    "store/tikv/gc_worker_test.go",
+    "store/tikv/interface.go",
+    "store/tikv/kv.go",
+    "store/tikv/lock_resolver.go",
+    "store/tikv/safepoint_test.go",
     "store/tikv/2pc.go",
     "store/tikv/backoff.go",
     "store/tikv/client.go",
@@ -40,22 +46,18 @@
     "store/tikv/gcworker/gc_worker.go",
     "store/tikv/gcworker/gc_worker_test.go",
     "store/tikv/gcworker/misc.go",
-    "store/tikv/interface.go",
-    "store/tikv/kv.go",
-    "store/tikv/lock_resolver.go",
     "store/tikv/metrics.go",
     "store/tikv/rawkv.go",
     "store/tikv/region_request.go",
     "store/tikv/safepoint.go",
-    "store/tikv/safepoint_test.go",
     "store/tikv/scan.go",
     "store/tikv/snapshot.go",
     "store/tikv/split_region.go",
-    "store/tikv/sql_test.go",
     "store/tikv/store_test.go",
     "store/tikv/test_util.go",
     "store/tikv/ticlient_test.go",
-    "tidb-server/main.go"
+    "tidb-server/main.go",
+    "store/tikv/sql_test.go"
   ],
   "triage": {
     "sources": [
@@ -64,8 +66,8 @@
     ],
     "evidence": [
       "evidence: wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
-      "files: cmd/benchdb/main.go, store/tikv/2pc.go, store/tikv/backoff.go, store/tikv/client.go, store/tikv/coprocessor.go, store/tikv/error.go, store/tikv/gc_worker.go, store/tikv/gc_worker_test.go, store/tikv/gcworker/gc_worker.go, store/tikv/gcworker/gc_worker_test.go, store/tikv/gcworker/misc.go, store/tikv/interface.go, store/tikv/kv.go, store/tikv/lock_resolver.go, store/tikv/metrics.go, store/tikv/rawkv.go, store/tikv/region_request.go, store/tikv/safepoint.go, store/tikv/safepoint_test.go, store/tikv/scan.go, store/tikv/snapshot.go, store/tikv/split_region.go, store/tikv/sql_test.go, store/tikv/store_test.go, store/tikv/test_util.go, store/tikv/ticlient_test.go, tidb-server/main.go"
+      "files: cmd/benchdb/main.go, store/tikv/gc_worker.go, store/tikv/gc_worker_test.go, store/tikv/interface.go, store/tikv/kv.go, store/tikv/lock_resolver.go, store/tikv/safepoint_test.go, store/tikv/2pc.go, store/tikv/backoff.go, store/tikv/client.go, store/tikv/coprocessor.go, store/tikv/error.go, store/tikv/gcworker/gc_worker.go, store/tikv/gcworker/gc_worker_test.go, store/tikv/gcworker/misc.go, store/tikv/metrics.go, store/tikv/rawkv.go, store/tikv/region_request.go, store/tikv/safepoint.go, store/tikv/scan.go, store/tikv/snapshot.go, store/tikv/split_region.go, store/tikv/store_test.go, store/tikv/test_util.go, store/tikv/ticlient_test.go, tidb-server/main.go, store/tikv/sql_test.go"
     ]
   },
-  "analysis": "PR title: store/tikv: remove dependency on `tidb` from `store/tikv`.\nPR url: https://github.com/pingcap/tidb/pull/4932\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.\nChanged files (25): cmd/benchdb/main.go, store/tikv/2pc.go, store/tikv/backoff.go, store/tikv/client.go, store/tikv/coprocessor.go, store/tikv/error.go, store/tikv/gcworker/gc_worker.go, store/tikv/gcworker/gc_worker_test.go, store/tikv/gcworker/misc.go, store/tikv/interface.go, store/tikv/kv.go, store/tikv/lock_resolver.go, store/tikv/metrics.go, store/tikv/rawkv.go, store/tikv/region_request.go, store/tikv/safepoint.go, store/tikv/safepoint_test.go, store/tikv/scan.go, store/tikv/snapshot.go, store/tikv/split_region.go, store/tikv/sql_test.go, store/tikv/store_test.go, store/tikv/test_util.go, store/tikv/ticlient_test.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/4932.patch\nPicked test: type=unit path=store/tikv/gc_worker_test.go name=gc_worker_test"
+  "analysis": "PR title: store/tikv: remove dependency on `tidb` from `store/tikv`.\nPR url: https://github.com/pingcap/tidb/pull/4932\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.\nChanged files (27): cmd/benchdb/main.go, store/tikv/gc_worker.go, store/tikv/gc_worker_test.go, store/tikv/interface.go, store/tikv/kv.go, store/tikv/lock_resolver.go, store/tikv/safepoint_test.go, store/tikv/2pc.go, store/tikv/backoff.go, store/tikv/client.go, store/tikv/coprocessor.go, store/tikv/error.go, store/tikv/gcworker/gc_worker.go, store/tikv/gcworker/gc_worker_test.go, store/tikv/gcworker/misc.go, store/tikv/metrics.go, store/tikv/rawkv.go, store/tikv/region_request.go, store/tikv/safepoint.go, store/tikv/scan.go, store/tikv/snapshot.go, store/tikv/split_region.go, store/tikv/store_test.go, store/tikv/test_util.go, store/tikv/ticlient_test.go, tidb-server/main.go, store/tikv/sql_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4932.patch\nPicked test: type=unit path=store/tikv/gc_worker_test.go name=gc_worker_test"
 }

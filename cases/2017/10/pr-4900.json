@@ -17,20 +17,31 @@
   ],
   "failure_signature": "// The test suite takes too long under the race detector.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: opentracing for two phase commit.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR primarily adds OpenTracing instrumentation for two-phase commit and refactors the `kv.Transaction.Commit` interface to accept a context, touching many KV/txn/store/test files. The patch does not clearly show a targeted stabilization fix for an intermittent/flaky failure, and the evidence string is a generic comment about race-detector runtime rather than a concrete flaky signature. We conservatively classify it as needs-more-evidence.",
   "module": "txn",
-  "fix_pattern": "*: opentracing for two phase commit",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4900",
     "https://github.com/pingcap/tidb/pull/4900.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/4900.patch",
   "changed_files": [
+    "executor/simple.go",
+    "kv/fault_injection.go",
+    "kv/kv.go",
+    "kv/mock.go",
+    "kv/txn.go",
+    "server/conn.go",
+    "session.go",
+    "store/localstore/txn.go",
+    "store/tikv/2pc.go",
+    "store/tikv/txn.go",
+    "util/mock/context.go",
     "bootstrap_test.go",
     "cmd/benchkv/main.go",
     "ddl/column_change_test.go",
@@ -41,21 +52,12 @@
     "ddl/index_change_test.go",
     "ddl/reorg_test.go",
     "executor/executor_test.go",
-    "executor/simple.go",
-    "kv/fault_injection.go",
-    "kv/kv.go",
-    "kv/mock.go",
     "kv/mock_test.go",
-    "kv/txn.go",
     "meta/meta_test.go",
-    "server/conn.go",
-    "session.go",
     "store/localstore/compactor_test.go",
     "store/localstore/mvcc_test.go",
-    "store/localstore/txn.go",
     "store/localstore/xapi_test.go",
     "store/store_test.go",
-    "store/tikv/2pc.go",
     "store/tikv/2pc_test.go",
     "store/tikv/isolation_test.go",
     "store/tikv/lock_test.go",
@@ -67,12 +69,10 @@
     "store/tikv/split_test.go",
     "store/tikv/store_test.go",
     "store/tikv/ticlient_test.go",
-    "store/tikv/txn.go",
     "structure/structure_test.go",
     "table/tables/index_test.go",
     "table/tables/tables_test.go",
     "util/admin/admin_test.go",
-    "util/mock/context.go",
     "util/prefix_helper_test.go"
   ],
   "triage": {
@@ -82,8 +82,8 @@
     ],
     "evidence": [
       "evidence: // The test suite takes too long under the race detector.",
-      "files: bootstrap_test.go, cmd/benchkv/main.go, ddl/column_change_test.go, ddl/column_test.go, ddl/ddl_db_test.go, ddl/ddl_worker_test.go, ddl/foreign_key_test.go, ddl/index_change_test.go, ddl/reorg_test.go, executor/executor_test.go, executor/simple.go, kv/fault_injection.go, kv/kv.go, kv/mock.go, kv/mock_test.go, kv/txn.go, meta/meta_test.go, server/conn.go, session.go, store/localstore/compactor_test.go, store/localstore/mvcc_test.go, store/localstore/txn.go, store/localstore/xapi_test.go, store/store_test.go, store/tikv/2pc.go, store/tikv/2pc_test.go, store/tikv/isolation_test.go, store/tikv/lock_test.go, store/tikv/mock-tikv/cluster_test.go, store/tikv/safepoint_test.go, store/tikv/scan_mock_test.go, store/tikv/scan_test.go, store/tikv/snapshot_test.go, store/tikv/split_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, store/tikv/txn.go, structure/structure_test.go, table/tables/index_test.go, table/tables/tables_test.go, util/admin/admin_test.go, util/mock/context.go, util/prefix_helper_test.go"
+      "files: executor/simple.go, kv/fault_injection.go, kv/kv.go, kv/mock.go, kv/txn.go, server/conn.go, session.go, store/localstore/txn.go, store/tikv/2pc.go, store/tikv/txn.go, util/mock/context.go, bootstrap_test.go, cmd/benchkv/main.go, ddl/column_change_test.go, ddl/column_test.go, ddl/ddl_db_test.go, ddl/ddl_worker_test.go, ddl/foreign_key_test.go, ddl/index_change_test.go, ddl/reorg_test.go, executor/executor_test.go, kv/mock_test.go, meta/meta_test.go, store/localstore/compactor_test.go, store/localstore/mvcc_test.go, store/localstore/xapi_test.go, store/store_test.go, store/tikv/2pc_test.go, store/tikv/isolation_test.go, store/tikv/lock_test.go, store/tikv/mock-tikv/cluster_test.go, store/tikv/safepoint_test.go, store/tikv/scan_mock_test.go, store/tikv/scan_test.go, store/tikv/snapshot_test.go, store/tikv/split_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, structure/structure_test.go, table/tables/index_test.go, table/tables/tables_test.go, util/admin/admin_test.go, util/prefix_helper_test.go"
     ]
   },
-  "analysis": "PR title: *: opentracing for two phase commit\nPR url: https://github.com/pingcap/tidb/pull/4900\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // The test suite takes too long under the race detector.\nChanged files (43): bootstrap_test.go, cmd/benchkv/main.go, ddl/column_change_test.go, ddl/column_test.go, ddl/ddl_db_test.go, ddl/ddl_worker_test.go, ddl/foreign_key_test.go, ddl/index_change_test.go, ddl/reorg_test.go, executor/executor_test.go, executor/simple.go, kv/fault_injection.go, kv/kv.go, kv/mock.go, kv/mock_test.go, kv/txn.go, meta/meta_test.go, server/conn.go, session.go, store/localstore/compactor_test.go, store/localstore/mvcc_test.go, store/localstore/txn.go, store/localstore/xapi_test.go, store/store_test.go, store/tikv/2pc.go, store/tikv/2pc_test.go, store/tikv/isolation_test.go, store/tikv/lock_test.go, store/tikv/mock-tikv/cluster_test.go, store/tikv/safepoint_test.go, store/tikv/scan_mock_test.go, store/tikv/scan_test.go, store/tikv/snapshot_test.go, store/tikv/split_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, store/tikv/txn.go, structure/structure_test.go, table/tables/index_test.go, table/tables/tables_test.go, util/admin/admin_test.go, util/mock/context.go, util/prefix_helper_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4900.patch\nPicked test: type=unit path=bootstrap_test.go name=bootstrap_test"
+  "analysis": "PR title: *: opentracing for two phase commit\nPR url: https://github.com/pingcap/tidb/pull/4900\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // The test suite takes too long under the race detector.\nChanged files (43): executor/simple.go, kv/fault_injection.go, kv/kv.go, kv/mock.go, kv/txn.go, server/conn.go, session.go, store/localstore/txn.go, store/tikv/2pc.go, store/tikv/txn.go, util/mock/context.go, bootstrap_test.go, cmd/benchkv/main.go, ddl/column_change_test.go, ddl/column_test.go, ddl/ddl_db_test.go, ddl/ddl_worker_test.go, ddl/foreign_key_test.go, ddl/index_change_test.go, ddl/reorg_test.go, executor/executor_test.go, kv/mock_test.go, meta/meta_test.go, store/localstore/compactor_test.go, store/localstore/mvcc_test.go, store/localstore/xapi_test.go, store/store_test.go, store/tikv/2pc_test.go, store/tikv/isolation_test.go, store/tikv/lock_test.go, store/tikv/mock-tikv/cluster_test.go, store/tikv/safepoint_test.go, store/tikv/scan_mock_test.go, store/tikv/scan_test.go, store/tikv/snapshot_test.go, store/tikv/split_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, structure/structure_test.go, table/tables/index_test.go, table/tables/tables_test.go, util/admin/admin_test.go, util/prefix_helper_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4900.patch\nPicked test: type=unit path=bootstrap_test.go name=bootstrap_test"
 }

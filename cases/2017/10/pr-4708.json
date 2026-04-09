@@ -17,14 +17,14 @@
   ],
   "failure_signature": "mux sync.Mutex // fix data race in ddl test.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: expression: Quit builtin function SLEEP when KILLed.",
+  "root_cause_explanation": "The test was flaky due to async timing/cancellation behavior: the builtin `SLEEP()` used `time.Sleep` and did not react to query/session cancellation (KILL), so tests that expected SLEEP to abort could hang or time out depending on timing. This PR stabilizes it by making `SLEEP()` wait via `select` on `time.After(dur)` or `ctx.Done()` (and returning 1 when killed), plus adding a unit test with a cancelable mock context to assert the early-exit behavior.",
   "module": "expression",
-  "fix_pattern": "expression: Quit builtin function SLEEP when KILLed.",
+  "fix_pattern": "Make time-based waits responsive to cancellation: replace plain `time.Sleep` with `select { case <-time.After(...); case <-ctx.Done(): ... }` and add a test that cancels the context.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4708",
     "https://github.com/pingcap/tidb/pull/4708.patch"
