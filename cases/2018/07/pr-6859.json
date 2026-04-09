@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: stats: use feedback in time.",
+  "root_cause_explanation": "The test was flaky under `-race` because statistics feedback application mutated shared histogram/CMSketch structures in-place (and could hit nil CMSketch), leading to concurrent access races and potential panics. This PR fixes it by adding nil checks and updating stats via copy-on-write (copy index/column stats before mutating and swapping back), avoiding concurrent mutation of shared objects.",
   "module": "statistics",
-  "fix_pattern": "stats: use feedback in time",
+  "fix_pattern": "Avoid in-place mutation of shared stats objects; use copy-on-write and nil guards to prevent concurrent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6859",
     "https://github.com/pingcap/tidb/pull/6859.patch"
@@ -32,15 +32,15 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/6859.patch",
   "changed_files": [
     "domain/domain.go",
-    "statistics/cmsketch.go",
-    "statistics/feedback.go",
-    "statistics/feedback_test.go",
     "statistics/handle.go",
-    "statistics/handle_test.go",
-    "statistics/histogram.go",
-    "statistics/table.go",
     "statistics/update.go",
-    "statistics/update_test.go"
+    "statistics/update_test.go",
+    "statistics/feedback.go",
+    "statistics/histogram.go",
+    "statistics/handle_test.go",
+    "statistics/cmsketch.go",
+    "statistics/feedback_test.go",
+    "statistics/table.go"
   ],
   "triage": {
     "sources": [
@@ -49,8 +49,8 @@
     ],
     "evidence": [
       "evidence: fix possible nil pointer and data race",
-      "files: domain/domain.go, statistics/cmsketch.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle.go, statistics/handle_test.go, statistics/histogram.go, statistics/table.go, statistics/update.go, statistics/update_test.go"
+      "files: domain/domain.go, statistics/handle.go, statistics/update.go, statistics/update_test.go, statistics/feedback.go, statistics/histogram.go, statistics/handle_test.go, statistics/cmsketch.go, statistics/feedback_test.go, statistics/table.go"
     ]
   },
-  "analysis": "PR title: stats: use feedback in time\nPR url: https://github.com/pingcap/tidb/pull/6859\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix possible nil pointer and data race\nChanged files (10): domain/domain.go, statistics/cmsketch.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle.go, statistics/handle_test.go, statistics/histogram.go, statistics/table.go, statistics/update.go, statistics/update_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6859.patch\nPicked test: type=unit path=statistics/feedback_test.go name=feedback_test"
+  "analysis": "PR title: stats: use feedback in time\nPR url: https://github.com/pingcap/tidb/pull/6859\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix possible nil pointer and data race\nChanged files (10): domain/domain.go, statistics/handle.go, statistics/update.go, statistics/update_test.go, statistics/feedback.go, statistics/histogram.go, statistics/handle_test.go, statistics/cmsketch.go, statistics/feedback_test.go, statistics/table.go\nPatch url: https://github.com/pingcap/tidb/pull/6859.patch\nPicked test: type=unit path=statistics/feedback_test.go name=feedback_test"
 }

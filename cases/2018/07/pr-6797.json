@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// It's used for fixing data race in tests.",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: *: check the schema-validity when the DDL fails.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Patch refactors/extends schema checker and DDL schema-validity handling; no clear, targeted flaky-test stabilization mechanism is evident.",
   "module": "ddl",
-  "fix_pattern": "*: check the schema-validity when the DDL fails",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6797",
     "https://github.com/pingcap/tidb/pull/6797.patch"
@@ -32,24 +32,30 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/6797.patch",
   "changed_files": [
     "ddl/callback.go",
-    "ddl/callback_test.go",
     "ddl/ddl.go",
     "ddl/ddl_api.go",
     "ddl/ddl_db_change_test.go",
-    "ddl/ddl_test.go",
-    "ddl/ddl_worker.go",
-    "domain/schema_checker.go",
-    "domain/schema_checker_test.go",
     "domain/schema_validator.go",
-    "domain/schema_validator_test.go",
     "executor/ddl.go",
-    "kv/kv.go",
-    "server/server_test.go",
+    "executor/ddl_fail_test.go",
     "session/session.go",
+    "util/schema_checker/schema_checker.go",
+    "ddl/callback_test.go",
+    "ddl/ddl_worker.go",
+    "domain/schema_validator_test.go",
     "session/session_test.go",
     "session/tidb_test.go",
     "sessionctx/stmtctx/stmtctx.go",
-    "store/tikv/2pc.go"
+    "util/schema_checker/schema_checker_test.go",
+    "util/schemachecker/schema_checker.go",
+    "util/schemachecker/schema_checker_test.go",
+    "domain/domain.go",
+    "kv/kv.go",
+    "store/tikv/2pc.go",
+    "server/server_test.go",
+    "ddl/ddl_test.go",
+    "domain/schema_checker.go",
+    "domain/schema_checker_test.go"
   ],
   "triage": {
     "sources": [
@@ -58,8 +64,8 @@
     ],
     "evidence": [
       "evidence: // It's used for fixing data race in tests.",
-      "files: ddl/callback.go, ddl/callback_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_db_change_test.go, ddl/ddl_test.go, ddl/ddl_worker.go, domain/domain.go, domain/schema_checker.go, domain/schema_checker_test.go, domain/schema_validator.go, domain/schema_validator_test.go, executor/ddl.go, executor/ddl_fail_test.go, kv/kv.go, server/server_test.go, session/session.go, session/session_test.go, session/tidb_test.go, sessionctx/stmtctx/stmtctx.go, store/tikv/2pc.go, util/schema_checker/schema_checker.go, util/schema_checker/schema_checker_test.go, util/schemachecker/schema_checker.go, util/schemachecker/schema_checker_test.go"
+      "files: ddl/callback.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_db_change_test.go, domain/schema_validator.go, executor/ddl.go, executor/ddl_fail_test.go, session/session.go, util/schema_checker/schema_checker.go, ddl/callback_test.go, ddl/ddl_worker.go, domain/schema_validator_test.go, session/session_test.go, session/tidb_test.go, sessionctx/stmtctx/stmtctx.go, util/schema_checker/schema_checker_test.go, util/schemachecker/schema_checker.go, util/schemachecker/schema_checker_test.go, domain/domain.go, kv/kv.go, store/tikv/2pc.go, server/server_test.go, ddl/ddl_test.go, domain/schema_checker.go, domain/schema_checker_test.go"
     ]
   },
-  "analysis": "PR title: *: check the schema-validity when the DDL fails\nPR url: https://github.com/pingcap/tidb/pull/6797\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // It's used for fixing data race in tests.\nChanged files (19): ddl/callback.go, ddl/callback_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_db_change_test.go, ddl/ddl_test.go, ddl/ddl_worker.go, domain/schema_checker.go, domain/schema_checker_test.go, domain/schema_validator.go, domain/schema_validator_test.go, executor/ddl.go, kv/kv.go, server/server_test.go, session/session.go, session/session_test.go, session/tidb_test.go, sessionctx/stmtctx/stmtctx.go, store/tikv/2pc.go\nPatch url: https://github.com/pingcap/tidb/pull/6797.patch\nPicked test: type=unit path=ddl/callback_test.go name=callback_test"
+  "analysis": "PR title: *: check the schema-validity when the DDL fails\nPR url: https://github.com/pingcap/tidb/pull/6797\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // It's used for fixing data race in tests.\nChanged files (25): ddl/callback.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_db_change_test.go, domain/schema_validator.go, executor/ddl.go, executor/ddl_fail_test.go, session/session.go, util/schema_checker/schema_checker.go, ddl/callback_test.go, ddl/ddl_worker.go, domain/schema_validator_test.go, session/session_test.go, session/tidb_test.go, sessionctx/stmtctx/stmtctx.go, util/schema_checker/schema_checker_test.go, util/schemachecker/schema_checker.go, util/schemachecker/schema_checker_test.go, domain/domain.go, kv/kv.go, store/tikv/2pc.go, server/server_test.go, ddl/ddl_test.go, domain/schema_checker.go, domain/schema_checker_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6797.patch\nPicked test: type=unit path=ddl/callback_test.go name=callback_test"
 }

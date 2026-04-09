@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// We copy it before writing to avoid race.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "statistics_sensitive_test"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: plan, statistics: extract `histColl` struct.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Patch refactors planner/statistics structures (`histColl` extraction); no targeted flaky-test stabilization change is evident.",
   "module": "planner",
-  "fix_pattern": "plan, statistics: extract `histColl` struct",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6860",
     "https://github.com/pingcap/tidb/pull/6860.patch"
@@ -32,14 +32,17 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/6860.patch",
   "changed_files": [
     "plan/logical_plan_builder.go",
+    "plan/logical_plans.go",
+    "plan/stats.go",
     "statistics/boostrap.go",
     "statistics/dump.go",
-    "statistics/feedback.go",
-    "statistics/histogram.go",
     "statistics/selectivity.go",
     "statistics/selectivity_test.go",
     "statistics/statistics_test.go",
     "statistics/table.go",
+    "types/field_type.go",
+    "statistics/feedback.go",
+    "statistics/histogram.go",
     "statistics/update_test.go"
   ],
   "triage": {
@@ -49,8 +52,8 @@
     ],
     "evidence": [
       "evidence: // We copy it before writing to avoid race.",
-      "files: plan/logical_plan_builder.go, plan/logical_plans.go, plan/stats.go, statistics/boostrap.go, statistics/dump.go, statistics/feedback.go, statistics/histogram.go, statistics/selectivity.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, statistics/update_test.go, types/field_type.go"
+      "files: plan/logical_plan_builder.go, plan/logical_plans.go, plan/stats.go, statistics/boostrap.go, statistics/dump.go, statistics/selectivity.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, types/field_type.go, statistics/feedback.go, statistics/histogram.go, statistics/update_test.go"
     ]
   },
-  "analysis": "PR title: plan, statistics: extract `histColl` struct\nPR url: https://github.com/pingcap/tidb/pull/6860\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // We copy it before writing to avoid race.\nChanged files (10): plan/logical_plan_builder.go, statistics/boostrap.go, statistics/dump.go, statistics/feedback.go, statistics/histogram.go, statistics/selectivity.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, statistics/update_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6860.patch\nPicked test: type=unit path=statistics/selectivity_test.go name=selectivity_test"
+  "analysis": "PR title: plan, statistics: extract `histColl` struct\nPR url: https://github.com/pingcap/tidb/pull/6860\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // We copy it before writing to avoid race.\nChanged files (13): plan/logical_plan_builder.go, plan/logical_plans.go, plan/stats.go, statistics/boostrap.go, statistics/dump.go, statistics/selectivity.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, types/field_type.go, statistics/feedback.go, statistics/histogram.go, statistics/update_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6860.patch\nPicked test: type=unit path=statistics/selectivity_test.go name=selectivity_test"
 }

@@ -17,31 +17,37 @@
   ],
   "failure_signature": "rows := s.mustQuery(c, fmt.Sprintf(\"select c1 from test_add_index where c3 >= %d order by c1\", start)) (ddl/db_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Patch implements partition add-index reorganization for DDL (feature/correctness); no targeted flaky-test stabilization change is evident.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6814",
     "https://github.com/pingcap/tidb/pull/6814.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/6814.patch",
   "changed_files": [
-    "ddl/db_test.go",
-    "ddl/ddl.go",
     "ddl/index.go",
     "ddl/reorg.go",
-    "ddl/reorg_test.go",
-    "meta/meta.go",
-    "meta/meta_test.go",
     "model/ddl.go",
-    "util/admin/admin.go"
+    "ddl/ddl.go",
+    "ddl/ddl_db_test.go",
+    "ddl/ddl_api.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "sessionctx/variable/varsutil_test.go",
+    "table/tables/tables.go",
+    "table/tables/tables_test.go",
+    "ddl/db_test.go",
+    "plan/rule_partition_processor.go",
+    "meta/meta_test.go",
+    "meta/meta.go",
+    "ddl/reorg_test.go"
   ],
   "triage": {
     "sources": [
@@ -50,8 +56,8 @@
     ],
     "evidence": [
       "evidence: rows := s.mustQuery(c, fmt.Sprintf(\"select c1 from test_add_index where c3 >= %d order by c1\", start)) (ddl/db_test.go)",
-      "files: ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_db_test.go, ddl/index.go, ddl/reorg.go, ddl/reorg_test.go, meta/meta.go, meta/meta_test.go, model/ddl.go, plan/rule_partition_processor.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, table/tables/tables.go, table/tables/tables_test.go"
+      "files: ddl/index.go, ddl/reorg.go, model/ddl.go, ddl/ddl.go, ddl/ddl_db_test.go, ddl/ddl_api.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, table/tables/tables.go, table/tables/tables_test.go, ddl/db_test.go, plan/rule_partition_processor.go, meta/meta_test.go, meta/meta.go, ddl/reorg_test.go"
     ]
   },
-  "analysis": "PR title: ddl: implement reorganize for table partition when adding index\nPR url: https://github.com/pingcap/tidb/pull/6814\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rows := s.mustQuery(c, fmt.Sprintf(\"select c1 from test_add_index where c3 >= %d order by c1\", start)) (ddl/db_test.go)\nChanged files (9): ddl/db_test.go, ddl/ddl.go, ddl/index.go, ddl/reorg.go, ddl/reorg_test.go, meta/meta.go, meta/meta_test.go, model/ddl.go, util/admin/admin.go\nPatch url: https://github.com/pingcap/tidb/pull/6814.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+  "analysis": "PR title: ddl: implement reorganize for table partition when adding index\nPR url: https://github.com/pingcap/tidb/pull/6814\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rows := s.mustQuery(c, fmt.Sprintf(\"select c1 from test_add_index where c3 >= %d order by c1\", start)) (ddl/db_test.go)\nChanged files (17): ddl/index.go, ddl/reorg.go, model/ddl.go, ddl/ddl.go, ddl/ddl_db_test.go, ddl/ddl_api.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, table/tables/tables.go, table/tables/tables_test.go, ddl/db_test.go, plan/rule_partition_processor.go, meta/meta_test.go, meta/meta.go, ddl/reorg_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6814.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
 }

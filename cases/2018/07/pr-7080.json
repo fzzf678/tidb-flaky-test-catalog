@@ -17,36 +17,39 @@
   ],
   "failure_signature": "// so we need to clone the AggFuncs to avoid data race on these variables.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "global_variable_mutation",
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Global state must be reset/restored between tests. This PR stabilizes it by: *: make system variable 'group_concat_max_len' work.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Patch makes system variable `group_concat_max_len` work (feature/correctness); no targeted flaky-test stabilization change is evident.",
   "module": "module_unknown",
-  "fix_pattern": "*: make system variable 'group_concat_max_len' work",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/7080",
     "https://github.com/pingcap/tidb/pull/7080.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/7080.patch",
   "changed_files": [
-    "executor/aggfuncs/builder.go",
-    "executor/aggfuncs/func_group_concat.go",
-    "executor/aggregate.go",
-    "executor/builder.go",
-    "expression/aggregation/aggregation.go",
-    "expression/aggregation/aggregation_test.go",
-    "expression/aggregation/bench_test.go",
+    "expression/aggregation/agg_to_pb_test.go",
     "expression/aggregation/concat.go",
     "expression/aggregation/descriptor.go",
+    "plan/task.go",
+    "executor/aggfuncs/builder.go",
+    "executor/aggfuncs/func_group_concat.go",
+    "executor/set.go",
     "expression/errors.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/varsutil.go",
+    "executor/builder.go",
+    "expression/aggregation/aggregation_test.go",
     "expression/integration_test.go",
     "session/session_test.go",
     "sessionctx/variable/mock_globalaccessor.go",
-    "sessionctx/variable/varsutil.go",
     "sessionctx/variable/varsutil_test.go",
+    "executor/aggregate.go",
+    "expression/aggregation/aggregation.go",
+    "expression/aggregation/bench_test.go",
     "util/mock/context.go"
   ],
   "triage": {
@@ -56,8 +59,8 @@
     ],
     "evidence": [
       "evidence: // so we need to clone the AggFuncs to avoid data race on these variables.",
-      "files: executor/aggfuncs/builder.go, executor/aggfuncs/func_group_concat.go, executor/aggregate.go, executor/builder.go, executor/set.go, expression/aggregation/agg_to_pb_test.go, expression/aggregation/aggregation.go, expression/aggregation/aggregation_test.go, expression/aggregation/bench_test.go, expression/aggregation/concat.go, expression/aggregation/descriptor.go, expression/errors.go, expression/integration_test.go, plan/task.go, session/session_test.go, sessionctx/variable/mock_globalaccessor.go, sessionctx/variable/sysvar.go, sessionctx/variable/varsutil.go, sessionctx/variable/varsutil_test.go, util/mock/context.go"
+      "files: expression/aggregation/agg_to_pb_test.go, expression/aggregation/concat.go, expression/aggregation/descriptor.go, plan/task.go, executor/aggfuncs/builder.go, executor/aggfuncs/func_group_concat.go, executor/set.go, expression/errors.go, sessionctx/variable/sysvar.go, sessionctx/variable/varsutil.go, executor/builder.go, expression/aggregation/aggregation_test.go, expression/integration_test.go, session/session_test.go, sessionctx/variable/mock_globalaccessor.go, sessionctx/variable/varsutil_test.go, executor/aggregate.go, expression/aggregation/aggregation.go, expression/aggregation/bench_test.go, util/mock/context.go"
     ]
   },
-  "analysis": "PR title: *: make system variable 'group_concat_max_len' work\nPR url: https://github.com/pingcap/tidb/pull/7080\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // so we need to clone the AggFuncs to avoid data race on these variables.\nChanged files (16): executor/aggfuncs/builder.go, executor/aggfuncs/func_group_concat.go, executor/aggregate.go, executor/builder.go, expression/aggregation/aggregation.go, expression/aggregation/aggregation_test.go, expression/aggregation/bench_test.go, expression/aggregation/concat.go, expression/aggregation/descriptor.go, expression/errors.go, expression/integration_test.go, session/session_test.go, sessionctx/variable/mock_globalaccessor.go, sessionctx/variable/varsutil.go, sessionctx/variable/varsutil_test.go, util/mock/context.go\nPatch url: https://github.com/pingcap/tidb/pull/7080.patch\nPicked test: type=unit path=expression/aggregation/agg_to_pb_test.go name=agg_to_pb_test"
+  "analysis": "PR title: *: make system variable 'group_concat_max_len' work\nPR url: https://github.com/pingcap/tidb/pull/7080\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // so we need to clone the AggFuncs to avoid data race on these variables.\nChanged files (20): expression/aggregation/agg_to_pb_test.go, expression/aggregation/concat.go, expression/aggregation/descriptor.go, plan/task.go, executor/aggfuncs/builder.go, executor/aggfuncs/func_group_concat.go, executor/set.go, expression/errors.go, sessionctx/variable/sysvar.go, sessionctx/variable/varsutil.go, executor/builder.go, expression/aggregation/aggregation_test.go, expression/integration_test.go, session/session_test.go, sessionctx/variable/mock_globalaccessor.go, sessionctx/variable/varsutil_test.go, executor/aggregate.go, expression/aggregation/aggregation.go, expression/aggregation/bench_test.go, util/mock/context.go\nPatch url: https://github.com/pingcap/tidb/pull/7080.patch\nPicked test: type=unit path=expression/aggregation/agg_to_pb_test.go name=agg_to_pb_test"
 }
