@@ -17,20 +17,21 @@
   ],
   "failure_signature": "plan: fix data race in maxMinEliminater.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: plan: no need to pass the ctx to logicalOptRule.",
+  "root_cause_explanation": "The test was flaky due to a data race in optimizer rules: logical optimization rule instances stored `ctx` in a struct field and mutated it during Optimize(), so concurrent optimizations could race on that shared field (as hinted by the PR description: \"Assign value may cause data race\"). This PR makes the rule stateless by removing the field and passing ctx through function arguments, eliminating the race.",
   "module": "planner",
-  "fix_pattern": "plan: no need to pass the ctx to logicalOptRule",
+  "fix_pattern": "Make optimizer rule instances stateless (no per-call ctx stored on shared structs); pass context via parameters to avoid data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5671",
     "https://github.com/pingcap/tidb/pull/5671.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/5671.patch",
   "changed_files": [
+    "plan/max_min_eliminate.go",
     "plan/aggregation_push_down.go",
     "plan/build_key_info.go",
     "plan/column_pruning.go",
@@ -39,7 +40,6 @@
     "plan/expression_rewriter.go",
     "plan/logical_plan_builder.go",
     "plan/logical_plan_test.go",
-    "plan/max_min_eliminate.go",
     "plan/optimizer.go",
     "plan/planbuilder.go",
     "plan/predicate_push_down.go",
@@ -52,8 +52,8 @@
     ],
     "evidence": [
       "evidence: plan: fix data race in maxMinEliminater.",
-      "files: plan/aggregation_push_down.go, plan/build_key_info.go, plan/column_pruning.go, plan/decorrelate.go, plan/eliminate_projection.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/max_min_eliminate.go, plan/optimizer.go, plan/planbuilder.go, plan/predicate_push_down.go, plan/topn_push_down.go"
+      "files: plan/max_min_eliminate.go, plan/aggregation_push_down.go, plan/build_key_info.go, plan/column_pruning.go, plan/decorrelate.go, plan/eliminate_projection.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/planbuilder.go, plan/predicate_push_down.go, plan/topn_push_down.go"
     ]
   },
-  "analysis": "PR title: plan: no need to pass the ctx to logicalOptRule\nPR url: https://github.com/pingcap/tidb/pull/5671\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: plan: fix data race in maxMinEliminater.\nChanged files (13): plan/aggregation_push_down.go, plan/build_key_info.go, plan/column_pruning.go, plan/decorrelate.go, plan/eliminate_projection.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/max_min_eliminate.go, plan/optimizer.go, plan/planbuilder.go, plan/predicate_push_down.go, plan/topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/5671.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+  "analysis": "PR title: plan: no need to pass the ctx to logicalOptRule\nPR url: https://github.com/pingcap/tidb/pull/5671\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: plan: fix data race in maxMinEliminater.\nChanged files (13): plan/max_min_eliminate.go, plan/aggregation_push_down.go, plan/build_key_info.go, plan/column_pruning.go, plan/decorrelate.go, plan/eliminate_projection.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/planbuilder.go, plan/predicate_push_down.go, plan/topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/5671.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
 }

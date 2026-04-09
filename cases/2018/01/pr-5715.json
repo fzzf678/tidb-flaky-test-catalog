@@ -23,7 +23,7 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it asserted results from joins/subqueries without an explicit ORDER BY, so row order could change with executor implementation details (e.g., join result generation and chunking). This PR stabilizes the assertions by sorting results (e.g., `result.Sort().Check(...)`) before comparing, making the checks deterministic.",
   "module": "test_infra",
   "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
   "evidence_links": [
@@ -38,12 +38,12 @@
     "executor/join_result_generators.go",
     "executor/join_test.go",
     "executor/merge_join.go",
+    "util/chunk/iterator.go",
+    "util/chunk/iterator_test.go",
+    "tidb.go",
     "executor/show_test.go",
     "expression/integration_test.go",
     "mysql/const_test.go",
-    "tidb.go",
-    "util/chunk/iterator.go",
-    "util/chunk/iterator_test.go",
     "util/testkit/testkit.go"
   ],
   "triage": {
@@ -53,8 +53,8 @@
     ],
     "evidence": [
       "evidence: result.Sort().Check(testkit.Rows(\"0\", \"1\", \"1\")) (executor/join_test.go)",
-      "files: executor/builder.go, executor/index_lookup_join.go, executor/join.go, executor/join_result_generators.go, executor/join_test.go, executor/merge_join.go, executor/show_test.go, expression/integration_test.go, mysql/const_test.go, tidb.go, util/chunk/iterator.go, util/chunk/iterator_test.go, util/testkit/testkit.go"
+      "files: executor/builder.go, executor/index_lookup_join.go, executor/join.go, executor/join_result_generators.go, executor/join_test.go, executor/merge_join.go, util/chunk/iterator.go, util/chunk/iterator_test.go, tidb.go, executor/show_test.go, expression/integration_test.go, mysql/const_test.go, util/testkit/testkit.go"
     ]
   },
-  "analysis": "PR title: *: refine join result generator to return MaxChunkSize chunk\nPR url: https://github.com/pingcap/tidb/pull/5715\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result.Sort().Check(testkit.Rows(\"0\", \"1\", \"1\")) (executor/join_test.go)\nChanged files (13): executor/builder.go, executor/index_lookup_join.go, executor/join.go, executor/join_result_generators.go, executor/join_test.go, executor/merge_join.go, executor/show_test.go, expression/integration_test.go, mysql/const_test.go, tidb.go, util/chunk/iterator.go, util/chunk/iterator_test.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/5715.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+  "analysis": "PR title: *: refine join result generator to return MaxChunkSize chunk\nPR url: https://github.com/pingcap/tidb/pull/5715\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result.Sort().Check(testkit.Rows(\"0\", \"1\", \"1\")) (executor/join_test.go)\nChanged files (13): executor/builder.go, executor/index_lookup_join.go, executor/join.go, executor/join_result_generators.go, executor/join_test.go, executor/merge_join.go, util/chunk/iterator.go, util/chunk/iterator_test.go, tidb.go, executor/show_test.go, expression/integration_test.go, mysql/const_test.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/5715.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
 }

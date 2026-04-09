@@ -17,23 +17,24 @@
   ],
   "failure_signature": "// SetRowCount sets the number of rows. Make sure it can pass `make race`.",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: *: the result of `admin show ddl ...` shows a job‘s start time.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR replaces Job.LastUpdateTS with Job.StartTS and updates `admin show ddl ...` output formatting, plus adds a small unit test. The case evidence here is only a comment about passing `make race`, without a concrete flaky failure signature or a targeted stabilization fix, so we keep the conservative insufficient-evidence classification.",
   "module": "ddl",
-  "fix_pattern": "*: the result of `admin show ddl ...` shows a job‘s start time",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5517",
     "https://github.com/pingcap/tidb/pull/5517.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/5517.patch",
   "changed_files": [
+    "domain/schema_validator.go",
     "ddl/ddl_worker.go",
     "ddl/stat.go",
-    "domain/schema_validator.go",
+    "executor/executor.go",
     "model/ddl.go",
     "model/model_test.go"
   ],
@@ -44,8 +45,8 @@
     ],
     "evidence": [
       "evidence: // SetRowCount sets the number of rows. Make sure it can pass `make race`.",
-      "files: ddl/ddl_worker.go, ddl/stat.go, domain/schema_validator.go, executor/executor.go, model/ddl.go, model/model_test.go"
+      "files: domain/schema_validator.go, ddl/ddl_worker.go, ddl/stat.go, executor/executor.go, model/ddl.go, model/model_test.go"
     ]
   },
-  "analysis": "PR title: *: the result of `admin show ddl ...` shows a job‘s start time\nPR url: https://github.com/pingcap/tidb/pull/5517\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // SetRowCount sets the number of rows. Make sure it can pass `make race`.\nChanged files (5): ddl/ddl_worker.go, ddl/stat.go, domain/schema_validator.go, model/ddl.go, model/model_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5517.patch\nPicked test: type=unit path=model/model_test.go name=model_test"
+  "analysis": "PR title: *: the result of `admin show ddl ...` shows a job‘s start time\nPR url: https://github.com/pingcap/tidb/pull/5517\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // SetRowCount sets the number of rows. Make sure it can pass `make race`.\nChanged files (6): domain/schema_validator.go, ddl/ddl_worker.go, ddl/stat.go, executor/executor.go, model/ddl.go, model/model_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5517.patch\nPicked test: type=unit path=model/model_test.go name=model_test"
 }
