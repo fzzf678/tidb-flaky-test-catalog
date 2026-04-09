@@ -17,27 +17,28 @@
   ],
   "failure_signature": "result = tk.MustQuery(\"select a, bit_and(a) from t group by a order by a desc\") (expression/integration_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds support for the builtin aggregation function `bit_and` (AST/expression/planner changes plus new tests). The patch does not clearly indicate a targeted stabilization fix for an intermittent/flaky failure, and the case evidence string is not a concrete flaky failure signature, so we conservatively classify it as needs-more-evidence.",
+  "module": "expression",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5147",
     "https://github.com/pingcap/tidb/pull/5147.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/5147.patch",
   "changed_files": [
+    "_vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go",
     "ast/functions.go",
     "expression/aggregation/agg_to_pb.go",
     "expression/aggregation/aggregation.go",
     "expression/aggregation/bit_and.go",
     "expression/integration_test.go",
-    "plan/physical_plans.go"
+    "plan/physical_plans.go",
+    "store/tikv/coprocessor.go"
   ],
   "triage": {
     "sources": [
@@ -49,5 +50,5 @@
       "files: _vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go, ast/functions.go, expression/aggregation/agg_to_pb.go, expression/aggregation/aggregation.go, expression/aggregation/bit_and.go, expression/integration_test.go, plan/physical_plans.go, store/tikv/coprocessor.go"
     ]
   },
-  "analysis": "PR title: ast, plan, expression: support builtin aggregation function 'bit_and'\nPR url: https://github.com/pingcap/tidb/pull/5147\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select a, bit_and(a) from t group by a order by a desc\") (expression/integration_test.go)\nChanged files (6): ast/functions.go, expression/aggregation/agg_to_pb.go, expression/aggregation/aggregation.go, expression/aggregation/bit_and.go, expression/integration_test.go, plan/physical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/5147.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+  "analysis": "PR title: ast, plan, expression: support builtin aggregation function 'bit_and'\nPR url: https://github.com/pingcap/tidb/pull/5147\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select a, bit_and(a) from t group by a order by a desc\") (expression/integration_test.go)\nChanged files (8): _vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go, ast/functions.go, expression/aggregation/agg_to_pb.go, expression/aggregation/aggregation.go, expression/aggregation/bit_and.go, expression/integration_test.go, plan/physical_plans.go, store/tikv/coprocessor.go\nPatch url: https://github.com/pingcap/tidb/pull/5147.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
 }

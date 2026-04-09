@@ -17,27 +17,30 @@
   ],
   "failure_signature": "// Min to Limit + Sort. (plan/logical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR introduces a planner optimization (rewrite MAX/MIN aggregations into `TopN/Sort + Limit` style plans) and updates related plan/executor code and tests. The patch does not clearly show a targeted stabilization change for an intermittent/flaky failure, and the case evidence string is not a concrete flaky failure signature, so we conservatively classify it as needs-more-evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5105",
     "https://github.com/pingcap/tidb/pull/5105.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/5105.patch",
   "changed_files": [
-    "executor/index_lookup_join.go",
-    "executor/join.go",
     "plan/aggregation_eliminate.go",
     "plan/logical_plan_builder.go",
-    "plan/logical_plan_test.go",
-    "plan/optimizer.go"
+    "plan/optimizer.go",
+    "plan/expression_rewriter.go",
+    "executor/index_lookup_join.go",
+    "executor/join.go",
+    "plan/physical_plans.go",
+    "plan/resolve_indices.go",
+    "plan/topn_push_down.go",
+    "plan/logical_plan_test.go"
   ],
   "triage": {
     "sources": [
@@ -46,8 +49,8 @@
     ],
     "evidence": [
       "evidence: // Min to Limit + Sort. (plan/logical_plan_test.go)",
-      "files: executor/index_lookup_join.go, executor/join.go, plan/aggregation_eliminate.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/physical_plans.go, plan/resolve_indices.go, plan/topn_push_down.go"
+      "files: plan/aggregation_eliminate.go, plan/logical_plan_builder.go, plan/optimizer.go, plan/expression_rewriter.go, executor/index_lookup_join.go, executor/join.go, plan/physical_plans.go, plan/resolve_indices.go, plan/topn_push_down.go, plan/logical_plan_test.go"
     ]
   },
-  "analysis": "PR title: plan: covert max/min to Limit + Sort operators\nPR url: https://github.com/pingcap/tidb/pull/5105\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Min to Limit + Sort. (plan/logical_plan_test.go)\nChanged files (6): executor/index_lookup_join.go, executor/join.go, plan/aggregation_eliminate.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go\nPatch url: https://github.com/pingcap/tidb/pull/5105.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+  "analysis": "PR title: plan: covert max/min to Limit + Sort operators\nPR url: https://github.com/pingcap/tidb/pull/5105\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Min to Limit + Sort. (plan/logical_plan_test.go)\nChanged files (10): plan/aggregation_eliminate.go, plan/logical_plan_builder.go, plan/optimizer.go, plan/expression_rewriter.go, executor/index_lookup_join.go, executor/join.go, plan/physical_plans.go, plan/resolve_indices.go, plan/topn_push_down.go, plan/logical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5105.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
 }

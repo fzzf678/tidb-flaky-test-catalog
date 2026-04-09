@@ -23,8 +23,8 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "planner",
+  "root_cause_explanation": "The test was flaky because it asserted row order for queries without an explicit ORDER BY; after hash join/join result generator changes, the output order can change (and is not guaranteed), making unit tests unstable. This PR stabilizes the affected tests by adding explicit ORDER BY clauses (and/or sorting results before assertions) to enforce deterministic ordering.",
+  "module": "executor",
   "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4987",
@@ -32,22 +32,28 @@
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/4987.patch",
   "changed_files": [
+    "executor/apply_join.go",
     "executor/builder.go",
     "executor/executor.go",
-    "executor/executor_test.go",
+    "executor/hash_join.go",
+    "executor/hash_join_test.go",
+    "executor/hash_semi_join.go",
     "executor/index_lookup_join.go",
     "executor/join.go",
     "executor/join_result_generators.go",
-    "executor/join_test.go",
     "executor/merge_join.go",
-    "plan/cbo_test.go",
-    "plan/dag_plan_test.go",
+    "executor/nested_loop_join.go",
     "plan/explain.go",
     "plan/initialize.go",
     "plan/physical_plan_builder.go",
     "plan/physical_plans.go",
     "plan/stringer.go",
-    "plan/task.go"
+    "plan/task.go",
+    "executor/executor_test.go",
+    "executor/join_builder.go",
+    "plan/cbo_test.go",
+    "plan/dag_plan_test.go",
+    "executor/join_test.go"
   ],
   "triage": {
     "sources": [
@@ -56,8 +62,8 @@
     ],
     "evidence": [
       "evidence: result = tk.MustQuery(`SELECT * FROM test_gc_read t WHERE t.c in (SELECT t.c FROM test_gc_read t where t.c > 5) order by a`) (executor/executor_test.go)",
-      "files: executor/apply_join.go, executor/builder.go, executor/executor.go, executor/executor_test.go, executor/hash_join.go, executor/hash_join_test.go, executor/hash_semi_join.go, executor/index_lookup_join.go, executor/join.go, executor/join_builder.go, executor/join_result_generators.go, executor/join_test.go, executor/merge_join.go, executor/nested_loop_join.go, plan/cbo_test.go, plan/dag_plan_test.go, plan/explain.go, plan/initialize.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/stringer.go, plan/task.go"
+      "files: executor/apply_join.go, executor/builder.go, executor/executor.go, executor/hash_join.go, executor/hash_join_test.go, executor/hash_semi_join.go, executor/index_lookup_join.go, executor/join.go, executor/join_result_generators.go, executor/merge_join.go, executor/nested_loop_join.go, plan/explain.go, plan/initialize.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/stringer.go, plan/task.go, executor/executor_test.go, executor/join_builder.go, plan/cbo_test.go, plan/dag_plan_test.go, executor/join_test.go"
     ]
   },
-  "analysis": "PR title: plan, executor: improve hash join to support all join types\nPR url: https://github.com/pingcap/tidb/pull/4987\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(`SELECT * FROM test_gc_read t WHERE t.c in (SELECT t.c FROM test_gc_read t where t.c > 5) order by a`) (executor/executor_test.go)\nChanged files (16): executor/builder.go, executor/executor.go, executor/executor_test.go, executor/index_lookup_join.go, executor/join.go, executor/join_result_generators.go, executor/join_test.go, executor/merge_join.go, plan/cbo_test.go, plan/dag_plan_test.go, plan/explain.go, plan/initialize.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/stringer.go, plan/task.go\nPatch url: https://github.com/pingcap/tidb/pull/4987.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+  "analysis": "PR title: plan, executor: improve hash join to support all join types\nPR url: https://github.com/pingcap/tidb/pull/4987\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(`SELECT * FROM test_gc_read t WHERE t.c in (SELECT t.c FROM test_gc_read t where t.c > 5) order by a`) (executor/executor_test.go)\nChanged files (22): executor/apply_join.go, executor/builder.go, executor/executor.go, executor/hash_join.go, executor/hash_join_test.go, executor/hash_semi_join.go, executor/index_lookup_join.go, executor/join.go, executor/join_result_generators.go, executor/merge_join.go, executor/nested_loop_join.go, plan/explain.go, plan/initialize.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/stringer.go, plan/task.go, executor/executor_test.go, executor/join_builder.go, plan/cbo_test.go, plan/dag_plan_test.go, executor/join_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4987.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
 }
