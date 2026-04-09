@@ -22,34 +22,36 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor, util: employ memory Tracker to track memory usage during query execution.",
-  "module": "executor",
-  "fix_pattern": "executor, util: employ memory Tracker to track memory usage during query execution",
+  "root_cause_explanation": "The test was flaky due to a data race: memory Tracker exceed actions (e.g., LogOnExceed/PanicOnExceed) could be invoked concurrently and mutated internal state without synchronization (race detector signal: \"fix data race\"). This PR makes the actions thread-safe with a mutex and an act-once guard to eliminate the race.",
+  "module": "util",
+  "fix_pattern": "Make memory Tracker exceed actions thread-safe (mutex + act-once guard) to avoid data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5826",
     "https://github.com/pingcap/tidb/pull/5826.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/5826.patch",
   "changed_files": [
-    "config/config.go",
-    "config/config.toml.example",
-    "executor/executor.go",
     "executor/join.go",
-    "executor/prepared.go",
     "executor/sort.go",
+    "util/chunk/list.go",
+    "util/chunk/list_test.go",
+    "util/memory/memory_tracker.go",
+    "executor/executor.go",
     "mysql/errname.go",
-    "server/conn.go",
+    "util/memory/mem_tracker.go",
+    "executor/prepared.go",
     "sessionctx/stmtctx/stmtctx.go",
+    "server/conn.go",
     "sessionctx/variable/session.go",
     "sessionctx/variable/sysvar.go",
     "sessionctx/variable/tidb_vars.go",
     "sessionctx/variable/varsutil.go",
-    "tidb-server/main.go",
-    "util/chunk/list.go",
-    "util/chunk/list_test.go",
     "util/memory/action.go",
     "util/memory/tracker.go",
-    "util/memory/tracker_test.go"
+    "util/memory/tracker_test.go",
+    "config/config.go",
+    "config/config.toml.example",
+    "tidb-server/main.go"
   ],
   "triage": {
     "sources": [
@@ -58,8 +60,8 @@
     ],
     "evidence": [
       "evidence: fix data race",
-      "files: config/config.go, config/config.toml.example, executor/executor.go, executor/join.go, executor/prepared.go, executor/sort.go, mysql/errname.go, server/conn.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, tidb-server/main.go, util/chunk/list.go, util/chunk/list_test.go, util/memory/action.go, util/memory/mem_tracker.go, util/memory/memory_tracker.go, util/memory/tracker.go, util/memory/tracker_test.go"
+      "files: executor/join.go, executor/sort.go, util/chunk/list.go, util/chunk/list_test.go, util/memory/memory_tracker.go, executor/executor.go, mysql/errname.go, util/memory/mem_tracker.go, executor/prepared.go, sessionctx/stmtctx/stmtctx.go, server/conn.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, util/memory/action.go, util/memory/tracker.go, util/memory/tracker_test.go, config/config.go, config/config.toml.example, tidb-server/main.go"
     ]
   },
-  "analysis": "PR title: executor, util: employ memory Tracker to track memory usage during query execution\nPR url: https://github.com/pingcap/tidb/pull/5826\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (19): config/config.go, config/config.toml.example, executor/executor.go, executor/join.go, executor/prepared.go, executor/sort.go, mysql/errname.go, server/conn.go, sessionctx/stmtctx/stmtctx.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, tidb-server/main.go, util/chunk/list.go, util/chunk/list_test.go, util/memory/action.go, util/memory/tracker.go, util/memory/tracker_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5826.patch\nPicked test: type=unit path=util/chunk/list_test.go name=list_test"
+  "analysis": "PR title: executor, util: employ memory Tracker to track memory usage during query execution\nPR url: https://github.com/pingcap/tidb/pull/5826\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (21): executor/join.go, executor/sort.go, util/chunk/list.go, util/chunk/list_test.go, util/memory/memory_tracker.go, executor/executor.go, mysql/errname.go, util/memory/mem_tracker.go, executor/prepared.go, sessionctx/stmtctx/stmtctx.go, server/conn.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, util/memory/action.go, util/memory/tracker.go, util/memory/tracker_test.go, config/config.go, config/config.toml.example, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/5826.patch\nPicked test: type=unit path=util/chunk/list_test.go name=list_test"
 }

@@ -17,23 +17,22 @@
   ],
   "failure_signature": "sql: \"select * from (select * from t use index() order by b) t left join t t1 on t.a=t1.a limit 10\", (plan/physical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a planner rule correctness bug (TopN push down). The case does not provide a flaky-test failure signature or a targeted stabilization change, so we avoid guessing a nondeterministic-order/plan root cause category.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6187",
     "https://github.com/pingcap/tidb/pull/6187.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/6187.patch",
   "changed_files": [
-    "plan/physical_plan_test.go",
-    "plan/topn_push_down.go"
+    "plan/topn_push_down.go",
+    "plan/physical_plan_test.go"
   ],
   "triage": {
     "sources": [
@@ -42,8 +41,8 @@
     ],
     "evidence": [
       "evidence: sql: \"select * from (select * from t use index() order by b) t left join t t1 on t.a=t1.a limit 10\", (plan/physical_plan_test.go)",
-      "files: plan/physical_plan_test.go, plan/topn_push_down.go"
+      "files: plan/topn_push_down.go, plan/physical_plan_test.go"
     ]
   },
-  "analysis": "PR title: plan: fix a bug when applying `top-n push down` rule.\nPR url: https://github.com/pingcap/tidb/pull/6187\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from (select * from t use index() order by b) t left join t t1 on t.a=t1.a limit 10\", (plan/physical_plan_test.go)\nChanged files (2): plan/physical_plan_test.go, plan/topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/6187.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
+  "analysis": "PR title: plan: fix a bug when applying `top-n push down` rule.\nPR url: https://github.com/pingcap/tidb/pull/6187\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from (select * from t use index() order by b) t left join t t1 on t.a=t1.a limit 10\", (plan/physical_plan_test.go)\nChanged files (2): plan/topn_push_down.go, plan/physical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6187.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
 }

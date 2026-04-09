@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rss, err1 := tk.Se.Execute(ctx, \"select * from earlyclose order by id\") (executor/executor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky due to a goroutine leak / cleanup bug: copIterator.Close() could hang because worker goroutines might block trying to send responses after the iterator was already closed (no receiver), leaking goroutines and stalling shutdown. This PR makes the worker goroutine also observe the finished signal (check both response and finished channels) so it can exit cleanly and avoid the hang.",
   "module": "kv",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Ensure background worker goroutines exit on Close/finished signals to avoid goroutine leaks and hangs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6140",
     "https://github.com/pingcap/tidb/pull/6140.patch"

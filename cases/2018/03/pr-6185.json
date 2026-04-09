@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from test.t where a < 1 order by a limit 0;\").Check(testkit.Rows()) (executor/executor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR fixes a deterministic correctness/panic issue around `LIMIT 0` planning (convert Limit to TableDual). The case does not provide a flaky-test failure signature or a targeted stabilization change, so we avoid guessing a nondeterministic-order root cause category.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6185",
     "https://github.com/pingcap/tidb/pull/6185.patch"
@@ -33,8 +32,9 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/6185.patch",
   "changed_files": [
     "executor/executor_test.go",
-    "plan/cbo_test.go",
-    "plan/logical_plan_builder.go"
+    "plan/logical_plan_builder.go",
+    "plan/logical_plan_test.go",
+    "plan/cbo_test.go"
   ],
   "triage": {
     "sources": [
@@ -43,8 +43,8 @@
     ],
     "evidence": [
       "evidence: tk.MustQuery(\"select * from test.t where a < 1 order by a limit 0;\").Check(testkit.Rows()) (executor/executor_test.go)",
-      "files: executor/executor_test.go, plan/cbo_test.go, plan/logical_plan_builder.go, plan/logical_plan_test.go"
+      "files: executor/executor_test.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/cbo_test.go"
     ]
   },
-  "analysis": "PR title: executor, plan: convert Limit to TableDual when meet `limit 0`\nPR url: https://github.com/pingcap/tidb/pull/6185\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from test.t where a < 1 order by a limit 0;\").Check(testkit.Rows()) (executor/executor_test.go)\nChanged files (3): executor/executor_test.go, plan/cbo_test.go, plan/logical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/6185.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+  "analysis": "PR title: executor, plan: convert Limit to TableDual when meet `limit 0`\nPR url: https://github.com/pingcap/tidb/pull/6185\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from test.t where a < 1 order by a limit 0;\").Check(testkit.Rows()) (executor/executor_test.go)\nChanged files (4): executor/executor_test.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/cbo_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6185.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
 }
