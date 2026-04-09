@@ -17,32 +17,39 @@
   ],
   "failure_signature": "// sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by d order by k\", (plan/dag_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR extends mocktikv to support stream aggregation pushdown and updates planner/executor components and related tests. The patch does not provide a concrete flaky failure signature or a targeted stabilization change for an intermittent failure, so we conservatively classify it as needs-more-evidence.",
+  "module": "planner",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5444",
     "https://github.com/pingcap/tidb/pull/5444.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/5444.patch",
   "changed_files": [
+    "executor/aggregate.go",
     "executor/aggregate_test.go",
-    "kv/kv.go",
-    "plan/cbo_test.go",
-    "plan/dag_plan_test.go",
-    "plan/gen_physical_plans.go",
-    "plan/initialize.go",
     "plan/plan_to_pb.go",
+    "plan/prop_generator.go",
     "plan/task.go",
     "store/tikv/coprocessor.go",
     "store/tikv/mocktikv/aggregate.go",
     "store/tikv/mocktikv/cop_handler_dag.go",
-    "store/tikv/mocktikv/executor.go"
+    "store/tikv/mocktikv/executor.go",
+    "plan/dag_plan_test.go",
+    "plan/gen_physical_plans.go",
+    "plan/optimizer.go",
+    "plan/physical_plan_builder.go",
+    "plan/plan.go",
+    "plan/cbo_test.go",
+    "plan/initialize.go",
+    "plan/resolve_indices.go",
+    "session.go",
+    "kv/kv.go"
   ],
   "triage": {
     "sources": [
@@ -51,8 +58,8 @@
     ],
     "evidence": [
       "evidence: // sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by d order by k\", (plan/dag_plan_test.go)",
-      "files: executor/aggregate.go, executor/aggregate_test.go, kv/kv.go, plan/cbo_test.go, plan/dag_plan_test.go, plan/gen_physical_plans.go, plan/initialize.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/plan.go, plan/plan_to_pb.go, plan/prop_generator.go, plan/resolve_indices.go, plan/task.go, session.go, store/tikv/coprocessor.go, store/tikv/mocktikv/aggregate.go, store/tikv/mocktikv/cop_handler_dag.go, store/tikv/mocktikv/executor.go"
+      "files: executor/aggregate.go, executor/aggregate_test.go, plan/plan_to_pb.go, plan/prop_generator.go, plan/task.go, store/tikv/coprocessor.go, store/tikv/mocktikv/aggregate.go, store/tikv/mocktikv/cop_handler_dag.go, store/tikv/mocktikv/executor.go, plan/dag_plan_test.go, plan/gen_physical_plans.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/plan.go, plan/cbo_test.go, plan/initialize.go, plan/resolve_indices.go, session.go, kv/kv.go"
     ]
   },
-  "analysis": "PR title: *: support pushing down stream aggregation on mocktikv\nPR url: https://github.com/pingcap/tidb/pull/5444\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by d order by k\", (plan/dag_plan_test.go)\nChanged files (12): executor/aggregate_test.go, kv/kv.go, plan/cbo_test.go, plan/dag_plan_test.go, plan/gen_physical_plans.go, plan/initialize.go, plan/plan_to_pb.go, plan/task.go, store/tikv/coprocessor.go, store/tikv/mocktikv/aggregate.go, store/tikv/mocktikv/cop_handler_dag.go, store/tikv/mocktikv/executor.go\nPatch url: https://github.com/pingcap/tidb/pull/5444.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+  "analysis": "PR title: *: support pushing down stream aggregation on mocktikv\nPR url: https://github.com/pingcap/tidb/pull/5444\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by d order by k\", (plan/dag_plan_test.go)\nChanged files (19): executor/aggregate.go, executor/aggregate_test.go, plan/plan_to_pb.go, plan/prop_generator.go, plan/task.go, store/tikv/coprocessor.go, store/tikv/mocktikv/aggregate.go, store/tikv/mocktikv/cop_handler_dag.go, store/tikv/mocktikv/executor.go, plan/dag_plan_test.go, plan/gen_physical_plans.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/plan.go, plan/cbo_test.go, plan/initialize.go, plan/resolve_indices.go, session.go, kv/kv.go\nPatch url: https://github.com/pingcap/tidb/pull/5444.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
 }

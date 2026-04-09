@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sql: \"select /*+ TIDB_HASHJOIN(t1, t2) */ * from t t1 join t t2 on t1.b = t2.a order by t1.a limit 1\", (plan/dag_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR introduces a new optimizer hint `TIDB_HASHJOIN` (parser + planner changes) and adds/updates plan and join tests to validate the hint behavior and conflict handling. The patch does not provide a concrete flaky failure signature or a targeted stabilization fix for an intermittent failure, so we conservatively classify it as needs-more-evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5315",
     "https://github.com/pingcap/tidb/pull/5315.patch"
@@ -35,13 +34,13 @@
     "executor/join_test.go",
     "parser/misc.go",
     "parser/parser.y",
-    "parser/parser_test.go",
     "plan/dag_plan_test.go",
     "plan/gen_physical_plans.go",
     "plan/join_reorder.go",
     "plan/logical_plan_builder.go",
     "plan/logical_plans.go",
-    "plan/planbuilder.go"
+    "plan/planbuilder.go",
+    "parser/parser_test.go"
   ],
   "triage": {
     "sources": [
@@ -50,8 +49,8 @@
     ],
     "evidence": [
       "evidence: sql: \"select /*+ TIDB_HASHJOIN(t1, t2) */ * from t t1 join t t2 on t1.b = t2.a order by t1.a limit 1\", (plan/dag_plan_test.go)",
-      "files: executor/join_test.go, parser/misc.go, parser/parser.y, parser/parser_test.go, plan/dag_plan_test.go, plan/gen_physical_plans.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/planbuilder.go"
+      "files: executor/join_test.go, parser/misc.go, parser/parser.y, plan/dag_plan_test.go, plan/gen_physical_plans.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/planbuilder.go, parser/parser_test.go"
     ]
   },
-  "analysis": "PR title: plan: add hint to force to choose hash join.\nPR url: https://github.com/pingcap/tidb/pull/5315\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select /*+ TIDB_HASHJOIN(t1, t2) */ * from t t1 join t t2 on t1.b = t2.a order by t1.a limit 1\", (plan/dag_plan_test.go)\nChanged files (10): executor/join_test.go, parser/misc.go, parser/parser.y, parser/parser_test.go, plan/dag_plan_test.go, plan/gen_physical_plans.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/planbuilder.go\nPatch url: https://github.com/pingcap/tidb/pull/5315.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+  "analysis": "PR title: plan: add hint to force to choose hash join.\nPR url: https://github.com/pingcap/tidb/pull/5315\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select /*+ TIDB_HASHJOIN(t1, t2) */ * from t t1 join t t2 on t1.b = t2.a order by t1.a limit 1\", (plan/dag_plan_test.go)\nChanged files (10): executor/join_test.go, parser/misc.go, parser/parser.y, plan/dag_plan_test.go, plan/gen_physical_plans.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/planbuilder.go, parser/parser_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5315.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
 }

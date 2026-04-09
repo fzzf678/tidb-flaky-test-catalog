@@ -17,29 +17,29 @@
   ],
   "failure_signature": "+ // Since multiple inner workers run concurrently, we should copy join's indexRanges for every worker to avoid data race.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: plan, executor: index join enhancement.",
-  "module": "planner",
-  "fix_pattern": "plan, executor: index join enhancement.",
+  "root_cause_explanation": "The test was flaky due to a data race in index join execution: multiple inner workers can run concurrently, and sharing the same `indexRanges` slice across workers can lead to concurrent access/mutation (race detector signal). This PR stabilizes it by cloning/copying `indexRanges` for each worker (deep-clone each range) before concurrent use, avoiding the race.",
+  "module": "executor",
+  "fix_pattern": "Clone/copy per-worker index ranges before concurrent use to avoid data races in multi-worker index join executors.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5425",
     "https://github.com/pingcap/tidb/pull/5425.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/5425.patch",
   "changed_files": [
+    "plan/gen_physical_plans.go",
+    "plan/physical_plan_builder.go",
+    "plan/physical_plans.go",
     "executor/builder.go",
     "executor/distsql.go",
-    "executor/executor_pkg_test.go",
     "executor/index_lookup_join.go",
     "executor/new_index_lookup_join.go",
     "plan/dag_plan_test.go",
-    "plan/gen_physical_plans.go",
-    "plan/physical_plan_builder.go",
-    "plan/physical_plans.go"
+    "executor/executor_pkg_test.go"
   ],
   "triage": {
     "sources": [
@@ -48,8 +48,8 @@
     ],
     "evidence": [
       "evidence: + // Since multiple inner workers run concurrently, we should copy join's indexRanges for every worker to avoid data race.",
-      "files: executor/builder.go, executor/distsql.go, executor/executor_pkg_test.go, executor/index_lookup_join.go, executor/new_index_lookup_join.go, plan/dag_plan_test.go, plan/gen_physical_plans.go, plan/physical_plan_builder.go, plan/physical_plans.go"
+      "files: plan/gen_physical_plans.go, plan/physical_plan_builder.go, plan/physical_plans.go, executor/builder.go, executor/distsql.go, executor/index_lookup_join.go, executor/new_index_lookup_join.go, plan/dag_plan_test.go, executor/executor_pkg_test.go"
     ]
   },
-  "analysis": "PR title: plan, executor: index join enhancement.\nPR url: https://github.com/pingcap/tidb/pull/5425\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + // Since multiple inner workers run concurrently, we should copy join's indexRanges for every worker to avoid data race.\nChanged files (9): executor/builder.go, executor/distsql.go, executor/executor_pkg_test.go, executor/index_lookup_join.go, executor/new_index_lookup_join.go, plan/dag_plan_test.go, plan/gen_physical_plans.go, plan/physical_plan_builder.go, plan/physical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/5425.patch\nPicked test: type=unit path=executor/executor_pkg_test.go name=executor_pkg_test"
+  "analysis": "PR title: plan, executor: index join enhancement.\nPR url: https://github.com/pingcap/tidb/pull/5425\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + // Since multiple inner workers run concurrently, we should copy join's indexRanges for every worker to avoid data race.\nChanged files (9): plan/gen_physical_plans.go, plan/physical_plan_builder.go, plan/physical_plans.go, executor/builder.go, executor/distsql.go, executor/index_lookup_join.go, executor/new_index_lookup_join.go, plan/dag_plan_test.go, executor/executor_pkg_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5425.patch\nPicked test: type=unit path=executor/executor_pkg_test.go name=executor_pkg_test"
 }
