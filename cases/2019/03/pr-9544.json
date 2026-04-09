@@ -17,22 +17,20 @@
   ],
   "failure_signature": "result = tk.MustQuery(\"select a, sum(a) over(order by a) from t\") (executor/window_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9544",
     "https://github.com/pingcap/tidb/pull/9544.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/9544.patch",
   "changed_files": [
-    "cmd/explaintest/r/window_function.result",
     "executor/builder.go",
     "executor/window.go",
     "executor/window_test.go",
@@ -42,7 +40,8 @@
     "planner/core/logical_plan_builder.go",
     "planner/core/logical_plan_test.go",
     "planner/core/logical_plans.go",
-    "planner/core/resolve_indices.go"
+    "planner/core/resolve_indices.go",
+    "cmd/explaintest/r/window_function.result"
   ],
   "triage": {
     "sources": [
@@ -51,8 +50,8 @@
     ],
     "evidence": [
       "evidence: result = tk.MustQuery(\"select a, sum(a) over(order by a) from t\") (executor/window_test.go)",
-      "files: cmd/explaintest/r/window_function.result, executor/builder.go, executor/window.go, executor/window_test.go, expression/aggregation/window_func.go, planner/core/errors.go, planner/core/explain.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/resolve_indices.go"
+      "files: executor/builder.go, executor/window.go, executor/window_test.go, expression/aggregation/window_func.go, planner/core/errors.go, planner/core/explain.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/resolve_indices.go, cmd/explaintest/r/window_function.result"
     ]
   },
-  "analysis": "PR title: planner, executor: handle default frame for window functions\nPR url: https://github.com/pingcap/tidb/pull/9544\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select a, sum(a) over(order by a) from t\") (executor/window_test.go)\nChanged files (11): cmd/explaintest/r/window_function.result, executor/builder.go, executor/window.go, executor/window_test.go, expression/aggregation/window_func.go, planner/core/errors.go, planner/core/explain.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/resolve_indices.go\nPatch url: https://github.com/pingcap/tidb/pull/9544.patch\nPicked test: type=unit path=executor/window_test.go name=window_test"
+  "analysis": "PR title: planner, executor: handle default frame for window functions\nPR url: https://github.com/pingcap/tidb/pull/9544\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select a, sum(a) over(order by a) from t\") (executor/window_test.go)\nChanged files (11): executor/builder.go, executor/window.go, executor/window_test.go, expression/aggregation/window_func.go, planner/core/errors.go, planner/core/explain.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/resolve_indices.go, cmd/explaintest/r/window_function.result\nPatch url: https://github.com/pingcap/tidb/pull/9544.patch\nPicked test: type=unit path=executor/window_test.go name=window_test"
 }

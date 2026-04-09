@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: fix data race in test",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix data race in test.",
+  "root_cause_explanation": "A shared variable used by the DDL hook (the current test case pointer) was read/written concurrently by async DDL worker callbacks and the test goroutine, causing a DATA RACE. The fix adds a mutex and updates the test to read/write the shared pointer under lock.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix data race in test",
+  "fix_pattern": "Protect shared hook/test state with a mutex (RWMutex around the mutable pointer used by async callbacks).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9526",
     "https://github.com/pingcap/tidb/pull/9526.patch"

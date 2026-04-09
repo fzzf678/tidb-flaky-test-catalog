@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl:fix data race in call_back_test.go",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl:fix data race in call_back_test.go.",
+  "root_cause_explanation": "The unit test mutated the DDL callback/hook while DDL worker goroutines could concurrently invoke it, triggering a DATA RACE. The fix avoids mutating a shared callback in-place (use a new callback instance for the new phase) and saves/restores the original hook around the test.",
   "module": "ddl",
-  "fix_pattern": "ddl:fix data race in call_back_test.go",
+  "fix_pattern": "Avoid mutating shared callback/hook state while async DDL workers are running (use a new callback instance + restore original hook).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9491",
     "https://github.com/pingcap/tidb/pull/9491.patch"

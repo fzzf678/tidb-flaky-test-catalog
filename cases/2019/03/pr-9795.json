@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustExec(\"prepare stmt2 from 'select count(a) over (order by a rows between ? preceding and ? preceding) from window_prepare'\") (planner/core/prepare_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "parser",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9795",
     "https://github.com/pingcap/tidb/pull/9795.patch"
@@ -35,8 +34,9 @@
     "executor/prepared.go",
     "planner/core/common_plans.go",
     "planner/core/logical_plan_builder.go",
-    "planner/core/prepare_test.go",
-    "types/parser_driver/value_expr.go"
+    "sessionctx/variable/tidb_vars.go",
+    "types/parser_driver/value_expr.go",
+    "planner/core/prepare_test.go"
   ],
   "triage": {
     "sources": [
@@ -45,8 +45,8 @@
     ],
     "evidence": [
       "evidence: tk.MustExec(\"prepare stmt2 from 'select count(a) over (order by a rows between ? preceding and ? preceding) from window_prepare'\") (planner/core/prepare_test.go)",
-      "files: executor/prepared.go, planner/core/common_plans.go, planner/core/logical_plan_builder.go, planner/core/prepare_test.go, sessionctx/variable/tidb_vars.go, types/parser_driver/value_expr.go"
+      "files: executor/prepared.go, planner/core/common_plans.go, planner/core/logical_plan_builder.go, sessionctx/variable/tidb_vars.go, types/parser_driver/value_expr.go, planner/core/prepare_test.go"
     ]
   },
-  "analysis": "PR title: *: fix bugs when window function meets prepare\nPR url: https://github.com/pingcap/tidb/pull/9795\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustExec(\"prepare stmt2 from 'select count(a) over (order by a rows between ? preceding and ? preceding) from window_prepare'\") (planner/core/prepare_test.go)\nChanged files (5): executor/prepared.go, planner/core/common_plans.go, planner/core/logical_plan_builder.go, planner/core/prepare_test.go, types/parser_driver/value_expr.go\nPatch url: https://github.com/pingcap/tidb/pull/9795.patch\nPicked test: type=unit path=planner/core/prepare_test.go name=prepare_test"
+  "analysis": "PR title: *: fix bugs when window function meets prepare\nPR url: https://github.com/pingcap/tidb/pull/9795\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustExec(\"prepare stmt2 from 'select count(a) over (order by a rows between ? preceding and ? preceding) from window_prepare'\") (planner/core/prepare_test.go)\nChanged files (6): executor/prepared.go, planner/core/common_plans.go, planner/core/logical_plan_builder.go, sessionctx/variable/tidb_vars.go, types/parser_driver/value_expr.go, planner/core/prepare_test.go\nPatch url: https://github.com/pingcap/tidb/pull/9795.patch\nPicked test: type=unit path=planner/core/prepare_test.go name=prepare_test"
 }

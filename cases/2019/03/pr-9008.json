@@ -22,20 +22,39 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: create sql bind table during bootstrap.",
-  "module": "module_unknown",
-  "fix_pattern": "*: create sql bind table during bootstrap",
+  "root_cause_explanation": "The bind cache was updated in-place on shared structures while other goroutines could concurrently read it, leading to a DATA RACE. The fix uses copy-on-write (clone the BindCache map/slices), applies the diff to the copy, then atomically swaps the new cache into place.",
+  "module": "bindinfo",
+  "fix_pattern": "Copy-on-write shared cache (clone map/slices) + atomic swap after update to avoid concurrent read/write races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9008",
     "https://github.com/pingcap/tidb/pull/9008.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/9008.patch",
   "changed_files": [
-    "bindinfo/bind_test.go",
-    "bindinfo/cache.go",
     "domain/domain.go",
+    "go.mod",
+    "go.sum",
+    "infobind/bind.go",
+    "infobind/cache.go",
     "session/bootstrap.go",
-    "session/session.go"
+    "session/session.go",
+    "infobind/bind_test.go",
+    "session/bootstrap_test.go",
+    "ddl/column.go",
+    "ddl/ddl.go",
+    "ddl/index.go",
+    "ddl/reorg.go",
+    "ddl/table.go",
+    "executor/aggregate.go",
+    "owner/manager.go",
+    "session/txn.go",
+    "store/mockstore/mocktikv/rpc.go",
+    "store/tikv/coprocessor.go",
+    "store/tikv/region_request.go",
+    "store/tikv/txn.go",
+    "util/codec/decimal.go",
+    "bindinfo/cache.go",
+    "bindinfo/bind_test.go"
   ],
   "triage": {
     "sources": [
@@ -44,8 +63,8 @@
     ],
     "evidence": [
       "evidence: fix load bind data race condition",
-      "files: bindinfo/bind_test.go, bindinfo/cache.go, ddl/column.go, ddl/ddl.go, ddl/index.go, ddl/reorg.go, ddl/table.go, domain/domain.go, executor/aggregate.go, go.mod, go.sum, infobind/bind.go, infobind/bind_test.go, infobind/cache.go, owner/manager.go, session/bootstrap.go, session/bootstrap_test.go, session/session.go, session/txn.go, store/mockstore/mocktikv/rpc.go, store/tikv/coprocessor.go, store/tikv/region_request.go, store/tikv/txn.go, util/codec/decimal.go"
+      "files: domain/domain.go, go.mod, go.sum, infobind/bind.go, infobind/cache.go, session/bootstrap.go, session/session.go, infobind/bind_test.go, session/bootstrap_test.go, ddl/column.go, ddl/ddl.go, ddl/index.go, ddl/reorg.go, ddl/table.go, executor/aggregate.go, owner/manager.go, session/txn.go, store/mockstore/mocktikv/rpc.go, store/tikv/coprocessor.go, store/tikv/region_request.go, store/tikv/txn.go, util/codec/decimal.go, bindinfo/cache.go, bindinfo/bind_test.go"
     ]
   },
-  "analysis": "PR title: *: create sql bind table during bootstrap\nPR url: https://github.com/pingcap/tidb/pull/9008\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix load bind data race condition\nChanged files (5): bindinfo/bind_test.go, bindinfo/cache.go, domain/domain.go, session/bootstrap.go, session/session.go\nPatch url: https://github.com/pingcap/tidb/pull/9008.patch\nPicked test: type=unit path=bindinfo/bind_test.go name=bind_test"
+  "analysis": "PR title: *: create sql bind table during bootstrap\nPR url: https://github.com/pingcap/tidb/pull/9008\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix load bind data race condition\nChanged files (24): domain/domain.go, go.mod, go.sum, infobind/bind.go, infobind/cache.go, session/bootstrap.go, session/session.go, infobind/bind_test.go, session/bootstrap_test.go, ddl/column.go, ddl/ddl.go, ddl/index.go, ddl/reorg.go, ddl/table.go, executor/aggregate.go, owner/manager.go, session/txn.go, store/mockstore/mocktikv/rpc.go, store/tikv/coprocessor.go, store/tikv/region_request.go, store/tikv/txn.go, util/codec/decimal.go, bindinfo/cache.go, bindinfo/bind_test.go\nPatch url: https://github.com/pingcap/tidb/pull/9008.patch\nPicked test: type=unit path=bindinfo/bind_test.go name=bind_test"
 }

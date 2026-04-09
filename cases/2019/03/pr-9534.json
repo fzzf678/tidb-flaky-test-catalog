@@ -20,11 +20,11 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: statistics: unify log format in package statistics.",
+  "root_cause_explanation": "The test installed a log hook on the global logger, which can race with concurrent logging in other goroutines/tests. The fix registers the hook via a dedicated zap core and replaces globals during suite setup, avoiding unsafe concurrent mutation of shared logging state.",
   "module": "statistics",
-  "fix_pattern": "statistics: unify log format in package statistics",
+  "fix_pattern": "Register a per-suite log hook via InitLogger/ReplaceGlobals (zap core) instead of mutating shared global logger hooks.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9534",
     "https://github.com/pingcap/tidb/pull/9534.patch"
