@@ -17,14 +17,14 @@
   ],
   "failure_signature": "mux sync.Mutex // fix data race in ddl test.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: session,executor: run statement without transaction.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR appears to be a correctness/behavior change or broad refactor (session,executor: run statement without transaction). The available evidence here does not show a clear, targeted flaky-test stabilization mechanism tied to an intermittent failure signature, so we conservatively avoid guessing and downgrade this case.",
   "module": "session",
-  "fix_pattern": "session,executor: run statement without transaction",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8260",
     "https://github.com/pingcap/tidb/pull/8260.patch"
@@ -32,17 +32,20 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/8260.patch",
   "changed_files": [
     "executor/adapter.go",
+    "executor/admin.go",
     "executor/builder.go",
-    "executor/errors.go",
     "executor/executor.go",
+    "executor/point_get.go",
+    "session/session_test.go",
+    "session/txn.go",
+    "executor/errors.go",
     "executor/executor_test.go",
     "executor/index_lookup_join.go",
     "executor/simple.go",
     "planner/core/logical_plan_builder.go",
     "session/session.go",
-    "session/session_test.go",
+    "session/session_fail_test.go",
     "session/tidb.go",
-    "session/txn.go",
     "sessionctx/context.go",
     "table/tables/tables.go",
     "util/mock/context.go"
@@ -54,8 +57,8 @@
     ],
     "evidence": [
       "evidence: mux sync.Mutex // fix data race in ddl test.",
-      "files: executor/adapter.go, executor/admin.go, executor/builder.go, executor/errors.go, executor/executor.go, executor/executor_test.go, executor/index_lookup_join.go, executor/point_get.go, executor/simple.go, planner/core/logical_plan_builder.go, session/session.go, session/session_fail_test.go, session/session_test.go, session/tidb.go, session/txn.go, sessionctx/context.go, table/tables/tables.go, util/mock/context.go"
+      "files: executor/adapter.go, executor/admin.go, executor/builder.go, executor/executor.go, executor/point_get.go, session/session_test.go, session/txn.go, executor/errors.go, executor/executor_test.go, executor/index_lookup_join.go, executor/simple.go, planner/core/logical_plan_builder.go, session/session.go, session/session_fail_test.go, session/tidb.go, sessionctx/context.go, table/tables/tables.go, util/mock/context.go"
     ]
   },
-  "analysis": "PR title: session,executor: run statement without transaction\nPR url: https://github.com/pingcap/tidb/pull/8260\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: mux sync.Mutex // fix data race in ddl test.\nChanged files (15): executor/adapter.go, executor/builder.go, executor/errors.go, executor/executor.go, executor/executor_test.go, executor/index_lookup_join.go, executor/simple.go, planner/core/logical_plan_builder.go, session/session.go, session/session_test.go, session/tidb.go, session/txn.go, sessionctx/context.go, table/tables/tables.go, util/mock/context.go\nPatch url: https://github.com/pingcap/tidb/pull/8260.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+  "analysis": "PR title: session,executor: run statement without transaction\nPR url: https://github.com/pingcap/tidb/pull/8260\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: mux sync.Mutex // fix data race in ddl test.\nChanged files (18): executor/adapter.go, executor/admin.go, executor/builder.go, executor/executor.go, executor/point_get.go, session/session_test.go, session/txn.go, executor/errors.go, executor/executor_test.go, executor/index_lookup_join.go, executor/simple.go, planner/core/logical_plan_builder.go, session/session.go, session/session_fail_test.go, session/tidb.go, sessionctx/context.go, table/tables/tables.go, util/mock/context.go\nPatch url: https://github.com/pingcap/tidb/pull/8260.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
 }

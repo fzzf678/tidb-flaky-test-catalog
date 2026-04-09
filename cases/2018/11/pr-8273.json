@@ -17,25 +17,24 @@
   ],
   "failure_signature": "// Test nest different size order by. (planner/core/physical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR appears to be a correctness/behavior change or broad refactor (planner: fix error caused by different length between inner and outer OrderByItems). The available evidence here does not show a clear, targeted flaky-test stabilization mechanism tied to an intermittent failure signature, so we conservatively avoid guessing and downgrade this case.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8273",
     "https://github.com/pingcap/tidb/pull/8273.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/8273.patch",
   "changed_files": [
-    "cmd/explaintest/r/explain_easy.result",
-    "cmd/explaintest/t/explain_easy.test",
     "planner/core/exhaust_physical_plans.go",
-    "planner/core/physical_plan_test.go"
+    "planner/core/physical_plan_test.go",
+    "cmd/explaintest/r/explain_easy.result",
+    "cmd/explaintest/t/explain_easy.test"
   ],
   "triage": {
     "sources": [
@@ -44,8 +43,8 @@
     ],
     "evidence": [
       "evidence: // Test nest different size order by. (planner/core/physical_plan_test.go)",
-      "files: cmd/explaintest/r/explain_easy.result, cmd/explaintest/t/explain_easy.test, planner/core/exhaust_physical_plans.go, planner/core/physical_plan_test.go"
+      "files: planner/core/exhaust_physical_plans.go, planner/core/physical_plan_test.go, cmd/explaintest/r/explain_easy.result, cmd/explaintest/t/explain_easy.test"
     ]
   },
-  "analysis": "PR title: planner: fix error caused by different length between inner and outer OrderByItems\nPR url: https://github.com/pingcap/tidb/pull/8273\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Test nest different size order by. (planner/core/physical_plan_test.go)\nChanged files (4): cmd/explaintest/r/explain_easy.result, cmd/explaintest/t/explain_easy.test, planner/core/exhaust_physical_plans.go, planner/core/physical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8273.patch\nPicked test: type=unit path=planner/core/physical_plan_test.go name=physical_plan_test"
+  "analysis": "PR title: planner: fix error caused by different length between inner and outer OrderByItems\nPR url: https://github.com/pingcap/tidb/pull/8273\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Test nest different size order by. (planner/core/physical_plan_test.go)\nChanged files (4): planner/core/exhaust_physical_plans.go, planner/core/physical_plan_test.go, cmd/explaintest/r/explain_easy.result, cmd/explaintest/t/explain_easy.test\nPatch url: https://github.com/pingcap/tidb/pull/8273.patch\nPicked test: type=unit path=planner/core/physical_plan_test.go name=physical_plan_test"
 }
