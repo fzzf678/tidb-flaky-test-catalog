@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from t1 right join t2 using (a) order by a\").Check(testkit.Rows(\"2 5 4\", \"3 6 <nil>\")) (executor/join_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3372",
     "https://github.com/pingcap/tidb/pull/3372.patch"
@@ -34,12 +33,12 @@
   "changed_files": [
     "ast/dml.go",
     "executor/join_test.go",
-    "expression/schema.go",
     "parser/parser.y",
     "parser/parser_test.go",
     "plan/expression_rewriter.go",
     "plan/logical_plan_builder.go",
-    "plan/logical_plans.go"
+    "plan/logical_plans.go",
+    "expression/schema.go"
   ],
   "triage": {
     "sources": [
@@ -48,8 +47,8 @@
     ],
     "evidence": [
       "evidence: tk.MustQuery(\"select * from t1 right join t2 using (a) order by a\").Check(testkit.Rows(\"2 5 4\", \"3 6 <nil>\")) (executor/join_test.go)",
-      "files: ast/dml.go, executor/join_test.go, expression/schema.go, parser/parser.y, parser/parser_test.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plans.go"
+      "files: ast/dml.go, executor/join_test.go, parser/parser.y, parser/parser_test.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plans.go, expression/schema.go"
     ]
   },
-  "analysis": "PR title: *: support using clause in join statement.\nPR url: https://github.com/pingcap/tidb/pull/3372\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t1 right join t2 using (a) order by a\").Check(testkit.Rows(\"2 5 4\", \"3 6 <nil>\")) (executor/join_test.go)\nChanged files (8): ast/dml.go, executor/join_test.go, expression/schema.go, parser/parser.y, parser/parser_test.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/3372.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+  "analysis": "PR title: *: support using clause in join statement.\nPR url: https://github.com/pingcap/tidb/pull/3372\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t1 right join t2 using (a) order by a\").Check(testkit.Rows(\"2 5 4\", \"3 6 <nil>\")) (executor/join_test.go)\nChanged files (8): ast/dml.go, executor/join_test.go, parser/parser.y, parser/parser_test.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plans.go, expression/schema.go\nPatch url: https://github.com/pingcap/tidb/pull/3372.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
 }
