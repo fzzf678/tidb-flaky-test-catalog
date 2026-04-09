@@ -17,14 +17,15 @@
   ],
   "failure_signature": "Merge branch 'master' into fix-race-continue",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation",
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: binloginfo: fix CI in unit test TestMaxRecvSize.",
-  "module": "txn",
-  "fix_pattern": "binloginfo: fix CI in unit test TestMaxRecvSize",
+  "root_cause_explanation": "The test was flaky due to shared global binlog flags leaking across tests: one test toggled global ignore/skip flags, while an asynchronous 2PC cleanup goroutine could later re-enable them and pollute subsequent tests (e.g., TestMaxRecvSize). The patch stabilizes it by making the ignore flag explicitly set/unset and resetting global flags during test cleanup to keep state isolated between tests.",
+  "module": "test_infra",
+  "fix_pattern": "Avoid shared global-state leakage: make global flags set/unset explicit and reset them in test cleanup to isolate concurrent/background goroutines from other tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6554",
     "https://github.com/pingcap/tidb/pull/6554.patch"

@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// exclusively to avoid the data race when using the same backoffer",
   "root_cause_categories": [
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: store/tikv: rollback all keys when prewrite fail.",
+  "root_cause_explanation": "The test was flaky due to concurrency races in 2PC prewrite: concurrent goroutines could share mutable backoffer/context state, and canceling/forking improperly could lead to races and incomplete cleanup. The patch stabilizes it by isolating per-request backoff/context (clone/fork per goroutine) and ensuring rollback/cleanup can deterministically cover all written keys on prewrite failure.",
   "module": "kv",
-  "fix_pattern": "store/tikv: rollback all keys when prewrite fail.",
+  "fix_pattern": "Avoid shared mutable state across concurrent requests (clone/fork per goroutine) and ensure rollback/cleanup covers all written keys deterministically.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6472",
     "https://github.com/pingcap/tidb/pull/6472.patch"

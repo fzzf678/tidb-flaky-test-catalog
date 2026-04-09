@@ -17,23 +17,22 @@
   ],
   "failure_signature": "sql: \"select count(*) from (select * from t order by b) t group by b\", (plan/physical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Patch fixes planner correctness for possible-properties (Sort/TopN/Projection) and adds tests; no targeted flaky-test stabilization change is evident.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6485",
     "https://github.com/pingcap/tidb/pull/6485.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/6485.patch",
   "changed_files": [
-    "plan/physical_plan_test.go",
-    "plan/property_cols_prune.go"
+    "plan/property_cols_prune.go",
+    "plan/physical_plan_test.go"
   ],
   "triage": {
     "sources": [
@@ -42,8 +41,8 @@
     ],
     "evidence": [
       "evidence: sql: \"select count(*) from (select * from t order by b) t group by b\", (plan/physical_plan_test.go)",
-      "files: plan/physical_plan_test.go, plan/property_cols_prune.go"
+      "files: plan/property_cols_prune.go, plan/physical_plan_test.go"
     ]
   },
-  "analysis": "PR title: plan: prepare possible property for logical Sort/TopN/Projection\nPR url: https://github.com/pingcap/tidb/pull/6485\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select count(*) from (select * from t order by b) t group by b\", (plan/physical_plan_test.go)\nChanged files (2): plan/physical_plan_test.go, plan/property_cols_prune.go\nPatch url: https://github.com/pingcap/tidb/pull/6485.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
+  "analysis": "PR title: plan: prepare possible property for logical Sort/TopN/Projection\nPR url: https://github.com/pingcap/tidb/pull/6485\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select count(*) from (select * from t order by b) t group by b\", (plan/physical_plan_test.go)\nChanged files (2): plan/property_cols_prune.go, plan/physical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6485.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
 }

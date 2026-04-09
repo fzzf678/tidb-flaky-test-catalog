@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: http: revert log_level change.",
+  "root_cause_explanation": "The test was flaky due to a data race on global logging/config state: runtime log_level changes via the HTTP settings handler mutated log level / global config without atomic synchronization. The patch stabilizes it by reverting the log_level endpoint changes to remove the unsafe concurrent mutation path.",
   "module": "server",
-  "fix_pattern": "http: revert log_level change",
+  "fix_pattern": "Avoid non-atomic mutation of global config/log state; remove or guard runtime log-level changes to eliminate data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6525",
     "https://github.com/pingcap/tidb/pull/6525.patch"

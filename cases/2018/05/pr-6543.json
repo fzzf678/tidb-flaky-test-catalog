@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: rewrite TestNotFillCacheFlag to avoid data race in CI.",
+  "root_cause_explanation": "The test was flaky due to a data race in the test harness: the checkRequestClient's shared mutable fields (e.g., expectations for NotFillCache) could be read/written concurrently while requests were processed. The patch stabilizes it by rewriting the test to assert expectations via a per-query context hook, avoiding shared mutable state across goroutines.",
   "module": "executor",
-  "fix_pattern": "executor: rewrite TestNotFillCacheFlag to avoid data race in CI",
+  "fix_pattern": "Avoid shared mutable state in tests; pass expectations via per-query context/hook so concurrent request handling cannot race.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6543",
     "https://github.com/pingcap/tidb/pull/6543.patch"
