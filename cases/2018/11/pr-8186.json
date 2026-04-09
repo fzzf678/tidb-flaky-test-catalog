@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rand.Seed(time.Now().Unix()) (store/tikv/latch/scheduler_test.go)",
   "root_cause_categories": [
-    "external_dependency"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test/system could hang intermittently due to a timing-dependent concurrency bug: the latch scheduler could deadlock when a transaction released a lock but did not reliably wake up the next waiter. This PR fixes the scheduler to hand off the key to the next lock on release, preventing wait-forever behavior.",
   "module": "kv",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Fix concurrency deadlock by ensuring waiters are awakened/handed off when releasing latches.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8186",
     "https://github.com/pingcap/tidb/pull/8186.patch"
@@ -32,9 +32,9 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/8186.patch",
   "changed_files": [
     "store/tikv/latch/latch.go",
+    "store/tikv/latch/scheduler_test.go",
     "store/tikv/latch/latch_test.go",
-    "store/tikv/latch/scheduler.go",
-    "store/tikv/latch/scheduler_test.go"
+    "store/tikv/latch/scheduler.go"
   ],
   "triage": {
     "sources": [
@@ -43,8 +43,8 @@
     ],
     "evidence": [
       "evidence: rand.Seed(time.Now().Unix()) (store/tikv/latch/scheduler_test.go)",
-      "files: store/tikv/latch/latch.go, store/tikv/latch/latch_test.go, store/tikv/latch/scheduler.go, store/tikv/latch/scheduler_test.go"
+      "files: store/tikv/latch/latch.go, store/tikv/latch/scheduler_test.go, store/tikv/latch/latch_test.go, store/tikv/latch/scheduler.go"
     ]
   },
-  "analysis": "PR title: store/tikv/latch: fix a deadlock in the latch scheduler\nPR url: https://github.com/pingcap/tidb/pull/8186\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(time.Now().Unix()) (store/tikv/latch/scheduler_test.go)\nChanged files (4): store/tikv/latch/latch.go, store/tikv/latch/latch_test.go, store/tikv/latch/scheduler.go, store/tikv/latch/scheduler_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8186.patch\nPicked test: type=unit path=store/tikv/latch/scheduler_test.go name=scheduler_test"
+  "analysis": "PR title: store/tikv/latch: fix a deadlock in the latch scheduler\nPR url: https://github.com/pingcap/tidb/pull/8186\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(time.Now().Unix()) (store/tikv/latch/scheduler_test.go)\nChanged files (4): store/tikv/latch/latch.go, store/tikv/latch/scheduler_test.go, store/tikv/latch/latch_test.go, store/tikv/latch/scheduler.go\nPatch url: https://github.com/pingcap/tidb/pull/8186.patch\nPicked test: type=unit path=store/tikv/latch/scheduler_test.go name=scheduler_test"
 }

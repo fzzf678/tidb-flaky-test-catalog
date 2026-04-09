@@ -20,9 +20,9 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The unit test was flaky because it compared unordered results without enforcing deterministic ordering. Depending on internal iteration/execution order, the slice content could be the same but ordered differently. This PR stabilizes it by sorting the result slice (e.g., sort.Strings) before assertions.",
   "module": "expression",
   "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
   "evidence_links": [
@@ -42,7 +42,7 @@
     ],
     "evidence": [
       "evidence: sort.Strings(result) (expression/constant_test.go)",
-      "files: expression/constant_propagation.go, expression/constant_test.go, expression/constraint_propagation.go, expression/new_constant_propagation.go"
+      "files: expression/constant_propagation.go, expression/constant_test.go, expression/constraint_propagation.go"
     ]
   },
   "analysis": "PR title: expression: a constraint propagate framework mainly for partition pruning\nPR url: https://github.com/pingcap/tidb/pull/7643\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Strings(result) (expression/constant_test.go)\nChanged files (3): expression/constant_propagation.go, expression/constant_test.go, expression/constraint_propagation.go\nPatch url: https://github.com/pingcap/tidb/pull/7643.patch\nPicked test: type=unit path=expression/constant_test.go name=constant_test"

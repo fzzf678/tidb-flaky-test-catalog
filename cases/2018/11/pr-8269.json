@@ -17,21 +17,22 @@
   ],
   "failure_signature": "tk.MustQuery(\"SELECT * FROM t WHERE (a,b,c) <= (1,2,3) order by b\").Check(testkit.Rows(\"1 1 <nil>\", \"1 2 3\")) (planner/core/expression_rewriter_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR appears to be a correctness/behavior change or broad refactor (planner: fix expression rewriter wrong compare logic). The available evidence here does not show a clear, targeted flaky-test stabilization mechanism tied to an intermittent failure signature, so we conservatively avoid guessing and downgrade this case.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8269",
     "https://github.com/pingcap/tidb/pull/8269.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/8269.patch",
   "changed_files": [
+    "go.mod",
+    "go.sum",
     "planner/core/expression_rewriter.go",
     "planner/core/expression_rewriter_test.go"
   ],
@@ -45,5 +46,5 @@
       "files: go.mod, go.sum, planner/core/expression_rewriter.go, planner/core/expression_rewriter_test.go"
     ]
   },
-  "analysis": "PR title: planner: fix expression rewriter wrong compare logic\nPR url: https://github.com/pingcap/tidb/pull/8269\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"SELECT * FROM t WHERE (a,b,c) <= (1,2,3) order by b\").Check(testkit.Rows(\"1 1 <nil>\", \"1 2 3\")) (planner/core/expression_rewriter_test.go)\nChanged files (2): planner/core/expression_rewriter.go, planner/core/expression_rewriter_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8269.patch\nPicked test: type=unit path=planner/core/expression_rewriter_test.go name=expression_rewriter_test"
+  "analysis": "PR title: planner: fix expression rewriter wrong compare logic\nPR url: https://github.com/pingcap/tidb/pull/8269\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"SELECT * FROM t WHERE (a,b,c) <= (1,2,3) order by b\").Check(testkit.Rows(\"1 1 <nil>\", \"1 2 3\")) (planner/core/expression_rewriter_test.go)\nChanged files (4): go.mod, go.sum, planner/core/expression_rewriter.go, planner/core/expression_rewriter_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8269.patch\nPicked test: type=unit path=planner/core/expression_rewriter_test.go name=expression_rewriter_test"
 }

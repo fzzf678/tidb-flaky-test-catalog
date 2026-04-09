@@ -20,12 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "missing_order_by"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because UNION result ordering is not guaranteed without an explicit ORDER BY, so assertions on row order can fail intermittently. This PR stabilizes the test by adding an ORDER BY clause to make the UNION output deterministic.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Add explicit ORDER BY to enforce deterministic result ordering before assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8442",
     "https://github.com/pingcap/tidb/pull/8442.patch"

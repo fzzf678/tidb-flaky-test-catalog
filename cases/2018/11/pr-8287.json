@@ -17,24 +17,22 @@
   ],
   "failure_signature": "ddl: fix concurrent access to `do.infoHandle` has a data race error",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix concurrent access to `do.infoHandle` has a data race error.",
-  "module": "ddl",
-  "fix_pattern": "ddl: fix concurrent access to `do.infoHandle` has a data race error",
+  "root_cause_explanation": "The test was flaky under -race due to concurrent read/write of Domain's infoHandle between the background schema reload loop and test code resetting/reloading schema state. This PR fixes it by accessing infoHandle via atomic operations (LoadPointer/StorePointer) and adjusting tests to reload schema safely, eliminating the data race.",
+  "module": "domain",
+  "fix_pattern": "Fix data race by using atomic load/store for shared pointers accessed concurrently (domain infoHandle).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8287",
     "https://github.com/pingcap/tidb/pull/8287.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/8287.patch",
   "changed_files": [
-    "ddl/fail_db_test.go",
-    "domain/domain.go"
+    "domain/domain.go",
+    "ddl/fail_db_test.go"
   ],
   "triage": {
     "sources": [
@@ -43,8 +41,8 @@
     ],
     "evidence": [
       "evidence: ddl: fix concurrent access to `do.infoHandle` has a data race error",
-      "files: ddl/fail_db_test.go, domain/domain.go"
+      "files: domain/domain.go, ddl/fail_db_test.go"
     ]
   },
-  "analysis": "PR title: ddl: fix concurrent access to `do.infoHandle` has a data race error\nPR url: https://github.com/pingcap/tidb/pull/8287\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix concurrent access to `do.infoHandle` has a data race error\nChanged files (2): ddl/fail_db_test.go, domain/domain.go\nPatch url: https://github.com/pingcap/tidb/pull/8287.patch\nPicked test: type=unit path=ddl/fail_db_test.go name=fail_db_test"
+  "analysis": "PR title: ddl: fix concurrent access to `do.infoHandle` has a data race error\nPR url: https://github.com/pingcap/tidb/pull/8287\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix concurrent access to `do.infoHandle` has a data race error\nChanged files (2): domain/domain.go, ddl/fail_db_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8287.patch\nPicked test: type=unit path=ddl/fail_db_test.go name=fail_db_test"
 }
