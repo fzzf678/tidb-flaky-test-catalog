@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// Test Index Join + Order by. (plan/dag_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3304",
     "https://github.com/pingcap/tidb/pull/3304.patch"
@@ -32,7 +32,36 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/3304.patch",
   "changed_files": [
     "util/types/time.go",
-    "util/types/time_test.go"
+    "util/types/time_test.go",
+    "parser/parser.y",
+    "parser/parser_test.go",
+    "ast/ast.go",
+    "domain/schema_validator.go",
+    "executor/adapter.go",
+    "session.go",
+    "session_test.go",
+    "_vendor/src/github.com/pingcap/kvproto/pkg/mvccpb/mvccpb.pb.go",
+    "_vendor/src/github.com/pingcap/kvproto/pkg/util/codec_test.go",
+    "_vendor/src/github.com/pingcap/tipb/go-binlog/binlog.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-binlog/cistern.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-binlog/pump.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-tipb/executor.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-tipb/schema.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-tipb/select.pb.go",
+    "glide.lock",
+    "glide.yaml",
+    "plan/dag_plan_test.go",
+    "plan/initialize.go",
+    "plan/logical_plans.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/physical_plans.go",
+    "plan/stringer.go",
+    "plan/task_profile.go",
+    "bootstrap.go",
+    "statistics/ddl.go",
+    "statistics/histogram.go",
+    "store/tikv/kv.go"
   ],
   "triage": {
     "sources": [
@@ -41,8 +70,8 @@
     ],
     "evidence": [
       "evidence: // Test Index Join + Order by. (plan/dag_plan_test.go)",
-      "files: _vendor/src/github.com/pingcap/kvproto/pkg/mvccpb/mvccpb.pb.go, _vendor/src/github.com/pingcap/kvproto/pkg/util/codec_test.go, _vendor/src/github.com/pingcap/tipb/go-binlog/binlog.pb.go, _vendor/src/github.com/pingcap/tipb/go-binlog/cistern.pb.go, _vendor/src/github.com/pingcap/tipb/go-binlog/pump.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/executor.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/schema.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/select.pb.go, ast/ast.go, bootstrap.go, domain/schema_validator.go, executor/adapter.go, glide.lock, glide.yaml, parser/parser.y, parser/parser_test.go, plan/dag_plan_test.go, plan/initialize.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/physical_plans.go, plan/stringer.go, plan/task_profile.go, session.go, session_test.go, statistics/ddl.go, statistics/histogram.go, store/tikv/kv.go, util/types/time.go, util/types/time_test.go"
+      "files: util/types/time.go, util/types/time_test.go, parser/parser.y, parser/parser_test.go, ast/ast.go, domain/schema_validator.go, executor/adapter.go, session.go, session_test.go, _vendor/src/github.com/pingcap/kvproto/pkg/mvccpb/mvccpb.pb.go, _vendor/src/github.com/pingcap/kvproto/pkg/util/codec_test.go, _vendor/src/github.com/pingcap/tipb/go-binlog/binlog.pb.go, _vendor/src/github.com/pingcap/tipb/go-binlog/cistern.pb.go, _vendor/src/github.com/pingcap/tipb/go-binlog/pump.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/executor.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/schema.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/select.pb.go, glide.lock, glide.yaml, plan/dag_plan_test.go, plan/initialize.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/physical_plans.go, plan/stringer.go, plan/task_profile.go, bootstrap.go, statistics/ddl.go, statistics/histogram.go, store/tikv/kv.go"
     ]
   },
-  "analysis": "PR title: util: Duration Add\nPR url: https://github.com/pingcap/tidb/pull/3304\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Test Index Join + Order by. (plan/dag_plan_test.go)\nChanged files (2): util/types/time.go, util/types/time_test.go\nPatch url: https://github.com/pingcap/tidb/pull/3304.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+  "analysis": "PR title: util: Duration Add\nPR url: https://github.com/pingcap/tidb/pull/3304\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Test Index Join + Order by. (plan/dag_plan_test.go)\nChanged files (31): util/types/time.go, util/types/time_test.go, parser/parser.y, parser/parser_test.go, ast/ast.go, domain/schema_validator.go, executor/adapter.go, session.go, session_test.go, _vendor/src/github.com/pingcap/kvproto/pkg/mvccpb/mvccpb.pb.go, _vendor/src/github.com/pingcap/kvproto/pkg/util/codec_test.go, _vendor/src/github.com/pingcap/tipb/go-binlog/binlog.pb.go, _vendor/src/github.com/pingcap/tipb/go-binlog/cistern.pb.go, _vendor/src/github.com/pingcap/tipb/go-binlog/pump.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/executor.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/expression.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/schema.pb.go, _vendor/src/github.com/pingcap/tipb/go-tipb/select.pb.go, glide.lock, glide.yaml, plan/dag_plan_test.go, plan/initialize.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/physical_plans.go, plan/stringer.go, plan/task_profile.go, bootstrap.go, statistics/ddl.go, statistics/histogram.go, store/tikv/kv.go\nPatch url: https://github.com/pingcap/tidb/pull/3304.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
 }
