@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: stats: refine index row count estimation.",
+  "root_cause_explanation": "The test was flaky due to a data race in the statistics cache: table stats were being updated (e.g., building derived name/id maps and index metadata) while other goroutines could concurrently read the same cached structures. The patch stabilizes it by copying table stats before mutation (copy-on-write) and rebuilding derived maps on the copied struct, avoiding concurrent read/write races.",
   "module": "statistics",
-  "fix_pattern": "stats: refine index row count estimation",
+  "fix_pattern": "Avoid mutating shared stats cache; copy table stats before updates (copy-on-write) and rebuild derived maps on the copy to eliminate data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6869",
     "https://github.com/pingcap/tidb/pull/6869.patch"

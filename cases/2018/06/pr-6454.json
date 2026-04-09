@@ -17,25 +17,27 @@
   ],
   "failure_signature": "// Merge Join will now enforce a sort. (plan/physical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Patch changes Merge Join hint handling / physical plan enforcement (planner correctness); no targeted flaky-test stabilization change is evident.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6454",
     "https://github.com/pingcap/tidb/pull/6454.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/6454.patch",
   "changed_files": [
-    "plan/exhaust_physical_plans.go",
-    "plan/find_best_task.go",
+    "plan/gen_physical_plans.go",
+    "plan/physical_plan_builder.go",
+    "plan/physical_plans.go",
+    "plan/plan.go",
     "plan/physical_plan_test.go",
-    "plan/plan.go"
+    "plan/exhaust_physical_plans.go",
+    "plan/find_best_task.go"
   ],
   "triage": {
     "sources": [
@@ -44,8 +46,8 @@
     ],
     "evidence": [
       "evidence: // Merge Join will now enforce a sort. (plan/physical_plan_test.go)",
-      "files: plan/exhaust_physical_plans.go, plan/find_best_task.go, plan/gen_physical_plans.go, plan/physical_plan_builder.go, plan/physical_plan_test.go, plan/physical_plans.go, plan/plan.go"
+      "files: plan/gen_physical_plans.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/physical_plan_test.go, plan/exhaust_physical_plans.go, plan/find_best_task.go"
     ]
   },
-  "analysis": "PR title: plan: make \"TIDB_SMJ\" take effect even when no index can be used\nPR url: https://github.com/pingcap/tidb/pull/6454\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Merge Join will now enforce a sort. (plan/physical_plan_test.go)\nChanged files (4): plan/exhaust_physical_plans.go, plan/find_best_task.go, plan/physical_plan_test.go, plan/plan.go\nPatch url: https://github.com/pingcap/tidb/pull/6454.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
+  "analysis": "PR title: plan: make \"TIDB_SMJ\" take effect even when no index can be used\nPR url: https://github.com/pingcap/tidb/pull/6454\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // Merge Join will now enforce a sort. (plan/physical_plan_test.go)\nChanged files (7): plan/gen_physical_plans.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/physical_plan_test.go, plan/exhaust_physical_plans.go, plan/find_best_task.go\nPatch url: https://github.com/pingcap/tidb/pull/6454.patch\nPicked test: type=unit path=plan/physical_plan_test.go name=physical_plan_test"
 }

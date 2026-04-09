@@ -17,15 +17,14 @@
   ],
   "failure_signature": "fix data race | result = tk.MustQuery(\"select count(*) from t group by d order by c\") (executor/aggregate_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky due to data races introduced by parallel hash aggregation: worker goroutines shared mutable state (e.g., aggregation function instances / worker channels), leading to race-detector failures or nondeterministic behavior. The patch fixes this by isolating per-worker state (e.g., clone AggFuncs per worker and use per-worker input channels) so concurrent aggregation does not share mutable objects.",
+  "module": "executor",
+  "fix_pattern": "Make parallel executor code thread-safe by isolating per-worker state (clone per-worker structs; avoid shared mutable objects/channels).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6658",
     "https://github.com/pingcap/tidb/pull/6658.patch"
@@ -33,18 +32,43 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/6658.patch",
   "changed_files": [
     "executor/aggregate.go",
-    "executor/aggregate_test.go",
     "executor/builder.go",
-    "executor/executor_test.go",
-    "executor/join_test.go",
+    "executor/executor.go",
     "expression/aggregation/aggregation.go",
+    "expression/aggregation/avg.go",
+    "expression/aggregation/bit_and.go",
+    "expression/aggregation/bit_or.go",
+    "expression/aggregation/bit_xor.go",
+    "expression/aggregation/concat.go",
+    "expression/aggregation/count.go",
     "expression/aggregation/descriptor.go",
-    "expression/builtin_compare.go",
-    "expression/integration_test.go",
+    "expression/aggregation/first_row.go",
+    "expression/aggregation/max_min.go",
+    "expression/aggregation/sum.go",
     "plan/physical_plans.go",
-    "plan/rule_aggregation_push_down.go",
     "plan/task.go",
-    "util/codec/codec_test.go"
+    "util/codec/codec.go",
+    "util/codec/codec_test.go",
+    "executor/aggregate_test.go",
+    "session/session.go",
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "sessionctx/variable/varsutil_test.go",
+    "executor/executor_test.go",
+    "plan/gen_physical_plans.go",
+    "plan/aggregation_push_down.go",
+    "expression/integration_test.go",
+    "executor/join_test.go",
+    "expression/builtin_arithmetic.go",
+    "expression/distsql_builtin_test.go",
+    "expression/expr_to_pb.go",
+    "util/codec/bench_test.go",
+    "util/codec/decimal.go",
+    "util/codec/decimal_test.go",
+    "expression/builtin_compare.go",
+    "plan/rule_aggregation_push_down.go",
+    "executor/bench_parallel_hashagg_test.go"
   ],
   "triage": {
     "sources": [
@@ -54,8 +78,8 @@
     ],
     "evidence": [
       "evidence: fix data race | result = tk.MustQuery(\"select count(*) from t group by d order by c\") (executor/aggregate_test.go)",
-      "files: executor/aggregate.go, executor/aggregate_test.go, executor/bench_parallel_hashagg_test.go, executor/builder.go, executor/executor.go, executor/executor_test.go, executor/join_test.go, expression/aggregation/aggregation.go, expression/aggregation/avg.go, expression/aggregation/bit_and.go, expression/aggregation/bit_or.go, expression/aggregation/bit_xor.go, expression/aggregation/concat.go, expression/aggregation/count.go, expression/aggregation/descriptor.go, expression/aggregation/first_row.go, expression/aggregation/max_min.go, expression/aggregation/sum.go, expression/builtin_arithmetic.go, expression/builtin_compare.go, expression/distsql_builtin_test.go, expression/expr_to_pb.go, expression/integration_test.go, plan/aggregation_push_down.go, plan/gen_physical_plans.go, plan/physical_plans.go, plan/rule_aggregation_push_down.go, plan/task.go, session/session.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, util/codec/bench_test.go, util/codec/codec.go, util/codec/codec_test.go, util/codec/decimal.go, util/codec/decimal_test.go"
+      "files: executor/aggregate.go, executor/builder.go, executor/executor.go, expression/aggregation/aggregation.go, expression/aggregation/avg.go, expression/aggregation/bit_and.go, expression/aggregation/bit_or.go, expression/aggregation/bit_xor.go, expression/aggregation/concat.go, expression/aggregation/count.go, expression/aggregation/descriptor.go, expression/aggregation/first_row.go, expression/aggregation/max_min.go, expression/aggregation/sum.go, plan/physical_plans.go, plan/task.go, util/codec/codec.go, util/codec/codec_test.go, executor/aggregate_test.go, session/session.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, executor/executor_test.go, plan/gen_physical_plans.go, plan/aggregation_push_down.go, expression/integration_test.go, executor/join_test.go, expression/builtin_arithmetic.go, expression/distsql_builtin_test.go, expression/expr_to_pb.go, util/codec/bench_test.go, util/codec/decimal.go, util/codec/decimal_test.go, expression/builtin_compare.go, plan/rule_aggregation_push_down.go, executor/bench_parallel_hashagg_test.go"
     ]
   },
-  "analysis": "PR title: *: support parallel hash agg\nPR url: https://github.com/pingcap/tidb/pull/6658\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix data race | result = tk.MustQuery(\"select count(*) from t group by d order by c\") (executor/aggregate_test.go)\nChanged files (13): executor/aggregate.go, executor/aggregate_test.go, executor/builder.go, executor/executor_test.go, executor/join_test.go, expression/aggregation/aggregation.go, expression/aggregation/descriptor.go, expression/builtin_compare.go, expression/integration_test.go, plan/physical_plans.go, plan/rule_aggregation_push_down.go, plan/task.go, util/codec/codec_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6658.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+  "analysis": "PR title: *: support parallel hash agg\nPR url: https://github.com/pingcap/tidb/pull/6658\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix data race | result = tk.MustQuery(\"select count(*) from t group by d order by c\") (executor/aggregate_test.go)\nChanged files (38): executor/aggregate.go, executor/builder.go, executor/executor.go, expression/aggregation/aggregation.go, expression/aggregation/avg.go, expression/aggregation/bit_and.go, expression/aggregation/bit_or.go, expression/aggregation/bit_xor.go, expression/aggregation/concat.go, expression/aggregation/count.go, expression/aggregation/descriptor.go, expression/aggregation/first_row.go, expression/aggregation/max_min.go, expression/aggregation/sum.go, plan/physical_plans.go, plan/task.go, util/codec/codec.go, util/codec/codec_test.go, executor/aggregate_test.go, session/session.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, executor/executor_test.go, plan/gen_physical_plans.go, plan/aggregation_push_down.go, expression/integration_test.go, executor/join_test.go, expression/builtin_arithmetic.go, expression/distsql_builtin_test.go, expression/expr_to_pb.go, util/codec/bench_test.go, util/codec/decimal.go, util/codec/decimal_test.go, expression/builtin_compare.go, plan/rule_aggregation_push_down.go, executor/bench_parallel_hashagg_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6658.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
 }

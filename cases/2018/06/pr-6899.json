@@ -17,23 +17,22 @@
   ],
   "failure_signature": "sql: \"select ifnull(t1.b, t2.a) from t t1 left join t t2 on t1.e=t2.e order by ifnull(t1.b, t2.a) limit 5\", (plan/logical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Patch fixes TopN pushdown rule correctness and adds plan tests; it is not a targeted flaky-test stabilization change.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6899",
     "https://github.com/pingcap/tidb/pull/6899.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/6899.patch",
   "changed_files": [
-    "plan/logical_plan_test.go",
-    "plan/rule_topn_push_down.go"
+    "plan/rule_topn_push_down.go",
+    "plan/logical_plan_test.go"
   ],
   "triage": {
     "sources": [
@@ -42,8 +41,8 @@
     ],
     "evidence": [
       "evidence: sql: \"select ifnull(t1.b, t2.a) from t t1 left join t t2 on t1.e=t2.e order by ifnull(t1.b, t2.a) limit 5\", (plan/logical_plan_test.go)",
-      "files: plan/logical_plan_test.go, plan/rule_topn_push_down.go"
+      "files: plan/rule_topn_push_down.go, plan/logical_plan_test.go"
     ]
   },
-  "analysis": "PR title: plan: fix a bug in `topn_push_down` rule.\nPR url: https://github.com/pingcap/tidb/pull/6899\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select ifnull(t1.b, t2.a) from t t1 left join t t2 on t1.e=t2.e order by ifnull(t1.b, t2.a) limit 5\", (plan/logical_plan_test.go)\nChanged files (2): plan/logical_plan_test.go, plan/rule_topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/6899.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+  "analysis": "PR title: plan: fix a bug in `topn_push_down` rule.\nPR url: https://github.com/pingcap/tidb/pull/6899\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select ifnull(t1.b, t2.a) from t t1 left join t t2 on t1.e=t2.e order by ifnull(t1.b, t2.a) limit 5\", (plan/logical_plan_test.go)\nChanged files (2): plan/rule_topn_push_down.go, plan/logical_plan_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6899.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
 }

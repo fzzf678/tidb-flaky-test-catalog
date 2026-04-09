@@ -17,16 +17,16 @@
   ],
   "failure_signature": "ddl: reduce test time when running tests with `race`",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "async_timing_issue",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "insufficient_timeout",
+    "shared_table_without_isolation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: reduce test time when running tests with `race`.",
+  "root_cause_explanation": "The test was flaky due to timing sensitivity under -race: long fixed waits/retry backoffs (e.g., WaitTimeWhenErrorOccured) and shared database names made DDL tests slow and occasionally hit timeouts or interfere with other tests. The patch stabilizes it by reducing the wait interval in tests and isolating test databases / splitting heavy subtests to reduce runtime and cross-test interference.",
   "module": "ddl",
-  "fix_pattern": "ddl: reduce test time when running tests with `race`",
+  "fix_pattern": "Reduce fixed waits/backoffs in tests and isolate test resources (unique DB names) to avoid timeouts and cross-test interference, especially under -race.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6821",
     "https://github.com/pingcap/tidb/pull/6821.patch"

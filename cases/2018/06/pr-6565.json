@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: stats: refine the pseudo condition for stats.",
+  "root_cause_explanation": "The test was flaky due to a data race in statistics handling: shared in-memory stats structures were mutated while other goroutines could concurrently read them (e.g., pseudo/error-rate updates). The patch fixes this by using copy-on-write (copy the stats structs before mutation) and by reusing local handle/infoschema references to avoid concurrent access, eliminating race-detector failures.",
   "module": "statistics",
-  "fix_pattern": "stats: refine the pseudo condition for stats",
+  "fix_pattern": "Avoid mutating shared stats cache; use copy-on-write / thread-safe updates to eliminate data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6565",
     "https://github.com/pingcap/tidb/pull/6565.patch"
@@ -32,22 +32,23 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/6565.patch",
   "changed_files": [
     "domain/domain.go",
-    "executor/aggregate_test.go",
     "executor/analyze.go",
-    "metrics/stats.go",
-    "plan/cbo_test.go",
     "plan/logical_plan_builder.go",
-    "session/bootstrap.go",
     "session/session.go",
     "sessionctx/variable/session.go",
-    "statistics/dump.go",
     "statistics/feedback.go",
     "statistics/handle.go",
     "statistics/histogram.go",
     "statistics/table.go",
     "statistics/update.go",
     "statistics/update_test.go",
-    "tidb-server/main.go"
+    "executor/aggregate_test.go",
+    "session/bootstrap.go",
+    "statistics/dump.go",
+    "metrics/stats.go",
+    "plan/cbo_test.go",
+    "tidb-server/main.go",
+    "statistics/boostrap.go"
   ],
   "triage": {
     "sources": [
@@ -56,8 +57,8 @@
     ],
     "evidence": [
       "evidence: fix race",
-      "files: domain/domain.go, executor/aggregate_test.go, executor/analyze.go, metrics/stats.go, plan/cbo_test.go, plan/logical_plan_builder.go, session/bootstrap.go, session/session.go, sessionctx/variable/session.go, statistics/boostrap.go, statistics/dump.go, statistics/feedback.go, statistics/handle.go, statistics/histogram.go, statistics/table.go, statistics/update.go, statistics/update_test.go, tidb-server/main.go"
+      "files: domain/domain.go, executor/analyze.go, plan/logical_plan_builder.go, session/session.go, sessionctx/variable/session.go, statistics/feedback.go, statistics/handle.go, statistics/histogram.go, statistics/table.go, statistics/update.go, statistics/update_test.go, executor/aggregate_test.go, session/bootstrap.go, statistics/dump.go, metrics/stats.go, plan/cbo_test.go, tidb-server/main.go, statistics/boostrap.go"
     ]
   },
-  "analysis": "PR title: stats: refine the pseudo condition for stats\nPR url: https://github.com/pingcap/tidb/pull/6565\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix race\nChanged files (17): domain/domain.go, executor/aggregate_test.go, executor/analyze.go, metrics/stats.go, plan/cbo_test.go, plan/logical_plan_builder.go, session/bootstrap.go, session/session.go, sessionctx/variable/session.go, statistics/dump.go, statistics/feedback.go, statistics/handle.go, statistics/histogram.go, statistics/table.go, statistics/update.go, statistics/update_test.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/6565.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+  "analysis": "PR title: stats: refine the pseudo condition for stats\nPR url: https://github.com/pingcap/tidb/pull/6565\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix race\nChanged files (18): domain/domain.go, executor/analyze.go, plan/logical_plan_builder.go, session/session.go, sessionctx/variable/session.go, statistics/feedback.go, statistics/handle.go, statistics/histogram.go, statistics/table.go, statistics/update.go, statistics/update_test.go, executor/aggregate_test.go, session/bootstrap.go, statistics/dump.go, metrics/stats.go, plan/cbo_test.go, tidb-server/main.go, statistics/boostrap.go\nPatch url: https://github.com/pingcap/tidb/pull/6565.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
 }
