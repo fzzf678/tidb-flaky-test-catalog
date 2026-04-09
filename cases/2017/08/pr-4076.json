@@ -17,16 +17,14 @@
   ],
   "failure_signature": "*: fix race with atomic global variables.",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "shared_state_pollution"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "global_variable_mutation",
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Global state must be reset/restored between tests. This PR stabilizes it by: *: fix race with atomic global variables.",
+  "root_cause_explanation": "Tests and code were mutating/reading a global flag (TurnOnNewExprEval) without synchronization, which can trigger data races under concurrent test execution or -race. This PR makes the flag atomic (int32 + atomic Load/Store) and updates call sites to eliminate the race.",
   "module": "module_unknown",
-  "fix_pattern": "*: fix race with atomic global variables.",
+  "fix_pattern": "Make global flags atomic and use atomic Load/Store to avoid data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4076",
     "https://github.com/pingcap/tidb/pull/4076.patch"

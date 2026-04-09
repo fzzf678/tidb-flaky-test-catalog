@@ -23,9 +23,9 @@
     "missing_order_by",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it asserted row order for a UNION query without an explicit ORDER BY, while UNION execution can return rows in different orders. This PR stabilizes the test by making the query deterministic (aliasing the second SELECT column as `c` and adding `ORDER BY c`) so the subsequent `Check()` is stable across runs.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Add explicit ORDER BY (or sort results) before assertions for UNION queries to avoid nondeterministic ordering flakes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4001",
     "https://github.com/pingcap/tidb/pull/4001.patch"

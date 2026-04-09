@@ -17,24 +17,23 @@
   ],
   "failure_signature": "sql: \"select * from t use index(b) where b = 1 order by a\", (plan/cbo_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4065",
     "https://github.com/pingcap/tidb/pull/4065.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/4065.patch",
   "changed_files": [
-    "plan/cbo_test.go",
     "plan/new_physical_plan_builder.go",
-    "plan/task.go"
+    "plan/task.go",
+    "plan/cbo_test.go"
   ],
   "triage": {
     "sources": [
@@ -43,8 +42,8 @@
     ],
     "evidence": [
       "evidence: sql: \"select * from t use index(b) where b = 1 order by a\", (plan/cbo_test.go)",
-      "files: plan/cbo_test.go, plan/new_physical_plan_builder.go, plan/task.go"
+      "files: plan/new_physical_plan_builder.go, plan/task.go, plan/cbo_test.go"
     ]
   },
-  "analysis": "PR title: plan: fix bug about processing property of reader plan.\nPR url: https://github.com/pingcap/tidb/pull/4065\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t use index(b) where b = 1 order by a\", (plan/cbo_test.go)\nChanged files (3): plan/cbo_test.go, plan/new_physical_plan_builder.go, plan/task.go\nPatch url: https://github.com/pingcap/tidb/pull/4065.patch\nPicked test: type=unit path=plan/cbo_test.go name=cbo_test"
+  "analysis": "PR title: plan: fix bug about processing property of reader plan.\nPR url: https://github.com/pingcap/tidb/pull/4065\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t use index(b) where b = 1 order by a\", (plan/cbo_test.go)\nChanged files (3): plan/new_physical_plan_builder.go, plan/task.go, plan/cbo_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4065.patch\nPicked test: type=unit path=plan/cbo_test.go name=cbo_test"
 }

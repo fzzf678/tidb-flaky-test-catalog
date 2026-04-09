@@ -17,23 +17,23 @@
   ],
   "failure_signature": "tk.MustQuery(\"select /*+ TIDB_INLJ(t, t1) */ * from t right join t1 on t.a=t1.a order by t.b\").Check(testkit.Rows(\"<nil> <nil> 0 0\", \"3 1 3 4\", \"1 3 1 2\", \"1 3 1 3\")) (executor/join_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3998",
     "https://github.com/pingcap/tidb/pull/3998.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/3998.patch",
   "changed_files": [
-    "executor/join_test.go",
-    "executor/new_join.go"
+    "executor/new_join.go",
+    "store/tikv/coprocessor.go",
+    "executor/join_test.go"
   ],
   "triage": {
     "sources": [
@@ -42,8 +42,8 @@
     ],
     "evidence": [
       "evidence: tk.MustQuery(\"select /*+ TIDB_INLJ(t, t1) */ * from t right join t1 on t.a=t1.a order by t.b\").Check(testkit.Rows(\"<nil> <nil> 0 0\", \"3 1 3 4\", \"1 3 1 2\", \"1 3 1 3\")) (executor/join_test.go)",
-      "files: executor/join_test.go, executor/new_join.go, store/tikv/coprocessor.go"
+      "files: executor/new_join.go, store/tikv/coprocessor.go, executor/join_test.go"
     ]
   },
-  "analysis": "PR title: executor: fix bug when do outer index join\nPR url: https://github.com/pingcap/tidb/pull/3998\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select /*+ TIDB_INLJ(t, t1) */ * from t right join t1 on t.a=t1.a order by t.b\").Check(testkit.Rows(\"<nil> <nil> 0 0\", \"3 1 3 4\", \"1 3 1 2\", \"1 3 1 3\")) (executor/join_test.go)\nChanged files (2): executor/join_test.go, executor/new_join.go\nPatch url: https://github.com/pingcap/tidb/pull/3998.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+  "analysis": "PR title: executor: fix bug when do outer index join\nPR url: https://github.com/pingcap/tidb/pull/3998\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select /*+ TIDB_INLJ(t, t1) */ * from t right join t1 on t.a=t1.a order by t.b\").Check(testkit.Rows(\"<nil> <nil> 0 0\", \"3 1 3 4\", \"1 3 1 2\", \"1 3 1 3\")) (executor/join_test.go)\nChanged files (3): executor/new_join.go, store/tikv/coprocessor.go, executor/join_test.go\nPatch url: https://github.com/pingcap/tidb/pull/3998.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
 }
