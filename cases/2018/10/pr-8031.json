@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix wrong result when index join on union scan.",
+  "root_cause_explanation": "The failure was due to a concurrency bug in index lookup join with union scan: shared mutable state (e.g., dataReaderBuilder.Plan / union scan construction) could be modified concurrently across batches/workers, leading to wrong results or data races. This PR fixes it by using a local child builder per call and making buildUnionScanFromReader safe for concurrent inner workers, with a regression test.",
   "module": "executor",
-  "fix_pattern": "executor: fix wrong result when index join on union scan.",
+  "fix_pattern": "Avoid shared mutable builder state in concurrent IndexLookupJoin inner workers; build per-call child builders and make union scan construction thread-safe.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8031",
     "https://github.com/pingcap/tidb/pull/8031.patch"
@@ -32,6 +32,7 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/8031.patch",
   "changed_files": [
     "executor/builder.go",
+    "executor/index_lookup_join.go",
     "executor/index_lookup_join_test.go"
   ],
   "triage": {
@@ -44,5 +45,5 @@
       "files: executor/builder.go, executor/index_lookup_join.go, executor/index_lookup_join_test.go"
     ]
   },
-  "analysis": "PR title: executor: fix wrong result when index join on union scan.\nPR url: https://github.com/pingcap/tidb/pull/8031\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: address comment and avoid data race\nChanged files (2): executor/builder.go, executor/index_lookup_join_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8031.patch\nPicked test: type=unit path=executor/index_lookup_join_test.go name=index_lookup_join_test"
+  "analysis": "PR title: executor: fix wrong result when index join on union scan.\nPR url: https://github.com/pingcap/tidb/pull/8031\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: address comment and avoid data race\nChanged files (3): executor/builder.go, executor/index_lookup_join.go, executor/index_lookup_join_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8031.patch\nPicked test: type=unit path=executor/index_lookup_join_test.go name=index_lookup_join_test"
 }
