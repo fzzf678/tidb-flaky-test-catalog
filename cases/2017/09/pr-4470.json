@@ -20,12 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "IndexLookUpExecutor's double-read path did not preserve ORDER BY result order; returned rows could be out-of-order depending on background worker scheduling, causing intermittent row-order assertion failures. This PR keeps task/result ordering stable and adds a regression test.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Preserve ORDER BY determinism in double-read/index lookup (keep task/result order stable).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4470",
     "https://github.com/pingcap/tidb/pull/4470.patch"

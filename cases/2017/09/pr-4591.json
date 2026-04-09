@@ -17,14 +17,14 @@
   ],
   "failure_signature": "2. make race may fail, because the background goroutines may still visiting store after store is closed.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "statistics_sensitive_test"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. This PR stabilizes it by: plan,statistics: don't forget to close domain in testing.",
+  "root_cause_explanation": "Tests bootstrapped a store/session and created a Domain via BootstrapSession but did not always close the Domain, leaking background resources/goroutines and tripping leak checks. This PR returns the Domain from the helper and defers dom.Close() alongside store.Close(), plus standardizes AfterTest cleanup.",
   "module": "planner",
-  "fix_pattern": "plan,statistics: don't forget to close domain in testing",
+  "fix_pattern": "Close Domain and ensure per-test cleanup (dom.Close + AfterTest) to avoid leaks between tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4591",
     "https://github.com/pingcap/tidb/pull/4591.patch"

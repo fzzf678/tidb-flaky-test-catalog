@@ -17,14 +17,14 @@
   ],
   "failure_signature": "- wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
   "root_cause_categories": [
-    "shared_state_pollution"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "global_variable_mutation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to leaked global/shared state between tests. Global state must be reset/restored between tests. This PR stabilizes it by: gc: use tmp session in gc_worker instead of global singleton.",
+  "root_cause_explanation": "GCWorker used a shared session and a non-atomic running flag across goroutines, and some tests relied on waiting for session creation to avoid a race. This PR removes the racy shared state by using atomic coordination and creating isolated sessions for GC SQL operations.",
   "module": "gc",
-  "fix_pattern": "gc: use tmp session in gc_worker instead of global singleton.",
+  "fix_pattern": "Avoid sharing a Session across goroutines (use temp sessions + atomic state) to eliminate GCWorker races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4453",
     "https://github.com/pingcap/tidb/pull/4453.patch"

@@ -17,27 +17,55 @@
   ],
   "failure_signature": "vendor: update goleveldb to fix a data race",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "test_infra_migration"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: vendor: update goleveldb to fix a data race.",
+  "root_cause_explanation": "The PR includes a Go race detector report in the vendored goleveldb implementation (channel close/send in the mem pool path), which can cause intermittent -race failures. This PR updates the vendored goleveldb to include the upstream data-race fix.",
   "module": "txn",
-  "fix_pattern": "vendor: update goleveldb to fix a data race",
+  "fix_pattern": "Update vendored goleveldb to include the data-race fix.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4518",
     "https://github.com/pingcap/tidb/pull/4518.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/4518.patch",
   "changed_files": [
+    "_vendor/src/github.com/BurntSushi/toml/COPYING",
+    "_vendor/src/github.com/BurntSushi/toml/decode.go",
+    "_vendor/src/github.com/BurntSushi/toml/decode_meta.go",
+    "_vendor/src/github.com/BurntSushi/toml/doc.go",
+    "_vendor/src/github.com/BurntSushi/toml/encode.go",
+    "_vendor/src/github.com/BurntSushi/toml/encoding_types.go",
+    "_vendor/src/github.com/BurntSushi/toml/encoding_types_1.1.go",
+    "_vendor/src/github.com/BurntSushi/toml/lex.go",
+    "_vendor/src/github.com/BurntSushi/toml/parse.go",
+    "_vendor/src/github.com/BurntSushi/toml/type_check.go",
+    "_vendor/src/github.com/BurntSushi/toml/type_fields.go",
+    "_vendor/src/github.com/coreos/etcd/contrib/recipes/barrier.go",
+    "_vendor/src/github.com/coreos/etcd/contrib/recipes/client.go",
+    "_vendor/src/github.com/coreos/etcd/contrib/recipes/double_barrier.go",
+    "_vendor/src/github.com/coreos/etcd/contrib/recipes/key.go",
+    "_vendor/src/github.com/coreos/etcd/contrib/recipes/priority_queue.go",
+    "_vendor/src/github.com/coreos/etcd/contrib/recipes/queue.go",
+    "_vendor/src/github.com/coreos/etcd/contrib/recipes/rwmutex.go",
+    "_vendor/src/github.com/coreos/etcd/contrib/recipes/watch.go",
     "_vendor/src/github.com/ngaut/log/LICENSE",
     "_vendor/src/github.com/ngaut/log/crash_unix.go",
     "_vendor/src/github.com/ngaut/log/crash_win.go",
     "_vendor/src/github.com/ngaut/log/log.go",
     "_vendor/src/github.com/pingcap/goleveldb/leveldb/db_state.go",
     "_vendor/src/github.com/pingcap/goleveldb/leveldb/table/reader.go",
+    "_vendor/src/github.com/pingcap/tipb/go-mysqlx/Connection/mysqlx_connection.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-mysqlx/Crud/mysqlx_crud.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-mysqlx/Datatypes/mysqlx_datatypes.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-mysqlx/Expect/mysqlx_expect.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-mysqlx/Expr/mysqlx_expr.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-mysqlx/Notice/mysqlx_notice.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-mysqlx/Resultset/mysqlx_resultset.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-mysqlx/Session/mysqlx_session.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-mysqlx/Sql/mysqlx_sql.pb.go",
+    "_vendor/src/github.com/pingcap/tipb/go-mysqlx/mysqlx.pb.go",
     "glide.lock",
     "glide.yaml",
     "new_session_test.go"
@@ -52,5 +80,5 @@
       "files: _vendor/src/github.com/BurntSushi/toml/COPYING, _vendor/src/github.com/BurntSushi/toml/decode.go, _vendor/src/github.com/BurntSushi/toml/decode_meta.go, _vendor/src/github.com/BurntSushi/toml/doc.go, _vendor/src/github.com/BurntSushi/toml/encode.go, _vendor/src/github.com/BurntSushi/toml/encoding_types.go, _vendor/src/github.com/BurntSushi/toml/encoding_types_1.1.go, _vendor/src/github.com/BurntSushi/toml/lex.go, _vendor/src/github.com/BurntSushi/toml/parse.go, _vendor/src/github.com/BurntSushi/toml/type_check.go, _vendor/src/github.com/BurntSushi/toml/type_fields.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/barrier.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/client.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/double_barrier.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/key.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/priority_queue.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/queue.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/rwmutex.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/watch.go, _vendor/src/github.com/ngaut/log/LICENSE, _vendor/src/github.com/ngaut/log/crash_unix.go, _vendor/src/github.com/ngaut/log/crash_win.go, _vendor/src/github.com/ngaut/log/log.go, _vendor/src/github.com/pingcap/goleveldb/leveldb/db_state.go, _vendor/src/github.com/pingcap/goleveldb/leveldb/table/reader.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Connection/mysqlx_connection.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Crud/mysqlx_crud.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Datatypes/mysqlx_datatypes.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Expect/mysqlx_expect.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Expr/mysqlx_expr.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Notice/mysqlx_notice.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Resultset/mysqlx_resultset.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Session/mysqlx_session.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Sql/mysqlx_sql.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/mysqlx.pb.go, glide.lock, glide.yaml, new_session_test.go"
     ]
   },
-  "analysis": "PR title: vendor: update goleveldb to fix a data race\nPR url: https://github.com/pingcap/tidb/pull/4518\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: vendor: update goleveldb to fix a data race\nChanged files (9): _vendor/src/github.com/ngaut/log/LICENSE, _vendor/src/github.com/ngaut/log/crash_unix.go, _vendor/src/github.com/ngaut/log/crash_win.go, _vendor/src/github.com/ngaut/log/log.go, _vendor/src/github.com/pingcap/goleveldb/leveldb/db_state.go, _vendor/src/github.com/pingcap/goleveldb/leveldb/table/reader.go, glide.lock, glide.yaml, new_session_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4518.patch\nPicked test: type=unit path=new_session_test.go name=new_session_test"
+  "analysis": "PR title: vendor: update goleveldb to fix a data race\nPR url: https://github.com/pingcap/tidb/pull/4518\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: vendor: update goleveldb to fix a data race\nChanged files (38): _vendor/src/github.com/BurntSushi/toml/COPYING, _vendor/src/github.com/BurntSushi/toml/decode.go, _vendor/src/github.com/BurntSushi/toml/decode_meta.go, _vendor/src/github.com/BurntSushi/toml/doc.go, _vendor/src/github.com/BurntSushi/toml/encode.go, _vendor/src/github.com/BurntSushi/toml/encoding_types.go, _vendor/src/github.com/BurntSushi/toml/encoding_types_1.1.go, _vendor/src/github.com/BurntSushi/toml/lex.go, _vendor/src/github.com/BurntSushi/toml/parse.go, _vendor/src/github.com/BurntSushi/toml/type_check.go, _vendor/src/github.com/BurntSushi/toml/type_fields.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/barrier.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/client.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/double_barrier.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/key.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/priority_queue.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/queue.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/rwmutex.go, _vendor/src/github.com/coreos/etcd/contrib/recipes/watch.go, _vendor/src/github.com/ngaut/log/LICENSE, _vendor/src/github.com/ngaut/log/crash_unix.go, _vendor/src/github.com/ngaut/log/crash_win.go, _vendor/src/github.com/ngaut/log/log.go, _vendor/src/github.com/pingcap/goleveldb/leveldb/db_state.go, _vendor/src/github.com/pingcap/goleveldb/leveldb/table/reader.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Connection/mysqlx_connection.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Crud/mysqlx_crud.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Datatypes/mysqlx_datatypes.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Expect/mysqlx_expect.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Expr/mysqlx_expr.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Notice/mysqlx_notice.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Resultset/mysqlx_resultset.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Session/mysqlx_session.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/Sql/mysqlx_sql.pb.go, _vendor/src/github.com/pingcap/tipb/go-mysqlx/mysqlx.pb.go, glide.lock, glide.yaml, new_session_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4518.patch\nPicked test: type=unit path=new_session_test.go name=new_session_test"
 }
