@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix data race in executor_test.go/checkRequestClient.",
+  "root_cause_explanation": "The test was flaky under `-race` because `checkRequestClient` fields in `executor_test.go` were read/written concurrently without synchronization. This PR fixes it by adding proper locking (Lock/RLock) around shared field updates and assertions.",
   "module": "test_infra",
-  "fix_pattern": "test: fix data race in executor_test.go/checkRequestClient",
+  "fix_pattern": "Add mutex guards for shared fields in test doubles when accessed from concurrent goroutines.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/7326",
     "https://github.com/pingcap/tidb/pull/7326.patch"

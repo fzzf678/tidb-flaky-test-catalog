@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: stats: fix the data race in test.",
+  "root_cause_explanation": "The test was flaky under `-race` because it added a log hook while background goroutines were logging, leading to concurrent map access in logrus hooks. This PR fixes it by registering the hook once in `SetUpSuite` and reusing it during the test, avoiding concurrent mutation of global logger state.",
   "module": "statistics",
-  "fix_pattern": "stats: fix the data race in test",
+  "fix_pattern": "Initialize shared logger hooks/handlers once at suite setup; avoid mutating global logger state during concurrent execution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/7434",
     "https://github.com/pingcap/tidb/pull/7434.patch"
