@@ -13,18 +13,18 @@
     "name": "2pc_test"
   },
   "symptoms": [
-    "revise test case to fix race"
+    "Revise commit-intercept tests to avoid race when injecting s.store.client (store/tikv/2pc_test.go)"
   ],
-  "failure_signature": "revise test case to fix race",
+  "failure_signature": "Revise commit-intercept tests to avoid race when injecting s.store.client (store/tikv/2pc_test.go)",
   "root_cause_categories": [
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: store/tikv: refine errors for undetermined result.",
+  "root_cause_explanation": "The test was flaky due to a race in test instrumentation around intercepting the commit RPC path. Mutating shared client state in a gocheck suite can race with async operations and make the assertions nondeterministic. This PR stabilizes it by restructuring/splitting the test cases and isolating the intercept client injection so it no longer races.",
   "module": "kv",
-  "fix_pattern": "store/tikv: refine errors for undetermined result",
+  "fix_pattern": "Isolate per-test state when intercepting async RPC paths (avoid racy shared client mutation) by refactoring/splitting the tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3423",
     "https://github.com/pingcap/tidb/pull/3423.patch"
@@ -40,7 +40,7 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: revise test case to fix race",
+      "evidence: revise test case to fix race (store/tikv/2pc_test.go)",
       "files: store/tikv/2pc.go, store/tikv/2pc_test.go"
     ]
   },

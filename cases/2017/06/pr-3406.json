@@ -13,28 +13,26 @@
     "name": "ddl_db_test"
   },
   "symptoms": [
-    "ddl: Fixes the timeout of run `make race`"
+    "if num > defaultBatchSize*10 { break } (ddl/ddl_db_test.go)"
   ],
-  "failure_signature": "ddl: Fixes the timeout of run `make race`",
+  "failure_signature": "if num > defaultBatchSize*10 { break } (ddl/ddl_db_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: Fixes the timeout of run `make race`.",
+  "root_cause_explanation": "The test was flaky due to timing/performance assumptions: on slow CI, the add-index loop can run long enough that the operation can't complete within the test's time budget. This PR stabilizes it by adding an upper bound on inserted rows (break when num > defaultBatchSize*10) to keep the workload bounded.",
   "module": "ddl",
-  "fix_pattern": "ddl: Fixes the timeout of run `make race`",
+  "fix_pattern": "Cap test workload (add an upper bound in the loop) to avoid timeouts on slow CI.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3406",
     "https://github.com/pingcap/tidb/pull/3406.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/3406.patch",
   "changed_files": [
-    "ddl/ddl_db_test.go",
-    "ddl/index.go"
+    "ddl/index.go",
+    "ddl/ddl_db_test.go"
   ],
   "triage": {
     "sources": [
@@ -42,9 +40,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: ddl: Fixes the timeout of run `make race`",
-      "files: ddl/ddl_db_test.go, ddl/index.go"
+      "evidence: if num > defaultBatchSize*10 { break } (ddl/ddl_db_test.go)",
+      "files: ddl/index.go, ddl/ddl_db_test.go"
     ]
   },
-  "analysis": "PR title: ddl: Fixes the timeout of run `make race`\nPR url: https://github.com/pingcap/tidb/pull/3406\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: Fixes the timeout of run `make race`\nChanged files (2): ddl/ddl_db_test.go, ddl/index.go\nPatch url: https://github.com/pingcap/tidb/pull/3406.patch\nPicked test: type=unit path=ddl/ddl_db_test.go name=ddl_db_test"
+  "analysis": "PR title: ddl: Fixes the timeout of run `make race`\nPR url: https://github.com/pingcap/tidb/pull/3406\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: Fixes the timeout of run `make race`\nChanged files (2): ddl/index.go, ddl/ddl_db_test.go\nPatch url: https://github.com/pingcap/tidb/pull/3406.patch\nPicked test: type=unit path=ddl/ddl_db_test.go name=ddl_db_test"
 }

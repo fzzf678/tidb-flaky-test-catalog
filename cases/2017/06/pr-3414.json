@@ -13,29 +13,29 @@
     "name": "bootstrap_test"
   },
   "symptoms": [
-    "@@ -121,6 +121,16 @@ race: parserlib"
+    "defer store.Close() (bootstrap_test.go)"
   ],
-  "failure_signature": "@@ -121,6 +121,16 @@ race: parserlib",
+  "failure_signature": "defer store.Close() (bootstrap_test.go)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: util/testleak: make it work right.",
-  "module": "module_unknown",
-  "fix_pattern": "util/testleak: make it work right",
+  "root_cause_explanation": "The test was flaky because background resources (stores/sessions/goroutines) were not consistently cleaned up before leak detection, making failures order- and timing-dependent. This PR stabilizes it by ensuring cleanup (e.g., defer store.Close()) and refining testleak to reduce false positives from goroutines still shutting down.",
+  "module": "test_infra",
+  "fix_pattern": "Ensure proper cleanup (close stores/sessions) and make leak detection resilient to slow goroutine shutdown to avoid suite-level flakiness.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3414",
     "https://github.com/pingcap/tidb/pull/3414.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/3414.patch",
   "changed_files": [
-    "Makefile",
     "bootstrap_test.go",
     "tidb_test.go",
-    "util/testleak/fake.go",
-    "util/testleak/leaktest.go"
+    "util/testleak/leaktest.go",
+    "Makefile",
+    "util/testleak/fake.go"
   ],
   "triage": {
     "sources": [
@@ -43,9 +43,9 @@
       "explicit_flaky_signal"
     ],
     "evidence": [
-      "evidence: @@ -121,6 +121,16 @@ race: parserlib",
-      "files: Makefile, bootstrap_test.go, tidb_test.go, util/testleak/fake.go, util/testleak/leaktest.go"
+      "evidence: defer store.Close() (bootstrap_test.go)",
+      "files: bootstrap_test.go, tidb_test.go, util/testleak/leaktest.go, Makefile, util/testleak/fake.go"
     ]
   },
-  "analysis": "PR title: util/testleak: make it work right\nPR url: https://github.com/pingcap/tidb/pull/3414\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: @@ -121,6 +121,16 @@ race: parserlib\nChanged files (5): Makefile, bootstrap_test.go, tidb_test.go, util/testleak/fake.go, util/testleak/leaktest.go\nPatch url: https://github.com/pingcap/tidb/pull/3414.patch\nPicked test: type=unit path=bootstrap_test.go name=bootstrap_test"
+  "analysis": "PR title: util/testleak: make it work right\nPR url: https://github.com/pingcap/tidb/pull/3414\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: @@ -121,6 +121,16 @@ race: parserlib\nChanged files (5): bootstrap_test.go, tidb_test.go, util/testleak/leaktest.go, Makefile, util/testleak/fake.go\nPatch url: https://github.com/pingcap/tidb/pull/3414.patch\nPicked test: type=unit path=bootstrap_test.go name=bootstrap_test"
 }
