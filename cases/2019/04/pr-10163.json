@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The CMSketch TopN data structures (maps/slices/byte slices) could be shared and mutated across code paths, creating a risk of concurrent read/write races. This PR mitigates it by deep-copying the TopN index (including backing byte slices) when copying CMSketch, and by using per-test random sources when generating Zipf-distributed samples.",
   "module": "statistics",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Deep-copy mutable shared structures (map/slice/[]byte) before reuse and avoid sharing non-thread-safe RNG state across goroutines/tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10163",
     "https://github.com/pingcap/tidb/pull/10163.patch"
@@ -33,10 +33,12 @@
   "changed_files": [
     "statistics/cmsketch.go",
     "statistics/cmsketch_test.go",
-    "statistics/estimate.go",
+    "statistics/feedback.go",
     "statistics/feedback_test.go",
-    "statistics/handle/update.go",
-    "statistics/handle/update_test.go"
+    "statistics/update.go",
+    "statistics/update_test.go",
+    "statistics/estimate.go",
+    "statistics/handle/update.go"
   ],
   "triage": {
     "sources": [
@@ -46,8 +48,8 @@
     ],
     "evidence": [
       "evidence: + // Avoid potential data race | zipf := rand.NewZipf(rand.New(rand.NewSource(seed)), s, 1, imax) (statistics/cmsketch_test.go)",
-      "files: statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/estimate.go, statistics/feedback.go, statistics/feedback_test.go, statistics/handle/update.go, statistics/update.go, statistics/update_test.go"
+      "files: statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/feedback.go, statistics/feedback_test.go, statistics/update.go, statistics/update_test.go, statistics/estimate.go, statistics/handle/update.go"
     ]
   },
-  "analysis": "PR title: statistics: support building CMSketch with Top N\nPR url: https://github.com/pingcap/tidb/pull/10163\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: + // Avoid potential data race | zipf := rand.NewZipf(rand.New(rand.NewSource(seed)), s, 1, imax) (statistics/cmsketch_test.go)\nChanged files (6): statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/estimate.go, statistics/feedback_test.go, statistics/handle/update.go, statistics/handle/update_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10163.patch\nPicked test: type=unit path=statistics/cmsketch_test.go name=cmsketch_test"
+  "analysis": "PR title: statistics: support building CMSketch with Top N\nPR url: https://github.com/pingcap/tidb/pull/10163\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: + // Avoid potential data race | zipf := rand.NewZipf(rand.New(rand.NewSource(seed)), s, 1, imax) (statistics/cmsketch_test.go)\nChanged files (8): statistics/cmsketch.go, statistics/cmsketch_test.go, statistics/feedback.go, statistics/feedback_test.go, statistics/update.go, statistics/update_test.go, statistics/estimate.go, statistics/handle/update.go\nPatch url: https://github.com/pingcap/tidb/pull/10163.patch\nPicked test: type=unit path=statistics/cmsketch_test.go name=cmsketch_test"
 }

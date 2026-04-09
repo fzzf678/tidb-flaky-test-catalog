@@ -17,16 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"explain select a from t order by abs(rand())+1\").Check(testkit.Rows( (executor/sort_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a planner correctness change around column pruning/ConstItem (including adding deterministic EXPLAIN tests), without a clear flaky-test failure signature or a targeted stabilization change for the picked test, so we conservatively mark it as insufficient evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10064",
     "https://github.com/pingcap/tidb/pull/10064.patch"
@@ -34,9 +32,10 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/10064.patch",
   "changed_files": [
     "executor/sort_test.go",
+    "planner/core/rule_column_pruning.go",
+    "cmd/explaintest/r/topn_push_down.result",
     "expression/column.go",
-    "expression/column_test.go",
-    "planner/core/rule_column_pruning.go"
+    "expression/column_test.go"
   ],
   "triage": {
     "sources": [
@@ -45,8 +44,8 @@
     ],
     "evidence": [
       "evidence: tk.MustQuery(\"explain select a from t order by abs(rand())+1\").Check(testkit.Rows( (executor/sort_test.go)",
-      "files: cmd/explaintest/r/topn_push_down.result, executor/sort_test.go, expression/column.go, expression/column_test.go, planner/core/rule_column_pruning.go"
+      "files: executor/sort_test.go, planner/core/rule_column_pruning.go, cmd/explaintest/r/topn_push_down.result, expression/column.go, expression/column_test.go"
     ]
   },
-  "analysis": "PR title: planner: keep unfoldable exprs when pruning columns for ORDER BY items\nPR url: https://github.com/pingcap/tidb/pull/10064\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"explain select a from t order by abs(rand())+1\").Check(testkit.Rows( (executor/sort_test.go)\nChanged files (4): executor/sort_test.go, expression/column.go, expression/column_test.go, planner/core/rule_column_pruning.go\nPatch url: https://github.com/pingcap/tidb/pull/10064.patch\nPicked test: type=unit path=executor/sort_test.go name=sort_test"
+  "analysis": "PR title: planner: keep unfoldable exprs when pruning columns for ORDER BY items\nPR url: https://github.com/pingcap/tidb/pull/10064\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"explain select a from t order by abs(rand())+1\").Check(testkit.Rows( (executor/sort_test.go)\nChanged files (5): executor/sort_test.go, planner/core/rule_column_pruning.go, cmd/explaintest/r/topn_push_down.result, expression/column.go, expression/column_test.go\nPatch url: https://github.com/pingcap/tidb/pull/10064.patch\nPicked test: type=unit path=executor/sort_test.go name=sort_test"
 }

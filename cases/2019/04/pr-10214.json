@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: support fast sample for fast analyze.",
+  "root_cause_explanation": "Fast analyze updated `collectors[*].Samples` via append/growth and element writes, which can race in concurrent fast-sample execution. This PR fixes the data race by ensuring sample slots are preallocated and then assigning `SampleItem{Ordinal, Value}` by index (allocating nil entries) instead of appending.",
   "module": "executor",
-  "fix_pattern": "executor: support fast sample for fast analyze",
+  "fix_pattern": "Preallocate shared slices and assign by index; avoid concurrent append/re-slice when multiple goroutines update collectors.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10214",
     "https://github.com/pingcap/tidb/pull/10214.patch"
@@ -32,11 +32,63 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/10214.patch",
   "changed_files": [
     "executor/analyze.go",
-    "executor/analyze_test.go",
     "executor/builder.go",
     "planner/core/common_plans.go",
     "planner/core/planbuilder.go",
-    "store/mockstore/mocktikv/rpc.go"
+    "sessionctx/variable/session.go",
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/variable/tidb_vars.go",
+    "sessionctx/variable/varsutil_test.go",
+    "store/tikv/region_cache.go",
+    "store/tikv/client.go",
+    "store/tikv/tikvrpc/tikvrpc.go",
+    "go.mod",
+    "go.sum",
+    "executor/analyze_test.go",
+    ".travis.yml",
+    "README.md",
+    "cmd/explaintest/r/access_path_selection.result",
+    "cmd/explaintest/r/explain_complex.result",
+    "cmd/explaintest/r/explain_complex_stats.result",
+    "cmd/explaintest/r/explain_easy.result",
+    "cmd/explaintest/r/explain_easy_stats.result",
+    "cmd/explaintest/r/index_join.result",
+    "cmd/explaintest/r/topn_push_down.result",
+    "cmd/explaintest/r/tpch.result",
+    "cmd/explaintest/r/window_function.result",
+    "distsql/distsql.go",
+    "distsql/distsql_test.go",
+    "distsql/request_builder.go",
+    "distsql/select_result.go",
+    "executor/chunk_size_control_test.go",
+    "executor/distsql.go",
+    "executor/executor_required_rows_test.go",
+    "executor/executor_test.go",
+    "executor/set_test.go",
+    "executor/show_test.go",
+    "executor/simple.go",
+    "executor/simple_test.go",
+    "executor/table_reader.go",
+    "expression/builtin_json.go",
+    "expression/builtin_json_test.go",
+    "expression/builtin_time.go",
+    "expression/integration_test.go",
+    "kv/kv.go",
+    "meta/meta.go",
+    "meta/meta_test.go",
+    "planner/core/find_best_task.go",
+    "server/http_handler.go",
+    "server/http_handler_test.go",
+    "session/bootstrap.go",
+    "sessionctx/variable/varsutil.go",
+    "statistics/builder.go",
+    "store/mockstore/mocktikv/rpc.go",
+    "store/tikv/coprocessor.go",
+    "types/time.go",
+    "types/time_test.go",
+    "util/kvencoder/kv_encoder.go",
+    "util/testleak/leaktest.go",
+    "statistics/sample.go"
   ],
   "triage": {
     "sources": [
@@ -45,8 +97,8 @@
     ],
     "evidence": [
       "evidence: fix data race",
-      "files: .travis.yml, README.md, cmd/explaintest/r/access_path_selection.result, cmd/explaintest/r/explain_complex.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/explain_easy_stats.result, cmd/explaintest/r/index_join.result, cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/tpch.result, cmd/explaintest/r/window_function.result, distsql/distsql.go, distsql/distsql_test.go, distsql/request_builder.go, distsql/select_result.go, executor/analyze.go, executor/analyze_test.go, executor/builder.go, executor/chunk_size_control_test.go, executor/distsql.go, executor/executor_required_rows_test.go, executor/executor_test.go, executor/set_test.go, executor/show_test.go, executor/simple.go, executor/simple_test.go, executor/table_reader.go, expression/builtin_json.go, expression/builtin_json_test.go, expression/builtin_time.go, expression/integration_test.go, go.mod, go.sum, kv/kv.go, meta/meta.go, meta/meta_test.go, planner/core/common_plans.go, planner/core/find_best_task.go, planner/core/planbuilder.go, server/http_handler.go, server/http_handler_test.go, session/bootstrap.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil.go, sessionctx/variable/varsutil_test.go, statistics/builder.go, statistics/sample.go, store/mockstore/mocktikv/rpc.go, store/tikv/client.go, store/tikv/coprocessor.go, store/tikv/region_cache.go, store/tikv/tikvrpc/tikvrpc.go, types/time.go, types/time_test.go, util/kvencoder/kv_encoder.go, util/testleak/leaktest.go"
+      "files: executor/analyze.go, executor/builder.go, planner/core/common_plans.go, planner/core/planbuilder.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, store/tikv/region_cache.go, store/tikv/client.go, store/tikv/tikvrpc/tikvrpc.go, go.mod, go.sum, executor/analyze_test.go, .travis.yml, README.md, cmd/explaintest/r/access_path_selection.result, cmd/explaintest/r/explain_complex.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/explain_easy_stats.result, cmd/explaintest/r/index_join.result, cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/tpch.result, cmd/explaintest/r/window_function.result, distsql/distsql.go, distsql/distsql_test.go, distsql/request_builder.go, distsql/select_result.go, executor/chunk_size_control_test.go, executor/distsql.go, executor/executor_required_rows_test.go, executor/executor_test.go, executor/set_test.go, executor/show_test.go, executor/simple.go, executor/simple_test.go, executor/table_reader.go, expression/builtin_json.go, expression/builtin_json_test.go, expression/builtin_time.go, expression/integration_test.go, kv/kv.go, meta/meta.go, meta/meta_test.go, planner/core/find_best_task.go, server/http_handler.go, server/http_handler_test.go, session/bootstrap.go, sessionctx/variable/varsutil.go, statistics/builder.go, store/mockstore/mocktikv/rpc.go, store/tikv/coprocessor.go, types/time.go, types/time_test.go, util/kvencoder/kv_encoder.go, util/testleak/leaktest.go, statistics/sample.go"
     ]
   },
-  "analysis": "PR title: executor: support fast sample for fast analyze\nPR url: https://github.com/pingcap/tidb/pull/10214\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (6): executor/analyze.go, executor/analyze_test.go, executor/builder.go, planner/core/common_plans.go, planner/core/planbuilder.go, store/mockstore/mocktikv/rpc.go\nPatch url: https://github.com/pingcap/tidb/pull/10214.patch\nPicked test: type=unit path=distsql/distsql_test.go name=distsql_test"
+  "analysis": "PR title: executor: support fast sample for fast analyze\nPR url: https://github.com/pingcap/tidb/pull/10214\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race\nChanged files (58): executor/analyze.go, executor/builder.go, planner/core/common_plans.go, planner/core/planbuilder.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/variable/tidb_vars.go, sessionctx/variable/varsutil_test.go, store/tikv/region_cache.go, store/tikv/client.go, store/tikv/tikvrpc/tikvrpc.go, go.mod, go.sum, executor/analyze_test.go, .travis.yml, README.md, cmd/explaintest/r/access_path_selection.result, cmd/explaintest/r/explain_complex.result, cmd/explaintest/r/explain_complex_stats.result, cmd/explaintest/r/explain_easy.result, cmd/explaintest/r/explain_easy_stats.result, cmd/explaintest/r/index_join.result, cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/tpch.result, cmd/explaintest/r/window_function.result, distsql/distsql.go, distsql/distsql_test.go, distsql/request_builder.go, distsql/select_result.go, executor/chunk_size_control_test.go, executor/distsql.go, executor/executor_required_rows_test.go, executor/executor_test.go, executor/set_test.go, executor/show_test.go, executor/simple.go, executor/simple_test.go, executor/table_reader.go, expression/builtin_json.go, expression/builtin_json_test.go, expression/builtin_time.go, expression/integration_test.go, kv/kv.go, meta/meta.go, meta/meta_test.go, planner/core/find_best_task.go, server/http_handler.go, server/http_handler_test.go, session/bootstrap.go, sessionctx/variable/varsutil.go, statistics/builder.go, store/mockstore/mocktikv/rpc.go, store/tikv/coprocessor.go, types/time.go, types/time_test.go, util/kvencoder/kv_encoder.go, util/testleak/leaktest.go, statistics/sample.go\nPatch url: https://github.com/pingcap/tidb/pull/10214.patch\nPicked test: type=unit path=distsql/distsql_test.go name=distsql_test"
 }

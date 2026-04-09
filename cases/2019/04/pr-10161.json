@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(`SELECT * FROM t1 order by f1;`).Check(testkit.Rows(\"1 0\", \"2 2\")) (executor/write_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is a correctness fix for strict SQL mode / bad null handling and the triage snippet is not a flaky failure signature or a targeted stabilization change for the picked test, so we conservatively mark it as insufficient evidence.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10161",
     "https://github.com/pingcap/tidb/pull/10161.patch"
@@ -34,9 +33,9 @@
   "changed_files": [
     "executor/executor.go",
     "executor/executor_test.go",
-    "executor/insert_common.go",
     "executor/write_test.go",
-    "table/column.go"
+    "table/column.go",
+    "executor/insert_common.go"
   ],
   "triage": {
     "sources": [
@@ -45,8 +44,8 @@
     ],
     "evidence": [
       "evidence: tk.MustQuery(`SELECT * FROM t1 order by f1;`).Check(testkit.Rows(\"1 0\", \"2 2\")) (executor/write_test.go)",
-      "files: executor/executor.go, executor/executor_test.go, executor/insert_common.go, executor/write_test.go, table/column.go"
+      "files: executor/executor.go, executor/executor_test.go, executor/write_test.go, table/column.go, executor/insert_common.go"
     ]
   },
-  "analysis": "PR title: executor: fix bad null error handling for insert statement when disabling the strict SQL mode\nPR url: https://github.com/pingcap/tidb/pull/10161\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(`SELECT * FROM t1 order by f1;`).Check(testkit.Rows(\"1 0\", \"2 2\")) (executor/write_test.go)\nChanged files (5): executor/executor.go, executor/executor_test.go, executor/insert_common.go, executor/write_test.go, table/column.go\nPatch url: https://github.com/pingcap/tidb/pull/10161.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
+  "analysis": "PR title: executor: fix bad null error handling for insert statement when disabling the strict SQL mode\nPR url: https://github.com/pingcap/tidb/pull/10161\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(`SELECT * FROM t1 order by f1;`).Check(testkit.Rows(\"1 0\", \"2 2\")) (executor/write_test.go)\nChanged files (5): executor/executor.go, executor/executor_test.go, executor/write_test.go, table/column.go, executor/insert_common.go\nPatch url: https://github.com/pingcap/tidb/pull/10161.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
 }

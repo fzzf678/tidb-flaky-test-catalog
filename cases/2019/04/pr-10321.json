@@ -17,16 +17,14 @@
   ],
   "failure_signature": "bindinfo: fix data race of parser in global handle",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "shared_state_pollution"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code",
-    "global_variable_mutation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: bindinfo: fix data race of parser in global handle.",
-  "module": "parser",
-  "fix_pattern": "bindinfo: fix data race of parser in global handle",
+  "root_cause_explanation": "BindHandle previously reused a shared session parser and updated the binding cache without fully serializing parser usage, which can trigger data races when multiple goroutines update bindings. This PR fixes it by giving BindHandle its own `parser.Parser` instance and locking around cache updates and parsing.",
+  "module": "bindinfo",
+  "fix_pattern": "Avoid sharing non-thread-safe parser instances across goroutines; use per-handle parsers and mutex-protected cache updates.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/10321",
     "https://github.com/pingcap/tidb/pull/10321.patch"
