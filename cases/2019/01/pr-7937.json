@@ -17,43 +17,48 @@
   ],
   "failure_signature": "fix data race in gofail test",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "global_variable_mutation",
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: add restore deleted table.",
-  "module": "ddl",
-  "fix_pattern": "ddl: add restore deleted table",
+  "root_cause_explanation": "A package-level failpoint/test flag (`kv.MockCommitErrorEnable`) was read/written concurrently in gofail code paths, causing a DATA RACE. The fix makes the flag thread-safe by switching it to an atomic int64 and using atomic load/store when enabling/disabling the failpoint.",
+  "module": "kv",
+  "fix_pattern": "Make shared failpoint/test flags thread-safe (atomic load/store for package-level state).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/7937",
     "https://github.com/pingcap/tidb/pull/7937.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/7937.patch",
   "changed_files": [
+    "ddl/db_test.go",
     "ddl/ddl.go",
     "ddl/ddl_api.go",
     "ddl/ddl_worker.go",
     "ddl/delete_range.go",
     "ddl/mock.go",
-    "ddl/serial_test.go",
     "ddl/table.go",
+    "ddl/table_test.go",
     "ddl/util/util.go",
     "domain/domain.go",
+    "executor/admin.go",
     "executor/builder.go",
-    "executor/ddl.go",
-    "executor/ddl_test.go",
-    "executor/set.go",
-    "go.mod",
-    "go.sum",
-    "infoschema/builder.go",
-    "kv/txn.go",
     "meta/meta.go",
     "planner/core/common_plans.go",
     "planner/core/planbuilder.go",
-    "planner/core/preprocess.go",
+    "util/admin/admin.go",
+    "executor/set.go",
+    "go.mod",
+    "go.sum",
+    "ddl/serial_test.go",
     "store/tikv/txn.go",
-    "util/gcutil/gcutil.go"
+    "kv/txn.go",
+    "util/gcutil/gcutil.go",
+    "executor/ddl.go",
+    "planner/core/preprocess.go",
+    "infoschema/builder.go",
+    "executor/ddl_test.go"
   ],
   "triage": {
     "sources": [
@@ -62,8 +67,8 @@
     ],
     "evidence": [
       "evidence: fix data race in gofail test",
-      "files: ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/mock.go, ddl/serial_test.go, ddl/table.go, ddl/table_test.go, ddl/util/util.go, domain/domain.go, executor/admin.go, executor/builder.go, executor/ddl.go, executor/ddl_test.go, executor/set.go, go.mod, go.sum, infoschema/builder.go, kv/txn.go, meta/meta.go, planner/core/common_plans.go, planner/core/planbuilder.go, planner/core/preprocess.go, store/tikv/txn.go, util/admin/admin.go, util/gcutil/gcutil.go"
+      "files: ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/mock.go, ddl/table.go, ddl/table_test.go, ddl/util/util.go, domain/domain.go, executor/admin.go, executor/builder.go, meta/meta.go, planner/core/common_plans.go, planner/core/planbuilder.go, util/admin/admin.go, executor/set.go, go.mod, go.sum, ddl/serial_test.go, store/tikv/txn.go, kv/txn.go, util/gcutil/gcutil.go, executor/ddl.go, planner/core/preprocess.go, infoschema/builder.go, executor/ddl_test.go"
     ]
   },
-  "analysis": "PR title: ddl: add restore deleted table\nPR url: https://github.com/pingcap/tidb/pull/7937\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race in gofail test\nChanged files (23): ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/mock.go, ddl/serial_test.go, ddl/table.go, ddl/util/util.go, domain/domain.go, executor/builder.go, executor/ddl.go, executor/ddl_test.go, executor/set.go, go.mod, go.sum, infoschema/builder.go, kv/txn.go, meta/meta.go, planner/core/common_plans.go, planner/core/planbuilder.go, planner/core/preprocess.go, store/tikv/txn.go, util/gcutil/gcutil.go\nPatch url: https://github.com/pingcap/tidb/pull/7937.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+  "analysis": "PR title: ddl: add restore deleted table\nPR url: https://github.com/pingcap/tidb/pull/7937\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race in gofail test\nChanged files (27): ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/mock.go, ddl/table.go, ddl/table_test.go, ddl/util/util.go, domain/domain.go, executor/admin.go, executor/builder.go, meta/meta.go, planner/core/common_plans.go, planner/core/planbuilder.go, util/admin/admin.go, executor/set.go, go.mod, go.sum, ddl/serial_test.go, store/tikv/txn.go, kv/txn.go, util/gcutil/gcutil.go, executor/ddl.go, planner/core/preprocess.go, infoschema/builder.go, executor/ddl_test.go\nPatch url: https://github.com/pingcap/tidb/pull/7937.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
 }

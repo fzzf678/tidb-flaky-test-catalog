@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sql: \"select a, b as z from t order by (sum(z) over())\", (planner/core/logical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8630",
     "https://github.com/pingcap/tidb/pull/8630.patch"
@@ -35,7 +34,6 @@
     "expression/aggregation/window_func.go",
     "go.mod",
     "go.sum",
-    "planner/core/errors.go",
     "planner/core/exhaust_physical_plans.go",
     "planner/core/explain.go",
     "planner/core/expression_rewriter.go",
@@ -46,10 +44,11 @@
     "planner/core/physical_plans.go",
     "planner/core/planbuilder.go",
     "planner/core/rule_column_pruning.go",
-    "planner/core/rule_eliminate_projection.go",
-    "planner/core/rule_predicate_push_down.go",
     "planner/core/stats.go",
-    "planner/core/stringer.go"
+    "planner/core/stringer.go",
+    "planner/core/errors.go",
+    "planner/core/rule_eliminate_projection.go",
+    "planner/core/rule_predicate_push_down.go"
   ],
   "triage": {
     "sources": [
@@ -58,8 +57,8 @@
     ],
     "evidence": [
       "evidence: sql: \"select a, b as z from t order by (sum(z) over())\", (planner/core/logical_plan_test.go)",
-      "files: expression/aggregation/window_func.go, go.mod, go.sum, planner/core/errors.go, planner/core/exhaust_physical_plans.go, planner/core/explain.go, planner/core/expression_rewriter.go, planner/core/initialize.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/physical_plans.go, planner/core/planbuilder.go, planner/core/rule_column_pruning.go, planner/core/rule_eliminate_projection.go, planner/core/rule_predicate_push_down.go, planner/core/stats.go, planner/core/stringer.go"
+      "files: expression/aggregation/window_func.go, go.mod, go.sum, planner/core/exhaust_physical_plans.go, planner/core/explain.go, planner/core/expression_rewriter.go, planner/core/initialize.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/physical_plans.go, planner/core/planbuilder.go, planner/core/rule_column_pruning.go, planner/core/stats.go, planner/core/stringer.go, planner/core/errors.go, planner/core/rule_eliminate_projection.go, planner/core/rule_predicate_push_down.go"
     ]
   },
-  "analysis": "PR title: planner: support window function\nPR url: https://github.com/pingcap/tidb/pull/8630\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select a, b as z from t order by (sum(z) over())\", (planner/core/logical_plan_test.go)\nChanged files (18): expression/aggregation/window_func.go, go.mod, go.sum, planner/core/errors.go, planner/core/exhaust_physical_plans.go, planner/core/explain.go, planner/core/expression_rewriter.go, planner/core/initialize.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/physical_plans.go, planner/core/planbuilder.go, planner/core/rule_column_pruning.go, planner/core/rule_eliminate_projection.go, planner/core/rule_predicate_push_down.go, planner/core/stats.go, planner/core/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/8630.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
+  "analysis": "PR title: planner: support window function\nPR url: https://github.com/pingcap/tidb/pull/8630\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select a, b as z from t order by (sum(z) over())\", (planner/core/logical_plan_test.go)\nChanged files (18): expression/aggregation/window_func.go, go.mod, go.sum, planner/core/exhaust_physical_plans.go, planner/core/explain.go, planner/core/expression_rewriter.go, planner/core/initialize.go, planner/core/logical_plan_builder.go, planner/core/logical_plan_test.go, planner/core/logical_plans.go, planner/core/physical_plans.go, planner/core/planbuilder.go, planner/core/rule_column_pruning.go, planner/core/stats.go, planner/core/stringer.go, planner/core/errors.go, planner/core/rule_eliminate_projection.go, planner/core/rule_predicate_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/8630.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
 }

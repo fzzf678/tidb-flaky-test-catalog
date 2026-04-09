@@ -20,9 +20,9 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it compared results without enforcing a deterministic order. Collection/iteration order is not guaranteed in all cases, so assertions can be nondeterministic. The fix stabilizes the test by sorting the result slice (e.g., `sort.Strings`) before assertions.",
   "module": "expression",
   "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
   "evidence_links": [
@@ -32,7 +32,9 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/8640.patch",
   "changed_files": [
     "expression/constant_test.go",
-    "expression/constraint_propagation.go"
+    "expression/constraint_propagation.go",
+    "go.mod",
+    "go.sum"
   ],
   "triage": {
     "sources": [
@@ -44,5 +46,5 @@
       "files: expression/constant_test.go, expression/constraint_propagation.go, go.mod, go.sum"
     ]
   },
-  "analysis": "PR title: expression: constraint propagate for '>' and monotonous function\nPR url: https://github.com/pingcap/tidb/pull/8640\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Strings(result) (expression/constant_test.go)\nChanged files (2): expression/constant_test.go, expression/constraint_propagation.go\nPatch url: https://github.com/pingcap/tidb/pull/8640.patch\nPicked test: type=unit path=expression/constant_test.go name=constant_test"
+  "analysis": "PR title: expression: constraint propagate for '>' and monotonous function\nPR url: https://github.com/pingcap/tidb/pull/8640\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Strings(result) (expression/constant_test.go)\nChanged files (4): expression/constant_test.go, expression/constraint_propagation.go, go.mod, go.sum\nPatch url: https://github.com/pingcap/tidb/pull/8640.patch\nPicked test: type=unit path=expression/constant_test.go name=constant_test"
 }

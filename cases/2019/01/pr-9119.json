@@ -17,15 +17,15 @@
   ],
   "failure_signature": "+ // potencial data race in unit test since `CommitMaxBackoff` will be updated",
   "root_cause_categories": [
-    "external_dependency",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "real_tikv_dependency"
+    "global_variable_mutation",
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: store/tikv: use new backoffer for async commit batches.",
+  "root_cause_explanation": "A package-level variable (`CommitMaxBackoff`) was updated by test suites while an async commit goroutine read it to construct a backoffer, causing a potential DATA RACE. The fix avoids concurrent access by creating/capturing the backoffer outside the goroutine before starting the async work.",
   "module": "kv",
-  "fix_pattern": "store/tikv: use new backoffer for async commit batches",
+  "fix_pattern": "Capture global config/state outside goroutines to avoid data races (avoid concurrent reads of mutable package-level variables).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9119",
     "https://github.com/pingcap/tidb/pull/9119.patch"
