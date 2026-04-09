@@ -17,30 +17,31 @@
   ],
   "failure_signature": "// The test suite takes too long under the race detector.",
   "root_cause_categories": [
-    "schema_change_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: speed up add index by split handle range from pd region.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: The PR title/body and .patch are primarily about DDL performance/correctness changes. The provided symptom (race-detector runtime note) does not clearly map to a targeted flaky-test stabilization fix, so we avoid guessing the root cause category.",
   "module": "ddl",
-  "fix_pattern": "ddl: speed up add index by split handle range from pd region.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5964",
     "https://github.com/pingcap/tidb/pull/5964.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/5964.patch",
   "changed_files": [
+    "store/tikv/coprocessor.go",
+    "store/tikv/coprocessor_test.go",
     "ddl/ddl.go",
-    "ddl/ddl_db_test.go",
-    "ddl/ddl_worker.go",
-    "ddl/ddl_worker_test.go",
     "ddl/index.go",
+    "util/arena/arena.go",
     "ddl/reorg.go",
+    "ddl/ddl_db_test.go",
     "ddl/reorg_test.go",
+    "ddl/ddl_worker_test.go",
     "store/tikv/2pc_test.go",
     "store/tikv/client_test.go",
-    "store/tikv/coprocessor_test.go",
     "store/tikv/isolation_test.go",
     "store/tikv/lock_test.go",
     "store/tikv/rawkv_test.go",
@@ -53,7 +54,8 @@
     "store/tikv/sql_fail_test.go",
     "store/tikv/store_test.go",
     "store/tikv/ticlient_test.go",
-    "store/tikv/tikv_test.go"
+    "store/tikv/tikv_test.go",
+    "ddl/ddl_worker.go"
   ],
   "triage": {
     "sources": [
@@ -62,8 +64,8 @@
     ],
     "evidence": [
       "evidence: // The test suite takes too long under the race detector.",
-      "files: ddl/ddl.go, ddl/ddl_db_test.go, ddl/ddl_worker.go, ddl/ddl_worker_test.go, ddl/index.go, ddl/reorg.go, ddl/reorg_test.go, store/tikv/2pc_test.go, store/tikv/client_test.go, store/tikv/coprocessor.go, store/tikv/coprocessor_test.go, store/tikv/isolation_test.go, store/tikv/lock_test.go, store/tikv/rawkv_test.go, store/tikv/region_cache_test.go, store/tikv/safepoint_test.go, store/tikv/scan_mock_test.go, store/tikv/scan_test.go, store/tikv/snapshot_test.go, store/tikv/split_test.go, store/tikv/sql_fail_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, store/tikv/tikv_test.go, util/arena/arena.go"
+      "files: store/tikv/coprocessor.go, store/tikv/coprocessor_test.go, ddl/ddl.go, ddl/index.go, util/arena/arena.go, ddl/reorg.go, ddl/ddl_db_test.go, ddl/reorg_test.go, ddl/ddl_worker_test.go, store/tikv/2pc_test.go, store/tikv/client_test.go, store/tikv/isolation_test.go, store/tikv/lock_test.go, store/tikv/rawkv_test.go, store/tikv/region_cache_test.go, store/tikv/safepoint_test.go, store/tikv/scan_mock_test.go, store/tikv/scan_test.go, store/tikv/snapshot_test.go, store/tikv/split_test.go, store/tikv/sql_fail_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, store/tikv/tikv_test.go, ddl/ddl_worker.go"
     ]
   },
-  "analysis": "PR title: ddl: speed up add index by split handle range from pd region.\nPR url: https://github.com/pingcap/tidb/pull/5964\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // The test suite takes too long under the race detector.\nChanged files (23): ddl/ddl.go, ddl/ddl_db_test.go, ddl/ddl_worker.go, ddl/ddl_worker_test.go, ddl/index.go, ddl/reorg.go, ddl/reorg_test.go, store/tikv/2pc_test.go, store/tikv/client_test.go, store/tikv/coprocessor_test.go, store/tikv/isolation_test.go, store/tikv/lock_test.go, store/tikv/rawkv_test.go, store/tikv/region_cache_test.go, store/tikv/safepoint_test.go, store/tikv/scan_mock_test.go, store/tikv/scan_test.go, store/tikv/snapshot_test.go, store/tikv/split_test.go, store/tikv/sql_fail_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, store/tikv/tikv_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5964.patch\nPicked test: type=unit path=ddl/ddl_db_test.go name=ddl_db_test"
+  "analysis": "PR title: ddl: speed up add index by split handle range from pd region.\nPR url: https://github.com/pingcap/tidb/pull/5964\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // The test suite takes too long under the race detector.\nChanged files (25): store/tikv/coprocessor.go, store/tikv/coprocessor_test.go, ddl/ddl.go, ddl/index.go, util/arena/arena.go, ddl/reorg.go, ddl/ddl_db_test.go, ddl/reorg_test.go, ddl/ddl_worker_test.go, store/tikv/2pc_test.go, store/tikv/client_test.go, store/tikv/isolation_test.go, store/tikv/lock_test.go, store/tikv/rawkv_test.go, store/tikv/region_cache_test.go, store/tikv/safepoint_test.go, store/tikv/scan_mock_test.go, store/tikv/scan_test.go, store/tikv/snapshot_test.go, store/tikv/split_test.go, store/tikv/sql_fail_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, store/tikv/tikv_test.go, ddl/ddl_worker.go\nPatch url: https://github.com/pingcap/tidb/pull/5964.patch\nPicked test: type=unit path=ddl/ddl_db_test.go name=ddl_db_test"
 }

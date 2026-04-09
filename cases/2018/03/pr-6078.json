@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"explain select /*+ TIDB_SMJ(t2) */ * from t1 left outer join t2 on t1.a=t2.a and t1.a!=3 order by t1.a;\").Check(testkit.Rows( (executor/join_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is mainly an executor refactor/bugfix (merge join behavior/order). The case does not provide a flaky-test failure signature or a targeted stabilization change, so we avoid guessing a nondeterministic-order root cause category.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6078",
     "https://github.com/pingcap/tidb/pull/6078.patch"
@@ -33,10 +32,10 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/6078.patch",
   "changed_files": [
     "executor/builder.go",
-    "executor/executor.go",
-    "executor/join_test.go",
     "executor/merge_join.go",
-    "executor/sort.go"
+    "executor/executor.go",
+    "executor/sort.go",
+    "executor/join_test.go"
   ],
   "triage": {
     "sources": [
@@ -45,8 +44,8 @@
     ],
     "evidence": [
       "evidence: tk.MustQuery(\"explain select /*+ TIDB_SMJ(t2) */ * from t1 left outer join t2 on t1.a=t2.a and t1.a!=3 order by t1.a;\").Check(testkit.Rows( (executor/join_test.go)",
-      "files: executor/builder.go, executor/executor.go, executor/join_test.go, executor/merge_join.go, executor/sort.go"
+      "files: executor/builder.go, executor/merge_join.go, executor/executor.go, executor/sort.go, executor/join_test.go"
     ]
   },
-  "analysis": "PR title: executor: refactor merge join\nPR url: https://github.com/pingcap/tidb/pull/6078\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"explain select /*+ TIDB_SMJ(t2) */ * from t1 left outer join t2 on t1.a=t2.a and t1.a!=3 order by t1.a;\").Check(testkit.Rows( (executor/join_test.go)\nChanged files (5): executor/builder.go, executor/executor.go, executor/join_test.go, executor/merge_join.go, executor/sort.go\nPatch url: https://github.com/pingcap/tidb/pull/6078.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+  "analysis": "PR title: executor: refactor merge join\nPR url: https://github.com/pingcap/tidb/pull/6078\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"explain select /*+ TIDB_SMJ(t2) */ * from t1 left outer join t2 on t1.a=t2.a and t1.a!=3 order by t1.a;\").Check(testkit.Rows( (executor/join_test.go)\nChanged files (5): executor/builder.go, executor/merge_join.go, executor/executor.go, executor/sort.go, executor/join_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6078.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
 }

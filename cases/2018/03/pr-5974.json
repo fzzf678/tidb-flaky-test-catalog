@@ -17,42 +17,41 @@
   ],
   "failure_signature": "// We copy it before writing to avoid race.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: stats: add average column size for the histogram.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Although the patch context contains a comment mentioning \"avoid race\", this PR is primarily a statistics feature/correctness change (avg column size for histogram) and the case lacks a concrete flaky-test failure signature and targeted stabilization rationale. We avoid guessing a data-race root cause category from a context comment.",
   "module": "statistics",
-  "fix_pattern": "stats: add average column size for the histogram",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5974",
     "https://github.com/pingcap/tidb/pull/5974.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/5974.patch",
   "changed_files": [
+    "bootstrap.go",
     "executor/aggregate_test.go",
     "executor/show_stats.go",
     "plan/planbuilder.go",
     "server/statistics_handler_test.go",
-    "session/bootstrap.go",
-    "session/session.go",
+    "session.go",
     "statistics/boostrap.go",
     "statistics/builder.go",
-    "statistics/ddl.go",
-    "statistics/ddl_test.go",
     "statistics/dump.go",
     "statistics/handle.go",
     "statistics/handle_test.go",
     "statistics/histogram.go",
     "statistics/sample.go",
-    "statistics/sample_test.go",
     "statistics/scalar_test.go",
     "statistics/selectivity_test.go",
     "statistics/statistics_test.go",
     "statistics/table.go",
-    "statistics/update_test.go",
-    "util/chunk/chunk.go"
+    "util/arena/arena.go",
+    "util/chunk/chunk.go",
+    "statistics/ddl.go",
+    "statistics/ddl_test.go"
   ],
   "triage": {
     "sources": [
@@ -61,8 +60,8 @@
     ],
     "evidence": [
       "evidence: // We copy it before writing to avoid race.",
-      "files: bootstrap.go, executor/aggregate_test.go, executor/show_stats.go, plan/planbuilder.go, server/statistics_handler_test.go, session.go, statistics/boostrap.go, statistics/builder.go, statistics/ddl.go, statistics/ddl_test.go, statistics/dump.go, statistics/handle.go, statistics/handle_test.go, statistics/histogram.go, statistics/sample.go, statistics/scalar_test.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, util/arena/arena.go, util/chunk/chunk.go"
+      "files: bootstrap.go, executor/aggregate_test.go, executor/show_stats.go, plan/planbuilder.go, server/statistics_handler_test.go, session.go, statistics/boostrap.go, statistics/builder.go, statistics/dump.go, statistics/handle.go, statistics/handle_test.go, statistics/histogram.go, statistics/sample.go, statistics/scalar_test.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, util/arena/arena.go, util/chunk/chunk.go, statistics/ddl.go, statistics/ddl_test.go"
     ]
   },
-  "analysis": "PR title: stats: add average column size for the histogram\nPR url: https://github.com/pingcap/tidb/pull/5974\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // We copy it before writing to avoid race.\nChanged files (22): executor/aggregate_test.go, executor/show_stats.go, plan/planbuilder.go, server/statistics_handler_test.go, session/bootstrap.go, session/session.go, statistics/boostrap.go, statistics/builder.go, statistics/ddl.go, statistics/ddl_test.go, statistics/dump.go, statistics/handle.go, statistics/handle_test.go, statistics/histogram.go, statistics/sample.go, statistics/sample_test.go, statistics/scalar_test.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, statistics/update_test.go, util/chunk/chunk.go\nPatch url: https://github.com/pingcap/tidb/pull/5974.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+  "analysis": "PR title: stats: add average column size for the histogram\nPR url: https://github.com/pingcap/tidb/pull/5974\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: // We copy it before writing to avoid race.\nChanged files (21): bootstrap.go, executor/aggregate_test.go, executor/show_stats.go, plan/planbuilder.go, server/statistics_handler_test.go, session.go, statistics/boostrap.go, statistics/builder.go, statistics/dump.go, statistics/handle.go, statistics/handle_test.go, statistics/histogram.go, statistics/sample.go, statistics/scalar_test.go, statistics/selectivity_test.go, statistics/statistics_test.go, statistics/table.go, util/arena/arena.go, util/chunk/chunk.go, statistics/ddl.go, statistics/ddl_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5974.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
 }
