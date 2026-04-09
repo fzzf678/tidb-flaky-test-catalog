@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race in testChunkSizeControlSuite.",
+  "root_cause_explanation": "The test client kept per-region delays in a shared map that was read by async request goroutines while being updated by the test goroutine, causing a map DATA RACE. The fix adds an RWMutex and wraps map access via GetDelay/SetDelay helpers.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race in testChunkSizeControlSuite",
+  "fix_pattern": "Add RWMutex around shared map state accessed by async goroutines (encapsulate reads/writes via locked helpers).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9676",
     "https://github.com/pingcap/tidb/pull/9676.patch"

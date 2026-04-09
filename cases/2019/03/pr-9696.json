@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: statistics: stabilize sort order when computing correlation.",
+  "root_cause_explanation": "Correlation/statistics computation depended on deterministic ordering. The fix switches sorting of sample items to a stable sort (sort.Stable) and updates the unit test to sort SHOW output before asserting, making the observed order deterministic.",
   "module": "statistics",
-  "fix_pattern": "statistics: stabilize sort order when computing correlation",
+  "fix_pattern": "Use stable sorting (sort.Stable) and sort query results before assertions to enforce deterministic order.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9696",
     "https://github.com/pingcap/tidb/pull/9696.patch"

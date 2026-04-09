@@ -17,14 +17,14 @@
   ],
   "failure_signature": "-// It's used for fixing data race in tests.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: config, server: Add http status host.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "server",
-  "fix_pattern": "config, server: Add http status host",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9814",
     "https://github.com/pingcap/tidb/pull/9814.patch"
@@ -32,9 +32,42 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/9814.patch",
   "changed_files": [
     "config/config.go",
-    "config/config.toml.example",
     "server/http_status.go",
-    "tidb-server/main.go"
+    "tidb-server/main.go",
+    "util/logutil/log_test.go",
+    "ddl/failtest/fail_db_test.go",
+    "domain/domain.go",
+    "domain/domain_test.go",
+    "session/session_test.go",
+    "ddl/callback_test.go",
+    "ddl/column.go",
+    "ddl/db_change_test.go",
+    "ddl/ddl.go",
+    "ddl/ddl_api.go",
+    "ddl/ddl_test.go",
+    "ddl/ddl_worker.go",
+    "ddl/delete_range.go",
+    "ddl/index.go",
+    "ddl/reorg.go",
+    "ddl/rollingback.go",
+    "ddl/session_pool.go",
+    "ddl/syncer.go",
+    "ddl/table.go",
+    "util/logutil/log.go",
+    "cmd/explaintest/r/subquery.result",
+    "cmd/explaintest/t/subquery.test",
+    "planner/core/logical_plans.go",
+    "planner/core/stats.go",
+    "infoschema/slow_log.go",
+    "sessionctx/variable/session.go",
+    "executor/builder.go",
+    "executor/executor_required_rows_test.go",
+    "executor/index_lookup_join.go",
+    "executor/join.go",
+    "executor/joiner.go",
+    "executor/joiner_test.go",
+    "executor/merge_join.go",
+    "config/config.toml.example"
   ],
   "triage": {
     "sources": [
@@ -43,8 +76,8 @@
     ],
     "evidence": [
       "evidence: -// It's used for fixing data race in tests.",
-      "files: cmd/explaintest/r/subquery.result, cmd/explaintest/t/subquery.test, config/config.go, config/config.toml.example, ddl/callback_test.go, ddl/column.go, ddl/db_change_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_test.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/failtest/fail_db_test.go, ddl/index.go, ddl/reorg.go, ddl/rollingback.go, ddl/session_pool.go, ddl/syncer.go, ddl/table.go, domain/domain.go, domain/domain_test.go, executor/builder.go, executor/executor_required_rows_test.go, executor/index_lookup_join.go, executor/join.go, executor/joiner.go, executor/joiner_test.go, executor/merge_join.go, infoschema/slow_log.go, planner/core/logical_plans.go, planner/core/stats.go, server/http_status.go, session/session_test.go, sessionctx/variable/session.go, tidb-server/main.go, util/logutil/log.go, util/logutil/log_test.go"
+      "files: config/config.go, server/http_status.go, tidb-server/main.go, util/logutil/log_test.go, ddl/failtest/fail_db_test.go, domain/domain.go, domain/domain_test.go, session/session_test.go, ddl/callback_test.go, ddl/column.go, ddl/db_change_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_test.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/index.go, ddl/reorg.go, ddl/rollingback.go, ddl/session_pool.go, ddl/syncer.go, ddl/table.go, util/logutil/log.go, cmd/explaintest/r/subquery.result, cmd/explaintest/t/subquery.test, planner/core/logical_plans.go, planner/core/stats.go, infoschema/slow_log.go, sessionctx/variable/session.go, executor/builder.go, executor/executor_required_rows_test.go, executor/index_lookup_join.go, executor/join.go, executor/joiner.go, executor/joiner_test.go, executor/merge_join.go, config/config.toml.example"
     ]
   },
-  "analysis": "PR title: config, server: Add http status host\nPR url: https://github.com/pingcap/tidb/pull/9814\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: -// It's used for fixing data race in tests.\nChanged files (4): config/config.go, config/config.toml.example, server/http_status.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/9814.patch\nPicked test: type=unit path=ddl/callback_test.go name=callback_test"
+  "analysis": "PR title: config, server: Add http status host\nPR url: https://github.com/pingcap/tidb/pull/9814\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: -// It's used for fixing data race in tests.\nChanged files (37): config/config.go, server/http_status.go, tidb-server/main.go, util/logutil/log_test.go, ddl/failtest/fail_db_test.go, domain/domain.go, domain/domain_test.go, session/session_test.go, ddl/callback_test.go, ddl/column.go, ddl/db_change_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_test.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/index.go, ddl/reorg.go, ddl/rollingback.go, ddl/session_pool.go, ddl/syncer.go, ddl/table.go, util/logutil/log.go, cmd/explaintest/r/subquery.result, cmd/explaintest/t/subquery.test, planner/core/logical_plans.go, planner/core/stats.go, infoschema/slow_log.go, sessionctx/variable/session.go, executor/builder.go, executor/executor_required_rows_test.go, executor/index_lookup_join.go, executor/join.go, executor/joiner.go, executor/joiner_test.go, executor/merge_join.go, config/config.toml.example\nPatch url: https://github.com/pingcap/tidb/pull/9814.patch\nPicked test: type=unit path=ddl/callback_test.go name=callback_test"
 }

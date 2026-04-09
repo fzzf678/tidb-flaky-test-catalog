@@ -17,28 +17,27 @@
   ],
   "failure_signature": "tk.MustQuery(\"select t1.a+t1.b as result from t1 left join t2 on 1 = 0 order by result limit 20;\").Check(testkit.Rows( (executor/join_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9684",
     "https://github.com/pingcap/tidb/pull/9684.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/9684.patch",
   "changed_files": [
-    "cmd/explaintest/r/topn_push_down.result",
+    "executor/join_test.go",
+    "planner/core/rule_inject_extra_projection.go",
+    "planner/core/physical_plan_test.go",
     "cmd/explaintest/r/topn_pushdown.result",
     "cmd/explaintest/t/topn_pushdown.test",
-    "executor/join_test.go",
-    "planner/core/physical_plan_test.go",
-    "planner/core/rule_inject_extra_projection.go",
-    "planner/core/rule_topn_push_down.go"
+    "planner/core/rule_topn_push_down.go",
+    "cmd/explaintest/r/topn_push_down.result"
   ],
   "triage": {
     "sources": [
@@ -47,8 +46,8 @@
     ],
     "evidence": [
       "evidence: tk.MustQuery(\"select t1.a+t1.b as result from t1 left join t2 on 1 = 0 order by result limit 20;\").Check(testkit.Rows( (executor/join_test.go)",
-      "files: cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/topn_pushdown.result, cmd/explaintest/t/topn_pushdown.test, executor/join_test.go, planner/core/physical_plan_test.go, planner/core/rule_inject_extra_projection.go, planner/core/rule_topn_push_down.go"
+      "files: executor/join_test.go, planner/core/rule_inject_extra_projection.go, planner/core/physical_plan_test.go, cmd/explaintest/r/topn_pushdown.result, cmd/explaintest/t/topn_pushdown.test, planner/core/rule_topn_push_down.go, cmd/explaintest/r/topn_push_down.result"
     ]
   },
-  "analysis": "PR title: planner, executor: set new child after injecting Project operator\nPR url: https://github.com/pingcap/tidb/pull/9684\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select t1.a+t1.b as result from t1 left join t2 on 1 = 0 order by result limit 20;\").Check(testkit.Rows( (executor/join_test.go)\nChanged files (7): cmd/explaintest/r/topn_push_down.result, cmd/explaintest/r/topn_pushdown.result, cmd/explaintest/t/topn_pushdown.test, executor/join_test.go, planner/core/physical_plan_test.go, planner/core/rule_inject_extra_projection.go, planner/core/rule_topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/9684.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+  "analysis": "PR title: planner, executor: set new child after injecting Project operator\nPR url: https://github.com/pingcap/tidb/pull/9684\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select t1.a+t1.b as result from t1 left join t2 on 1 = 0 order by result limit 20;\").Check(testkit.Rows( (executor/join_test.go)\nChanged files (7): executor/join_test.go, planner/core/rule_inject_extra_projection.go, planner/core/physical_plan_test.go, cmd/explaintest/r/topn_pushdown.result, cmd/explaintest/t/topn_pushdown.test, planner/core/rule_topn_push_down.go, cmd/explaintest/r/topn_push_down.result\nPatch url: https://github.com/pingcap/tidb/pull/9684.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
 }
