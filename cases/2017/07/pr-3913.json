@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix set/get var race.",
+  "root_cause_explanation": "User-defined session variables could be read and written concurrently (SET_VAR/GET_VAR), causing data races and flaky -race failures. This PR adds a dedicated RW lock around the Users map (and adds a regression query) to make set/get thread-safe.",
   "module": "txn",
-  "fix_pattern": "*: fix set/get var race",
+  "fix_pattern": "Protect shared session-variable maps with RW locks to avoid concurrent read/write races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3913",
     "https://github.com/pingcap/tidb/pull/3913.patch"
