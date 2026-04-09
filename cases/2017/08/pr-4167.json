@@ -17,14 +17,14 @@
   ],
   "failure_signature": "+ wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: start GCWorker after bootstrap finish.",
+  "root_cause_explanation": "GCWorker was started during store creation even when the system might not be bootstrapped yet, leading to timing-dependent failures and sleep-based synchronization in session creation. This PR starts GCWorker after BootstrapSession completes and removes sleep-based waiting by using proper startup ordering/synchronization.",
   "module": "session",
-  "fix_pattern": "*: start GCWorker after bootstrap finish.",
+  "fix_pattern": "Start background workers only after bootstrap; replace sleep-based sync with deterministic startup ordering.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4167",
     "https://github.com/pingcap/tidb/pull/4167.patch"
@@ -33,9 +33,9 @@
   "changed_files": [
     "domain/domain.go",
     "session.go",
+    "store/tikv/kv.go",
     "store/tikv/gc_worker.go",
     "store/tikv/gc_worker_test.go",
-    "store/tikv/kv.go",
     "store/tikv/store_test.go"
   ],
   "triage": {
@@ -45,8 +45,8 @@
     ],
     "evidence": [
       "evidence: + wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.",
-      "files: domain/domain.go, session.go, store/tikv/gc_worker.go, store/tikv/gc_worker_test.go, store/tikv/kv.go, store/tikv/store_test.go"
+      "files: domain/domain.go, session.go, store/tikv/kv.go, store/tikv/gc_worker.go, store/tikv/gc_worker_test.go, store/tikv/store_test.go"
     ]
   },
-  "analysis": "PR title: *: start GCWorker after bootstrap finish.\nPR url: https://github.com/pingcap/tidb/pull/4167\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.\nChanged files (6): domain/domain.go, session.go, store/tikv/gc_worker.go, store/tikv/gc_worker_test.go, store/tikv/kv.go, store/tikv/store_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4167.patch\nPicked test: type=unit path=store/tikv/gc_worker_test.go name=gc_worker_test"
+  "analysis": "PR title: *: start GCWorker after bootstrap finish.\nPR url: https://github.com/pingcap/tidb/pull/4167\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + wg.Wait() // Wait create session finish in worker, some test code depend on this to avoid race.\nChanged files (6): domain/domain.go, session.go, store/tikv/kv.go, store/tikv/gc_worker.go, store/tikv/gc_worker_test.go, store/tikv/store_test.go\nPatch url: https://github.com/pingcap/tidb/pull/4167.patch\nPicked test: type=unit path=store/tikv/gc_worker_test.go name=gc_worker_test"
 }

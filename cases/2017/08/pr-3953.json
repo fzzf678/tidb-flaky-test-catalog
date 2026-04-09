@@ -17,15 +17,14 @@
   ],
   "failure_signature": "// \"select * from t1 where c2 in (select s.c3 from t1 s) order by t1.c3\", (executor/explain_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3953",
     "https://github.com/pingcap/tidb/pull/3953.patch"
@@ -35,9 +34,9 @@
     "ast/dml.go",
     "executor/analyze_test.go",
     "executor/explain_test.go",
-    "expression/explain.go",
     "plan/explain.go",
-    "plan/physical_plans.go"
+    "plan/physical_plans.go",
+    "expression/explain.go"
   ],
   "triage": {
     "sources": [
@@ -46,8 +45,8 @@
     ],
     "evidence": [
       "evidence: // \"select * from t1 where c2 in (select s.c3 from t1 s) order by t1.c3\", (executor/explain_test.go)",
-      "files: ast/dml.go, executor/analyze_test.go, executor/explain_test.go, expression/explain.go, plan/explain.go, plan/physical_plans.go"
+      "files: ast/dml.go, executor/analyze_test.go, executor/explain_test.go, plan/explain.go, plan/physical_plans.go, expression/explain.go"
     ]
   },
-  "analysis": "PR title: plan, executor: implement ExplainInfo() interface for data source operators\nPR url: https://github.com/pingcap/tidb/pull/3953\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // \"select * from t1 where c2 in (select s.c3 from t1 s) order by t1.c3\", (executor/explain_test.go)\nChanged files (6): ast/dml.go, executor/analyze_test.go, executor/explain_test.go, expression/explain.go, plan/explain.go, plan/physical_plans.go\nPatch url: https://github.com/pingcap/tidb/pull/3953.patch\nPicked test: type=unit path=executor/explain_test.go name=explain_test"
+  "analysis": "PR title: plan, executor: implement ExplainInfo() interface for data source operators\nPR url: https://github.com/pingcap/tidb/pull/3953\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: // \"select * from t1 where c2 in (select s.c3 from t1 s) order by t1.c3\", (executor/explain_test.go)\nChanged files (6): ast/dml.go, executor/analyze_test.go, executor/explain_test.go, plan/explain.go, plan/physical_plans.go, expression/explain.go\nPatch url: https://github.com/pingcap/tidb/pull/3953.patch\nPicked test: type=unit path=executor/explain_test.go name=explain_test"
 }
