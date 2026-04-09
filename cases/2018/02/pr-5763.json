@@ -17,14 +17,14 @@
   ],
   "failure_signature": "+// +build !leak,!race",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: refine code for StmtTxn.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR is primarily a statement-transaction refactor/correctness change. The presence of a transient build tag change (`!leak,!race`) in the patch series is not enough to confidently attribute a flaky-test root cause or a targeted stabilization fix. We avoid guessing.",
   "module": "txn",
-  "fix_pattern": "*: refine code for StmtTxn",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5763",
     "https://github.com/pingcap/tidb/pull/5763.patch"
@@ -34,12 +34,12 @@
     "context/context.go",
     "executor/executor_test.go",
     "executor/write.go",
-    "new_session_test.go",
     "server/conn.go",
     "session.go",
-    "session_fail_test.go",
     "tidb.go",
-    "util/mock/context.go"
+    "util/mock/context.go",
+    "new_session_test.go",
+    "session_fail_test.go"
   ],
   "triage": {
     "sources": [
@@ -48,8 +48,8 @@
     ],
     "evidence": [
       "evidence: +// +build !leak,!race",
-      "files: context/context.go, executor/executor_test.go, executor/write.go, new_session_test.go, server/conn.go, session.go, session_fail_test.go, tidb.go, util/mock/context.go"
+      "files: context/context.go, executor/executor_test.go, executor/write.go, server/conn.go, session.go, tidb.go, util/mock/context.go, new_session_test.go, session_fail_test.go"
     ]
   },
-  "analysis": "PR title: *: refine code for StmtTxn\nPR url: https://github.com/pingcap/tidb/pull/5763\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: +// +build !leak,!race\nChanged files (9): context/context.go, executor/executor_test.go, executor/write.go, new_session_test.go, server/conn.go, session.go, session_fail_test.go, tidb.go, util/mock/context.go\nPatch url: https://github.com/pingcap/tidb/pull/5763.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+  "analysis": "PR title: *: refine code for StmtTxn\nPR url: https://github.com/pingcap/tidb/pull/5763\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: +// +build !leak,!race\nChanged files (9): context/context.go, executor/executor_test.go, executor/write.go, server/conn.go, session.go, tidb.go, util/mock/context.go, new_session_test.go, session_fail_test.go\nPatch url: https://github.com/pingcap/tidb/pull/5763.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
 }
