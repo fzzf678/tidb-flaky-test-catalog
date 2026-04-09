@@ -20,19 +20,20 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "t_parallel_with_shared_state",
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Running in parallel with shared state can introduce races. This PR stabilizes it by: expression: refactor builtin function RAND to be compatible with MySQL.",
+  "root_cause_explanation": "RAND() evaluation kept mutable random-generator state that could be shared across parallel projection workers / cloned expressions, triggering a DATA RACE under concurrent evaluation. The fix avoids sharing rand state (do not carry randGen across Clone; use per-invocation generator for non-constant seeds) and initializes the generator deterministically per statement/seed.",
   "module": "expression",
-  "fix_pattern": "expression: refactor builtin function RAND to be compatible with MySQL",
+  "fix_pattern": "Avoid sharing mutable state across parallel evaluators (ensure builtin funcs do not share rand.Rand across clones/workers).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9387",
     "https://github.com/pingcap/tidb/pull/9387.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/9387.patch",
   "changed_files": [
+    "executor/projection.go",
     "expression/builtin_math.go",
+    "expression/evaluator.go",
     "expression/integration_test.go"
   ],
   "triage": {
@@ -45,5 +46,5 @@
       "files: executor/projection.go, expression/builtin_math.go, expression/evaluator.go, expression/integration_test.go"
     ]
   },
-  "analysis": "PR title: expression: refactor builtin function RAND to be compatible with MySQL\nPR url: https://github.com/pingcap/tidb/pull/9387\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: 1. builtinRandSig/builtinRandWithSeedSig.randGen may cause data race when Project executing parallelly.\nChanged files (2): expression/builtin_math.go, expression/integration_test.go\nPatch url: https://github.com/pingcap/tidb/pull/9387.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
+  "analysis": "PR title: expression: refactor builtin function RAND to be compatible with MySQL\nPR url: https://github.com/pingcap/tidb/pull/9387\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: 1. builtinRandSig/builtinRandWithSeedSig.randGen may cause data race when Project executing parallelly.\nChanged files (4): executor/projection.go, expression/builtin_math.go, expression/evaluator.go, expression/integration_test.go\nPatch url: https://github.com/pingcap/tidb/pull/9387.patch\nPicked test: type=unit path=expression/integration_test.go name=integration_test"
 }

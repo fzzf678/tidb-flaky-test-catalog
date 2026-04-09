@@ -17,23 +17,23 @@
   ],
   "failure_signature": "ddl: fix data race about ReorgWaitTimeout in tests",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "concurrency_data_race",
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix data race about ReorgWaitTimeout in tests.",
+  "root_cause_explanation": "The tests mutated a global DDL knob (ReorgWaitTimeout) while DDL workers could concurrently read it, triggering a DATA RACE and polluting shared state across tests. The fix removes the redundant global mutation (and thus avoids concurrent access to the shared variable).",
   "module": "ddl",
-  "fix_pattern": "ddl: fix data race about ReorgWaitTimeout in tests",
+  "fix_pattern": "Avoid mutating global DDL knobs in tests; keep state local or restore safely to prevent cross-test races/pollution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9483",
     "https://github.com/pingcap/tidb/pull/9483.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/9483.patch",
   "changed_files": [
-    "ddl/db_test.go"
+    "ddl/db_test.go",
+    "table/column.go"
   ],
   "triage": {
     "sources": [
@@ -45,5 +45,5 @@
       "files: ddl/db_test.go, table/column.go"
     ]
   },
-  "analysis": "PR title: ddl: fix data race about ReorgWaitTimeout in tests\nPR url: https://github.com/pingcap/tidb/pull/9483\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix data race about ReorgWaitTimeout in tests\nChanged files (1): ddl/db_test.go\nPatch url: https://github.com/pingcap/tidb/pull/9483.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+  "analysis": "PR title: ddl: fix data race about ReorgWaitTimeout in tests\nPR url: https://github.com/pingcap/tidb/pull/9483\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix data race about ReorgWaitTimeout in tests\nChanged files (2): ddl/db_test.go, table/column.go\nPatch url: https://github.com/pingcap/tidb/pull/9483.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
 }

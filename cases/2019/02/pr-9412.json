@@ -20,11 +20,12 @@
     "concurrency_data_race"
   ],
   "review_smells": [
+    "global_variable_mutation",
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: test: fix gofail test race.",
-  "module": "test_infra",
-  "fix_pattern": "test: fix gofail test race",
+  "root_cause_explanation": "A package-level flag used by a gofail failpoint was read/written concurrently, causing a DATA RACE. The fix makes the flag thread-safe by switching to atomic load/store and wrapping access behind helper functions.",
+  "module": "session",
+  "fix_pattern": "Make shared failpoint/test flags thread-safe (atomic load/store for package-level state).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9412",
     "https://github.com/pingcap/tidb/pull/9412.patch"

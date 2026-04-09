@@ -17,28 +17,27 @@
   ],
   "failure_signature": "result: \"TableReader(Table(t))->Sort->Window(avg(cast(test.t.a)) over(order by test.t.a asc, test.t.b desc))->Projection\", (planner/core/logical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_plan_selection",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/9270",
     "https://github.com/pingcap/tidb/pull/9270.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/9270.patch",
   "changed_files": [
+    "planner/core/exhaust_physical_plans.go",
+    "planner/core/explain.go",
+    "planner/core/physical_plans.go",
     "cmd/explaintest/main.go",
     "cmd/explaintest/r/window_function.result",
     "cmd/explaintest/t/window_function.test",
-    "planner/core/exhaust_physical_plans.go",
-    "planner/core/explain.go",
     "planner/core/logical_plan_test.go",
-    "planner/core/physical_plans.go",
     "planner/core/stringer.go"
   ],
   "triage": {
@@ -48,8 +47,8 @@
     ],
     "evidence": [
       "evidence: result: \"TableReader(Table(t))->Sort->Window(avg(cast(test.t.a)) over(order by test.t.a asc, test.t.b desc))->Projection\", (planner/core/logical_plan_test.go)",
-      "files: cmd/explaintest/main.go, cmd/explaintest/r/window_function.result, cmd/explaintest/t/window_function.test, planner/core/exhaust_physical_plans.go, planner/core/explain.go, planner/core/logical_plan_test.go, planner/core/physical_plans.go, planner/core/stringer.go"
+      "files: planner/core/exhaust_physical_plans.go, planner/core/explain.go, planner/core/physical_plans.go, cmd/explaintest/main.go, cmd/explaintest/r/window_function.result, cmd/explaintest/t/window_function.test, planner/core/logical_plan_test.go, planner/core/stringer.go"
     ]
   },
-  "analysis": "PR title: planner/core: refine explain for window function\nPR url: https://github.com/pingcap/tidb/pull/9270\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result: \"TableReader(Table(t))->Sort->Window(avg(cast(test.t.a)) over(order by test.t.a asc, test.t.b desc))->Projection\", (planner/core/logical_plan_test.go)\nChanged files (8): cmd/explaintest/main.go, cmd/explaintest/r/window_function.result, cmd/explaintest/t/window_function.test, planner/core/exhaust_physical_plans.go, planner/core/explain.go, planner/core/logical_plan_test.go, planner/core/physical_plans.go, planner/core/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/9270.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
+  "analysis": "PR title: planner/core: refine explain for window function\nPR url: https://github.com/pingcap/tidb/pull/9270\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result: \"TableReader(Table(t))->Sort->Window(avg(cast(test.t.a)) over(order by test.t.a asc, test.t.b desc))->Projection\", (planner/core/logical_plan_test.go)\nChanged files (8): planner/core/exhaust_physical_plans.go, planner/core/explain.go, planner/core/physical_plans.go, cmd/explaintest/main.go, cmd/explaintest/r/window_function.result, cmd/explaintest/t/window_function.test, planner/core/logical_plan_test.go, planner/core/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/9270.patch\nPicked test: type=unit path=planner/core/logical_plan_test.go name=logical_plan_test"
 }
