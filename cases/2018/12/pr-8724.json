@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: fix data race in unit test TestChangeColumn",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix data race in unit test TestChangeColumn.",
+  "root_cause_explanation": "Tests temporarily modified the global ddl.TableColumnCountLimit while DDL code concurrently read it, causing a data race and cross-test interference. This PR stabilizes it by converting the limit to an atomic uint32 and using atomic load/store everywhere.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix data race in unit test TestChangeColumn",
+  "fix_pattern": "Use atomic for global limits accessed concurrently; avoid mutating globals in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8724",
     "https://github.com/pingcap/tidb/pull/8724.patch"

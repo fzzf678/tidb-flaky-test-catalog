@@ -17,26 +17,26 @@
   ],
   "failure_signature": "tk.MustQuery(\"select b from th order by a\").Check(testkit.Rows(\"-8\", \"-7\", \"-6\", \"-5\", \"-4\", \"-3\", \"-2\", \"-1\", \"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\")) (executor/executor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
+  "module": "executor",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8411",
     "https://github.com/pingcap/tidb/pull/8411.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/8411.patch",
   "changed_files": [
-    "ddl/db_test.go",
-    "executor/executor_test.go",
     "executor/write_test.go",
+    "planner/core/rule_partition_processor.go",
     "table/tables/partition.go",
-    "table/tables/tables_test.go"
+    "table/tables/tables_test.go",
+    "ddl/db_test.go",
+    "executor/executor_test.go"
   ],
   "triage": {
     "sources": [
@@ -45,8 +45,8 @@
     ],
     "evidence": [
       "evidence: tk.MustQuery(\"select b from th order by a\").Check(testkit.Rows(\"-8\", \"-7\", \"-6\", \"-5\", \"-4\", \"-3\", \"-2\", \"-1\", \"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\")) (executor/executor_test.go)",
-      "files: ddl/db_test.go, executor/executor_test.go, executor/write_test.go, planner/core/rule_partition_processor.go, table/tables/partition.go, table/tables/tables_test.go"
+      "files: executor/write_test.go, planner/core/rule_partition_processor.go, table/tables/partition.go, table/tables/tables_test.go, ddl/db_test.go, executor/executor_test.go"
     ]
   },
-  "analysis": "PR title: *: support select, insert for hash partition table.\nPR url: https://github.com/pingcap/tidb/pull/8411\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select b from th order by a\").Check(testkit.Rows(\"-8\", \"-7\", \"-6\", \"-5\", \"-4\", \"-3\", \"-2\", \"-1\", \"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\")) (executor/executor_test.go)\nChanged files (5): ddl/db_test.go, executor/executor_test.go, executor/write_test.go, table/tables/partition.go, table/tables/tables_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8411.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+  "analysis": "PR title: *: support select, insert for hash partition table.\nPR url: https://github.com/pingcap/tidb/pull/8411\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select b from th order by a\").Check(testkit.Rows(\"-8\", \"-7\", \"-6\", \"-5\", \"-4\", \"-3\", \"-2\", \"-1\", \"0\", \"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\", \"8\")) (executor/executor_test.go)\nChanged files (6): executor/write_test.go, planner/core/rule_partition_processor.go, table/tables/partition.go, table/tables/tables_test.go, ddl/db_test.go, executor/executor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8411.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
 }

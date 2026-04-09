@@ -20,11 +20,11 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor/test: fix data race of executor unit tests.",
+  "root_cause_explanation": "TestCoprocessorPriority modified global config (ExpensiveThreshold) and shared request-priority checking state, which can race with other executor tests. This PR stabilizes it by moving the test into executor/seqtest to enforce sequential execution and avoid concurrent global mutation.",
   "module": "executor",
-  "fix_pattern": "executor/test: fix data race of executor unit tests",
+  "fix_pattern": "Run tests that mutate global config sequentially (or isolate state changes) to avoid data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8807",
     "https://github.com/pingcap/tidb/pull/8807.patch"
@@ -32,9 +32,9 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/8807.patch",
   "changed_files": [
     "executor/executor_test.go",
+    "executor/seqtest/seq_executor_test.go",
     "executor/join_test.go",
-    "executor/merge_join_test.go",
-    "executor/seqtest/seq_executor_test.go"
+    "executor/merge_join_test.go"
   ],
   "triage": {
     "sources": [
@@ -43,8 +43,8 @@
     ],
     "evidence": [
       "evidence: executor/test: fix data race of executor unit tests",
-      "files: executor/executor_test.go, executor/join_test.go, executor/merge_join_test.go, executor/seqtest/seq_executor_test.go"
+      "files: executor/executor_test.go, executor/seqtest/seq_executor_test.go, executor/join_test.go, executor/merge_join_test.go"
     ]
   },
-  "analysis": "PR title: executor/test: fix data race of executor unit tests\nPR url: https://github.com/pingcap/tidb/pull/8807\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: executor/test: fix data race of executor unit tests\nChanged files (4): executor/executor_test.go, executor/join_test.go, executor/merge_join_test.go, executor/seqtest/seq_executor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8807.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+  "analysis": "PR title: executor/test: fix data race of executor unit tests\nPR url: https://github.com/pingcap/tidb/pull/8807\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: executor/test: fix data race of executor unit tests\nChanged files (4): executor/executor_test.go, executor/seqtest/seq_executor_test.go, executor/join_test.go, executor/merge_join_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8807.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
 }

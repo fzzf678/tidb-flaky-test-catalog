@@ -17,28 +17,29 @@
   ],
   "failure_signature": "ddl: fix data race",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: reduce the time to run unit tests.",
+  "root_cause_explanation": "Tests and global registries mutated shared global variables (e.g., ddl.ReorgWaitTimeout, statusvar statisticsList) without synchronization, causing data races and cross-test interference. This PR stabilizes by protecting the global list with a RWMutex and removing/avoiding global timeout mutations in tests.",
   "module": "ddl",
-  "fix_pattern": "ddl: reduce the time to run unit tests",
+  "fix_pattern": "Avoid mutating global variables in tests; if unavoidable, guard them with locks/atomic and restore deterministically.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8585",
     "https://github.com/pingcap/tidb/pull/8585.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/8585.patch",
   "changed_files": [
-    "ddl/db_integration_test.go",
-    "ddl/db_partition_test.go",
     "ddl/db_test.go",
+    "ddl/ddl.go",
     "ddl/ddl_test.go",
+    "ddl/mock.go",
+    "ddl/db_integration_test.go",
     "ddl/ddl_worker_test.go",
     "ddl/failtest/fail_db_test.go",
-    "sessionctx/variable/statusvar.go"
+    "sessionctx/variable/statusvar.go",
+    "ddl/db_partition_test.go"
   ],
   "triage": {
     "sources": [
@@ -47,8 +48,8 @@
     ],
     "evidence": [
       "evidence: ddl: fix data race",
-      "files: ddl/db_integration_test.go, ddl/db_partition_test.go, ddl/db_test.go, ddl/ddl.go, ddl/ddl_test.go, ddl/ddl_worker_test.go, ddl/failtest/fail_db_test.go, ddl/mock.go, sessionctx/variable/statusvar.go"
+      "files: ddl/db_test.go, ddl/ddl.go, ddl/ddl_test.go, ddl/mock.go, ddl/db_integration_test.go, ddl/ddl_worker_test.go, ddl/failtest/fail_db_test.go, sessionctx/variable/statusvar.go, ddl/db_partition_test.go"
     ]
   },
-  "analysis": "PR title: ddl: reduce the time to run unit tests\nPR url: https://github.com/pingcap/tidb/pull/8585\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix data race\nChanged files (7): ddl/db_integration_test.go, ddl/db_partition_test.go, ddl/db_test.go, ddl/ddl_test.go, ddl/ddl_worker_test.go, ddl/failtest/fail_db_test.go, sessionctx/variable/statusvar.go\nPatch url: https://github.com/pingcap/tidb/pull/8585.patch\nPicked test: type=unit path=ddl/db_integration_test.go name=db_integration_test"
+  "analysis": "PR title: ddl: reduce the time to run unit tests\nPR url: https://github.com/pingcap/tidb/pull/8585\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix data race\nChanged files (9): ddl/db_test.go, ddl/ddl.go, ddl/ddl_test.go, ddl/mock.go, ddl/db_integration_test.go, ddl/ddl_worker_test.go, ddl/failtest/fail_db_test.go, sessionctx/variable/statusvar.go, ddl/db_partition_test.go\nPatch url: https://github.com/pingcap/tidb/pull/8585.patch\nPicked test: type=unit path=ddl/db_integration_test.go name=db_integration_test"
 }

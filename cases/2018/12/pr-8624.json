@@ -17,31 +17,30 @@
   ],
   "failure_signature": "result := s.tk.MustQuery(\"select * from employees order by id\") (ddl/db_test.go)",
   "root_cause_categories": [
-    "schema_change_race",
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "ddl",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8624",
     "https://github.com/pingcap/tidb/pull/8624.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/8624.patch",
   "changed_files": [
-    ".travis.yml",
     "ddl/db_test.go",
     "ddl/ddl.go",
     "ddl/ddl_api.go",
     "ddl/ddl_worker.go",
-    "ddl/delete_range.go",
     "ddl/partition.go",
     "go.mod",
-    "go.sum"
+    "go.sum",
+    "ddl/delete_range.go",
+    "circle.yml",
+    ".travis.yml"
   ],
   "triage": {
     "sources": [
@@ -50,8 +49,8 @@
     ],
     "evidence": [
       "evidence: result := s.tk.MustQuery(\"select * from employees order by id\") (ddl/db_test.go)",
-      "files: .travis.yml, circle.yml, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/partition.go, go.mod, go.sum"
+      "files: ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/partition.go, go.mod, go.sum, ddl/delete_range.go, circle.yml, .travis.yml"
     ]
   },
-  "analysis": "PR title: ddl: support alter table .. truncate partition\nPR url: https://github.com/pingcap/tidb/pull/8624\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result := s.tk.MustQuery(\"select * from employees order by id\") (ddl/db_test.go)\nChanged files (9): .travis.yml, ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/delete_range.go, ddl/partition.go, go.mod, go.sum\nPatch url: https://github.com/pingcap/tidb/pull/8624.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
+  "analysis": "PR title: ddl: support alter table .. truncate partition\nPR url: https://github.com/pingcap/tidb/pull/8624\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result := s.tk.MustQuery(\"select * from employees order by id\") (ddl/db_test.go)\nChanged files (10): ddl/db_test.go, ddl/ddl.go, ddl/ddl_api.go, ddl/ddl_worker.go, ddl/partition.go, go.mod, go.sum, ddl/delete_range.go, circle.yml, .travis.yml\nPatch url: https://github.com/pingcap/tidb/pull/8624.patch\nPicked test: type=unit path=ddl/db_test.go name=db_test"
 }

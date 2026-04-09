@@ -17,14 +17,14 @@
   ],
   "failure_signature": "// Add the hook here to avoid data race.",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "time_sleep_for_sync"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: stats: optimize unit test execution time.",
+  "root_cause_explanation": "Stats tests used fixed time.Sleep(...) to wait for stats/histograms to load, which is timing-sensitive and slow. This PR stabilizes by removing sleeps and explicitly triggering/awaiting the needed stats loading (e.g., LoadNeededHistograms) instead.",
   "module": "statistics",
-  "fix_pattern": "stats: optimize unit test execution time",
+  "fix_pattern": "Replace time.Sleep-based synchronization with deterministic stats loading/waiting.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8597",
     "https://github.com/pingcap/tidb/pull/8597.patch"

@@ -17,27 +17,25 @@
   ],
   "failure_signature": "ddl: fix a data race in unit test TestTableSplit",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix a data race in unit test TestTableSplit.",
+  "root_cause_explanation": "TestTableSplit toggled the global ddl.EnableSplitTableRegion flag while DDL code concurrently read it (and spawned goroutines), causing a data race. This PR stabilizes it by making the flag an atomic uint32 and using atomic load/store for reads and writes.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix a data race in unit test TestTableSplit",
+  "fix_pattern": "Use atomic for global test flags / avoid mutating globals concurrently.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8719",
     "https://github.com/pingcap/tidb/pull/8719.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/8719.patch",
   "changed_files": [
-    "circle.yml",
     "ddl/ddl.go",
     "ddl/table.go",
     "ddl/table_split_test.go",
-    "tidb-server/main.go"
+    "tidb-server/main.go",
+    "circle.yml"
   ],
   "triage": {
     "sources": [
@@ -46,8 +44,8 @@
     ],
     "evidence": [
       "evidence: ddl: fix a data race in unit test TestTableSplit",
-      "files: circle.yml, ddl/ddl.go, ddl/table.go, ddl/table_split_test.go, tidb-server/main.go"
+      "files: ddl/ddl.go, ddl/table.go, ddl/table_split_test.go, tidb-server/main.go, circle.yml"
     ]
   },
-  "analysis": "PR title: ddl: fix a data race in unit test TestTableSplit\nPR url: https://github.com/pingcap/tidb/pull/8719\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix a data race in unit test TestTableSplit\nChanged files (5): circle.yml, ddl/ddl.go, ddl/table.go, ddl/table_split_test.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/8719.patch\nPicked test: type=unit path=ddl/table_split_test.go name=TestTableSplit"
+  "analysis": "PR title: ddl: fix a data race in unit test TestTableSplit\nPR url: https://github.com/pingcap/tidb/pull/8719\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: ddl: fix a data race in unit test TestTableSplit\nChanged files (5): ddl/ddl.go, ddl/table.go, ddl/table_split_test.go, tidb-server/main.go, circle.yml\nPatch url: https://github.com/pingcap/tidb/pull/8719.patch\nPicked test: type=unit path=ddl/table_split_test.go name=TestTableSplit"
 }
