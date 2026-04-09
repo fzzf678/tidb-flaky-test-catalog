@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rss, err := tk.Se.Execute(\"select * from earlyclose order by id\") (executor/executor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky due to a goroutine leak / cleanup bug: if copIterator.Close() was called and Next() raced with closure, Next() could block waiting on channels after worker goroutines had already exited, leaking goroutines and potentially hanging the test. This PR makes Next() observe the finished signal (select on respChan and finished) so it returns promptly after Close and avoids the leak/hang.",
   "module": "kv",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Ensure iterator Next() observes Close/finished signals to avoid goroutine leaks and hangs.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/5654",
     "https://github.com/pingcap/tidb/pull/5654.patch"
@@ -32,7 +32,8 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/5654.patch",
   "changed_files": [
     "executor/executor_test.go",
-    "store/tikv/coprocessor.go"
+    "store/tikv/coprocessor.go",
+    "util/arena/arena.go"
   ],
   "triage": {
     "sources": [
@@ -44,5 +45,5 @@
       "files: executor/executor_test.go, store/tikv/coprocessor.go, util/arena/arena.go"
     ]
   },
-  "analysis": "PR title: store/tikv: call Next() after copIterator closed lead to goroutine leak (#5624)\nPR url: https://github.com/pingcap/tidb/pull/5654\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rss, err := tk.Se.Execute(\"select * from earlyclose order by id\") (executor/executor_test.go)\nChanged files (2): executor/executor_test.go, store/tikv/coprocessor.go\nPatch url: https://github.com/pingcap/tidb/pull/5654.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+  "analysis": "PR title: store/tikv: call Next() after copIterator closed lead to goroutine leak (#5624)\nPR url: https://github.com/pingcap/tidb/pull/5654\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rss, err := tk.Se.Execute(\"select * from earlyclose order by id\") (executor/executor_test.go)\nChanged files (3): executor/executor_test.go, store/tikv/coprocessor.go, util/arena/arena.go\nPatch url: https://github.com/pingcap/tidb/pull/5654.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
 }
