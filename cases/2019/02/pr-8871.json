@@ -17,15 +17,14 @@
   ],
   "failure_signature": "tk.MustQuery(\"select * from t order by a desc\").Check(testkit.Rows(\"7 6\", \"6 8\", \"4 8\", \"3 4\", \"2 3\", \"1 5\")) (executor/union_scan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
+  "module": "executor",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/8871",
     "https://github.com/pingcap/tidb/pull/8871.patch"
@@ -33,12 +32,16 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/8871.patch",
   "changed_files": [
     "executor/builder.go",
+    "executor/executor.go",
     "executor/union_scan.go",
     "executor/union_scan_test.go",
-    "planner/core/physical_plan_test.go",
+    "planner/core/exhaust_physical_plans.go",
+    "planner/core/logical_plans.go",
+    "planner/core/physical_plans.go",
     "planner/core/rule_partition_processor.go",
-    "sessionctx/context.go",
-    "table/tables/tables.go"
+    "table/tables/tables.go",
+    "planner/core/physical_plan_test.go",
+    "sessionctx/context.go"
   ],
   "triage": {
     "sources": [
@@ -47,8 +50,8 @@
     ],
     "evidence": [
       "evidence: tk.MustQuery(\"select * from t order by a desc\").Check(testkit.Rows(\"7 6\", \"6 8\", \"4 8\", \"3 4\", \"2 3\", \"1 5\")) (executor/union_scan_test.go)",
-      "files: executor/builder.go, executor/executor.go, executor/union_scan.go, executor/union_scan_test.go, planner/core/exhaust_physical_plans.go, planner/core/logical_plans.go, planner/core/physical_plan_test.go, planner/core/physical_plans.go, planner/core/rule_partition_processor.go, sessionctx/context.go, table/tables/tables.go"
+      "files: executor/builder.go, executor/executor.go, executor/union_scan.go, executor/union_scan_test.go, planner/core/exhaust_physical_plans.go, planner/core/logical_plans.go, planner/core/physical_plans.go, planner/core/rule_partition_processor.go, table/tables/tables.go, planner/core/physical_plan_test.go, sessionctx/context.go"
     ]
   },
-  "analysis": "PR title: *: fix union scan for partitioned table\nPR url: https://github.com/pingcap/tidb/pull/8871\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t order by a desc\").Check(testkit.Rows(\"7 6\", \"6 8\", \"4 8\", \"3 4\", \"2 3\", \"1 5\")) (executor/union_scan_test.go)\nChanged files (7): executor/builder.go, executor/union_scan.go, executor/union_scan_test.go, planner/core/physical_plan_test.go, planner/core/rule_partition_processor.go, sessionctx/context.go, table/tables/tables.go\nPatch url: https://github.com/pingcap/tidb/pull/8871.patch\nPicked test: type=unit path=executor/union_scan_test.go name=union_scan_test"
+  "analysis": "PR title: *: fix union scan for partitioned table\nPR url: https://github.com/pingcap/tidb/pull/8871\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: tk.MustQuery(\"select * from t order by a desc\").Check(testkit.Rows(\"7 6\", \"6 8\", \"4 8\", \"3 4\", \"2 3\", \"1 5\")) (executor/union_scan_test.go)\nChanged files (11): executor/builder.go, executor/executor.go, executor/union_scan.go, executor/union_scan_test.go, planner/core/exhaust_physical_plans.go, planner/core/logical_plans.go, planner/core/physical_plans.go, planner/core/rule_partition_processor.go, table/tables/tables.go, planner/core/physical_plan_test.go, sessionctx/context.go\nPatch url: https://github.com/pingcap/tidb/pull/8871.patch\nPicked test: type=unit path=executor/union_scan_test.go name=union_scan_test"
 }
