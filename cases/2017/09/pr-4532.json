@@ -20,11 +20,11 @@
     "concurrency_data_race"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: move InitLogger from SetUpSuite to TestT.",
+  "root_cause_explanation": "Multiple test suites were initializing/changing the global logger during the run, which can race when suites execute concurrently. This PR initializes the logger once in TestT and removes per-suite InitLogger/log-level mutations.",
   "module": "module_unknown",
-  "fix_pattern": "*: move InitLogger from SetUpSuite to TestT",
+  "fix_pattern": "Initialize logger once per test run; avoid mutating global log state in suite setup.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4532",
     "https://github.com/pingcap/tidb/pull/4532.patch"

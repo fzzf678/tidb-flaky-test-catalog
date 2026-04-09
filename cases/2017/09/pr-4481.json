@@ -17,32 +17,34 @@
   ],
   "failure_signature": "sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by c order by k\", (plan/dag_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR/patch looks like a correctness/refactor/feature change without a concrete flaky failure signature or a targeted stabilization for the picked test. Keep as insufficient evidence until CI logs or a reliable repro is available.",
   "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/4481",
     "https://github.com/pingcap/tidb/pull/4481.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/4481.patch",
   "changed_files": [
-    "executor/analyze_test.go",
-    "plan/cbo_test.go",
+    "plan/new_physical_plan_builder.go",
+    "plan/physical_plan_test.go",
     "plan/dag_plan_test.go",
     "plan/explain_test.go",
     "plan/logical_plan_test.go",
     "plan/logical_plans.go",
-    "plan/new_physical_plan_builder.go",
+    "plan/optimizer.go",
     "plan/physical_plan_builder.go",
     "plan/physical_plans.go",
     "plan/stats.go",
-    "plan/task.go"
+    "plan/task.go",
+    "plan/cbo_test.go",
+    "executor/analyze_test.go",
+    "plan/join_reorder.go"
   ],
   "triage": {
     "sources": [
@@ -51,8 +53,8 @@
     ],
     "evidence": [
       "evidence: sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by c order by k\", (plan/dag_plan_test.go)",
-      "files: executor/analyze_test.go, plan/cbo_test.go, plan/dag_plan_test.go, plan/explain_test.go, plan/join_reorder.go, plan/logical_plan_test.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plan_test.go, plan/physical_plans.go, plan/stats.go, plan/task.go"
+      "files: plan/new_physical_plan_builder.go, plan/physical_plan_test.go, plan/dag_plan_test.go, plan/explain_test.go, plan/logical_plan_test.go, plan/logical_plans.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/stats.go, plan/task.go, plan/cbo_test.go, executor/analyze_test.go, plan/join_reorder.go"
     ]
   },
-  "analysis": "PR title: *: Support stream aggregation in new plan\nPR url: https://github.com/pingcap/tidb/pull/4481\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by c order by k\", (plan/dag_plan_test.go)\nChanged files (11): executor/analyze_test.go, plan/cbo_test.go, plan/dag_plan_test.go, plan/explain_test.go, plan/logical_plan_test.go, plan/logical_plans.go, plan/new_physical_plan_builder.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/stats.go, plan/task.go\nPatch url: https://github.com/pingcap/tidb/pull/4481.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
+  "analysis": "PR title: *: Support stream aggregation in new plan\nPR url: https://github.com/pingcap/tidb/pull/4481\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select sum(e) as k, avg(b + c) from t where c = 1 and b = 1 and e = 1 group by c order by k\", (plan/dag_plan_test.go)\nChanged files (14): plan/new_physical_plan_builder.go, plan/physical_plan_test.go, plan/dag_plan_test.go, plan/explain_test.go, plan/logical_plan_test.go, plan/logical_plans.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/stats.go, plan/task.go, plan/cbo_test.go, executor/analyze_test.go, plan/join_reorder.go\nPatch url: https://github.com/pingcap/tidb/pull/4481.patch\nPicked test: type=unit path=plan/dag_plan_test.go name=dag_plan_test"
 }
