@@ -17,24 +17,29 @@
   ],
   "failure_signature": "r := tk.MustQuery(`SELECT * from t order by id limit 2;`) (executor/write_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Patch implements partitioned-table write support across executor/plan/table; no targeted flaky-test stabilization change is evident.",
   "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/7166",
     "https://github.com/pingcap/tidb/pull/7166.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/7166.patch",
   "changed_files": [
-    "executor/write.go",
+    "executor/builder.go",
     "executor/write_test.go",
-    "table/tables/partition.go"
+    "plan/find_best_task.go",
+    "table/tables/partition.go",
+    "statistics/update.go",
+    "executor/write.go",
+    "executor/analyze.go",
+    "ddl/db_test.go",
+    "plan/point_get_plan.go"
   ],
   "triage": {
     "sources": [
@@ -43,8 +48,8 @@
     ],
     "evidence": [
       "evidence: r := tk.MustQuery(`SELECT * from t order by id limit 2;`) (executor/write_test.go)",
-      "files: ddl/db_test.go, executor/analyze.go, executor/builder.go, executor/write.go, executor/write_test.go, plan/find_best_task.go, plan/point_get_plan.go, statistics/update.go, table/tables/partition.go"
+      "files: executor/builder.go, executor/write_test.go, plan/find_best_task.go, table/tables/partition.go, statistics/update.go, executor/write.go, executor/analyze.go, ddl/db_test.go, plan/point_get_plan.go"
     ]
   },
-  "analysis": "PR title: *: support update operation for table partition\nPR url: https://github.com/pingcap/tidb/pull/7166\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: r := tk.MustQuery(`SELECT * from t order by id limit 2;`) (executor/write_test.go)\nChanged files (3): executor/write.go, executor/write_test.go, table/tables/partition.go\nPatch url: https://github.com/pingcap/tidb/pull/7166.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
+  "analysis": "PR title: *: support update operation for table partition\nPR url: https://github.com/pingcap/tidb/pull/7166\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: r := tk.MustQuery(`SELECT * from t order by id limit 2;`) (executor/write_test.go)\nChanged files (9): executor/builder.go, executor/write_test.go, plan/find_best_task.go, table/tables/partition.go, statistics/update.go, executor/write.go, executor/analyze.go, ddl/db_test.go, plan/point_get_plan.go\nPatch url: https://github.com/pingcap/tidb/pull/7166.patch\nPicked test: type=unit path=executor/write_test.go name=write_test"
 }

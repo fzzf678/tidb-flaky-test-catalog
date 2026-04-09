@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: fix data race in ddl.TestStat()",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: fix data race in ddl.TestStat().",
+  "root_cause_explanation": "The test was flaky under `-race` because it restarted DDL workers by calling `start`, which reinitializes worker state while async notification goroutines may still be running, causing data races. This PR fixes it by using `restartWorkers`, which avoids re-creating workers and reduces concurrent mutation of shared worker fields.",
   "module": "ddl",
-  "fix_pattern": "ddl: fix data race in ddl.TestStat()",
+  "fix_pattern": "Use safer restart/reset helpers in tests (e.g. `restartWorkers`) instead of full `start` to avoid concurrent worker-state races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/7548",
     "https://github.com/pingcap/tidb/pull/7548.patch"

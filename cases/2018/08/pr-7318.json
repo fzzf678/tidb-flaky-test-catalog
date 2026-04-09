@@ -22,17 +22,17 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: infoschema: fix information schema data race.",
+  "root_cause_explanation": "The test was flaky under `-race` due to unsafely shared mutable schema metadata and test counters. Infoschema applied diffs by mutating `DBInfo` that could be referenced elsewhere, and an executor test counter was updated without locking. This PR fixes it by cloning `DBInfo` before mutation and adding mutex guards around shared test state.",
   "module": "domain",
-  "fix_pattern": "infoschema: fix information schema data race",
+  "fix_pattern": "Clone shared schema metadata before mutation and guard shared test state/counters with mutexes.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/7318",
     "https://github.com/pingcap/tidb/pull/7318.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/7318.patch",
   "changed_files": [
-    "executor/executor_test.go",
-    "infoschema/builder.go"
+    "infoschema/builder.go",
+    "executor/executor_test.go"
   ],
   "triage": {
     "sources": [
@@ -41,8 +41,8 @@
     ],
     "evidence": [
       "evidence: fix race in executor test",
-      "files: executor/executor_test.go, infoschema/builder.go"
+      "files: infoschema/builder.go, executor/executor_test.go"
     ]
   },
-  "analysis": "PR title: infoschema: fix information schema data race\nPR url: https://github.com/pingcap/tidb/pull/7318\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix race in executor test\nChanged files (2): executor/executor_test.go, infoschema/builder.go\nPatch url: https://github.com/pingcap/tidb/pull/7318.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+  "analysis": "PR title: infoschema: fix information schema data race\nPR url: https://github.com/pingcap/tidb/pull/7318\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix race in executor test\nChanged files (2): infoschema/builder.go, executor/executor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/7318.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
 }
