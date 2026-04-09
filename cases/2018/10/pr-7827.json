@@ -17,14 +17,14 @@
   ],
   "failure_signature": "- maintain ExecStats(a map), and init ExecStates entry in plan building phase(single thread, so map itself no race condition, but for entry...)",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: make `explain` support `explain anaylze`.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR appears to be a correctness/behavior change or broad refactor (*: make `explain` support `explain anaylze`). The available evidence here does not show a clear, targeted flaky-test stabilization mechanism tied to an intermittent failure signature, so we conservatively avoid guessing and downgrade this case.",
   "module": "statistics",
-  "fix_pattern": "*: make `explain` support `explain anaylze`",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/7827",
     "https://github.com/pingcap/tidb/pull/7827.patch"
@@ -33,17 +33,36 @@
   "changed_files": [
     "ast/misc.go",
     "executor/adapter.go",
+    "executor/admin.go",
     "executor/aggregate.go",
+    "executor/analyze.go",
     "executor/builder.go",
+    "executor/checksum.go",
+    "executor/ddl.go",
+    "executor/delete.go",
     "executor/distsql.go",
     "executor/executor.go",
+    "executor/explain.go",
+    "executor/grant.go",
     "executor/index_lookup_join.go",
+    "executor/insert.go",
     "executor/join.go",
+    "executor/load_data.go",
+    "executor/load_stats.go",
     "executor/merge_join.go",
+    "executor/prepared.go",
+    "executor/prepared_test.go",
     "executor/projection.go",
+    "executor/replace.go",
+    "executor/revoke.go",
+    "executor/set.go",
+    "executor/show.go",
+    "executor/simple.go",
     "executor/sort.go",
     "executor/table_reader.go",
+    "executor/trace.go",
     "executor/union_scan.go",
+    "executor/update.go",
     "parser/parser.y",
     "planner/core/cbo_test.go",
     "planner/core/common_plans.go",
@@ -61,5 +80,5 @@
       "files: ast/misc.go, executor/adapter.go, executor/admin.go, executor/aggregate.go, executor/analyze.go, executor/builder.go, executor/checksum.go, executor/ddl.go, executor/delete.go, executor/distsql.go, executor/executor.go, executor/explain.go, executor/grant.go, executor/index_lookup_join.go, executor/insert.go, executor/join.go, executor/load_data.go, executor/load_stats.go, executor/merge_join.go, executor/prepared.go, executor/prepared_test.go, executor/projection.go, executor/replace.go, executor/revoke.go, executor/set.go, executor/show.go, executor/simple.go, executor/sort.go, executor/table_reader.go, executor/trace.go, executor/union_scan.go, executor/update.go, parser/parser.y, planner/core/cbo_test.go, planner/core/common_plans.go, planner/core/planbuilder.go, sessionctx/stmtctx/stmtctx.go, util/execdetails/execdetails.go"
     ]
   },
-  "analysis": "PR title: *: make `explain` support `explain anaylze`\nPR url: https://github.com/pingcap/tidb/pull/7827\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - maintain ExecStats(a map), and init ExecStates entry in plan building phase(single thread, so map itself no race condition, but for entry...)\nChanged files (19): ast/misc.go, executor/adapter.go, executor/aggregate.go, executor/builder.go, executor/distsql.go, executor/executor.go, executor/index_lookup_join.go, executor/join.go, executor/merge_join.go, executor/projection.go, executor/sort.go, executor/table_reader.go, executor/union_scan.go, parser/parser.y, planner/core/cbo_test.go, planner/core/common_plans.go, planner/core/planbuilder.go, sessionctx/stmtctx/stmtctx.go, util/execdetails/execdetails.go\nPatch url: https://github.com/pingcap/tidb/pull/7827.patch\nPicked test: type=unit path=executor/prepared_test.go name=prepared_test"
+  "analysis": "PR title: *: make `explain` support `explain anaylze`\nPR url: https://github.com/pingcap/tidb/pull/7827\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - maintain ExecStats(a map), and init ExecStates entry in plan building phase(single thread, so map itself no race condition, but for entry...)\nChanged files (38): ast/misc.go, executor/adapter.go, executor/admin.go, executor/aggregate.go, executor/analyze.go, executor/builder.go, executor/checksum.go, executor/ddl.go, executor/delete.go, executor/distsql.go, executor/executor.go, executor/explain.go, executor/grant.go, executor/index_lookup_join.go, executor/insert.go, executor/join.go, executor/load_data.go, executor/load_stats.go, executor/merge_join.go, executor/prepared.go, executor/prepared_test.go, executor/projection.go, executor/replace.go, executor/revoke.go, executor/set.go, executor/show.go, executor/simple.go, executor/sort.go, executor/table_reader.go, executor/trace.go, executor/union_scan.go, executor/update.go, parser/parser.y, planner/core/cbo_test.go, planner/core/common_plans.go, planner/core/planbuilder.go, sessionctx/stmtctx/stmtctx.go, util/execdetails/execdetails.go\nPatch url: https://github.com/pingcap/tidb/pull/7827.patch\nPicked test: type=unit path=executor/prepared_test.go name=prepared_test"
 }

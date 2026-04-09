@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: util/timeutil: fix data race caused by forgetting set stats lease to 0.",
-  "module": "statistics",
-  "fix_pattern": "util/timeutil: fix data race caused by forgetting set stats lease to 0",
+  "root_cause_explanation": "The test was flaky under concurrency/-race due to unsynchronized shared state during bootstrap/timeutil initialization. This PR stabilizes it by (1) setting stats lease to 0 in test bootstrap to avoid background stats activity, and (2) guarding SetSystemTZ with sync.Once to prevent concurrent writes to a global variable.",
+  "module": "util",
+  "fix_pattern": "Eliminate data races in bootstrap/timeutil by disabling background leases in tests and guarding one-time global initialization (sync.Once).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/7901",
     "https://github.com/pingcap/tidb/pull/7901.patch"
