@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: stats: refactor stats update mechanism.",
+  "root_cause_explanation": "The test was flaky under `-race` because the statistics Handle maintained shared mutable maps (e.g. error-rate delta `rateMap`) that were accessed concurrently without consistent locking. This PR fixes it by moving `rateMap` under the Handle mutex and adding locks around clear/update paths, preventing concurrent map access races.",
   "module": "statistics",
-  "fix_pattern": "stats: refactor stats update mechanism",
+  "fix_pattern": "Put shared maps under a mutex and lock around read/write/clear operations to prevent concurrent map access data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/6901",
     "https://github.com/pingcap/tidb/pull/6901.patch"
@@ -38,7 +38,6 @@
     "statistics/boostrap.go",
     "statistics/ddl.go",
     "statistics/dump.go",
-    "statistics/feedback.go",
     "statistics/gc.go",
     "statistics/gc_test.go",
     "statistics/handle.go",
@@ -58,5 +57,5 @@
       "files: domain/domain.go, executor/analyze.go, executor/simple.go, executor/simple_test.go, statistics/boostrap.go, statistics/ddl.go, statistics/dump.go, statistics/gc.go, statistics/gc_test.go, statistics/handle.go, statistics/handle_test.go, statistics/histogram.go, statistics/table.go, statistics/update.go, statistics/update_list_test.go"
     ]
   },
-  "analysis": "PR title: stats: refactor stats update mechanism\nPR url: https://github.com/pingcap/tidb/pull/6901\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race for rate map\nChanged files (16): domain/domain.go, executor/analyze.go, executor/simple.go, executor/simple_test.go, statistics/boostrap.go, statistics/ddl.go, statistics/dump.go, statistics/feedback.go, statistics/gc.go, statistics/gc_test.go, statistics/handle.go, statistics/handle_test.go, statistics/histogram.go, statistics/table.go, statistics/update.go, statistics/update_list_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6901.patch\nPicked test: type=unit path=executor/simple_test.go name=simple_test"
+  "analysis": "PR title: stats: refactor stats update mechanism\nPR url: https://github.com/pingcap/tidb/pull/6901\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: fix data race for rate map\nChanged files (15): domain/domain.go, executor/analyze.go, executor/simple.go, executor/simple_test.go, statistics/boostrap.go, statistics/ddl.go, statistics/dump.go, statistics/gc.go, statistics/gc_test.go, statistics/handle.go, statistics/handle_test.go, statistics/histogram.go, statistics/table.go, statistics/update.go, statistics/update_list_test.go\nPatch url: https://github.com/pingcap/tidb/pull/6901.patch\nPicked test: type=unit path=executor/simple_test.go name=simple_test"
 }

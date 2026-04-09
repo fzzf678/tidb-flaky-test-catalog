@@ -17,24 +17,24 @@
   ],
   "failure_signature": "result = tk.MustQuery(\"select id, group_concat(name SEPARATOR '123') from test group by id order by id\") (executor/aggregate_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: Patch adds/updates group_concat support under a new aggregation framework (feature/refactor); no targeted flaky-test stabilization change is evident.",
   "module": "executor",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/7032",
     "https://github.com/pingcap/tidb/pull/7032.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/7032.patch",
   "changed_files": [
-    "executor/aggfuncs/aggfuncs.go",
     "executor/aggfuncs/builder.go",
     "executor/aggfuncs/func_group_concat.go",
+    "executor/aggfuncs/sets.go",
+    "executor/aggfuncs/aggfuncs.go",
     "executor/aggregate_test.go"
   ],
   "triage": {
@@ -44,8 +44,8 @@
     ],
     "evidence": [
       "evidence: result = tk.MustQuery(\"select id, group_concat(name SEPARATOR '123') from test group by id order by id\") (executor/aggregate_test.go)",
-      "files: executor/aggfuncs/aggfuncs.go, executor/aggfuncs/builder.go, executor/aggfuncs/func_group_concat.go, executor/aggfuncs/sets.go, executor/aggregate_test.go"
+      "files: executor/aggfuncs/builder.go, executor/aggfuncs/func_group_concat.go, executor/aggfuncs/sets.go, executor/aggfuncs/aggfuncs.go, executor/aggregate_test.go"
     ]
   },
-  "analysis": "PR title: executor: support group_concat under new aggregation evaluation framework\nPR url: https://github.com/pingcap/tidb/pull/7032\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select id, group_concat(name SEPARATOR '123') from test group by id order by id\") (executor/aggregate_test.go)\nChanged files (4): executor/aggfuncs/aggfuncs.go, executor/aggfuncs/builder.go, executor/aggfuncs/func_group_concat.go, executor/aggregate_test.go\nPatch url: https://github.com/pingcap/tidb/pull/7032.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+  "analysis": "PR title: executor: support group_concat under new aggregation evaluation framework\nPR url: https://github.com/pingcap/tidb/pull/7032\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select id, group_concat(name SEPARATOR '123') from test group by id order by id\") (executor/aggregate_test.go)\nChanged files (5): executor/aggfuncs/builder.go, executor/aggfuncs/func_group_concat.go, executor/aggfuncs/sets.go, executor/aggfuncs/aggfuncs.go, executor/aggregate_test.go\nPatch url: https://github.com/pingcap/tidb/pull/7032.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
 }
