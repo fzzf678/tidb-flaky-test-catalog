@@ -17,27 +17,24 @@
   ],
   "failure_signature": "\"select * from t1 order by c2\", (executor/explain_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (support explain) appears to be primarily a functional/correctness/change or test refactor. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1632",
     "https://github.com/pingcap/tidb/pull/1632.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/1632.patch",
   "changed_files": [
-    "ast/functions.go",
     "executor/builder.go",
     "executor/explain.go",
     "executor/explain_test.go",
     "expression/expression.go",
-    "parser/opcode/opcode.go",
-    "parser/opcode/opcode_test.go",
     "plan/column_pruning.go",
     "plan/join_reorder.go",
     "plan/logical_plan_builder.go",
@@ -47,8 +44,11 @@
     "plan/plan_test.go",
     "plan/planbuilder.go",
     "plan/predicate_push_down.go",
-    "plan/refiner.go",
-    "plan/stringer.go"
+    "plan/stringer.go",
+    "ast/functions.go",
+    "parser/opcode/opcode.go",
+    "parser/opcode/opcode_test.go",
+    "plan/refiner.go"
   ],
   "triage": {
     "sources": [
@@ -57,8 +57,8 @@
     ],
     "evidence": [
       "evidence: \"select * from t1 order by c2\", (executor/explain_test.go)",
-      "files: ast/functions.go, executor/builder.go, executor/explain.go, executor/explain_test.go, expression/expression.go, parser/opcode/opcode.go, parser/opcode/opcode_test.go, plan/column_pruning.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/physical_plans.go, plan/plan.go, plan/plan_test.go, plan/planbuilder.go, plan/predicate_push_down.go, plan/refiner.go, plan/stringer.go"
+      "files: executor/builder.go, executor/explain.go, executor/explain_test.go, expression/expression.go, plan/column_pruning.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/physical_plans.go, plan/plan.go, plan/plan_test.go, plan/planbuilder.go, plan/predicate_push_down.go, plan/stringer.go, ast/functions.go, parser/opcode/opcode.go, parser/opcode/opcode_test.go, plan/refiner.go"
     ]
   },
-  "analysis": "PR title: support explain\nPR url: https://github.com/pingcap/tidb/pull/1632\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"select * from t1 order by c2\", (executor/explain_test.go)\nChanged files (18): ast/functions.go, executor/builder.go, executor/explain.go, executor/explain_test.go, expression/expression.go, parser/opcode/opcode.go, parser/opcode/opcode_test.go, plan/column_pruning.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/physical_plans.go, plan/plan.go, plan/plan_test.go, plan/planbuilder.go, plan/predicate_push_down.go, plan/refiner.go, plan/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/1632.patch\nPicked test: type=unit path=executor/explain_test.go name=explain_test"
+  "analysis": "PR title: support explain\nPR url: https://github.com/pingcap/tidb/pull/1632\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"select * from t1 order by c2\", (executor/explain_test.go)\nChanged files (18): executor/builder.go, executor/explain.go, executor/explain_test.go, expression/expression.go, plan/column_pruning.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/physical_plans.go, plan/plan.go, plan/plan_test.go, plan/planbuilder.go, plan/predicate_push_down.go, plan/stringer.go, ast/functions.go, parser/opcode/opcode.go, parser/opcode/opcode_test.go, plan/refiner.go\nPatch url: https://github.com/pingcap/tidb/pull/1632.patch\nPicked test: type=unit path=executor/explain_test.go name=explain_test"
 }
