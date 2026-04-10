@@ -17,14 +17,14 @@
   ],
   "failure_signature": "$(GO) test --race -cover ./...",
   "root_cause_categories": [
-    "schema_change_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: add test flag to skip long time DDL test.",
+  "root_cause_explanation": "DDL test suites can be long-running under race/slow CI. This PR stabilizes CI by introducing a `skip_ddl` flag and skipping the long-running DDL suites by default (run with `-skip_ddl=false` when needed), reducing timeout risk.",
   "module": "ddl",
-  "fix_pattern": "add test flag to skip long time DDL test.",
+  "fix_pattern": "Gate long-running/slow test suites behind a flag (skip by default in race/CI) and provide an explicit opt-in to run the full DDL test set.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/648",
     "https://github.com/pingcap/tidb/pull/648.patch"

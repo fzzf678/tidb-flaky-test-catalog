@@ -22,24 +22,24 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: performance turning.",
-  "module": "module_unknown",
-  "fix_pattern": "performance turning",
+  "root_cause_explanation": "The tests were flaky under the race detector due to unsafe sharing of mutable state across goroutines (e.g., reusing an outer-scope `err` variable and concurrency around sync primitives). This PR stabilizes it by avoiding these data races (use goroutine-local `err := ...` in the test and avoid copying/unsafe usage of sync.WaitGroup in the compactor).",
+  "module": "kv",
+  "fix_pattern": "Avoid data races by using goroutine-local variables (e.g., `:=`) and not copying sync primitives; keep shared sync objects safely owned (e.g., WaitGroup pointer) when used concurrently.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/625",
     "https://github.com/pingcap/tidb/pull/625.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/625.patch",
   "changed_files": [
-    "kv/union_store.go",
-    "store/localstore/boltdb/boltdb.go",
-    "store/localstore/compactor.go",
-    "store/localstore/engine/engine.go",
-    "store/localstore/isolation_test.go",
     "store/localstore/kv.go",
-    "store/localstore/snapshot.go",
     "store/localstore/txn.go",
-    "util/codec/bytes.go"
+    "util/codec/bytes.go",
+    "kv/union_store.go",
+    "store/localstore/compactor.go",
+    "store/localstore/boltdb/boltdb.go",
+    "store/localstore/snapshot.go",
+    "store/localstore/engine/engine.go",
+    "store/localstore/isolation_test.go"
   ],
   "triage": {
     "sources": [
@@ -48,8 +48,8 @@
     ],
     "evidence": [
       "evidence: Fix data race",
-      "files: kv/union_store.go, store/localstore/boltdb/boltdb.go, store/localstore/compactor.go, store/localstore/engine/engine.go, store/localstore/isolation_test.go, store/localstore/kv.go, store/localstore/snapshot.go, store/localstore/txn.go, util/codec/bytes.go"
+      "files: store/localstore/kv.go, store/localstore/txn.go, util/codec/bytes.go, kv/union_store.go, store/localstore/compactor.go, store/localstore/boltdb/boltdb.go, store/localstore/snapshot.go, store/localstore/engine/engine.go, store/localstore/isolation_test.go"
     ]
   },
-  "analysis": "PR title: performance turning\nPR url: https://github.com/pingcap/tidb/pull/625\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Fix data race\nChanged files (9): kv/union_store.go, store/localstore/boltdb/boltdb.go, store/localstore/compactor.go, store/localstore/engine/engine.go, store/localstore/isolation_test.go, store/localstore/kv.go, store/localstore/snapshot.go, store/localstore/txn.go, util/codec/bytes.go\nPatch url: https://github.com/pingcap/tidb/pull/625.patch\nPicked test: type=unit path=store/localstore/isolation_test.go name=isolation_test"
+  "analysis": "PR title: performance turning\nPR url: https://github.com/pingcap/tidb/pull/625\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: Fix data race\nChanged files (9): store/localstore/kv.go, store/localstore/txn.go, util/codec/bytes.go, kv/union_store.go, store/localstore/compactor.go, store/localstore/boltdb/boltdb.go, store/localstore/snapshot.go, store/localstore/engine/engine.go, store/localstore/isolation_test.go\nPatch url: https://github.com/pingcap/tidb/pull/625.patch\nPicked test: type=unit path=store/localstore/isolation_test.go name=isolation_test"
 }
