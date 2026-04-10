@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: domain: Fix data race.",
+  "root_cause_explanation": "The test was flaky under the race detector because a mock flag (MockReloadFailed) was accessed concurrently without synchronization. This PR stabilizes it by wrapping the mock flag with a RWMutex-protected helper and accessing it via SetValue/getValue.",
   "module": "domain",
-  "fix_pattern": "domain: Fix data race",
+  "fix_pattern": "Guard mock flags/shared state used across goroutines with synchronization (RWMutex/atomic) to avoid data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2062",
     "https://github.com/pingcap/tidb/pull/2062.patch"

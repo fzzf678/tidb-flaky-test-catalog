@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: sessionctx/binloginfo: fix race.",
+  "root_cause_explanation": "The test was flaky under the race detector because background DDL could still be running while global PumpClient was being cleared during teardown. This PR stabilizes it by stopping DDL before setting PumpClient to nil.",
   "module": "session",
-  "fix_pattern": "sessionctx/binloginfo: fix race.",
+  "fix_pattern": "Stop background workers (e.g., DDL) before clearing shared globals in teardown to avoid data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2130",
     "https://github.com/pingcap/tidb/pull/2130.patch"
