@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: make race with debug level.",
-  "module": "module_unknown",
-  "fix_pattern": "*: make race with debug level",
+  "root_cause_explanation": "The test was flaky under the race detector because DDL hook callbacks run in another goroutine and accessed shared variables (e.g., table handles) without synchronization. This PR stabilizes it by guarding the shared state with a mutex and locking around both the callback updates and the main test's reads.",
+  "module": "ddl",
+  "fix_pattern": "Protect shared variables accessed by async DDL hook goroutines with synchronization (e.g., `sync.Mutex`), and lock around both writer and reader sides in tests.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1687",
     "https://github.com/pingcap/tidb/pull/1687.patch"
@@ -32,12 +32,12 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/1687.patch",
   "changed_files": [
     "Makefile",
-    "ddl/column_change_test.go",
     "ddl/ddl_test.go",
     "executor/executor_test.go",
     "privilege/privileges/privileges_test.go",
     "store/store_test.go",
-    "tidb_test.go"
+    "tidb_test.go",
+    "ddl/column_change_test.go"
   ],
   "triage": {
     "sources": [
@@ -46,8 +46,8 @@
     ],
     "evidence": [
       "evidence: *: make race with debug level",
-      "files: Makefile, ddl/column_change_test.go, ddl/ddl_test.go, executor/executor_test.go, privilege/privileges/privileges_test.go, store/store_test.go, tidb_test.go"
+      "files: Makefile, ddl/ddl_test.go, executor/executor_test.go, privilege/privileges/privileges_test.go, store/store_test.go, tidb_test.go, ddl/column_change_test.go"
     ]
   },
-  "analysis": "PR title: *: make race with debug level\nPR url: https://github.com/pingcap/tidb/pull/1687\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: *: make race with debug level\nChanged files (7): Makefile, ddl/column_change_test.go, ddl/ddl_test.go, executor/executor_test.go, privilege/privileges/privileges_test.go, store/store_test.go, tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/1687.patch\nPicked test: type=unit path=ddl/column_change_test.go name=column_change_test"
+  "analysis": "PR title: *: make race with debug level\nPR url: https://github.com/pingcap/tidb/pull/1687\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: *: make race with debug level\nChanged files (7): Makefile, ddl/ddl_test.go, executor/executor_test.go, privilege/privileges/privileges_test.go, store/store_test.go, tidb_test.go, ddl/column_change_test.go\nPatch url: https://github.com/pingcap/tidb/pull/1687.patch\nPicked test: type=unit path=ddl/column_change_test.go name=column_change_test"
 }

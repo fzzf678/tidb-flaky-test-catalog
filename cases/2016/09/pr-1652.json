@@ -20,11 +20,11 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "relying_on_map_iteration_order"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it compared a list of predicate/condition strings whose order was nondeterministic (e.g., derived from map iteration / optimizer output ordering). This PR stabilizes it by sorting the collected strings before joining and asserting, making the assertion deterministic.",
+  "module": "planner",
+  "fix_pattern": "Sort collected results/strings before assertions to avoid nondeterministic ordering (e.g., from map iteration).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1652",
     "https://github.com/pingcap/tidb/pull/1652.patch"
@@ -32,10 +32,11 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/1652.patch",
   "changed_files": [
     "expression/expression.go",
-    "plan/expression_rewriter.go",
-    "plan/logical_plan_builder.go",
+    "plan/predicate_push_down.go",
     "plan/plan_test.go",
-    "plan/predicate_push_down.go"
+    "executor/builder.go",
+    "plan/expression_rewriter.go",
+    "plan/logical_plan_builder.go"
   ],
   "triage": {
     "sources": [
@@ -44,8 +45,8 @@
     ],
     "evidence": [
       "evidence: sort.Strings(result) (plan/plan_test.go)",
-      "files: executor/builder.go, expression/expression.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/plan_test.go, plan/predicate_push_down.go"
+      "files: expression/expression.go, plan/predicate_push_down.go, plan/plan_test.go, executor/builder.go, plan/expression_rewriter.go, plan/logical_plan_builder.go"
     ]
   },
-  "analysis": "PR title: support constant propagation\nPR url: https://github.com/pingcap/tidb/pull/1652\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Strings(result) (plan/plan_test.go)\nChanged files (5): expression/expression.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/plan_test.go, plan/predicate_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/1652.patch\nPicked test: type=unit path=plan/plan_test.go name=plan_test"
+  "analysis": "PR title: support constant propagation\nPR url: https://github.com/pingcap/tidb/pull/1652\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Strings(result) (plan/plan_test.go)\nChanged files (6): expression/expression.go, plan/predicate_push_down.go, plan/plan_test.go, executor/builder.go, plan/expression_rewriter.go, plan/logical_plan_builder.go\nPatch url: https://github.com/pingcap/tidb/pull/1652.patch\nPicked test: type=unit path=plan/plan_test.go name=plan_test"
 }
