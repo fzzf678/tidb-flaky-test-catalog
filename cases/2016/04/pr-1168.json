@@ -17,14 +17,14 @@
   ],
   "failure_signature": "- $(GO) test --race -cover ./...",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: ticlient: import ticlient.",
-  "module": "module_unknown",
-  "fix_pattern": "ticlient: import ticlient",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (ticlient: import ticlient) appears to be primarily a functional/correctness change or refactor. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
+  "module": "kv",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1168",
     "https://github.com/pingcap/tidb/pull/1168.patch"
@@ -32,6 +32,30 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/1168.patch",
   "changed_files": [
     "Makefile",
+    "ticlient/backoff.go",
+    "ticlient/client.go",
+    "ticlient/client_test.go",
+    "ticlient/coprocessor.go",
+    "ticlient/coprocessor_test.go",
+    "ticlient/error.go",
+    "ticlient/kv.go",
+    "ticlient/kv_test.go",
+    "ticlient/lock.go",
+    "ticlient/oracle/oracle.go",
+    "ticlient/oracle/oracles/local.go",
+    "ticlient/oracle/oracles/local_test.go",
+    "ticlient/oracle/oracles/pd.go",
+    "ticlient/region_cache.go",
+    "ticlient/region_cache_test.go",
+    "ticlient/scan.go",
+    "ticlient/scan_mock_test.go",
+    "ticlient/scan_test.go",
+    "ticlient/snapshot.go",
+    "ticlient/snapshot_test.go",
+    "ticlient/ticlient_test.go",
+    "ticlient/txn.go",
+    "ticlient/txn_committer.go",
+    "tidb-server/main.go",
     "store/tikv/backoff.go",
     "store/tikv/client.go",
     "store/tikv/client_test.go",
@@ -54,8 +78,7 @@
     "store/tikv/snapshot_test.go",
     "store/tikv/ticlient_test.go",
     "store/tikv/txn.go",
-    "store/tikv/txn_committer.go",
-    "tidb-server/main.go"
+    "store/tikv/txn_committer.go"
   ],
   "triage": {
     "sources": [
@@ -64,8 +87,8 @@
     ],
     "evidence": [
       "evidence: - $(GO) test --race -cover ./...",
-      "files: Makefile, store/tikv/backoff.go, store/tikv/client.go, store/tikv/client_test.go, store/tikv/coprocessor.go, store/tikv/coprocessor_test.go, store/tikv/error.go, store/tikv/kv.go, store/tikv/kv_test.go, store/tikv/lock.go, store/tikv/oracle/oracle.go, store/tikv/oracle/oracles/local.go, store/tikv/oracle/oracles/local_test.go, store/tikv/oracle/oracles/pd.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, store/tikv/scan.go, store/tikv/scan_mock_test.go, store/tikv/scan_test.go, store/tikv/snapshot.go, store/tikv/snapshot_test.go, store/tikv/ticlient_test.go, store/tikv/txn.go, store/tikv/txn_committer.go, ticlient/backoff.go, ticlient/client.go, ticlient/client_test.go, ticlient/coprocessor.go, ticlient/coprocessor_test.go, ticlient/error.go, ticlient/kv.go, ticlient/kv_test.go, ticlient/lock.go, ticlient/oracle/oracle.go, ticlient/oracle/oracles/local.go, ticlient/oracle/oracles/local_test.go, ticlient/oracle/oracles/pd.go, ticlient/region_cache.go, ticlient/region_cache_test.go, ticlient/scan.go, ticlient/scan_mock_test.go, ticlient/scan_test.go, ticlient/snapshot.go, ticlient/snapshot_test.go, ticlient/ticlient_test.go, ticlient/txn.go, ticlient/txn_committer.go, tidb-server/main.go"
+      "files: Makefile, ticlient/backoff.go, ticlient/client.go, ticlient/client_test.go, ticlient/coprocessor.go, ticlient/coprocessor_test.go, ticlient/error.go, ticlient/kv.go, ticlient/kv_test.go, ticlient/lock.go, ticlient/oracle/oracle.go, ticlient/oracle/oracles/local.go, ticlient/oracle/oracles/local_test.go, ticlient/oracle/oracles/pd.go, ticlient/region_cache.go, ticlient/region_cache_test.go, ticlient/scan.go, ticlient/scan_mock_test.go, ticlient/scan_test.go, ticlient/snapshot.go, ticlient/snapshot_test.go, ticlient/ticlient_test.go, ticlient/txn.go, ticlient/txn_committer.go, tidb-server/main.go, store/tikv/backoff.go, store/tikv/client.go, store/tikv/client_test.go, store/tikv/coprocessor.go, store/tikv/coprocessor_test.go, store/tikv/error.go, store/tikv/kv.go, store/tikv/kv_test.go, store/tikv/lock.go, store/tikv/oracle/oracle.go, store/tikv/oracle/oracles/local.go, store/tikv/oracle/oracles/local_test.go, store/tikv/oracle/oracles/pd.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, store/tikv/scan.go, store/tikv/scan_mock_test.go, store/tikv/scan_test.go, store/tikv/snapshot.go, store/tikv/snapshot_test.go, store/tikv/ticlient_test.go, store/tikv/txn.go, store/tikv/txn_committer.go"
     ]
   },
-  "analysis": "PR title: ticlient: import ticlient\nPR url: https://github.com/pingcap/tidb/pull/1168\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - $(GO) test --race -cover ./...\nChanged files (25): Makefile, store/tikv/backoff.go, store/tikv/client.go, store/tikv/client_test.go, store/tikv/coprocessor.go, store/tikv/coprocessor_test.go, store/tikv/error.go, store/tikv/kv.go, store/tikv/kv_test.go, store/tikv/lock.go, store/tikv/oracle/oracle.go, store/tikv/oracle/oracles/local.go, store/tikv/oracle/oracles/local_test.go, store/tikv/oracle/oracles/pd.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, store/tikv/scan.go, store/tikv/scan_mock_test.go, store/tikv/scan_test.go, store/tikv/snapshot.go, store/tikv/snapshot_test.go, store/tikv/ticlient_test.go, store/tikv/txn.go, store/tikv/txn_committer.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/1168.patch\nPicked test: type=unit path=store/tikv/client_test.go name=client_test"
+  "analysis": "PR title: ticlient: import ticlient\nPR url: https://github.com/pingcap/tidb/pull/1168\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: - $(GO) test --race -cover ./...\nChanged files (48): Makefile, ticlient/backoff.go, ticlient/client.go, ticlient/client_test.go, ticlient/coprocessor.go, ticlient/coprocessor_test.go, ticlient/error.go, ticlient/kv.go, ticlient/kv_test.go, ticlient/lock.go, ticlient/oracle/oracle.go, ticlient/oracle/oracles/local.go, ticlient/oracle/oracles/local_test.go, ticlient/oracle/oracles/pd.go, ticlient/region_cache.go, ticlient/region_cache_test.go, ticlient/scan.go, ticlient/scan_mock_test.go, ticlient/scan_test.go, ticlient/snapshot.go, ticlient/snapshot_test.go, ticlient/ticlient_test.go, ticlient/txn.go, ticlient/txn_committer.go, tidb-server/main.go, store/tikv/backoff.go, store/tikv/client.go, store/tikv/client_test.go, store/tikv/coprocessor.go, store/tikv/coprocessor_test.go, store/tikv/error.go, store/tikv/kv.go, store/tikv/kv_test.go, store/tikv/lock.go, store/tikv/oracle/oracle.go, store/tikv/oracle/oracles/local.go, store/tikv/oracle/oracles/local_test.go, store/tikv/oracle/oracles/pd.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, store/tikv/scan.go, store/tikv/scan_mock_test.go, store/tikv/scan_test.go, store/tikv/snapshot.go, store/tikv/snapshot_test.go, store/tikv/ticlient_test.go, store/tikv/txn.go, store/tikv/txn_committer.go\nPatch url: https://github.com/pingcap/tidb/pull/1168.patch\nPicked test: type=unit path=store/tikv/client_test.go name=client_test"
 }
