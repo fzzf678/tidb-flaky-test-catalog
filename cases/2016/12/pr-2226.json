@@ -22,7 +22,7 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: distsql, executor: fix select channel bug that may discard error.",
+  "root_cause_explanation": "The test was flaky due to a concurrency race in `selectResult.Next()`: selecting between separate result and error channels is nondeterministic and could discard errors. This PR stabilizes it by using a single channel carrying both partial results and errors.",
   "module": "executor",
   "fix_pattern": "distsql, executor: fix select channel bug that may discard error.",
   "evidence_links": [
