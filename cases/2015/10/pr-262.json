@@ -17,15 +17,14 @@
   ],
   "failure_signature": "\"select * from t1, t2 order by t1.c1, t1.c2, t2.c1, t2.c2\", (plan/plans/join_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (plans:fix a bug in index plan) appears to be primarily a functional/correctness change or refactor. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
+  "module": "planner",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/262",
     "https://github.com/pingcap/tidb/pull/262.patch"
@@ -34,15 +33,15 @@
   "changed_files": [
     "expression/binop.go",
     "expression/binop_test.go",
-    "expression/visitor_ident.go",
-    "expression/visitor_test.go",
     "field/result_field.go",
     "plan/plans/from.go",
     "plan/plans/index.go",
     "plan/plans/index_test.go",
+    "util/testkit/testkit.go",
+    "expression/visitor_ident.go",
     "plan/plans/join.go",
     "plan/plans/join_test.go",
-    "util/testkit/testkit.go"
+    "expression/visitor_test.go"
   ],
   "triage": {
     "sources": [
@@ -51,8 +50,8 @@
     ],
     "evidence": [
       "evidence: \"select * from t1, t2 order by t1.c1, t1.c2, t2.c1, t2.c2\", (plan/plans/join_test.go)",
-      "files: expression/binop.go, expression/binop_test.go, expression/visitor_ident.go, expression/visitor_test.go, field/result_field.go, plan/plans/from.go, plan/plans/index.go, plan/plans/index_test.go, plan/plans/join.go, plan/plans/join_test.go, util/testkit/testkit.go"
+      "files: expression/binop.go, expression/binop_test.go, field/result_field.go, plan/plans/from.go, plan/plans/index.go, plan/plans/index_test.go, util/testkit/testkit.go, expression/visitor_ident.go, plan/plans/join.go, plan/plans/join_test.go, expression/visitor_test.go"
     ]
   },
-  "analysis": "PR title: plans:fix a bug in index plan\nPR url: https://github.com/pingcap/tidb/pull/262\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"select * from t1, t2 order by t1.c1, t1.c2, t2.c1, t2.c2\", (plan/plans/join_test.go)\nChanged files (11): expression/binop.go, expression/binop_test.go, expression/visitor_ident.go, expression/visitor_test.go, field/result_field.go, plan/plans/from.go, plan/plans/index.go, plan/plans/index_test.go, plan/plans/join.go, plan/plans/join_test.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/262.patch\nPicked test: type=unit path=plan/plans/join_test.go name=join_test"
+  "analysis": "PR title: plans:fix a bug in index plan\nPR url: https://github.com/pingcap/tidb/pull/262\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: \"select * from t1, t2 order by t1.c1, t1.c2, t2.c1, t2.c2\", (plan/plans/join_test.go)\nChanged files (11): expression/binop.go, expression/binop_test.go, field/result_field.go, plan/plans/from.go, plan/plans/index.go, plan/plans/index_test.go, util/testkit/testkit.go, expression/visitor_ident.go, plan/plans/join.go, plan/plans/join_test.go, expression/visitor_test.go\nPatch url: https://github.com/pingcap/tidb/pull/262.patch\nPicked test: type=unit path=plan/plans/join_test.go name=join_test"
 }

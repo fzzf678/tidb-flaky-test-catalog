@@ -17,14 +17,14 @@
   ],
   "failure_signature": "mustExecMatch(c, se, \"select c1 as c2 from t order by c2 + 1\", [][]interface{}{{2}, {1}}) (tidb_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (refactor ident) appears to be primarily a functional/correctness change or refactor. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
   "module": "expression",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/409",
     "https://github.com/pingcap/tidb/pull/409.patch"
@@ -36,33 +36,33 @@
     "expression/helper_test.go",
     "expression/ident.go",
     "expression/ident_test.go",
-    "plan/plans/fields.go",
-    "plan/plans/groupby.go",
-    "plan/plans/groupby_test.go",
-    "plan/plans/having.go",
-    "plan/plans/having_test.go",
-    "plan/plans/join.go",
-    "plan/plans/orderby.go",
-    "plan/plans/orderby_test.go",
-    "plan/plans/row_stack.go",
     "plan/plans/select_list.go",
     "plan/plans/select_list_test.go",
-    "plan/plans/where.go",
-    "plan/plans/where_test.go",
+    "rset/rsets/groupby.go",
+    "plan/plans/groupby.go",
+    "plan/plans/groupby_test.go",
+    "rset/rsets/helper.go",
+    "plan/plans/fields.go",
     "rset/rsets/fields.go",
     "rset/rsets/fields_test.go",
-    "rset/rsets/groupby.go",
+    "plan/plans/where.go",
+    "plan/plans/where_test.go",
+    "rset/rsets/where.go",
+    "plan/plans/orderby.go",
+    "plan/plans/orderby_test.go",
     "rset/rsets/groupby_test.go",
     "rset/rsets/having.go",
     "rset/rsets/having_test.go",
-    "rset/rsets/helper.go",
-    "rset/rsets/join.go",
     "rset/rsets/orderby.go",
     "rset/rsets/orderby_test.go",
-    "rset/rsets/where.go",
     "stmt/stmts/select.go",
     "stmt/stmts/union.go",
-    "tidb_test.go"
+    "tidb_test.go",
+    "plan/plans/having.go",
+    "plan/plans/having_test.go",
+    "plan/plans/row_stack.go",
+    "plan/plans/join.go",
+    "rset/rsets/join.go"
   ],
   "triage": {
     "sources": [
@@ -71,8 +71,8 @@
     ],
     "evidence": [
       "evidence: mustExecMatch(c, se, \"select c1 as c2 from t order by c2 + 1\", [][]interface{}{{2}, {1}}) (tidb_test.go)",
-      "files: expression/binop_test.go, expression/helper.go, expression/helper_test.go, expression/ident.go, expression/ident_test.go, plan/plans/fields.go, plan/plans/groupby.go, plan/plans/groupby_test.go, plan/plans/having.go, plan/plans/having_test.go, plan/plans/join.go, plan/plans/orderby.go, plan/plans/orderby_test.go, plan/plans/row_stack.go, plan/plans/select_list.go, plan/plans/select_list_test.go, plan/plans/where.go, plan/plans/where_test.go, rset/rsets/fields.go, rset/rsets/fields_test.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, rset/rsets/having.go, rset/rsets/having_test.go, rset/rsets/helper.go, rset/rsets/join.go, rset/rsets/orderby.go, rset/rsets/orderby_test.go, rset/rsets/where.go, stmt/stmts/select.go, stmt/stmts/union.go, tidb_test.go"
+      "files: expression/binop_test.go, expression/helper.go, expression/helper_test.go, expression/ident.go, expression/ident_test.go, plan/plans/select_list.go, plan/plans/select_list_test.go, rset/rsets/groupby.go, plan/plans/groupby.go, plan/plans/groupby_test.go, rset/rsets/helper.go, plan/plans/fields.go, rset/rsets/fields.go, rset/rsets/fields_test.go, plan/plans/where.go, plan/plans/where_test.go, rset/rsets/where.go, plan/plans/orderby.go, plan/plans/orderby_test.go, rset/rsets/groupby_test.go, rset/rsets/having.go, rset/rsets/having_test.go, rset/rsets/orderby.go, rset/rsets/orderby_test.go, stmt/stmts/select.go, stmt/stmts/union.go, tidb_test.go, plan/plans/having.go, plan/plans/having_test.go, plan/plans/row_stack.go, plan/plans/join.go, rset/rsets/join.go"
     ]
   },
-  "analysis": "PR title: refactor ident\nPR url: https://github.com/pingcap/tidb/pull/409\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: mustExecMatch(c, se, \"select c1 as c2 from t order by c2 + 1\", [][]interface{}{{2}, {1}}) (tidb_test.go)\nChanged files (32): expression/binop_test.go, expression/helper.go, expression/helper_test.go, expression/ident.go, expression/ident_test.go, plan/plans/fields.go, plan/plans/groupby.go, plan/plans/groupby_test.go, plan/plans/having.go, plan/plans/having_test.go, plan/plans/join.go, plan/plans/orderby.go, plan/plans/orderby_test.go, plan/plans/row_stack.go, plan/plans/select_list.go, plan/plans/select_list_test.go, plan/plans/where.go, plan/plans/where_test.go, rset/rsets/fields.go, rset/rsets/fields_test.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, rset/rsets/having.go, rset/rsets/having_test.go, rset/rsets/helper.go, rset/rsets/join.go, rset/rsets/orderby.go, rset/rsets/orderby_test.go, rset/rsets/where.go, stmt/stmts/select.go, stmt/stmts/union.go, tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/409.patch\nPicked test: type=unit path=tidb_test.go name=tidb_test"
+  "analysis": "PR title: refactor ident\nPR url: https://github.com/pingcap/tidb/pull/409\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: mustExecMatch(c, se, \"select c1 as c2 from t order by c2 + 1\", [][]interface{}{{2}, {1}}) (tidb_test.go)\nChanged files (32): expression/binop_test.go, expression/helper.go, expression/helper_test.go, expression/ident.go, expression/ident_test.go, plan/plans/select_list.go, plan/plans/select_list_test.go, rset/rsets/groupby.go, plan/plans/groupby.go, plan/plans/groupby_test.go, rset/rsets/helper.go, plan/plans/fields.go, rset/rsets/fields.go, rset/rsets/fields_test.go, plan/plans/where.go, plan/plans/where_test.go, rset/rsets/where.go, plan/plans/orderby.go, plan/plans/orderby_test.go, rset/rsets/groupby_test.go, rset/rsets/having.go, rset/rsets/having_test.go, rset/rsets/orderby.go, rset/rsets/orderby_test.go, stmt/stmts/select.go, stmt/stmts/union.go, tidb_test.go, plan/plans/having.go, plan/plans/having_test.go, plan/plans/row_stack.go, plan/plans/join.go, rset/rsets/join.go\nPatch url: https://github.com/pingcap/tidb/pull/409.patch\nPicked test: type=unit path=tidb_test.go name=tidb_test"
 }

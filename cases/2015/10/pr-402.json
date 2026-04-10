@@ -17,28 +17,28 @@
   ],
   "failure_signature": "mustExecMatch(c, se, \"select c1 as a, c1 as b from t order by c1\", [][]interface{}{{1, 1}, {2, 2}}) (tidb_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (update ambiguous check) appears to be primarily a functional/correctness change or refactor. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
+  "module": "planner",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/402",
     "https://github.com/pingcap/tidb/pull/402.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/402.patch",
   "changed_files": [
-    "expression/helper.go",
-    "field/result_field.go",
     "plan/plans/select_list.go",
     "plan/plans/select_list_test.go",
     "rset/rsets/groupby.go",
     "rset/rsets/groupby_test.go",
+    "tidb_test.go",
     "rset/rsets/orderby.go",
-    "tidb_test.go"
+    "expression/helper.go",
+    "field/result_field.go"
   ],
   "triage": {
     "sources": [
@@ -47,8 +47,8 @@
     ],
     "evidence": [
       "evidence: mustExecMatch(c, se, \"select c1 as a, c1 as b from t order by c1\", [][]interface{}{{1, 1}, {2, 2}}) (tidb_test.go)",
-      "files: expression/helper.go, field/result_field.go, plan/plans/select_list.go, plan/plans/select_list_test.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, rset/rsets/orderby.go, tidb_test.go"
+      "files: plan/plans/select_list.go, plan/plans/select_list_test.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, tidb_test.go, rset/rsets/orderby.go, expression/helper.go, field/result_field.go"
     ]
   },
-  "analysis": "PR title: update ambiguous check\nPR url: https://github.com/pingcap/tidb/pull/402\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: mustExecMatch(c, se, \"select c1 as a, c1 as b from t order by c1\", [][]interface{}{{1, 1}, {2, 2}}) (tidb_test.go)\nChanged files (8): expression/helper.go, field/result_field.go, plan/plans/select_list.go, plan/plans/select_list_test.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, rset/rsets/orderby.go, tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/402.patch\nPicked test: type=unit path=tidb_test.go name=tidb_test"
+  "analysis": "PR title: update ambiguous check\nPR url: https://github.com/pingcap/tidb/pull/402\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: mustExecMatch(c, se, \"select c1 as a, c1 as b from t order by c1\", [][]interface{}{{1, 1}, {2, 2}}) (tidb_test.go)\nChanged files (8): plan/plans/select_list.go, plan/plans/select_list_test.go, rset/rsets/groupby.go, rset/rsets/groupby_test.go, tidb_test.go, rset/rsets/orderby.go, expression/helper.go, field/result_field.go\nPatch url: https://github.com/pingcap/tidb/pull/402.patch\nPicked test: type=unit path=tidb_test.go name=tidb_test"
 }
