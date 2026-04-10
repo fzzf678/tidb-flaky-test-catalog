@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: session_test: Fix data race.",
+  "root_cause_explanation": "The test was flaky under the race detector because a goroutine wrote to an outer-scope variable (`err`) shared across goroutines. This PR stabilizes it by using a goroutine-local variable (`:=`) so the error value is not shared, eliminating the data race.",
   "module": "session",
-  "fix_pattern": "session_test: Fix data race",
+  "fix_pattern": "Avoid sharing mutable variables across goroutines in tests; use goroutine-local variables (e.g., `:=`) to prevent -race data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/672",
     "https://github.com/pingcap/tidb/pull/672.patch"
