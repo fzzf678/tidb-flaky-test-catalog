@@ -22,17 +22,20 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: run a bootstrap session before store is ready (fix race).",
+  "root_cause_explanation": "The test was flaky due to initialization timing/races: sessions and tests could start using a store before the bootstrap session finished setting up required state. This PR stabilizes it by explicitly running `tidb.BootstrapSession(store)` in test setup before creating sessions or executing SQL.",
   "module": "session",
-  "fix_pattern": "*: run a bootstrap session before store is ready (fix race)",
+  "fix_pattern": "Initialize required global/store state (e.g., run BootstrapSession) before starting tests/sessions to avoid startup timing races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2491",
     "https://github.com/pingcap/tidb/pull/2491.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/2491.patch",
   "changed_files": [
-    "bootstrap_test.go",
     "ddl/ddl_db_test.go",
+    "sessionctx/binloginfo/binloginfo_test.go",
+    "store/tikv/gc_worker_test.go",
+    "store/tikv/store_test.go",
+    "bootstrap_test.go",
     "executor/executor_test.go",
     "perfschema/perfschema_test.go",
     "plan/resolver_test.go",
@@ -42,9 +45,6 @@
     "server/tidb_test.go",
     "session.go",
     "session_test.go",
-    "sessionctx/binloginfo/binloginfo_test.go",
-    "store/tikv/gc_worker_test.go",
-    "store/tikv/store_test.go",
     "store/tikv/ticlient_test.go",
     "table/tables/tables_test.go",
     "tidb-server/main.go",
@@ -57,8 +57,8 @@
     ],
     "evidence": [
       "evidence: *: run a bootstrap session before store is ready (fix race)",
-      "files: bootstrap_test.go, ddl/ddl_db_test.go, executor/executor_test.go, perfschema/perfschema_test.go, plan/resolver_test.go, plan/typeinferer_test.go, privilege/privileges/cache_test.go, privilege/privileges/privileges_test.go, server/tidb_test.go, session.go, session_test.go, sessionctx/binloginfo/binloginfo_test.go, store/tikv/gc_worker_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, table/tables/tables_test.go, tidb-server/main.go, tidb_test.go"
+      "files: ddl/ddl_db_test.go, sessionctx/binloginfo/binloginfo_test.go, store/tikv/gc_worker_test.go, store/tikv/store_test.go, bootstrap_test.go, executor/executor_test.go, perfschema/perfschema_test.go, plan/resolver_test.go, plan/typeinferer_test.go, privilege/privileges/cache_test.go, privilege/privileges/privileges_test.go, server/tidb_test.go, session.go, session_test.go, store/tikv/ticlient_test.go, table/tables/tables_test.go, tidb-server/main.go, tidb_test.go"
     ]
   },
-  "analysis": "PR title: *: run a bootstrap session before store is ready (fix race)\nPR url: https://github.com/pingcap/tidb/pull/2491\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: *: run a bootstrap session before store is ready (fix race)\nChanged files (18): bootstrap_test.go, ddl/ddl_db_test.go, executor/executor_test.go, perfschema/perfschema_test.go, plan/resolver_test.go, plan/typeinferer_test.go, privilege/privileges/cache_test.go, privilege/privileges/privileges_test.go, server/tidb_test.go, session.go, session_test.go, sessionctx/binloginfo/binloginfo_test.go, store/tikv/gc_worker_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, table/tables/tables_test.go, tidb-server/main.go, tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/2491.patch\nPicked test: type=unit path=bootstrap_test.go name=bootstrap_test"
+  "analysis": "PR title: *: run a bootstrap session before store is ready (fix race)\nPR url: https://github.com/pingcap/tidb/pull/2491\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: *: run a bootstrap session before store is ready (fix race)\nChanged files (18): ddl/ddl_db_test.go, sessionctx/binloginfo/binloginfo_test.go, store/tikv/gc_worker_test.go, store/tikv/store_test.go, bootstrap_test.go, executor/executor_test.go, perfschema/perfschema_test.go, plan/resolver_test.go, plan/typeinferer_test.go, privilege/privileges/cache_test.go, privilege/privileges/privileges_test.go, server/tidb_test.go, session.go, session_test.go, store/tikv/ticlient_test.go, table/tables/tables_test.go, tidb-server/main.go, tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/2491.patch\nPicked test: type=unit path=bootstrap_test.go name=bootstrap_test"
 }
