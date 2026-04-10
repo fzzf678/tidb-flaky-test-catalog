@@ -17,15 +17,14 @@
   ],
   "failure_signature": "*: Add row count field in a job, fix a drop schema bug and pass race",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: *: Add row count field in a job, fix a drop schema bug and pass race.",
+  "root_cause_explanation": "The test suite was flaky under the race detector because DDL workers invoke hook callbacks (OnChanged/OnJobUpdated/OnBgJobUpdated) concurrently while tests update `d.hook` or rely on hook state without synchronization. This PR stabilizes it by introducing `hookMu`-protected helper methods (e.g., `setHookWithLock`, `hookOnChangeWithLock`) and locking around hook callback invocations.",
   "module": "ddl",
-  "fix_pattern": "*: Add row count field in a job, fix a drop schema bug and pass race",
+  "fix_pattern": "Guard shared DDL hook/callback state with a mutex; use locked setters and wrappers when invoking hooks from worker goroutines to satisfy -race.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1759",
     "https://github.com/pingcap/tidb/pull/1759.patch"

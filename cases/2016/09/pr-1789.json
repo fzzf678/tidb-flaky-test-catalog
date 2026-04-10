@@ -17,15 +17,14 @@
   ],
   "failure_signature": "store/tikv: fix a data race.",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: store/tikv: fix a data race.",
+  "root_cause_explanation": "The test was flaky under the race detector because the mock oracle's timestamp method accessed shared state with insufficient synchronization. This PR stabilizes it by using an exclusive mutex lock in `GetTimestamp` to prevent concurrent read/write races.",
   "module": "kv",
-  "fix_pattern": "store/tikv: fix a data race.",
+  "fix_pattern": "Use proper mutex locking (exclusive `Lock`) for shared mutable state in test mocks to avoid -race data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1789",
     "https://github.com/pingcap/tidb/pull/1789.patch"

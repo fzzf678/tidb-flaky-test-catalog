@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: Pass make race",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: Pass make race.",
+  "root_cause_explanation": "The test was flaky under the race detector because it executed DDL statements from a goroutine using shared session/testkit state, leading to unsynchronized access to session internals. This PR stabilizes it by executing the DDL in the goroutine via a separate session (e.g., `sessionExec`) instead of reusing the shared test helper.",
   "module": "ddl",
-  "fix_pattern": "ddl: Pass make race",
+  "fix_pattern": "Avoid sharing a session/testkit across goroutines; run async DDL via a separate session/connection (or synchronize access) to prevent -race data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1669",
     "https://github.com/pingcap/tidb/pull/1669.patch"
