@@ -17,42 +17,43 @@
   ],
   "failure_signature": "sql: \"select * from t a where a.c = 1 order by a.d limit 2\", (plan/new_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (support cbo) appears to be primarily a functional/correctness/change or test refactor. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
   "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1498",
     "https://github.com/pingcap/tidb/pull/1498.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/1498.patch",
   "changed_files": [
-    "executor/aggregate_xapi.go",
-    "executor/builder.go",
-    "executor/executor.go",
-    "executor/executor_test.go",
     "executor/new_builder.go",
-    "executor/new_executor.go",
-    "executor/new_executor_xapi.go",
-    "expression/expression.go",
-    "meta/meta.go",
     "plan/expression_rewriter.go",
     "plan/logical_plan_builder.go",
     "plan/logical_plans.go",
     "plan/match_property.go",
-    "plan/new_plan_test.go",
     "plan/optimizer.go",
     "plan/physical_plan_builder.go",
     "plan/physical_plans.go",
     "plan/plan.go",
     "plan/predicate_push_down.go",
     "plan/push_limit.go",
+    "executor/builder.go",
+    "executor/executor.go",
+    "executor/executor_test.go",
+    "executor/new_executor.go",
+    "executor/new_executor_xapi.go",
+    "meta/meta.go",
+    "plan/column_pruning.go",
+    "plan/new_plan_test.go",
     "plan/refiner.go",
-    "plan/stringer.go"
+    "plan/stringer.go",
+    "executor/aggregate_xapi.go",
+    "expression/expression.go"
   ],
   "triage": {
     "sources": [
@@ -61,8 +62,8 @@
     ],
     "evidence": [
       "evidence: sql: \"select * from t a where a.c = 1 order by a.d limit 2\", (plan/new_plan_test.go)",
-      "files: executor/aggregate_xapi.go, executor/builder.go, executor/executor.go, executor/executor_test.go, executor/new_builder.go, executor/new_executor.go, executor/new_executor_xapi.go, expression/expression.go, meta/meta.go, plan/column_pruning.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/match_property.go, plan/new_plan_test.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/predicate_push_down.go, plan/push_limit.go, plan/refiner.go, plan/stringer.go"
+      "files: executor/new_builder.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/match_property.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/predicate_push_down.go, plan/push_limit.go, executor/builder.go, executor/executor.go, executor/executor_test.go, executor/new_executor.go, executor/new_executor_xapi.go, meta/meta.go, plan/column_pruning.go, plan/new_plan_test.go, plan/refiner.go, plan/stringer.go, executor/aggregate_xapi.go, expression/expression.go"
     ]
   },
-  "analysis": "PR title: support cbo\nPR url: https://github.com/pingcap/tidb/pull/1498\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t a where a.c = 1 order by a.d limit 2\", (plan/new_plan_test.go)\nChanged files (22): executor/aggregate_xapi.go, executor/builder.go, executor/executor.go, executor/executor_test.go, executor/new_builder.go, executor/new_executor.go, executor/new_executor_xapi.go, expression/expression.go, meta/meta.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/match_property.go, plan/new_plan_test.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/predicate_push_down.go, plan/push_limit.go, plan/refiner.go, plan/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/1498.patch\nPicked test: type=unit path=plan/new_plan_test.go name=new_plan_test"
+  "analysis": "PR title: support cbo\nPR url: https://github.com/pingcap/tidb/pull/1498\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select * from t a where a.c = 1 order by a.d limit 2\", (plan/new_plan_test.go)\nChanged files (23): executor/new_builder.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/match_property.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plans.go, plan/plan.go, plan/predicate_push_down.go, plan/push_limit.go, executor/builder.go, executor/executor.go, executor/executor_test.go, executor/new_executor.go, executor/new_executor_xapi.go, meta/meta.go, plan/column_pruning.go, plan/new_plan_test.go, plan/refiner.go, plan/stringer.go, executor/aggregate_xapi.go, expression/expression.go\nPatch url: https://github.com/pingcap/tidb/pull/1498.patch\nPicked test: type=unit path=plan/new_plan_test.go name=new_plan_test"
 }
