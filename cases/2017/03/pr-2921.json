@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rss, err = tk.Se.Execute(\"select * from copclient order by id\") (executor/distsql_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The flaky behavior was caused by a goroutine leak in the TiKV coprocessor iterator path: after closing the result set, the background 'copIterator' goroutine could keep running. Leaked goroutines can pollute subsequent tests (resource contention, timeouts, order-dependent failures). This PR fixes it by adjusting the iterator loop to stop correctly after finishing/cancelation and by adding/adjusting a regression test that verifies the goroutine disappears after Close().",
   "module": "kv",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Ensure iterator/background worker goroutines exit on Close() to prevent goroutine leaks that can pollute later tests; add regression checks for leaked goroutines when closing result sets.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2921",
     "https://github.com/pingcap/tidb/pull/2921.patch"

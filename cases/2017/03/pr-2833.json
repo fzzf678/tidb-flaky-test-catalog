@@ -17,15 +17,14 @@
   ],
   "failure_signature": "executor,store/tikv: fix data race",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "external_dependency"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor,store/tikv: fix data race.",
-  "module": "executor",
-  "fix_pattern": "executor,store/tikv: fix data race",
+  "root_cause_explanation": "The flakiness/race issue was caused by unsafely clearing/replacing the TiKV store's shared RegionCache from test code while other goroutines could still be using it, leading to a data race. This PR stabilizes the test by removing the ClearRegionCache helper and its usage so the shared cache is not replaced concurrently.",
+  "module": "kv",
+  "fix_pattern": "Avoid racy mutation/replacement of shared TiKV store internals in tests (e.g., do not reset/replace the RegionCache while requests may be in-flight; remove or guard unsafe helpers).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2833",
     "https://github.com/pingcap/tidb/pull/2833.patch"

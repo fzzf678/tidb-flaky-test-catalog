@@ -20,11 +20,12 @@
     "concurrency_data_race"
   ],
   "review_smells": [
+    "global_variable_mutation",
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: fix batch insert test data race.",
-  "module": "module_unknown",
-  "fix_pattern": "*: fix batch insert test data race",
+  "root_cause_explanation": "The flaky/racy behavior came from unsynchronized concurrent access to a global KV limit (TxnEntryCountLimit) that is mutated in tests and read by transactional/membuffer/2PC code paths. This can trigger data races under parallel test execution or race builds. This PR stabilizes it by switching the limit to a uint64 and using atomic Load/Store in both the test and the runtime code paths.",
+  "module": "kv",
+  "fix_pattern": "Protect concurrent access to global KV limits used in tests and runtime (e.g., use atomic Load/Store for TxnEntryCountLimit and avoid unsynchronized global mutation).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2968",
     "https://github.com/pingcap/tidb/pull/2968.patch"
