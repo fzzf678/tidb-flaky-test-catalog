@@ -17,14 +17,14 @@
   ],
   "failure_signature": "rand.Seed(20160101) (expression/builtin_math_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "nondeterministic_test_input"
   ],
   "review_smells": [
-    "missing_order_by"
+    "randomized_test_input"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it depended on randomness (RAND) and shared RNG state. Using a global random generator/seed can make results sensitive to evaluation order or other calls. This PR stabilizes it by making `rand(seed)` maintain per-function RNG state so repeated evaluations produce a deterministic sequence.",
   "module": "expression",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Avoid global RNG state for `rand(seed)`; use per-instance RNG state (rand.NewSource/rand.Rand) to make the sequence deterministic.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3213",
     "https://github.com/pingcap/tidb/pull/3213.patch"
@@ -32,7 +32,8 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/3213.patch",
   "changed_files": [
     "expression/builtin_math.go",
-    "expression/builtin_math_test.go"
+    "expression/builtin_math_test.go",
+    "expression/constant_fold.go"
   ],
   "triage": {
     "sources": [
@@ -44,5 +45,5 @@
       "files: expression/builtin_math.go, expression/builtin_math_test.go, expression/constant_fold.go"
     ]
   },
-  "analysis": "PR title: expression: refine builtin-func RAND (fix issue3211)\nPR url: https://github.com/pingcap/tidb/pull/3213\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(20160101) (expression/builtin_math_test.go)\nChanged files (2): expression/builtin_math.go, expression/builtin_math_test.go\nPatch url: https://github.com/pingcap/tidb/pull/3213.patch\nPicked test: type=unit path=expression/builtin_math_test.go name=builtin_math_test"
+  "analysis": "PR title: expression: refine builtin-func RAND (fix issue3211)\nPR url: https://github.com/pingcap/tidb/pull/3213\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: rand.Seed(20160101) (expression/builtin_math_test.go)\nChanged files (3): expression/builtin_math.go, expression/builtin_math_test.go, expression/constant_fold.go\nPatch url: https://github.com/pingcap/tidb/pull/3213.patch\nPicked test: type=unit path=expression/builtin_math_test.go name=builtin_math_test"
 }

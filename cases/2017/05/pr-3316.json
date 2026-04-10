@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: open doubleread close test and fix bug.",
+  "root_cause_explanation": "Index lookup double-read runs work in background goroutines. When the executor returns early (closing before reading all rows), workers must exit promptly; otherwise it can cause data races or goroutine leaks. This PR re-enables `TestIndexDoubleReadClose` and fixes the worker lifecycle by refactoring into a task-picking loop (`pickAndExecTask`) that shares a stable txn context and returns on context cancellation.",
   "module": "executor",
-  "fix_pattern": "executor: open doubleread close test and fix bug.",
+  "fix_pattern": "Ensure async worker goroutines have a stable parent context and exit on `ctx.Done()`; loop/drain work channels to avoid leaks when the executor closes early.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3316",
     "https://github.com/pingcap/tidb/pull/3316.patch"

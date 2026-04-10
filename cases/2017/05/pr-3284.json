@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix data race.",
+  "root_cause_explanation": "The test was flaky under the race detector due to a data race triggered by executing redundant UNION statements in `TestUnion`. This PR stabilizes the test by removing the unnecessary UNION SELECT executions (keeps only the essential setup), reducing exposure to the racy path.",
   "module": "executor",
-  "fix_pattern": "executor: fix data race.",
+  "fix_pattern": "Remove redundant/racy SQL executions from tests; avoid running UNION/SELECT via `MustExec` without assertions (prefer `MustQuery`+Check when needed).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3284",
     "https://github.com/pingcap/tidb/pull/3284.patch"
