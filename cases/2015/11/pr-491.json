@@ -17,14 +17,14 @@
   ],
   "failure_signature": "{\"UPDATE t SET id = id + 1 ORDER BY id DESC;\", true}, (ast/parser/parser_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (ast,optimizer: switch to use new parser, and convert ast.Node to old statements.) appears to be primarily a functional/correctness change or refactor. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/491",
     "https://github.com/pingcap/tidb/pull/491.patch"
@@ -32,7 +32,6 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/491.patch",
   "changed_files": [
     "ast/ast.go",
-    "ast/base.go",
     "ast/cloner.go",
     "ast/cloner_test.go",
     "ast/ddl.go",
@@ -42,23 +41,25 @@
     "ast/misc.go",
     "ast/parser/parser.y",
     "ast/parser/parser_test.go",
-    "ast/parser/scanner.l",
     "ast/parser/yy_parser.go",
-    "ddl/ddl_test.go",
-    "optimizer/aggregator.go",
-    "optimizer/compiler.go",
-    "optimizer/convert_expr.go",
-    "optimizer/convert_stmt.go",
-    "optimizer/evaluator.go",
-    "optimizer/evaluator_binop.go",
     "optimizer/infobinder.go",
     "optimizer/infobinder_test.go",
+    "ast/base.go",
+    "optimizer/aggregator.go",
+    "optimizer/evaluator.go",
+    "optimizer/optimizer.go",
     "optimizer/typecomputer.go",
     "optimizer/validator.go",
-    "stmt/stmts/drop_test.go",
-    "stmt/stmts/show_test.go",
+    "optimizer/convert_expr.go",
+    "optimizer/convert_stmt.go",
+    "optimizer/evaluator_binop.go",
+    "ast/parser/scanner.l",
     "tidb.go",
-    "tidb_test.go"
+    "tidb_test.go",
+    "ddl/ddl_test.go",
+    "optimizer/compiler.go",
+    "stmt/stmts/drop_test.go",
+    "stmt/stmts/show_test.go"
   ],
   "triage": {
     "sources": [
@@ -67,8 +68,8 @@
     ],
     "evidence": [
       "evidence: {\"UPDATE t SET id = id + 1 ORDER BY id DESC;\", true}, (ast/parser/parser_test.go)",
-      "files: ast/ast.go, ast/base.go, ast/cloner.go, ast/cloner_test.go, ast/ddl.go, ast/dml.go, ast/expressions.go, ast/functions.go, ast/misc.go, ast/parser/parser.y, ast/parser/parser_test.go, ast/parser/scanner.l, ast/parser/yy_parser.go, ddl/ddl_test.go, optimizer/aggregator.go, optimizer/compiler.go, optimizer/convert_expr.go, optimizer/convert_stmt.go, optimizer/evaluator.go, optimizer/evaluator_binop.go, optimizer/infobinder.go, optimizer/infobinder_test.go, optimizer/optimizer.go, optimizer/typecomputer.go, optimizer/validator.go, stmt/stmts/drop_test.go, stmt/stmts/show_test.go, tidb.go, tidb_test.go"
+      "files: ast/ast.go, ast/cloner.go, ast/cloner_test.go, ast/ddl.go, ast/dml.go, ast/expressions.go, ast/functions.go, ast/misc.go, ast/parser/parser.y, ast/parser/parser_test.go, ast/parser/yy_parser.go, optimizer/infobinder.go, optimizer/infobinder_test.go, ast/base.go, optimizer/aggregator.go, optimizer/evaluator.go, optimizer/optimizer.go, optimizer/typecomputer.go, optimizer/validator.go, optimizer/convert_expr.go, optimizer/convert_stmt.go, optimizer/evaluator_binop.go, ast/parser/scanner.l, tidb.go, tidb_test.go, ddl/ddl_test.go, optimizer/compiler.go, stmt/stmts/drop_test.go, stmt/stmts/show_test.go"
     ]
   },
-  "analysis": "PR title: ast,optimizer: switch to use new parser, and convert ast.Node to old statements.\nPR url: https://github.com/pingcap/tidb/pull/491\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: {\"UPDATE t SET id = id + 1 ORDER BY id DESC;\", true}, (ast/parser/parser_test.go)\nChanged files (28): ast/ast.go, ast/base.go, ast/cloner.go, ast/cloner_test.go, ast/ddl.go, ast/dml.go, ast/expressions.go, ast/functions.go, ast/misc.go, ast/parser/parser.y, ast/parser/parser_test.go, ast/parser/scanner.l, ast/parser/yy_parser.go, ddl/ddl_test.go, optimizer/aggregator.go, optimizer/compiler.go, optimizer/convert_expr.go, optimizer/convert_stmt.go, optimizer/evaluator.go, optimizer/evaluator_binop.go, optimizer/infobinder.go, optimizer/infobinder_test.go, optimizer/typecomputer.go, optimizer/validator.go, stmt/stmts/drop_test.go, stmt/stmts/show_test.go, tidb.go, tidb_test.go\nPatch url: https://github.com/pingcap/tidb/pull/491.patch\nPicked test: type=unit path=ast/parser/parser_test.go name=parser_test"
+  "analysis": "PR title: ast,optimizer: switch to use new parser, and convert ast.Node to old statements.\nPR url: https://github.com/pingcap/tidb/pull/491\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: {\"UPDATE t SET id = id + 1 ORDER BY id DESC;\", true}, (ast/parser/parser_test.go)\nChanged files (29): ast/ast.go, ast/cloner.go, ast/cloner_test.go, ast/ddl.go, ast/dml.go, ast/expressions.go, ast/functions.go, ast/misc.go, ast/parser/parser.y, ast/parser/parser_test.go, ast/parser/yy_parser.go, optimizer/infobinder.go, optimizer/infobinder_test.go, ast/base.go, optimizer/aggregator.go, optimizer/evaluator.go, optimizer/optimizer.go, optimizer/typecomputer.go, optimizer/validator.go, optimizer/convert_expr.go, optimizer/convert_stmt.go, optimizer/evaluator_binop.go, ast/parser/scanner.l, tidb.go, tidb_test.go, ddl/ddl_test.go, optimizer/compiler.go, stmt/stmts/drop_test.go, stmt/stmts/show_test.go\nPatch url: https://github.com/pingcap/tidb/pull/491.patch\nPicked test: type=unit path=ast/parser/parser_test.go name=parser_test"
 }
