@@ -17,14 +17,14 @@
   ],
   "failure_signature": "Avoid race condition.",
   "root_cause_categories": [
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "assert_exact_plan_or_cost"
+    "global_variable_mutation"
   ],
-  "root_cause_explanation": "The test was flaky because it asserted an exact plan/EXPLAIN output that can vary between runs. Exact plan/EXPLAIN assertions are brittle when optimizer choices can vary. This PR stabilizes it by: plan: alloc plan ID in builder.",
+  "root_cause_explanation": "The tests were flaky due to a data race on the global plan ID counter (GlobalID) used during plan building. Concurrent plan building could mutate/read this shared state, causing nondeterministic IDs and -race failures. This PR stabilizes it by making ID allocation builder-local (planBuilder.allocID) instead of using a shared global counter.",
   "module": "planner",
-  "fix_pattern": "plan: alloc plan ID in builder",
+  "fix_pattern": "Avoid shared global counters in plan building; allocate plan IDs per builder (builder-local state) to prevent data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1301",
     "https://github.com/pingcap/tidb/pull/1301.patch"
