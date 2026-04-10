@@ -17,15 +17,14 @@
   ],
   "failure_signature": "result = tk.MustQuery(\"select count(*), a.c from t a , t b, t c where a.c = b.d and b.d = c.d group by c.d order by a.c\") (executor/aggregate_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (plan: support aggregation push down.) appears to be primarily a functional/correctness/change or test refactor. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1886",
     "https://github.com/pingcap/tidb/pull/1886.patch"
@@ -33,17 +32,17 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/1886.patch",
   "changed_files": [
     "executor/aggregate_test.go",
-    "executor/builder.go",
     "expression/aggregation.go",
-    "expression/expression.go",
     "plan/aggregation_push_down.go",
+    "plan/optimizer.go",
+    "plan/physical_plan_builder.go",
+    "plan/plan_test.go",
+    "executor/builder.go",
+    "expression/expression.go",
     "plan/column_pruning.go",
     "plan/expression_rewriter.go",
     "plan/join_reorder.go",
     "plan/logical_plan_builder.go",
-    "plan/optimizer.go",
-    "plan/physical_plan_builder.go",
-    "plan/plan_test.go",
     "plan/predicate_push_down.go"
   ],
   "triage": {
@@ -53,8 +52,8 @@
     ],
     "evidence": [
       "evidence: result = tk.MustQuery(\"select count(*), a.c from t a , t b, t c where a.c = b.d and b.d = c.d group by c.d order by a.c\") (executor/aggregate_test.go)",
-      "files: executor/aggregate_test.go, executor/builder.go, expression/aggregation.go, expression/expression.go, plan/aggregation_push_down.go, plan/column_pruning.go, plan/expression_rewriter.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/plan_test.go, plan/predicate_push_down.go"
+      "files: executor/aggregate_test.go, expression/aggregation.go, plan/aggregation_push_down.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/plan_test.go, executor/builder.go, expression/expression.go, plan/column_pruning.go, plan/expression_rewriter.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/predicate_push_down.go"
     ]
   },
-  "analysis": "PR title: plan: support aggregation push down.\nPR url: https://github.com/pingcap/tidb/pull/1886\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select count(*), a.c from t a , t b, t c where a.c = b.d and b.d = c.d group by c.d order by a.c\") (executor/aggregate_test.go)\nChanged files (13): executor/aggregate_test.go, executor/builder.go, expression/aggregation.go, expression/expression.go, plan/aggregation_push_down.go, plan/column_pruning.go, plan/expression_rewriter.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/plan_test.go, plan/predicate_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/1886.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
+  "analysis": "PR title: plan: support aggregation push down.\nPR url: https://github.com/pingcap/tidb/pull/1886\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select count(*), a.c from t a , t b, t c where a.c = b.d and b.d = c.d group by c.d order by a.c\") (executor/aggregate_test.go)\nChanged files (13): executor/aggregate_test.go, expression/aggregation.go, plan/aggregation_push_down.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/plan_test.go, executor/builder.go, expression/expression.go, plan/column_pruning.go, plan/expression_rewriter.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/predicate_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/1886.patch\nPicked test: type=unit path=executor/aggregate_test.go name=aggregate_test"
 }

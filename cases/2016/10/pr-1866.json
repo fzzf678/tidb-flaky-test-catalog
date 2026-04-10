@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: Pass race",
   "root_cause_categories": [
-    "schema_change_race",
-    "concurrency_data_race"
+    "async_timing_issue"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "insufficient_timeout"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: Pass race.",
+  "root_cause_explanation": "The test was flaky due to timing/performance assumptions: under the race detector (or slow CI), the DDL owner can take longer to update, and the previous sleep/timeout budget was too small. This PR stabilizes it by extending the background job owner timeout (based on lease, capped) and sleeping long enough (based on lease) to ensure the owner change is observed deterministically.",
   "module": "ddl",
-  "fix_pattern": "ddl: Pass race",
+  "fix_pattern": "Increase time budget for async lease/owner checks under slow CI (e.g., extend timeout based on lease and sleep long enough to observe state change) to avoid race-mode timeouts.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1866",
     "https://github.com/pingcap/tidb/pull/1866.patch"

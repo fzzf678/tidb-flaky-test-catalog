@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: Pass go race",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: Pass go race.",
+  "root_cause_explanation": "The test was flaky under the race detector because the DDL hook callback (`onJobUpdated`) runs in another goroutine and reused shared variables (e.g., context), causing a data race when checks were executed. This PR stabilizes it by creating a fresh context inside the callback before performing the state checks.",
   "module": "ddl",
-  "fix_pattern": "ddl: Pass go race",
+  "fix_pattern": "Avoid sharing mutable variables/contexts across async DDL hook goroutines; create per-callback context (or guard shared state with synchronization) before assertions.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1903",
     "https://github.com/pingcap/tidb/pull/1903.patch"
