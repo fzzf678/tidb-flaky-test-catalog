@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sql: \"select * from t where a = 1 order by a\", (plan/dag_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "shared_state_pollution"
   ],
   "review_smells": [
-    "missing_order_by"
+    "insufficient_cleanup_between_tests"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test stability risk came from missing cleanup of shared resources/state in plan tests (e.g. KV store/session lifecycle and global plan flags), which can leak across tests and cause interference. This PR stabilizes it by creating/bootstrapping a store for the test and ensuring it is closed via defer, and by resetting global flags in deferred cleanup.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Add explicit test cleanup (e.g., defer store.Close() / reset global flags) to prevent cross-test resource and state pollution.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3098",
     "https://github.com/pingcap/tidb/pull/3098.patch"

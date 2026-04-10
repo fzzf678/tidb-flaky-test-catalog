@@ -17,38 +17,44 @@
   ],
   "failure_signature": "(select a /*+ TIDB_SMJ(t1) */from t1 where a=10 and b=1) union (select /*+ TIDB_SMJ(t2) */ a from t2 where a=11 and b=2) order by a limit 10; (ast/misc_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR ('*: implement index nested loop join') primarily changes code behavior and/or updates test expectations, but the diff does not contain a targeted stabilization change tied to a concrete flaky failure signature. We therefore keep a conservative fallback classification.",
   "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2945",
     "https://github.com/pingcap/tidb/pull/2945.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/2945.patch",
   "changed_files": [
-    "ast/misc_test.go",
     "executor/builder.go",
     "executor/executor.go",
-    "executor/join.go",
-    "executor/join_test.go",
-    "expression/util.go",
-    "parser/misc.go",
-    "parser/parser.y",
-    "parser/parser_test.go",
-    "plan/decorrelate.go",
-    "plan/join_reorder.go",
-    "plan/logical_plan_builder.go",
+    "plan/expr_to_pb.go",
     "plan/logical_plans.go",
     "plan/physical_plan_builder.go",
-    "plan/physical_plan_test.go",
-    "plan/physical_plans.go",
-    "plan/planbuilder.go",
     "plan/refiner.go",
+    "plan/physical_plan_test.go",
+    "plan/statistics_helper.go",
+    "executor/executor_test.go",
+    "expression/column.go",
+    "expression/util.go",
+    "plan/decorrelate.go",
+    "executor/explain_test.go",
+    "plan/physical_plans.go",
+    "executor/join.go",
+    "plan/optimizer.go",
+    "parser/misc.go",
+    "parser/parser.y",
+    "plan/join_reorder.go",
+    "plan/logical_plan_builder.go",
+    "plan/planbuilder.go",
+    "ast/misc_test.go",
+    "executor/join_test.go",
+    "parser/parser_test.go",
     "plan/stringer.go"
   ],
   "triage": {
@@ -58,8 +64,8 @@
     ],
     "evidence": [
       "evidence: (select a /*+ TIDB_SMJ(t1) */from t1 where a=10 and b=1) union (select /*+ TIDB_SMJ(t2) */ a from t2 where a=11 and b=2) order by a limit 10; (ast/misc_test.go)",
-      "files: ast/misc_test.go, executor/builder.go, executor/executor.go, executor/executor_test.go, executor/explain_test.go, executor/join.go, executor/join_test.go, expression/column.go, expression/util.go, parser/misc.go, parser/parser.y, parser/parser_test.go, plan/decorrelate.go, plan/expr_to_pb.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/optimizer.go, plan/physical_plan_builder.go, plan/physical_plan_test.go, plan/physical_plans.go, plan/planbuilder.go, plan/refiner.go, plan/statistics_helper.go, plan/stringer.go"
+      "files: executor/builder.go, executor/executor.go, plan/expr_to_pb.go, plan/logical_plans.go, plan/physical_plan_builder.go, plan/refiner.go, plan/physical_plan_test.go, plan/statistics_helper.go, executor/executor_test.go, expression/column.go, expression/util.go, plan/decorrelate.go, executor/explain_test.go, plan/physical_plans.go, executor/join.go, plan/optimizer.go, parser/misc.go, parser/parser.y, plan/join_reorder.go, plan/logical_plan_builder.go, plan/planbuilder.go, ast/misc_test.go, executor/join_test.go, parser/parser_test.go, plan/stringer.go"
     ]
   },
-  "analysis": "PR title: *: implement index nested loop join\nPR url: https://github.com/pingcap/tidb/pull/2945\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: (select a /*+ TIDB_SMJ(t1) */from t1 where a=10 and b=1) union (select /*+ TIDB_SMJ(t2) */ a from t2 where a=11 and b=2) order by a limit 10; (ast/misc_test.go)\nChanged files (19): ast/misc_test.go, executor/builder.go, executor/executor.go, executor/join.go, executor/join_test.go, expression/util.go, parser/misc.go, parser/parser.y, parser/parser_test.go, plan/decorrelate.go, plan/join_reorder.go, plan/logical_plan_builder.go, plan/logical_plans.go, plan/physical_plan_builder.go, plan/physical_plan_test.go, plan/physical_plans.go, plan/planbuilder.go, plan/refiner.go, plan/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/2945.patch\nPicked test: type=unit path=ast/misc_test.go name=misc_test"
+  "analysis": "PR title: *: implement index nested loop join\nPR url: https://github.com/pingcap/tidb/pull/2945\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: (select a /*+ TIDB_SMJ(t1) */from t1 where a=10 and b=1) union (select /*+ TIDB_SMJ(t2) */ a from t2 where a=11 and b=2) order by a limit 10; (ast/misc_test.go)\nChanged files (25): executor/builder.go, executor/executor.go, plan/expr_to_pb.go, plan/logical_plans.go, plan/physical_plan_builder.go, plan/refiner.go, plan/physical_plan_test.go, plan/statistics_helper.go, executor/executor_test.go, expression/column.go, expression/util.go, plan/decorrelate.go, executor/explain_test.go, plan/physical_plans.go, executor/join.go, plan/optimizer.go, parser/misc.go, parser/parser.y, plan/join_reorder.go, plan/logical_plan_builder.go, plan/planbuilder.go, ast/misc_test.go, executor/join_test.go, parser/parser_test.go, plan/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/2945.patch\nPicked test: type=unit path=ast/misc_test.go name=misc_test"
 }

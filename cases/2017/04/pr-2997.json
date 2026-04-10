@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sql: \"select a, count(b) from t group by b order by c limit 5\", (plan/logical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR ('plan: add push topn optimizing.') primarily changes code behavior and/or updates test expectations, but the diff does not contain a targeted stabilization change tied to a concrete flaky failure signature. We therefore keep a conservative fallback classification.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2997",
     "https://github.com/pingcap/tidb/pull/2997.patch"
@@ -33,11 +32,12 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/2997.patch",
   "changed_files": [
     "plan/decorrelate.go",
-    "plan/logical_plan_builder.go",
-    "plan/logical_plan_test.go",
     "plan/optimizer.go",
     "plan/physical_plan_test.go",
     "plan/plan.go",
+    "plan/push_topn.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plan_test.go",
     "plan/topn_push_down.go"
   ],
   "triage": {
@@ -47,8 +47,8 @@
     ],
     "evidence": [
       "evidence: sql: \"select a, count(b) from t group by b order by c limit 5\", (plan/logical_plan_test.go)",
-      "files: plan/decorrelate.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/physical_plan_test.go, plan/plan.go, plan/push_topn.go, plan/topn_push_down.go"
+      "files: plan/decorrelate.go, plan/optimizer.go, plan/physical_plan_test.go, plan/plan.go, plan/push_topn.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/topn_push_down.go"
     ]
   },
-  "analysis": "PR title: plan: add push topn optimizing.\nPR url: https://github.com/pingcap/tidb/pull/2997\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select a, count(b) from t group by b order by c limit 5\", (plan/logical_plan_test.go)\nChanged files (7): plan/decorrelate.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/physical_plan_test.go, plan/plan.go, plan/topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/2997.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+  "analysis": "PR title: plan: add push topn optimizing.\nPR url: https://github.com/pingcap/tidb/pull/2997\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select a, count(b) from t group by b order by c limit 5\", (plan/logical_plan_test.go)\nChanged files (8): plan/decorrelate.go, plan/optimizer.go, plan/physical_plan_test.go, plan/plan.go, plan/push_topn.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/topn_push_down.go\nPatch url: https://github.com/pingcap/tidb/pull/2997.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
 }

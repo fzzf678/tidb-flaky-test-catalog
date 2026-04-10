@@ -20,31 +20,30 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by",
     "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it asserted a specific row order for a query whose result order is not guaranteed (no ORDER BY), leading to occasional reordering. This PR stabilizes it by adding Result.Sort() in testkit and updating the test to sort results before checking.",
   "module": "test_infra",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "Use deterministic assertions for unordered queries (e.g., call Result.Sort() before Check(), or add ORDER BY).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/3177",
     "https://github.com/pingcap/tidb/pull/3177.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/3177.patch",
   "changed_files": [
-    "circle.yml",
     "ddl/ddl_db_test.go",
     "executor/aggregate_test.go",
     "executor/ddl_test.go",
     "executor/executor_test.go",
     "executor/grant_test.go",
-    "executor/join_test.go",
     "executor/prepared_test.go",
     "executor/show_test.go",
     "executor/simple_test.go",
     "executor/statement_context_test.go",
     "executor/write_test.go",
-    "util/testkit/testkit.go"
+    "util/testkit/testkit.go",
+    "executor/join_test.go",
+    "circle.yml"
   ],
   "triage": {
     "sources": [
@@ -53,8 +52,8 @@
     ],
     "evidence": [
       "evidence: result.Sort().Check(testkit.Rows(\"1 2 1 0\", \"2 3 2 0\")) (executor/join_test.go)",
-      "files: circle.yml, ddl/ddl_db_test.go, executor/aggregate_test.go, executor/ddl_test.go, executor/executor_test.go, executor/grant_test.go, executor/join_test.go, executor/prepared_test.go, executor/show_test.go, executor/simple_test.go, executor/statement_context_test.go, executor/write_test.go, util/testkit/testkit.go"
+      "files: ddl/ddl_db_test.go, executor/aggregate_test.go, executor/ddl_test.go, executor/executor_test.go, executor/grant_test.go, executor/prepared_test.go, executor/show_test.go, executor/simple_test.go, executor/statement_context_test.go, executor/write_test.go, util/testkit/testkit.go, executor/join_test.go, circle.yml"
     ]
   },
-  "analysis": "PR title: util/testkit: refine testkit\nPR url: https://github.com/pingcap/tidb/pull/3177\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result.Sort().Check(testkit.Rows(\"1 2 1 0\", \"2 3 2 0\")) (executor/join_test.go)\nChanged files (13): circle.yml, ddl/ddl_db_test.go, executor/aggregate_test.go, executor/ddl_test.go, executor/executor_test.go, executor/grant_test.go, executor/join_test.go, executor/prepared_test.go, executor/show_test.go, executor/simple_test.go, executor/statement_context_test.go, executor/write_test.go, util/testkit/testkit.go\nPatch url: https://github.com/pingcap/tidb/pull/3177.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
+  "analysis": "PR title: util/testkit: refine testkit\nPR url: https://github.com/pingcap/tidb/pull/3177\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result.Sort().Check(testkit.Rows(\"1 2 1 0\", \"2 3 2 0\")) (executor/join_test.go)\nChanged files (13): ddl/ddl_db_test.go, executor/aggregate_test.go, executor/ddl_test.go, executor/executor_test.go, executor/grant_test.go, executor/prepared_test.go, executor/show_test.go, executor/simple_test.go, executor/statement_context_test.go, executor/write_test.go, util/testkit/testkit.go, executor/join_test.go, circle.yml\nPatch url: https://github.com/pingcap/tidb/pull/3177.patch\nPicked test: type=unit path=executor/join_test.go name=join_test"
 }
