@@ -17,13 +17,12 @@
   ],
   "failure_signature": "sort.Sort(visitInfoArray(v1)) (plan/logical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it compared two slices whose order was nondeterministic (e.g., visitInfo collected during planning). This PR stabilizes it by sorting both slices before asserting equality, making the comparison deterministic.",
   "module": "planner",
   "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
   "evidence_links": [
@@ -32,9 +31,15 @@
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/2423.patch",
   "changed_files": [
+    "plan/preprocess.go",
+    "plan/preprocess_test.go",
     "plan/logical_plan_builder.go",
     "plan/logical_plan_test.go",
-    "plan/planbuilder.go"
+    "plan/optimizer.go",
+    "plan/planbuilder.go",
+    "plan/expression_rewriter.go",
+    "plan/physical_plan_test.go",
+    "mysql/const.go"
   ],
   "triage": {
     "sources": [
@@ -43,8 +48,8 @@
     ],
     "evidence": [
       "evidence: sort.Sort(visitInfoArray(v1)) (plan/logical_plan_test.go)",
-      "files: mysql/const.go, plan/expression_rewriter.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/physical_plan_test.go, plan/planbuilder.go, plan/preprocess.go, plan/preprocess_test.go"
+      "files: plan/preprocess.go, plan/preprocess_test.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/planbuilder.go, plan/expression_rewriter.go, plan/physical_plan_test.go, mysql/const.go"
     ]
   },
-  "analysis": "PR title: plan: collect visit info during logical plan build\nPR url: https://github.com/pingcap/tidb/pull/2423\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Sort(visitInfoArray(v1)) (plan/logical_plan_test.go)\nChanged files (3): plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/planbuilder.go\nPatch url: https://github.com/pingcap/tidb/pull/2423.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+  "analysis": "PR title: plan: collect visit info during logical plan build\nPR url: https://github.com/pingcap/tidb/pull/2423\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sort.Sort(visitInfoArray(v1)) (plan/logical_plan_test.go)\nChanged files (9): plan/preprocess.go, plan/preprocess_test.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/planbuilder.go, plan/expression_rewriter.go, plan/physical_plan_test.go, mysql/const.go\nPatch url: https://github.com/pingcap/tidb/pull/2423.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
 }

@@ -17,15 +17,14 @@
   ],
   "failure_signature": "ddl: pass make race",
   "root_cause_categories": [
-    "schema_change_race"
+    "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: Fix the bug that showing status row count is 0.",
+  "root_cause_explanation": "The test was flaky under `make race` due to concurrent access to shared DDL job state (row count) without proper synchronization. This PR stabilizes it by using `sync/atomic` Load/Store for row count fields so the race detector no longer reports a data race.",
   "module": "ddl",
-  "fix_pattern": "ddl: Fix the bug that showing status row count is 0",
+  "fix_pattern": "Use sync/atomic (or locks) to synchronize shared state updates in async DDL reorg code (e.g., job row count) to avoid data races.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2696",
     "https://github.com/pingcap/tidb/pull/2696.patch"
