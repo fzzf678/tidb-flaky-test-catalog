@@ -17,28 +17,24 @@
   ],
   "failure_signature": "result = tk.MustQuery(\"select * from t1 left join t2 on t1.c1 = t2.c1 right join t3 on t2.c1 = t3.c1 order by t1.c1, t1.c2, t2.c1, t2.c2, t3.c1, t3.c2;\") (executor/executor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (support hash join in new plan) appears to be primarily a feature/functional change. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
   "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1234",
     "https://github.com/pingcap/tidb/pull/1234.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/1234.patch",
   "changed_files": [
-    "bench_test.go",
     "evaluator/evaluator_binop.go",
     "executor/builder.go",
     "executor/executor_test.go",
     "executor/new_executor.go",
-    "infoschema/infoschema.go",
-    "optimizer/new_plan_test.go",
     "optimizer/optimizer.go",
     "optimizer/plan/new_plans.go",
     "optimizer/plan/newplanbuilder.go",
@@ -46,10 +42,13 @@
     "optimizer/plan/planbuilder.go",
     "optimizer/plan/planbuilder_join.go",
     "optimizer/plan/predicate_push_down.go",
+    "infoschema/infoschema.go",
+    "optimizer/new_plan_test.go",
     "optimizer/plan/stringer.go",
     "optimizer/resolver.go",
     "table/table.go",
-    "table/tables/tables.go"
+    "table/tables/tables.go",
+    "bench_test.go"
   ],
   "triage": {
     "sources": [
@@ -58,8 +57,8 @@
     ],
     "evidence": [
       "evidence: result = tk.MustQuery(\"select * from t1 left join t2 on t1.c1 = t2.c1 right join t3 on t2.c1 = t3.c1 order by t1.c1, t1.c2, t2.c1, t2.c2, t3.c1, t3.c2;\") (executor/executor_test.go)",
-      "files: bench_test.go, evaluator/evaluator_binop.go, executor/builder.go, executor/executor_test.go, executor/new_executor.go, infoschema/infoschema.go, optimizer/new_plan_test.go, optimizer/optimizer.go, optimizer/plan/new_plans.go, optimizer/plan/newplanbuilder.go, optimizer/plan/plan.go, optimizer/plan/planbuilder.go, optimizer/plan/planbuilder_join.go, optimizer/plan/predicate_push_down.go, optimizer/plan/stringer.go, optimizer/resolver.go, table/table.go, table/tables/tables.go"
+      "files: evaluator/evaluator_binop.go, executor/builder.go, executor/executor_test.go, executor/new_executor.go, optimizer/optimizer.go, optimizer/plan/new_plans.go, optimizer/plan/newplanbuilder.go, optimizer/plan/plan.go, optimizer/plan/planbuilder.go, optimizer/plan/planbuilder_join.go, optimizer/plan/predicate_push_down.go, infoschema/infoschema.go, optimizer/new_plan_test.go, optimizer/plan/stringer.go, optimizer/resolver.go, table/table.go, table/tables/tables.go, bench_test.go"
     ]
   },
-  "analysis": "PR title: support hash join in new plan\nPR url: https://github.com/pingcap/tidb/pull/1234\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select * from t1 left join t2 on t1.c1 = t2.c1 right join t3 on t2.c1 = t3.c1 order by t1.c1, t1.c2, t2.c1, t2.c2, t3.c1, t3.c2;\") (executor/executor_test.go)\nChanged files (18): bench_test.go, evaluator/evaluator_binop.go, executor/builder.go, executor/executor_test.go, executor/new_executor.go, infoschema/infoschema.go, optimizer/new_plan_test.go, optimizer/optimizer.go, optimizer/plan/new_plans.go, optimizer/plan/newplanbuilder.go, optimizer/plan/plan.go, optimizer/plan/planbuilder.go, optimizer/plan/planbuilder_join.go, optimizer/plan/predicate_push_down.go, optimizer/plan/stringer.go, optimizer/resolver.go, table/table.go, table/tables/tables.go\nPatch url: https://github.com/pingcap/tidb/pull/1234.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+  "analysis": "PR title: support hash join in new plan\nPR url: https://github.com/pingcap/tidb/pull/1234\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result = tk.MustQuery(\"select * from t1 left join t2 on t1.c1 = t2.c1 right join t3 on t2.c1 = t3.c1 order by t1.c1, t1.c2, t2.c1, t2.c2, t3.c1, t3.c2;\") (executor/executor_test.go)\nChanged files (18): evaluator/evaluator_binop.go, executor/builder.go, executor/executor_test.go, executor/new_executor.go, optimizer/optimizer.go, optimizer/plan/new_plans.go, optimizer/plan/newplanbuilder.go, optimizer/plan/plan.go, optimizer/plan/planbuilder.go, optimizer/plan/planbuilder_join.go, optimizer/plan/predicate_push_down.go, infoschema/infoschema.go, optimizer/new_plan_test.go, optimizer/plan/stringer.go, optimizer/resolver.go, table/table.go, table/tables/tables.go, bench_test.go\nPatch url: https://github.com/pingcap/tidb/pull/1234.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
 }

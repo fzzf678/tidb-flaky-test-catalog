@@ -20,11 +20,11 @@
     "external_dependency"
   ],
   "review_smells": [
-    "hardcoded_port_or_resource"
+    "real_tikv_dependency"
   ],
-  "root_cause_explanation": "The test was flaky due to environment/external dependencies (resource contention, ports, or real cluster timing). This PR stabilizes it by: store/tikv/mock-tikv: add coprocessor support.",
+  "root_cause_explanation": "The tests were flaky due to reliance on an external TiKV-like environment. This PR stabilizes them by enhancing MockTiKV (adding coprocessor support and a convenient NewMockTikvStore) so tests can run against a deterministic in-memory mock rather than a real cluster.",
   "module": "kv",
-  "fix_pattern": "store/tikv/mock-tikv: add coprocessor support.",
+  "fix_pattern": "Use MockTiKV with coprocessor support (e.g., NewMockTikvStore) in tests to avoid real TiKV dependency.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1230",
     "https://github.com/pingcap/tidb/pull/1230.patch"
@@ -32,16 +32,16 @@
   "patch_url": "https://github.com/pingcap/tidb/pull/1230.patch",
   "changed_files": [
     "executor/executor_test.go",
-    "executor/executor_xapi.go",
     "store/tikv/coprocessor.go",
     "store/tikv/kv.go",
-    "store/tikv/lock_test.go",
     "store/tikv/mock-tikv/cop_handler.go",
     "store/tikv/mock-tikv/mvcc.go",
     "store/tikv/mock-tikv/rpc.go",
     "store/tikv/scan_mock_test.go",
     "store/tikv/ticlient_test.go",
-    "xapi/xapi.go"
+    "executor/executor_xapi.go",
+    "xapi/xapi.go",
+    "store/tikv/lock_test.go"
   ],
   "triage": {
     "sources": [
@@ -50,8 +50,8 @@
     ],
     "evidence": [
       "evidence: executor: address comment and fix a race bug.",
-      "files: executor/executor_test.go, executor/executor_xapi.go, store/tikv/coprocessor.go, store/tikv/kv.go, store/tikv/lock_test.go, store/tikv/mock-tikv/cop_handler.go, store/tikv/mock-tikv/mvcc.go, store/tikv/mock-tikv/rpc.go, store/tikv/scan_mock_test.go, store/tikv/ticlient_test.go, xapi/xapi.go"
+      "files: executor/executor_test.go, store/tikv/coprocessor.go, store/tikv/kv.go, store/tikv/mock-tikv/cop_handler.go, store/tikv/mock-tikv/mvcc.go, store/tikv/mock-tikv/rpc.go, store/tikv/scan_mock_test.go, store/tikv/ticlient_test.go, executor/executor_xapi.go, xapi/xapi.go, store/tikv/lock_test.go"
     ]
   },
-  "analysis": "PR title: store/tikv/mock-tikv: add coprocessor support.\nPR url: https://github.com/pingcap/tidb/pull/1230\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: executor: address comment and fix a race bug.\nChanged files (11): executor/executor_test.go, executor/executor_xapi.go, store/tikv/coprocessor.go, store/tikv/kv.go, store/tikv/lock_test.go, store/tikv/mock-tikv/cop_handler.go, store/tikv/mock-tikv/mvcc.go, store/tikv/mock-tikv/rpc.go, store/tikv/scan_mock_test.go, store/tikv/ticlient_test.go, xapi/xapi.go\nPatch url: https://github.com/pingcap/tidb/pull/1230.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+  "analysis": "PR title: store/tikv/mock-tikv: add coprocessor support.\nPR url: https://github.com/pingcap/tidb/pull/1230\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: executor: address comment and fix a race bug.\nChanged files (11): executor/executor_test.go, store/tikv/coprocessor.go, store/tikv/kv.go, store/tikv/mock-tikv/cop_handler.go, store/tikv/mock-tikv/mvcc.go, store/tikv/mock-tikv/rpc.go, store/tikv/scan_mock_test.go, store/tikv/ticlient_test.go, executor/executor_xapi.go, xapi/xapi.go, store/tikv/lock_test.go\nPatch url: https://github.com/pingcap/tidb/pull/1230.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
 }
