@@ -17,26 +17,26 @@
   ],
   "failure_signature": "plan/statistics: fix data race",
   "root_cause_categories": [
-    "concurrency_data_race",
-    "nondeterministic_plan_selection"
+    "concurrency_data_race"
   ],
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: plan/statistics: concurrent build columns.",
+  "root_cause_explanation": "The flakiness risk came from a data race in concurrent statistics building: shared fields (e.g., table row count) could be read/updated concurrently by multiple goroutines during column/index histogram building. This PR stabilizes it by using atomic operations when accessing/updating the shared counter and by restructuring the build to run column builds concurrently without unsynchronized shared-state mutation.",
   "module": "planner",
-  "fix_pattern": "plan/statistics: concurrent build columns",
+  "fix_pattern": "Synchronize concurrent statistics building to avoid races on shared counters/state (e.g., use atomic Load/Store for shared table statistics fields updated across goroutines).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2713",
     "https://github.com/pingcap/tidb/pull/2713.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/2713.patch",
   "changed_files": [
-    "executor/analyze.go",
     "plan/statistics/statistics.go",
     "plan/statistics/statistics_test.go",
+    "executor/analyze.go",
     "sessionctx/variable/session.go",
-    "sessionctx/variable/sysvar.go"
+    "sessionctx/variable/sysvar.go",
+    "sessionctx/varsutil/varsutil.go"
   ],
   "triage": {
     "sources": [
@@ -45,8 +45,8 @@
     ],
     "evidence": [
       "evidence: plan/statistics: fix data race",
-      "files: executor/analyze.go, plan/statistics/statistics.go, plan/statistics/statistics_test.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/varsutil/varsutil.go"
+      "files: plan/statistics/statistics.go, plan/statistics/statistics_test.go, executor/analyze.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/varsutil/varsutil.go"
     ]
   },
-  "analysis": "PR title: plan/statistics: concurrent build columns\nPR url: https://github.com/pingcap/tidb/pull/2713\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: plan/statistics: fix data race\nChanged files (5): executor/analyze.go, plan/statistics/statistics.go, plan/statistics/statistics_test.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go\nPatch url: https://github.com/pingcap/tidb/pull/2713.patch\nPicked test: type=unit path=plan/statistics/statistics_test.go name=statistics_test"
+  "analysis": "PR title: plan/statistics: concurrent build columns\nPR url: https://github.com/pingcap/tidb/pull/2713\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: plan/statistics: fix data race\nChanged files (6): plan/statistics/statistics.go, plan/statistics/statistics_test.go, executor/analyze.go, sessionctx/variable/session.go, sessionctx/variable/sysvar.go, sessionctx/varsutil/varsutil.go\nPatch url: https://github.com/pingcap/tidb/pull/2713.patch\nPicked test: type=unit path=plan/statistics/statistics_test.go name=statistics_test"
 }

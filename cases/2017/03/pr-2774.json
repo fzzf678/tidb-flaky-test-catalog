@@ -17,32 +17,67 @@
   ],
   "failure_signature": "+// +build !race",
   "root_cause_categories": [
-    "concurrency_data_race"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "race_condition_in_async_code"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: http: get region's info.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adds region HTTP handlers and related tests (including a new test file excluded from race runs via a build tag). The diff does not include a clearly targeted flaky-test stabilization tied to a concrete failure signature, so we keep a conservative fallback classification.",
   "module": "server",
-  "fix_pattern": "http: get region's info",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2774",
     "https://github.com/pingcap/tidb/pull/2774.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/2774.patch",
   "changed_files": [
-    "glide.lock",
-    "server/config.go",
-    "server/http_status.go",
-    "server/region_handler.go",
-    "server/region_handler_test.go",
-    "server/server.go",
-    "store/tikv/kv.go",
     "store/tikv/region_cache.go",
     "store/tikv/region_cache_test.go",
+    "server/config.go",
+    "server/regions_handler.go",
+    "server/server.go",
+    "tidb-server/main.go",
+    "server/region_handler.go",
+    "_vendor/src/github.com/gorilla/context/LICENSE",
+    "_vendor/src/github.com/gorilla/context/context.go",
+    "_vendor/src/github.com/gorilla/context/doc.go",
+    "_vendor/src/github.com/gorilla/mux/LICENSE",
+    "_vendor/src/github.com/gorilla/mux/context_gorilla.go",
+    "_vendor/src/github.com/gorilla/mux/context_native.go",
+    "_vendor/src/github.com/gorilla/mux/doc.go",
+    "_vendor/src/github.com/gorilla/mux/mux.go",
+    "_vendor/src/github.com/gorilla/mux/regexp.go",
+    "_vendor/src/github.com/gorilla/mux/route.go",
+    "glide.lock",
+    "glide.yaml",
+    "_vendor/src/github.com/dustin/go-humanize/LICENSE",
+    "_vendor/src/github.com/dustin/go-humanize/big.go",
+    "_vendor/src/github.com/dustin/go-humanize/bigbytes.go",
+    "_vendor/src/github.com/dustin/go-humanize/bytes.go",
+    "_vendor/src/github.com/dustin/go-humanize/comma.go",
+    "_vendor/src/github.com/dustin/go-humanize/ftoa.go",
+    "_vendor/src/github.com/dustin/go-humanize/humanize.go",
+    "_vendor/src/github.com/dustin/go-humanize/number.go",
+    "_vendor/src/github.com/dustin/go-humanize/ordinals.go",
+    "_vendor/src/github.com/dustin/go-humanize/si.go",
+    "_vendor/src/github.com/dustin/go-humanize/times.go",
+    "_vendor/src/github.com/pingcap/kvproto/pkg/pdpb/pdpb.pb.go",
+    "_vendor/src/github.com/pingcap/kvproto/pkg/raft_cmdpb/raft_cmdpb.pb.go",
+    "_vendor/src/github.com/pingcap/pd/pd-client/client.go",
+    "_vendor/src/github.com/pingcap/pd/pd-client/rpc_worker.go",
+    "_vendor/src/github.com/pingcap/pd/pkg/apiutil/apiutil.go",
+    "_vendor/src/github.com/pingcap/pd/pkg/metricutil/metricutil.go",
+    "_vendor/src/github.com/pingcap/pd/pkg/typeutil/duration.go",
+    "_vendor/src/github.com/pingcap/pd/pkg/typeutil/size.go",
+    "_vendor/src/github.com/pingcap/tipb/go-tipb/select.pb.go",
+    "store/tikv/mock-tikv/cluster.go",
+    "store/tikv/mock-tikv/pd.go",
+    "store/tikv/store_test.go",
     "tablecodec/tablecodec.go",
     "tablecodec/tablecodec_test.go",
-    "tidb-server/main.go"
+    "server/region_handler_test.go",
+    "server/http_status.go",
+    "store/tikv/kv.go"
   ],
   "triage": {
     "sources": [
@@ -51,8 +86,8 @@
     ],
     "evidence": [
       "evidence: +// +build !race",
-      "files: _vendor/src/github.com/dustin/go-humanize/LICENSE, _vendor/src/github.com/dustin/go-humanize/big.go, _vendor/src/github.com/dustin/go-humanize/bigbytes.go, _vendor/src/github.com/dustin/go-humanize/bytes.go, _vendor/src/github.com/dustin/go-humanize/comma.go, _vendor/src/github.com/dustin/go-humanize/ftoa.go, _vendor/src/github.com/dustin/go-humanize/humanize.go, _vendor/src/github.com/dustin/go-humanize/number.go, _vendor/src/github.com/dustin/go-humanize/ordinals.go, _vendor/src/github.com/dustin/go-humanize/si.go, _vendor/src/github.com/dustin/go-humanize/times.go, _vendor/src/github.com/gorilla/context/LICENSE, _vendor/src/github.com/gorilla/context/context.go, _vendor/src/github.com/gorilla/context/doc.go, _vendor/src/github.com/gorilla/mux/LICENSE, _vendor/src/github.com/gorilla/mux/context_gorilla.go, _vendor/src/github.com/gorilla/mux/context_native.go, _vendor/src/github.com/gorilla/mux/doc.go, _vendor/src/github.com/gorilla/mux/mux.go, _vendor/src/github.com/gorilla/mux/regexp.go, _vendor/src/github.com/gorilla/mux/route.go, _vendor/src/github.com/pingcap/kvproto/pkg/pdpb/pdpb.pb.go, _vendor/src/github.com/pingcap/kvproto/pkg/raft_cmdpb/raft_cmdpb.pb.go, _vendor/src/github.com/pingcap/pd/pd-client/client.go, _vendor/src/github.com/pingcap/pd/pd-client/rpc_worker.go, _vendor/src/github.com/pingcap/pd/pkg/apiutil/apiutil.go, _vendor/src/github.com/pingcap/pd/pkg/metricutil/metricutil.go, _vendor/src/github.com/pingcap/pd/pkg/typeutil/duration.go, _vendor/src/github.com/pingcap/pd/pkg/typeutil/size.go, _vendor/src/github.com/pingcap/tipb/go-tipb/select.pb.go, glide.lock, glide.yaml, server/config.go, server/http_status.go, server/region_handler.go, server/region_handler_test.go, server/regions_handler.go, server/server.go, store/tikv/kv.go, store/tikv/mock-tikv/cluster.go, store/tikv/mock-tikv/pd.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, store/tikv/store_test.go, tablecodec/tablecodec.go, tablecodec/tablecodec_test.go, tidb-server/main.go"
+      "files: store/tikv/region_cache.go, store/tikv/region_cache_test.go, server/config.go, server/regions_handler.go, server/server.go, tidb-server/main.go, server/region_handler.go, _vendor/src/github.com/gorilla/context/LICENSE, _vendor/src/github.com/gorilla/context/context.go, _vendor/src/github.com/gorilla/context/doc.go, _vendor/src/github.com/gorilla/mux/LICENSE, _vendor/src/github.com/gorilla/mux/context_gorilla.go, _vendor/src/github.com/gorilla/mux/context_native.go, _vendor/src/github.com/gorilla/mux/doc.go, _vendor/src/github.com/gorilla/mux/mux.go, _vendor/src/github.com/gorilla/mux/regexp.go, _vendor/src/github.com/gorilla/mux/route.go, glide.lock, glide.yaml, _vendor/src/github.com/dustin/go-humanize/LICENSE, _vendor/src/github.com/dustin/go-humanize/big.go, _vendor/src/github.com/dustin/go-humanize/bigbytes.go, _vendor/src/github.com/dustin/go-humanize/bytes.go, _vendor/src/github.com/dustin/go-humanize/comma.go, _vendor/src/github.com/dustin/go-humanize/ftoa.go, _vendor/src/github.com/dustin/go-humanize/humanize.go, _vendor/src/github.com/dustin/go-humanize/number.go, _vendor/src/github.com/dustin/go-humanize/ordinals.go, _vendor/src/github.com/dustin/go-humanize/si.go, _vendor/src/github.com/dustin/go-humanize/times.go, _vendor/src/github.com/pingcap/kvproto/pkg/pdpb/pdpb.pb.go, _vendor/src/github.com/pingcap/kvproto/pkg/raft_cmdpb/raft_cmdpb.pb.go, _vendor/src/github.com/pingcap/pd/pd-client/client.go, _vendor/src/github.com/pingcap/pd/pd-client/rpc_worker.go, _vendor/src/github.com/pingcap/pd/pkg/apiutil/apiutil.go, _vendor/src/github.com/pingcap/pd/pkg/metricutil/metricutil.go, _vendor/src/github.com/pingcap/pd/pkg/typeutil/duration.go, _vendor/src/github.com/pingcap/pd/pkg/typeutil/size.go, _vendor/src/github.com/pingcap/tipb/go-tipb/select.pb.go, store/tikv/mock-tikv/cluster.go, store/tikv/mock-tikv/pd.go, store/tikv/store_test.go, tablecodec/tablecodec.go, tablecodec/tablecodec_test.go, server/region_handler_test.go, server/http_status.go, store/tikv/kv.go"
     ]
   },
-  "analysis": "PR title: http: get region's info\nPR url: https://github.com/pingcap/tidb/pull/2774\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: +// +build !race\nChanged files (12): glide.lock, server/config.go, server/http_status.go, server/region_handler.go, server/region_handler_test.go, server/server.go, store/tikv/kv.go, store/tikv/region_cache.go, store/tikv/region_cache_test.go, tablecodec/tablecodec.go, tablecodec/tablecodec_test.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/2774.patch\nPicked test: type=unit path=server/region_handler_test.go name=region_handler_test"
+  "analysis": "PR title: http: get region's info\nPR url: https://github.com/pingcap/tidb/pull/2774\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: +// +build !race\nChanged files (47): store/tikv/region_cache.go, store/tikv/region_cache_test.go, server/config.go, server/regions_handler.go, server/server.go, tidb-server/main.go, server/region_handler.go, _vendor/src/github.com/gorilla/context/LICENSE, _vendor/src/github.com/gorilla/context/context.go, _vendor/src/github.com/gorilla/context/doc.go, _vendor/src/github.com/gorilla/mux/LICENSE, _vendor/src/github.com/gorilla/mux/context_gorilla.go, _vendor/src/github.com/gorilla/mux/context_native.go, _vendor/src/github.com/gorilla/mux/doc.go, _vendor/src/github.com/gorilla/mux/mux.go, _vendor/src/github.com/gorilla/mux/regexp.go, _vendor/src/github.com/gorilla/mux/route.go, glide.lock, glide.yaml, _vendor/src/github.com/dustin/go-humanize/LICENSE, _vendor/src/github.com/dustin/go-humanize/big.go, _vendor/src/github.com/dustin/go-humanize/bigbytes.go, _vendor/src/github.com/dustin/go-humanize/bytes.go, _vendor/src/github.com/dustin/go-humanize/comma.go, _vendor/src/github.com/dustin/go-humanize/ftoa.go, _vendor/src/github.com/dustin/go-humanize/humanize.go, _vendor/src/github.com/dustin/go-humanize/number.go, _vendor/src/github.com/dustin/go-humanize/ordinals.go, _vendor/src/github.com/dustin/go-humanize/si.go, _vendor/src/github.com/dustin/go-humanize/times.go, _vendor/src/github.com/pingcap/kvproto/pkg/pdpb/pdpb.pb.go, _vendor/src/github.com/pingcap/kvproto/pkg/raft_cmdpb/raft_cmdpb.pb.go, _vendor/src/github.com/pingcap/pd/pd-client/client.go, _vendor/src/github.com/pingcap/pd/pd-client/rpc_worker.go, _vendor/src/github.com/pingcap/pd/pkg/apiutil/apiutil.go, _vendor/src/github.com/pingcap/pd/pkg/metricutil/metricutil.go, _vendor/src/github.com/pingcap/pd/pkg/typeutil/duration.go, _vendor/src/github.com/pingcap/pd/pkg/typeutil/size.go, _vendor/src/github.com/pingcap/tipb/go-tipb/select.pb.go, store/tikv/mock-tikv/cluster.go, store/tikv/mock-tikv/pd.go, store/tikv/store_test.go, tablecodec/tablecodec.go, tablecodec/tablecodec_test.go, server/region_handler_test.go, server/http_status.go, store/tikv/kv.go\nPatch url: https://github.com/pingcap/tidb/pull/2774.patch\nPicked test: type=unit path=server/region_handler_test.go name=region_handler_test"
 }
