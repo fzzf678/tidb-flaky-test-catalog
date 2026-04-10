@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: *: refactor `context.Context`.",
+  "root_cause_explanation": "The test was flaky under the race detector due to unsafe transaction lifecycle handling and shared context/txn usage across async code paths. This PR stabilizes it by refactoring context/transaction APIs (introducing `NewTxn` / `Txn`) and updating tests to create and commit transactions explicitly, avoiding data races.",
   "module": "txn",
-  "fix_pattern": "*: refactor `context.Context`",
+  "fix_pattern": "Use explicit transaction lifecycle management (e.g., `NewTxn` + commit on `ctx.Txn()`) and avoid sharing txns across async hooks to prevent data races under -race.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2298",
     "https://github.com/pingcap/tidb/pull/2298.patch"
