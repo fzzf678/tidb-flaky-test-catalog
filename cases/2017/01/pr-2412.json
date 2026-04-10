@@ -17,15 +17,14 @@
   ],
   "failure_signature": "sql: \"select a from t where a between 1 and 2 order by c\", (plan/physical_plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order",
-    "nondeterministic_plan_selection"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR adjusts CBO parameters and updates planner/statistics code and tests. The current evidence only points to a SQL case line (which already contains ORDER BY) and does not provide a clear flaky signature or targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
   "module": "planner",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2412",
     "https://github.com/pingcap/tidb/pull/2412.patch"
