@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: Fix the data race in foreign_key_test.go",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: Fix the data race in foreign_key_test.go.",
+  "root_cause_explanation": "The test was flaky under the race detector because DDL hook callbacks run in another goroutine and updated shared variables (e.g., check flags) without synchronization. This PR stabilizes it by guarding shared state with a mutex and asserting the result in the main test goroutine.",
   "module": "ddl",
-  "fix_pattern": "ddl: Fix the data race in foreign_key_test.go",
+  "fix_pattern": "Protect shared flags/state accessed by async DDL hooks with synchronization (e.g., sync.Mutex) and assert in the main goroutine.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2054",
     "https://github.com/pingcap/tidb/pull/2054.patch"

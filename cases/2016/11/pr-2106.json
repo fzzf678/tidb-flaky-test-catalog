@@ -22,9 +22,9 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: executor: fix a bug when join exists in subquery.",
+  "root_cause_explanation": "The test was flaky under `make race` due to concurrent access to HashJoin executor state (e.g., shutdown flags) and channel closing while worker goroutines were still running. This PR stabilizes it by using atomic.Value for the finished flag and adding proper synchronization (mutex/WaitGroup) to coordinate Close() and goroutine shutdown.",
   "module": "executor",
-  "fix_pattern": "executor: fix a bug when join exists in subquery.",
+  "fix_pattern": "Use atomic/locks and proper goroutine shutdown coordination (WaitGroup + synchronized Close) to avoid data races when closing executors.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2106",
     "https://github.com/pingcap/tidb/pull/2106.patch"

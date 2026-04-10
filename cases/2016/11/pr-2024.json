@@ -17,16 +17,14 @@
   ],
   "failure_signature": "ddl: Pass race",
   "root_cause_categories": [
-    "schema_change_race",
     "concurrency_data_race"
   ],
   "review_smells": [
-    "ddl_without_wait",
-    "async_schema_propagation"
+    "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky around DDL/schema changes where schema propagation is asynchronous. This PR stabilizes it by: ddl: Pass race.",
+  "root_cause_explanation": "The test was flaky under the race detector due to concurrent access to transaction state in a mock/test context without synchronization. This PR stabilizes it by introducing a mutex around GetTxn() in the mock context and using that thread-safe context in DDL tests.",
   "module": "ddl",
-  "fix_pattern": "ddl: Pass race",
+  "fix_pattern": "Add locking to mock/test contexts that manage transactions (e.g., guard GetTxn) to avoid data races under -race.",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/2024",
     "https://github.com/pingcap/tidb/pull/2024.patch"
