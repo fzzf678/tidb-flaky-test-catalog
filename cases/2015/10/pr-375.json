@@ -17,27 +17,27 @@
   ],
   "failure_signature": "testSQL = `SELECT addresses.id, addresses.user_id, addresses.email_address FROM addresses ORDER BY addresses.id;` (stmt/stmts/update_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (refactor update/insert/delete qualified name and as name handling) appears to be primarily a functional/correctness change or refactor. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
+  "module": "executor",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/375",
     "https://github.com/pingcap/tidb/pull/375.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/375.patch",
   "changed_files": [
-    "plan/plans/join.go",
     "stmt/stmts/delete.go",
     "stmt/stmts/delete_test.go",
     "stmt/stmts/insert.go",
     "stmt/stmts/insert_test.go",
     "stmt/stmts/update.go",
-    "stmt/stmts/update_test.go"
+    "stmt/stmts/update_test.go",
+    "plan/plans/join.go"
   ],
   "triage": {
     "sources": [
@@ -46,8 +46,8 @@
     ],
     "evidence": [
       "evidence: testSQL = `SELECT addresses.id, addresses.user_id, addresses.email_address FROM addresses ORDER BY addresses.id;` (stmt/stmts/update_test.go)",
-      "files: plan/plans/join.go, stmt/stmts/delete.go, stmt/stmts/delete_test.go, stmt/stmts/insert.go, stmt/stmts/insert_test.go, stmt/stmts/update.go, stmt/stmts/update_test.go"
+      "files: stmt/stmts/delete.go, stmt/stmts/delete_test.go, stmt/stmts/insert.go, stmt/stmts/insert_test.go, stmt/stmts/update.go, stmt/stmts/update_test.go, plan/plans/join.go"
     ]
   },
-  "analysis": "PR title: refactor update/insert/delete qualified name and as name handling\nPR url: https://github.com/pingcap/tidb/pull/375\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: testSQL = `SELECT addresses.id, addresses.user_id, addresses.email_address FROM addresses ORDER BY addresses.id;` (stmt/stmts/update_test.go)\nChanged files (7): plan/plans/join.go, stmt/stmts/delete.go, stmt/stmts/delete_test.go, stmt/stmts/insert.go, stmt/stmts/insert_test.go, stmt/stmts/update.go, stmt/stmts/update_test.go\nPatch url: https://github.com/pingcap/tidb/pull/375.patch\nPicked test: type=unit path=stmt/stmts/update_test.go name=update_test"
+  "analysis": "PR title: refactor update/insert/delete qualified name and as name handling\nPR url: https://github.com/pingcap/tidb/pull/375\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: testSQL = `SELECT addresses.id, addresses.user_id, addresses.email_address FROM addresses ORDER BY addresses.id;` (stmt/stmts/update_test.go)\nChanged files (7): stmt/stmts/delete.go, stmt/stmts/delete_test.go, stmt/stmts/insert.go, stmt/stmts/insert_test.go, stmt/stmts/update.go, stmt/stmts/update_test.go, plan/plans/join.go\nPatch url: https://github.com/pingcap/tidb/pull/375.patch\nPicked test: type=unit path=stmt/stmts/update_test.go name=update_test"
 }

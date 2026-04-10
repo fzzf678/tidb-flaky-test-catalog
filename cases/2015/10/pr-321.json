@@ -17,14 +17,14 @@
   ],
   "failure_signature": "{\"select c1 from t1 union (select c2 from t2) order by c1\", true}, (parser/parser_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
-  "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (dev union) appears to be primarily a functional/correctness change or refactor. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
+  "module": "parser",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/321",
     "https://github.com/pingcap/tidb/pull/321.patch"
@@ -33,12 +33,12 @@
   "changed_files": [
     "parser/parser.y",
     "parser/parser_test.go",
+    "stmt/stmts/union.go",
     "plan/plans/union.go",
-    "plan/plans/union_test.go",
+    "stmt/stmts/union_test.go",
     "stmt/stmts/insert.go",
     "stmt/stmts/insert_test.go",
-    "stmt/stmts/union.go",
-    "stmt/stmts/union_test.go"
+    "plan/plans/union_test.go"
   ],
   "triage": {
     "sources": [
@@ -47,8 +47,8 @@
     ],
     "evidence": [
       "evidence: {\"select c1 from t1 union (select c2 from t2) order by c1\", true}, (parser/parser_test.go)",
-      "files: parser/parser.y, parser/parser_test.go, plan/plans/union.go, plan/plans/union_test.go, stmt/stmts/insert.go, stmt/stmts/insert_test.go, stmt/stmts/union.go, stmt/stmts/union_test.go"
+      "files: parser/parser.y, parser/parser_test.go, stmt/stmts/union.go, plan/plans/union.go, stmt/stmts/union_test.go, stmt/stmts/insert.go, stmt/stmts/insert_test.go, plan/plans/union_test.go"
     ]
   },
-  "analysis": "PR title: dev union\nPR url: https://github.com/pingcap/tidb/pull/321\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: {\"select c1 from t1 union (select c2 from t2) order by c1\", true}, (parser/parser_test.go)\nChanged files (8): parser/parser.y, parser/parser_test.go, plan/plans/union.go, plan/plans/union_test.go, stmt/stmts/insert.go, stmt/stmts/insert_test.go, stmt/stmts/union.go, stmt/stmts/union_test.go\nPatch url: https://github.com/pingcap/tidb/pull/321.patch\nPicked test: type=unit path=parser/parser_test.go name=parser_test"
+  "analysis": "PR title: dev union\nPR url: https://github.com/pingcap/tidb/pull/321\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: {\"select c1 from t1 union (select c2 from t2) order by c1\", true}, (parser/parser_test.go)\nChanged files (8): parser/parser.y, parser/parser_test.go, stmt/stmts/union.go, plan/plans/union.go, stmt/stmts/union_test.go, stmt/stmts/insert.go, stmt/stmts/insert_test.go, plan/plans/union_test.go\nPatch url: https://github.com/pingcap/tidb/pull/321.patch\nPicked test: type=unit path=parser/parser_test.go name=parser_test"
 }
