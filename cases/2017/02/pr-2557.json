@@ -20,9 +20,9 @@
     "nondeterministic_result_order"
   ],
   "review_smells": [
-    "missing_order_by"
+    "unsorted_result_assertion"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "The test was flaky because it compared two slices whose order was nondeterministic (visitInfo collected during planning). This PR stabilizes it by sorting both slices before asserting equality, making the comparison deterministic.",
   "module": "security",
   "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
   "evidence_links": [
@@ -31,17 +31,36 @@
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/2557.patch",
   "changed_files": [
+    "bootstrap_test.go",
+    "ddl/ddl_db_test.go",
+    "executor/executor_test.go",
+    "perfschema/perfschema_test.go",
+    "plan/resolver_test.go",
+    "plan/typeinferer_test.go",
+    "privilege/privileges/cache_test.go",
+    "privilege/privileges/privileges_test.go",
+    "server/tidb_test.go",
+    "session.go",
+    "session_test.go",
+    "sessionctx/binloginfo/binloginfo_test.go",
+    "store/tikv/gc_worker_test.go",
+    "store/tikv/store_test.go",
+    "store/tikv/ticlient_test.go",
+    "table/tables/tables_test.go",
+    "tidb-server/main.go",
+    "tidb_test.go",
     "domain/domain.go",
+    "privilege/privileges/cache.go",
+    "tidb.go",
+    "executor/executor_simple.go",
     "executor/grant.go",
+    "plan/logical_plan_builder.go",
+    "plan/logical_plan_test.go",
     "plan/optimizer.go",
     "plan/planbuilder.go",
+    "plan/preprocess.go",
     "privilege/privilege.go",
-    "privilege/privileges/cache.go",
-    "privilege/privileges/cache_test.go",
-    "privilege/privileges/privileges.go",
-    "privilege/privileges/privileges_test.go",
-    "session.go",
-    "tidb-server/main.go"
+    "privilege/privileges/privileges.go"
   ],
   "triage": {
     "sources": [
@@ -51,8 +70,8 @@
     ],
     "evidence": [
       "evidence: fix race | sort.Sort(visitInfoArray(v1)) (plan/logical_plan_test.go)",
-      "files: bootstrap_test.go, ddl/ddl_db_test.go, domain/domain.go, executor/executor_simple.go, executor/executor_test.go, executor/grant.go, perfschema/perfschema_test.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/planbuilder.go, plan/preprocess.go, plan/resolver_test.go, plan/typeinferer_test.go, privilege/privilege.go, privilege/privileges/cache.go, privilege/privileges/cache_test.go, privilege/privileges/privileges.go, privilege/privileges/privileges_test.go, server/tidb_test.go, session.go, session_test.go, sessionctx/binloginfo/binloginfo_test.go, store/tikv/gc_worker_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, table/tables/tables_test.go, tidb-server/main.go, tidb.go, tidb_test.go"
+      "files: bootstrap_test.go, ddl/ddl_db_test.go, executor/executor_test.go, perfschema/perfschema_test.go, plan/resolver_test.go, plan/typeinferer_test.go, privilege/privileges/cache_test.go, privilege/privileges/privileges_test.go, server/tidb_test.go, session.go, session_test.go, sessionctx/binloginfo/binloginfo_test.go, store/tikv/gc_worker_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, table/tables/tables_test.go, tidb-server/main.go, tidb_test.go, domain/domain.go, privilege/privileges/cache.go, tidb.go, executor/executor_simple.go, executor/grant.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/planbuilder.go, plan/preprocess.go, privilege/privilege.go, privilege/privileges/privileges.go"
     ]
   },
-  "analysis": "PR title: *: update privilege Checker interface and use it\nPR url: https://github.com/pingcap/tidb/pull/2557\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix race | sort.Sort(visitInfoArray(v1)) (plan/logical_plan_test.go)\nChanged files (11): domain/domain.go, executor/grant.go, plan/optimizer.go, plan/planbuilder.go, privilege/privilege.go, privilege/privileges/cache.go, privilege/privileges/cache_test.go, privilege/privileges/privileges.go, privilege/privileges/privileges_test.go, session.go, tidb-server/main.go\nPatch url: https://github.com/pingcap/tidb/pull/2557.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
+  "analysis": "PR title: *: update privilege Checker interface and use it\nPR url: https://github.com/pingcap/tidb/pull/2557\nTriage sources: manual_triage, explicit_flaky_signal, determinism_stabilization\nTriage summary: fix race | sort.Sort(visitInfoArray(v1)) (plan/logical_plan_test.go)\nChanged files (30): bootstrap_test.go, ddl/ddl_db_test.go, executor/executor_test.go, perfschema/perfschema_test.go, plan/resolver_test.go, plan/typeinferer_test.go, privilege/privileges/cache_test.go, privilege/privileges/privileges_test.go, server/tidb_test.go, session.go, session_test.go, sessionctx/binloginfo/binloginfo_test.go, store/tikv/gc_worker_test.go, store/tikv/store_test.go, store/tikv/ticlient_test.go, table/tables/tables_test.go, tidb-server/main.go, tidb_test.go, domain/domain.go, privilege/privileges/cache.go, tidb.go, executor/executor_simple.go, executor/grant.go, plan/logical_plan_builder.go, plan/logical_plan_test.go, plan/optimizer.go, plan/planbuilder.go, plan/preprocess.go, privilege/privilege.go, privilege/privileges/privileges.go\nPatch url: https://github.com/pingcap/tidb/pull/2557.patch\nPicked test: type=unit path=plan/logical_plan_test.go name=logical_plan_test"
 }
