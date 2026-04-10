@@ -17,26 +17,25 @@
   ],
   "failure_signature": "result := tk.MustQuery(\"select b from t order by a desc\") (executor/executor_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by",
-    "unsorted_result_assertion"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (store/localstore: fix local region select table in desc order.) appears to be primarily a functional/correctness change. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
   "module": "kv",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1222",
     "https://github.com/pingcap/tidb/pull/1222.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/1222.patch",
   "changed_files": [
-    "executor/builder.go",
-    "executor/executor.go",
     "executor/executor_test.go",
     "store/localstore/local_region.go",
-    "xapi/tablecodec/tablecodec.go"
+    "xapi/tablecodec/tablecodec.go",
+    "executor/builder.go",
+    "executor/executor.go"
   ],
   "triage": {
     "sources": [
@@ -45,8 +44,8 @@
     ],
     "evidence": [
       "evidence: result := tk.MustQuery(\"select b from t order by a desc\") (executor/executor_test.go)",
-      "files: executor/builder.go, executor/executor.go, executor/executor_test.go, store/localstore/local_region.go, xapi/tablecodec/tablecodec.go"
+      "files: executor/executor_test.go, store/localstore/local_region.go, xapi/tablecodec/tablecodec.go, executor/builder.go, executor/executor.go"
     ]
   },
-  "analysis": "PR title: store/localstore: fix local region select table in desc order.\nPR url: https://github.com/pingcap/tidb/pull/1222\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result := tk.MustQuery(\"select b from t order by a desc\") (executor/executor_test.go)\nChanged files (5): executor/builder.go, executor/executor.go, executor/executor_test.go, store/localstore/local_region.go, xapi/tablecodec/tablecodec.go\nPatch url: https://github.com/pingcap/tidb/pull/1222.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
+  "analysis": "PR title: store/localstore: fix local region select table in desc order.\nPR url: https://github.com/pingcap/tidb/pull/1222\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: result := tk.MustQuery(\"select b from t order by a desc\") (executor/executor_test.go)\nChanged files (5): executor/executor_test.go, store/localstore/local_region.go, xapi/tablecodec/tablecodec.go, executor/builder.go, executor/executor.go\nPatch url: https://github.com/pingcap/tidb/pull/1222.patch\nPicked test: type=unit path=executor/executor_test.go name=executor_test"
 }
