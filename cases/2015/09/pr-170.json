@@ -22,16 +22,36 @@
   "review_smells": [
     "race_condition_in_async_code"
   ],
-  "root_cause_explanation": "The test was flaky due to concurrency races or unsynchronized shared state. Asynchronous state transitions need polling/Eventually-style checks. This PR stabilizes it by: TiDB MySQL protocol server.",
+  "root_cause_explanation": "The failure was caused by concurrent goroutines accessing/updating shared state without sufficient synchronization (race detector failure). This PR addresses it by adding explicit synchronization (e.g., atomic counters / sync.Once) in concurrent test code (TestConcurrent) to avoid data races.",
   "module": "server",
-  "fix_pattern": "TiDB MySQL protocol server",
+  "fix_pattern": "Use atomic counters / sync.Once to avoid data races in concurrent tests (race-safe under -race).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/170",
     "https://github.com/pingcap/tidb/pull/170.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/170.patch",
   "changed_files": [
-    ".gitignore",
+    "Makefile",
+    "README.md",
+    "tidb-server/main.go",
+    "tidb-server/server/column.go",
+    "tidb-server/server/config.go",
+    "tidb-server/server/conn.go",
+    "tidb-server/server/conn_stmt.go",
+    "tidb-server/server/driver.go",
+    "tidb-server/server/driver_tidb.go",
+    "tidb-server/server/packetio.go",
+    "tidb-server/server/server.go",
+    "tidb-server/server/server_test.go",
+    "tidb-server/server/tidb_test.go",
+    "tidb-server/server/util.go",
+    "tidb-server/server/util_test.go",
+    "tidb-server/tidb-server",
+    "util/hack/hack.go",
+    "util/hack/hack_test.go",
+    "tidb-server/arena/arena.go",
+    "tidb-server/arena/arena_test.go",
+    "tidb-server/tokenlimiter/tokenlimiter.go",
     "Godeps/Godeps.json",
     "Godeps/_workspace/src/github.com/go-sql-driver/mysql/.gitignore",
     "Godeps/_workspace/src/github.com/go-sql-driver/mysql/.travis.yml",
@@ -58,27 +78,10 @@
     "Godeps/_workspace/src/github.com/go-sql-driver/mysql/transaction.go",
     "Godeps/_workspace/src/github.com/go-sql-driver/mysql/utils.go",
     "Godeps/_workspace/src/github.com/go-sql-driver/mysql/utils_test.go",
-    "Makefile",
-    "README.md",
-    "tidb-server/main.go",
-    "tidb-server/server/column.go",
-    "tidb-server/server/config.go",
-    "tidb-server/server/conn.go",
-    "tidb-server/server/conn_stmt.go",
-    "tidb-server/server/driver.go",
-    "tidb-server/server/driver_tidb.go",
-    "tidb-server/server/packetio.go",
-    "tidb-server/server/server.go",
-    "tidb-server/server/server_test.go",
-    "tidb-server/server/tidb_test.go",
+    ".gitignore",
     "tidb-server/server/tokenlimiter.go",
-    "tidb-server/server/util.go",
-    "tidb-server/server/util_test.go",
-    "tidb-server/tidb-server",
     "util/arena/arena.go",
-    "util/arena/arena_test.go",
-    "util/hack/hack.go",
-    "util/hack/hack_test.go"
+    "util/arena/arena_test.go"
   ],
   "triage": {
     "sources": [
@@ -87,8 +90,8 @@
     ],
     "evidence": [
       "evidence: + - Fixed TestConcurrent test to pass Go's race detection",
-      "files: .gitignore, Godeps/Godeps.json, Godeps/_workspace/src/github.com/go-sql-driver/mysql/.gitignore, Godeps/_workspace/src/github.com/go-sql-driver/mysql/.travis.yml, Godeps/_workspace/src/github.com/go-sql-driver/mysql/AUTHORS, Godeps/_workspace/src/github.com/go-sql-driver/mysql/CHANGELOG.md, Godeps/_workspace/src/github.com/go-sql-driver/mysql/CONTRIBUTING.md, Godeps/_workspace/src/github.com/go-sql-driver/mysql/LICENSE, Godeps/_workspace/src/github.com/go-sql-driver/mysql/README.md, Godeps/_workspace/src/github.com/go-sql-driver/mysql/appengine.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/benchmark_test.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/buffer.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/collations.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/connection.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/const.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/driver.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/driver_test.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/errors.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/errors_test.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/infile.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/packets.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/result.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/rows.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/statement.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/transaction.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/utils.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/utils_test.go, Makefile, README.md, tidb-server/arena/arena.go, tidb-server/arena/arena_test.go, tidb-server/main.go, tidb-server/server/column.go, tidb-server/server/config.go, tidb-server/server/conn.go, tidb-server/server/conn_stmt.go, tidb-server/server/driver.go, tidb-server/server/driver_tidb.go, tidb-server/server/packetio.go, tidb-server/server/server.go, tidb-server/server/server_test.go, tidb-server/server/tidb_test.go, tidb-server/server/tokenlimiter.go, tidb-server/server/util.go, tidb-server/server/util_test.go, tidb-server/tidb-server, tidb-server/tokenlimiter/tokenlimiter.go, util/arena/arena.go, util/arena/arena_test.go, util/hack/hack.go, util/hack/hack_test.go"
+      "files: Makefile, README.md, tidb-server/main.go, tidb-server/server/column.go, tidb-server/server/config.go, tidb-server/server/conn.go, tidb-server/server/conn_stmt.go, tidb-server/server/driver.go, tidb-server/server/driver_tidb.go, tidb-server/server/packetio.go, tidb-server/server/server.go, tidb-server/server/server_test.go, tidb-server/server/tidb_test.go, tidb-server/server/util.go, tidb-server/server/util_test.go, tidb-server/tidb-server, util/hack/hack.go, util/hack/hack_test.go, tidb-server/arena/arena.go, tidb-server/arena/arena_test.go, tidb-server/tokenlimiter/tokenlimiter.go, Godeps/Godeps.json, Godeps/_workspace/src/github.com/go-sql-driver/mysql/.gitignore, Godeps/_workspace/src/github.com/go-sql-driver/mysql/.travis.yml, Godeps/_workspace/src/github.com/go-sql-driver/mysql/AUTHORS, Godeps/_workspace/src/github.com/go-sql-driver/mysql/CHANGELOG.md, Godeps/_workspace/src/github.com/go-sql-driver/mysql/CONTRIBUTING.md, Godeps/_workspace/src/github.com/go-sql-driver/mysql/LICENSE, Godeps/_workspace/src/github.com/go-sql-driver/mysql/README.md, Godeps/_workspace/src/github.com/go-sql-driver/mysql/appengine.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/benchmark_test.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/buffer.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/collations.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/connection.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/const.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/driver.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/driver_test.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/errors.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/errors_test.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/infile.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/packets.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/result.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/rows.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/statement.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/transaction.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/utils.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/utils_test.go, .gitignore, tidb-server/server/tokenlimiter.go, util/arena/arena.go, util/arena/arena_test.go"
     ]
   },
-  "analysis": "PR title: TiDB MySQL protocol server\nPR url: https://github.com/pingcap/tidb/pull/170\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + - Fixed TestConcurrent test to pass Go's race detection\nChanged files (48): .gitignore, Godeps/Godeps.json, Godeps/_workspace/src/github.com/go-sql-driver/mysql/.gitignore, Godeps/_workspace/src/github.com/go-sql-driver/mysql/.travis.yml, Godeps/_workspace/src/github.com/go-sql-driver/mysql/AUTHORS, Godeps/_workspace/src/github.com/go-sql-driver/mysql/CHANGELOG.md, Godeps/_workspace/src/github.com/go-sql-driver/mysql/CONTRIBUTING.md, Godeps/_workspace/src/github.com/go-sql-driver/mysql/LICENSE, Godeps/_workspace/src/github.com/go-sql-driver/mysql/README.md, Godeps/_workspace/src/github.com/go-sql-driver/mysql/appengine.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/benchmark_test.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/buffer.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/collations.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/connection.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/const.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/driver.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/driver_test.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/errors.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/errors_test.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/infile.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/packets.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/result.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/rows.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/statement.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/transaction.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/utils.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/utils_test.go, Makefile, README.md, tidb-server/main.go, tidb-server/server/column.go, tidb-server/server/config.go, tidb-server/server/conn.go, tidb-server/server/conn_stmt.go, tidb-server/server/driver.go, tidb-server/server/driver_tidb.go, tidb-server/server/packetio.go, tidb-server/server/server.go, tidb-server/server/server_test.go, tidb-server/server/tidb_test.go, tidb-server/server/tokenlimiter.go, tidb-server/server/util.go, tidb-server/server/util_test.go, tidb-server/tidb-server, util/arena/arena.go, util/arena/arena_test.go, util/hack/hack.go, util/hack/hack_test.go\nPatch url: https://github.com/pingcap/tidb/pull/170.patch\nPicked test: type=unit path=Godeps/_workspace/src/github.com/go-sql-driver/mysql/benchmark_test.go name=TestConcurrent"
+  "analysis": "PR title: TiDB MySQL protocol server\nPR url: https://github.com/pingcap/tidb/pull/170\nTriage sources: manual_triage, explicit_flaky_signal\nTriage summary: + - Fixed TestConcurrent test to pass Go's race detection\nChanged files (51): Makefile, README.md, tidb-server/main.go, tidb-server/server/column.go, tidb-server/server/config.go, tidb-server/server/conn.go, tidb-server/server/conn_stmt.go, tidb-server/server/driver.go, tidb-server/server/driver_tidb.go, tidb-server/server/packetio.go, tidb-server/server/server.go, tidb-server/server/server_test.go, tidb-server/server/tidb_test.go, tidb-server/server/util.go, tidb-server/server/util_test.go, tidb-server/tidb-server, util/hack/hack.go, util/hack/hack_test.go, tidb-server/arena/arena.go, tidb-server/arena/arena_test.go, tidb-server/tokenlimiter/tokenlimiter.go, Godeps/Godeps.json, Godeps/_workspace/src/github.com/go-sql-driver/mysql/.gitignore, Godeps/_workspace/src/github.com/go-sql-driver/mysql/.travis.yml, Godeps/_workspace/src/github.com/go-sql-driver/mysql/AUTHORS, Godeps/_workspace/src/github.com/go-sql-driver/mysql/CHANGELOG.md, Godeps/_workspace/src/github.com/go-sql-driver/mysql/CONTRIBUTING.md, Godeps/_workspace/src/github.com/go-sql-driver/mysql/LICENSE, Godeps/_workspace/src/github.com/go-sql-driver/mysql/README.md, Godeps/_workspace/src/github.com/go-sql-driver/mysql/appengine.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/benchmark_test.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/buffer.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/collations.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/connection.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/const.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/driver.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/driver_test.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/errors.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/errors_test.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/infile.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/packets.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/result.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/rows.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/statement.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/transaction.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/utils.go, Godeps/_workspace/src/github.com/go-sql-driver/mysql/utils_test.go, .gitignore, tidb-server/server/tokenlimiter.go, util/arena/arena.go, util/arena/arena_test.go\nPatch url: https://github.com/pingcap/tidb/pull/170.patch\nPicked test: type=unit path=Godeps/_workspace/src/github.com/go-sql-driver/mysql/benchmark_test.go name=TestConcurrent"
 }
