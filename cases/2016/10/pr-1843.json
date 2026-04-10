@@ -17,26 +17,26 @@
   ],
   "failure_signature": "sql: \"select sum(t.a + t.b), sum(t.a + t.c), sum(t.a + t.b), count(t.a) from t having sum(t.a + t.b) > 0 order by sum(t.a + t.c)\", (plan/plan_test.go)",
   "root_cause_categories": [
-    "nondeterministic_result_order"
+    "insufficient_evidence"
   ],
   "review_smells": [
-    "missing_order_by"
+    "needs_more_evidence"
   ],
-  "root_cause_explanation": "The test was flaky because it relied on nondeterministic result ordering (e.g., missing ORDER BY / unsorted assertions). Result ordering is not guaranteed unless explicitly enforced. This PR stabilizes it by: Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "root_cause_explanation": "INSUFFICIENT_EVIDENCE: This PR (*: support common aggregation functions elimination.) appears to be primarily a functional/correctness/change or test refactor. The current evidence does not include a concrete flaky signature or a targeted stabilization change, so we conservatively mark it as insufficient_evidence.",
   "module": "module_unknown",
-  "fix_pattern": "Sort results / enforce deterministic ordering before assertions to avoid nondeterministic flakiness.",
+  "fix_pattern": "N/A (insufficient evidence; no targeted stabilization change identified).",
   "evidence_links": [
     "https://github.com/pingcap/tidb/pull/1843",
     "https://github.com/pingcap/tidb/pull/1843.patch"
   ],
   "patch_url": "https://github.com/pingcap/tidb/pull/1843.patch",
   "changed_files": [
-    "executor/aggregate_test.go",
     "expression/aggregation.go",
-    "expression/expression.go",
     "plan/logical_plan_builder.go",
     "plan/plan_test.go",
-    "plan/stringer.go"
+    "plan/stringer.go",
+    "executor/aggregate_test.go",
+    "expression/expression.go"
   ],
   "triage": {
     "sources": [
@@ -45,8 +45,8 @@
     ],
     "evidence": [
       "evidence: sql: \"select sum(t.a + t.b), sum(t.a + t.c), sum(t.a + t.b), count(t.a) from t having sum(t.a + t.b) > 0 order by sum(t.a + t.c)\", (plan/plan_test.go)",
-      "files: executor/aggregate_test.go, expression/aggregation.go, expression/expression.go, plan/logical_plan_builder.go, plan/plan_test.go, plan/stringer.go"
+      "files: expression/aggregation.go, plan/logical_plan_builder.go, plan/plan_test.go, plan/stringer.go, executor/aggregate_test.go, expression/expression.go"
     ]
   },
-  "analysis": "PR title: *: support common aggregation functions elimination.\nPR url: https://github.com/pingcap/tidb/pull/1843\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select sum(t.a + t.b), sum(t.a + t.c), sum(t.a + t.b), count(t.a) from t having sum(t.a + t.b) > 0 order by sum(t.a + t.c)\", (plan/plan_test.go)\nChanged files (6): executor/aggregate_test.go, expression/aggregation.go, expression/expression.go, plan/logical_plan_builder.go, plan/plan_test.go, plan/stringer.go\nPatch url: https://github.com/pingcap/tidb/pull/1843.patch\nPicked test: type=unit path=plan/plan_test.go name=plan_test"
+  "analysis": "PR title: *: support common aggregation functions elimination.\nPR url: https://github.com/pingcap/tidb/pull/1843\nTriage sources: manual_triage, determinism_stabilization\nTriage summary: sql: \"select sum(t.a + t.b), sum(t.a + t.c), sum(t.a + t.b), count(t.a) from t having sum(t.a + t.b) > 0 order by sum(t.a + t.c)\", (plan/plan_test.go)\nChanged files (6): expression/aggregation.go, plan/logical_plan_builder.go, plan/plan_test.go, plan/stringer.go, executor/aggregate_test.go, expression/expression.go\nPatch url: https://github.com/pingcap/tidb/pull/1843.patch\nPicked test: type=unit path=plan/plan_test.go name=plan_test"
 }
