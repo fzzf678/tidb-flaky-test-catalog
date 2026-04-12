@@ -22,9 +22,6 @@ Each item includes: what to look for → why it is risky → what questions to a
 - [ ] **Real TiKV dependency** (`real_tikv_dependency`)
 - [ ] **Network operations without retry** (`network_without_retry`)
 
-### insufficient_evidence
-- [ ] **Insufficient evidence / missing root cause explanation** (`needs_more_evidence`)
-
 ### nondeterministic_plan_selection
 - [ ] **Asserting on exact plan or cost** (`assert_exact_plan_or_cost`)
 - [ ] **Statistics-sensitive test** (`statistics_sensitive_test`)
@@ -58,28 +55,6 @@ Each item includes: what to look for → why it is risky → what questions to a
 - [ ] **Incomplete testify migration** (`incomplete_testify_migration`)
 
 ## Detailed Checklist
-
-### Insufficient evidence / missing root cause explanation
-
-**Key:** `needs_more_evidence`
-
-**Related Root Causes:** insufficient_evidence
-
-**Description:** The change claims to fix flakiness, but the PR and/or the case lacks enough concrete evidence (failure signature, repro hints, CI links, or a clear explanation) to confidently determine the root cause.
-
-**Why Risky:** Without evidence, reviewers cannot validate the fix, and the change may only mask the problem (e.g., by increasing timeouts/retries) or introduce new flakiness. It also prevents the team from learning reusable patterns for future reviews.
-
-**Review Questions:**
-- What is the failure signature (logs/assertion/stack) and how often does it happen?
-- How does this change address the root cause, not just mitigate symptoms (sleep/timeout/retry/skip)?
-- Can we link to CI logs/issues or add minimal repro steps for future reference?
-- If we are quarantining (skip/mark flaky), is there a follow-up plan to root-cause it?
-
-**Suggested Fixes:**
-- Add evidence links (CI logs/issues) and a short explanation of the root cause and why the fix works
-- Prefer deterministic synchronization/ordering over pure sleeps or large timeout increases
-- If only mitigation is possible, quarantine explicitly and file a follow-up issue to root-cause
-- Improve failure signature collection (assertions/logs) so the case can be re-triaged later
 
 ### Race condition in async code
 
