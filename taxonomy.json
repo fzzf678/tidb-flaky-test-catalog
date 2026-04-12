@@ -2,15 +2,6 @@
   "schema_version": "0.1",
   "categories": [
     {
-      "key": "unclassified",
-      "name": "Unclassified (Needs triage)",
-      "definition": "Temporary bucket for cases whose root cause is not yet confidently classified. Cases should be re-triaged later and moved to a specific category once enough evidence exists.",
-      "replaced_by": "insufficient_evidence",
-      "status": "deprecated",
-      "observed_case_count": 0,
-      "observed_case_pct": 0.0
-    },
-    {
       "key": "insufficient_evidence",
       "name": "Insufficient Evidence",
       "definition": "Cases where the PR diff/title/body and available evidence in this catalog are insufficient to confidently determine the root cause of the flakiness. Use this as a semantic fallback instead of guessing; should be revisited when more evidence is available.",
@@ -35,62 +26,6 @@
       "status": "active",
       "observed_case_count": 1483,
       "observed_case_pct": 50.37
-    },
-    {
-      "key": "nondeterministic_result_order",
-      "name": "Non-deterministic Result Order",
-      "definition": "Test failures caused by assuming implicit ordering of results without explicit ORDER BY clause, or relying on container/map iteration order which is not guaranteed in Go. This is a common source of flakiness in TiDB tests.",
-      "symptoms": [
-        "Query results match in content but fail in order",
-        "Intermittent failures with MustQuery().Check()",
-        "Flakiness in SELECT without ORDER BY"
-      ],
-      "common_triggers": [
-        "Missing ORDER BY in SELECT queries",
-        "Using map[string]X and assuming iteration order",
-        "Parallel execution affecting result ordering",
-        "Chunk/batch processing order variations"
-      ],
-      "fix_patterns": [
-        "Add .Sort() before .Check()",
-        "Add explicit ORDER BY in queries",
-        "Use ordered containers or sort before comparison",
-        "Use testkit.Rows() with sorted expectations"
-      ],
-      "related_smells": [
-        "missing_order_by",
-        "relying_on_map_iteration_order",
-        "unsorted_result_assertion"
-      ],
-      "status": "active",
-      "observed_case_count": 212,
-      "observed_case_pct": 7.2
-    },
-    {
-      "key": "nondeterministic_test_input",
-      "name": "Non-deterministic Test Input / Probabilistic Assertion",
-      "definition": "Flakiness caused by tests using randomized or non-deterministic inputs, or by assertions that rely on probabilistic properties rather than deterministic invariants.",
-      "symptoms": [
-        "Rare failures only on some seeds/inputs",
-        "Random input generation triggers edge-case parsing/formatting",
-        "Probabilistic assertions occasionally fail"
-      ],
-      "common_triggers": [
-        "Using math/rand without a fixed seed",
-        "Probabilistic assertions (e.g., assuming random bits are never zero)",
-        "Random float/string formatting hitting scientific notation or rounding edge cases"
-      ],
-      "fix_patterns": [
-        "Use deterministic test vectors (table-driven inputs)",
-        "Use a fixed seed or per-test rand.Source and log the seed on failure",
-        "Avoid probabilistic assertions; assert deterministic invariants or accept equivalent outcomes"
-      ],
-      "related_smells": [
-        "randomized_test_input"
-      ],
-      "status": "active",
-      "observed_case_count": 7,
-      "observed_case_pct": 0.24
     },
     {
       "key": "concurrency_data_race",
@@ -123,100 +58,6 @@
       "status": "active",
       "observed_case_count": 520,
       "observed_case_pct": 17.66
-    },
-    {
-      "key": "nondeterministic_plan_selection",
-      "name": "Non-deterministic Plan Selection",
-      "definition": "Flakiness caused by optimizer choosing different execution plans across runs, often due to statistics variations, tie-breaking behavior, or plan cache issues. Test assertions on plan structure or cost may fail intermittently.",
-      "symptoms": [
-        "EXPLAIN output differs between runs",
-        "Plan ID or cost assertion failures",
-        "Plan cache related flakiness",
-        "Statistics-based test instability"
-      ],
-      "common_triggers": [
-        "Stale or incomplete statistics",
-        "Plan cache key changes",
-        "Cost estimation variations",
-        "Bind info or plan guide changes"
-      ],
-      "fix_patterns": [
-        "Use plan hints to stabilize plan",
-        "Update statistics before test",
-        "Avoid asserting on exact plan IDs",
-        "Clear plan cache between tests"
-      ],
-      "related_smells": [
-        "assert_exact_plan_or_cost",
-        "plan_cache_dependency",
-        "statistics_sensitive_test",
-        "unsupported_pushdown"
-      ],
-      "status": "active",
-      "observed_case_count": 133,
-      "observed_case_pct": 4.52
-    },
-    {
-      "key": "schema_change_race",
-      "name": "Schema / DDL Change Race",
-      "definition": "Flakiness related to DDL operations and schema changes, including timing issues between schema update and subsequent queries, schema version synchronization, or metadata caching problems.",
-      "symptoms": [
-        "DDL-related test failures",
-        "Schema version mismatch errors",
-        "Information schema staleness",
-        "Partition table related flakiness"
-      ],
-      "common_triggers": [
-        "DDL execution not waited for completion",
-        "Schema lease/cache timing issues",
-        "Concurrent DDL and DML operations",
-        "Partition table dynamic pruning issues"
-      ],
-      "fix_patterns": [
-        "Wait for DDL completion before querying",
-        "Sync schema version explicitly",
-        "Handle async schema propagation",
-        "Use serial test suite for DDL tests"
-      ],
-      "related_smells": [
-        "ddl_without_wait",
-        "schema_version_race",
-        "async_schema_propagation"
-      ],
-      "status": "active",
-      "observed_case_count": 56,
-      "observed_case_pct": 1.9
-    },
-    {
-      "key": "test_infra_migration",
-      "name": "Test Infrastructure Migration",
-      "definition": "Flakiness arising from migration between testing frameworks (e.g., old check suite to testify), test suite refactoring, or changes to test helpers/fixtures. Often manifests as test setup/teardown issues.",
-      "symptoms": [
-        "Migration-related test failures",
-        "Test suite setup issues",
-        "Test helper function failures",
-        "Flakiness after testify migration"
-      ],
-      "common_triggers": [
-        "Incompatible test framework changes",
-        "Missing testify migration steps",
-        "Test suite inheritance changes",
-        "Fixture setup/teardown ordering"
-      ],
-      "fix_patterns": [
-        "Complete testify migration properly",
-        "Fix test suite setup/teardown",
-        "Update test helpers for new framework",
-        "Use testify's require/assert properly"
-      ],
-      "related_smells": [
-        "incomplete_testify_migration",
-        "test_suite_setup_issue",
-        "deprecated_test_framework_usage"
-      ],
-      "status": "active",
-      "observed_case_count": 68,
-      "observed_case_pct": 2.31
     },
     {
       "key": "async_timing_issue",
@@ -252,6 +93,130 @@
       "observed_case_pct": 9.48
     },
     {
+      "key": "shared_state_pollution",
+      "name": "Shared State / Global State Pollution",
+      "definition": "Flakiness caused by tests polluting shared or global state that affects subsequent tests. Includes global variable modifications, shared database tables, and test isolation failures.",
+      "symptoms": [
+        "Test passes in isolation but fails in suite",
+        "Order-dependent test failures",
+        "Global configuration changes not restored",
+        "Shared table data between tests"
+      ],
+      "common_triggers": [
+        "Global variables modified without cleanup",
+        "Shared tables not cleaned between tests",
+        "System configuration changes",
+        "Registry or singleton state pollution"
+      ],
+      "fix_patterns": [
+        "Proper cleanup in defer/t.Cleanup()",
+        "Save and restore global state",
+        "Use unique table names per test",
+        "Reset singletons/registries between tests"
+      ],
+      "related_smells": [
+        "global_variable_mutation",
+        "insufficient_cleanup_between_tests",
+        "shared_table_without_isolation"
+      ],
+      "status": "active",
+      "observed_case_count": 221,
+      "observed_case_pct": 7.51
+    },
+    {
+      "key": "nondeterministic_result_order",
+      "name": "Non-deterministic Result Order",
+      "definition": "Test failures caused by assuming implicit ordering of results without explicit ORDER BY clause, or relying on container/map iteration order which is not guaranteed in Go. This is a common source of flakiness in TiDB tests.",
+      "symptoms": [
+        "Query results match in content but fail in order",
+        "Intermittent failures with MustQuery().Check()",
+        "Flakiness in SELECT without ORDER BY"
+      ],
+      "common_triggers": [
+        "Missing ORDER BY in SELECT queries",
+        "Using map[string]X and assuming iteration order",
+        "Parallel execution affecting result ordering",
+        "Chunk/batch processing order variations"
+      ],
+      "fix_patterns": [
+        "Add .Sort() before .Check()",
+        "Add explicit ORDER BY in queries",
+        "Use ordered containers or sort before comparison",
+        "Use testkit.Rows() with sorted expectations"
+      ],
+      "related_smells": [
+        "missing_order_by",
+        "relying_on_map_iteration_order",
+        "unsorted_result_assertion"
+      ],
+      "status": "active",
+      "observed_case_count": 212,
+      "observed_case_pct": 7.2
+    },
+    {
+      "key": "nondeterministic_plan_selection",
+      "name": "Non-deterministic Plan Selection",
+      "definition": "Flakiness caused by optimizer choosing different execution plans across runs, often due to statistics variations, tie-breaking behavior, or plan cache issues. Test assertions on plan structure or cost may fail intermittently.",
+      "symptoms": [
+        "EXPLAIN output differs between runs",
+        "Plan ID or cost assertion failures",
+        "Plan cache related flakiness",
+        "Statistics-based test instability"
+      ],
+      "common_triggers": [
+        "Stale or incomplete statistics",
+        "Plan cache key changes",
+        "Cost estimation variations",
+        "Bind info or plan guide changes"
+      ],
+      "fix_patterns": [
+        "Use plan hints to stabilize plan",
+        "Update statistics before test",
+        "Avoid asserting on exact plan IDs",
+        "Clear plan cache between tests"
+      ],
+      "related_smells": [
+        "assert_exact_plan_or_cost",
+        "plan_cache_dependency",
+        "statistics_sensitive_test",
+        "unsupported_pushdown"
+      ],
+      "status": "active",
+      "observed_case_count": 133,
+      "observed_case_pct": 4.52
+    },
+    {
+      "key": "test_infra_migration",
+      "name": "Test Infrastructure Migration",
+      "definition": "Flakiness arising from migration between testing frameworks (e.g., old check suite to testify), test suite refactoring, or changes to test helpers/fixtures. Often manifests as test setup/teardown issues.",
+      "symptoms": [
+        "Migration-related test failures",
+        "Test suite setup issues",
+        "Test helper function failures",
+        "Flakiness after testify migration"
+      ],
+      "common_triggers": [
+        "Incompatible test framework changes",
+        "Missing testify migration steps",
+        "Test suite inheritance changes",
+        "Fixture setup/teardown ordering"
+      ],
+      "fix_patterns": [
+        "Complete testify migration properly",
+        "Fix test suite setup/teardown",
+        "Update test helpers for new framework",
+        "Use testify's require/assert properly"
+      ],
+      "related_smells": [
+        "incomplete_testify_migration",
+        "test_suite_setup_issue",
+        "deprecated_test_framework_usage"
+      ],
+      "status": "active",
+      "observed_case_count": 68,
+      "observed_case_pct": 2.31
+    },
+    {
       "key": "external_dependency",
       "name": "External Dependency / Environment",
       "definition": "Flakiness caused by dependencies on external systems (TiKV, PD, network) or environment-specific factors. Includes real TiKV tests, network-dependent tests, and resource availability issues.",
@@ -283,35 +248,70 @@
       "observed_case_pct": 1.94
     },
     {
-      "key": "shared_state_pollution",
-      "name": "Shared State / Global State Pollution",
-      "definition": "Flakiness caused by tests polluting shared or global state that affects subsequent tests. Includes global variable modifications, shared database tables, and test isolation failures.",
+      "key": "schema_change_race",
+      "name": "Schema / DDL Change Race",
+      "definition": "Flakiness related to DDL operations and schema changes, including timing issues between schema update and subsequent queries, schema version synchronization, or metadata caching problems.",
       "symptoms": [
-        "Test passes in isolation but fails in suite",
-        "Order-dependent test failures",
-        "Global configuration changes not restored",
-        "Shared table data between tests"
+        "DDL-related test failures",
+        "Schema version mismatch errors",
+        "Information schema staleness",
+        "Partition table related flakiness"
       ],
       "common_triggers": [
-        "Global variables modified without cleanup",
-        "Shared tables not cleaned between tests",
-        "System configuration changes",
-        "Registry or singleton state pollution"
+        "DDL execution not waited for completion",
+        "Schema lease/cache timing issues",
+        "Concurrent DDL and DML operations",
+        "Partition table dynamic pruning issues"
       ],
       "fix_patterns": [
-        "Proper cleanup in defer/t.Cleanup()",
-        "Save and restore global state",
-        "Use unique table names per test",
-        "Reset singletons/registries between tests"
+        "Wait for DDL completion before querying",
+        "Sync schema version explicitly",
+        "Handle async schema propagation",
+        "Use serial test suite for DDL tests"
       ],
       "related_smells": [
-        "global_variable_mutation",
-        "insufficient_cleanup_between_tests",
-        "shared_table_without_isolation"
+        "ddl_without_wait",
+        "schema_version_race",
+        "async_schema_propagation"
       ],
       "status": "active",
-      "observed_case_count": 221,
-      "observed_case_pct": 7.51
+      "observed_case_count": 56,
+      "observed_case_pct": 1.9
+    },
+    {
+      "key": "nondeterministic_test_input",
+      "name": "Non-deterministic Test Input / Probabilistic Assertion",
+      "definition": "Flakiness caused by tests using randomized or non-deterministic inputs, or by assertions that rely on probabilistic properties rather than deterministic invariants.",
+      "symptoms": [
+        "Rare failures only on some seeds/inputs",
+        "Random input generation triggers edge-case parsing/formatting",
+        "Probabilistic assertions occasionally fail"
+      ],
+      "common_triggers": [
+        "Using math/rand without a fixed seed",
+        "Probabilistic assertions (e.g., assuming random bits are never zero)",
+        "Random float/string formatting hitting scientific notation or rounding edge cases"
+      ],
+      "fix_patterns": [
+        "Use deterministic test vectors (table-driven inputs)",
+        "Use a fixed seed or per-test rand.Source and log the seed on failure",
+        "Avoid probabilistic assertions; assert deterministic invariants or accept equivalent outcomes"
+      ],
+      "related_smells": [
+        "randomized_test_input"
+      ],
+      "status": "active",
+      "observed_case_count": 7,
+      "observed_case_pct": 0.24
+    },
+    {
+      "key": "unclassified",
+      "name": "Unclassified (Needs triage)",
+      "definition": "Temporary bucket for cases whose root cause is not yet confidently classified. Cases should be re-triaged later and moved to a specific category once enough evidence exists.",
+      "replaced_by": "insufficient_evidence",
+      "status": "deprecated",
+      "observed_case_count": 0,
+      "observed_case_pct": 0.0
     }
   ],
   "observed_total_cases": 2944
