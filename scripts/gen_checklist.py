@@ -24,7 +24,7 @@ def main():
     # Group by related root cause
     cause_groups = {}
     for smell in smells:
-        if smell["key"] == "unclassified":
+        if smell.get("status") == "deprecated" or smell["key"] == "unclassified":
             continue
         for cause in smell.get("related_root_causes", []):
             if cause not in cause_groups:
@@ -43,7 +43,7 @@ def main():
     ])
 
     for smell in smells:
-        if smell["key"] == "unclassified":
+        if smell.get("status") == "deprecated" or smell["key"] == "unclassified":
             continue
 
         lines.extend([
