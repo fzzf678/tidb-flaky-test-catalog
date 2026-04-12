@@ -57,6 +57,20 @@ def _pct(count: int, total: int) -> float:
         return 0.0
     return round(count / total * 100.0, 2)
 
+def _sort_items_by_observed_case_count(items: list) -> None:
+    # Stable sort: for ties, preserve existing order.
+    def sort_key(item: Any) -> Tuple[int, int]:
+        if not isinstance(item, dict):
+            return (1, 0)
+        count = item.get("observed_case_count", 0)
+        try:
+            count = int(count)
+        except Exception:
+            count = 0
+        return (0, -count)
+
+    items.sort(key=sort_key)
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Refresh observed case counts/pct in taxonomy.json and review_smells.json")
@@ -85,6 +99,7 @@ def main() -> int:
                 c = int(root_cause_counts.get(key, 0))
                 item["observed_case_count"] = c
                 item["observed_case_pct"] = _pct(c, total_cases)
+            _sort_items_by_observed_case_count(categories)
 
     if isinstance(smells, dict):
         smells["observed_total_cases"] = total_cases
@@ -99,6 +114,7 @@ def main() -> int:
                 c = int(smell_counts.get(key, 0))
                 item["observed_case_count"] = c
                 item["observed_case_pct"] = _pct(c, total_cases)
+            _sort_items_by_observed_case_count(smell_items)
 
     _write_json(taxonomy_path, taxonomy)
     _write_json(smells_path, smells)
