@@ -6,14 +6,20 @@
       "title": "Unclassified (Needs triage)",
       "description": "Temporary bucket for cases where we haven't identified a specific review smell yet.",
       "why_risky": "Without a concrete smell, reviewers have no actionable checklist to catch similar flakiness patterns early.",
-      "review_questions": ["What makes this test non-deterministic, and how can we make it deterministic?"],
+      "review_questions": [
+        "What makes this test non-deterministic, and how can we make it deterministic?"
+      ],
       "suggested_fixes": [
         "Identify the flakiness trigger and document the evidence in the case.",
         "Add deterministic synchronization/ordering/timeout handling as appropriate for the existing test or test infrastructure."
       ],
-      "related_root_causes": ["insufficient_evidence"],
+      "related_root_causes": [
+        "insufficient_evidence"
+      ],
       "replaced_by": "needs_more_evidence",
-      "status": "deprecated"
+      "status": "deprecated",
+      "observed_case_count": 0,
+      "observed_case_pct": 0.0
     },
     {
       "key": "needs_more_evidence",
@@ -32,10 +38,18 @@
         "If only mitigation is possible, quarantine explicitly and file a follow-up issue to root-cause",
         "Improve failure signature collection (assertions/logs) so the case can be re-triaged later"
       ],
-      "related_root_causes": ["insufficient_evidence"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "insufficient_evidence"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 1,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 1485,
+      "observed_case_pct": 50.44
     },
     {
       "key": "randomized_test_input",
@@ -52,10 +66,17 @@
         "Use a fixed seed or per-test rand.Source and log the seed on failure",
         "Avoid probabilistic assertions; assert deterministic invariants or accept equivalent outcomes"
       ],
-      "related_root_causes": ["nondeterministic_test_input"],
-      "applies_to": ["unit", "integration"],
+      "related_root_causes": [
+        "nondeterministic_test_input"
+      ],
+      "applies_to": [
+        "unit",
+        "integration"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 7,
+      "observed_case_pct": 0.24
     },
     {
       "key": "missing_order_by",
@@ -72,10 +93,18 @@
         "Use .Sort() before .Check() in test assertions",
         "Use testkit.Rows() with explicit ordering expectations"
       ],
-      "related_root_causes": ["nondeterministic_result_order"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "nondeterministic_result_order"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 68,
+      "observed_case_pct": 2.31
     },
     {
       "key": "relying_on_map_iteration_order",
@@ -92,10 +121,18 @@
         "Use ordered data structures when order matters",
         "Use maps only when order is irrelevant to the test"
       ],
-      "related_root_causes": ["nondeterministic_result_order"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "nondeterministic_result_order"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 41,
+      "observed_case_pct": 1.39
     },
     {
       "key": "unsorted_result_assertion",
@@ -112,10 +149,18 @@
         "Use testkit.Rows() and ensure expected order matches",
         "Consider if ORDER BY in query is more appropriate"
       ],
-      "related_root_causes": ["nondeterministic_result_order"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "nondeterministic_result_order"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 123,
+      "observed_case_pct": 4.18
     },
     {
       "key": "t_parallel_with_shared_state",
@@ -133,10 +178,18 @@
         "Convert shared state to per-test local state",
         "Use t.Run() with sequential execution instead"
       ],
-      "related_root_causes": ["concurrency_data_race", "shared_state_pollution"],
-      "applies_to": ["unit", "integration"],
+      "related_root_causes": [
+        "concurrency_data_race",
+        "shared_state_pollution"
+      ],
+      "applies_to": [
+        "unit",
+        "integration"
+      ],
       "severity": 3,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 44,
+      "observed_case_pct": 1.49
     },
     {
       "key": "global_variable_mutation",
@@ -154,10 +207,19 @@
         "Encapsulate state in test-specific structures",
         "Avoid global state when possible"
       ],
-      "related_root_causes": ["shared_state_pollution", "concurrency_data_race"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "shared_state_pollution",
+        "concurrency_data_race"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 155,
+      "observed_case_pct": 5.26
     },
     {
       "key": "unsafe_zero_copy_alias",
@@ -174,10 +236,18 @@
         "Avoid zero-copy conversions for values that outlive the backing buffer",
         "Format messages eagerly while inputs are still valid"
       ],
-      "related_root_causes": ["shared_state_pollution"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "shared_state_pollution"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 11,
+      "observed_case_pct": 0.37
     },
     {
       "key": "insufficient_cleanup_between_tests",
@@ -195,10 +265,18 @@
         "Ensure goroutines exit properly",
         "Use unique resource names per test"
       ],
-      "related_root_causes": ["shared_state_pollution"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "shared_state_pollution"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 95,
+      "observed_case_pct": 3.23
     },
     {
       "key": "race_condition_in_async_code",
@@ -216,10 +294,18 @@
         "Add race detector to CI",
         "Refactor to avoid shared mutable state"
       ],
-      "related_root_causes": ["concurrency_data_race"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "concurrency_data_race"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 3,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 502,
+      "observed_case_pct": 17.05
     },
     {
       "key": "assert_exact_plan_or_cost",
@@ -237,10 +323,17 @@
         "Update statistics before asserting on plans",
         "Make cost assertions approximate/range-based"
       ],
-      "related_root_causes": ["nondeterministic_plan_selection"],
-      "applies_to": ["unit", "integration"],
+      "related_root_causes": [
+        "nondeterministic_plan_selection"
+      ],
+      "applies_to": [
+        "unit",
+        "integration"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 94,
+      "observed_case_pct": 3.19
     },
     {
       "key": "assert_exact_error_message",
@@ -257,10 +350,18 @@
         "Use regex/substring matching for the stable part of the message",
         "Stabilize execution/plan with hints if the specific error source matters"
       ],
-      "related_root_causes": ["nondeterministic_plan_selection"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "nondeterministic_plan_selection"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 1,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 5,
+      "observed_case_pct": 0.17
     },
     {
       "key": "plan_cache_dependency",
@@ -277,10 +378,17 @@
         "Account for cached plans in assertions",
         "Use ADMIN EVOLVE to manage plan bindings"
       ],
-      "related_root_causes": ["nondeterministic_plan_selection"],
-      "applies_to": ["unit", "integration"],
+      "related_root_causes": [
+        "nondeterministic_plan_selection"
+      ],
+      "applies_to": [
+        "unit",
+        "integration"
+      ],
       "severity": 1,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 25,
+      "observed_case_pct": 0.85
     },
     {
       "key": "statistics_sensitive_test",
@@ -297,10 +405,17 @@
         "Use hints to control plan selection",
         "Make assertions less sensitive to exact plans"
       ],
-      "related_root_causes": ["nondeterministic_plan_selection"],
-      "applies_to": ["unit", "integration"],
+      "related_root_causes": [
+        "nondeterministic_plan_selection"
+      ],
+      "applies_to": [
+        "unit",
+        "integration"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 47,
+      "observed_case_pct": 1.6
     },
     {
       "key": "ddl_without_wait",
@@ -317,10 +432,18 @@
         "Add explicit waits for schema propagation",
         "Query information_schema to verify DDL completion"
       ],
-      "related_root_causes": ["schema_change_race"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "schema_change_race"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 21,
+      "observed_case_pct": 0.71
     },
     {
       "key": "schema_version_race",
@@ -337,10 +460,17 @@
         "Handle schema error with retry",
         "Use single session when possible"
       ],
-      "related_root_causes": ["schema_change_race"],
-      "applies_to": ["integration", "realtikv"],
+      "related_root_causes": [
+        "schema_change_race"
+      ],
+      "applies_to": [
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 12,
+      "observed_case_pct": 0.41
     },
     {
       "key": "async_schema_propagation",
@@ -357,10 +487,16 @@
         "Use local/mock store for DDL-sensitive tests",
         "Implement retry logic for schema errors"
       ],
-      "related_root_causes": ["schema_change_race"],
-      "applies_to": ["realtikv"],
+      "related_root_causes": [
+        "schema_change_race"
+      ],
+      "applies_to": [
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 31,
+      "observed_case_pct": 1.05
     },
     {
       "key": "incomplete_testify_migration",
@@ -377,10 +513,17 @@
         "Remove old framework dependencies",
         "Update test setup to testify patterns"
       ],
-      "related_root_causes": ["test_infra_migration"],
-      "applies_to": ["unit", "integration"],
+      "related_root_causes": [
+        "test_infra_migration"
+      ],
+      "applies_to": [
+        "unit",
+        "integration"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 0,
+      "observed_case_pct": 0.0
     },
     {
       "key": "test_suite_setup_issue",
@@ -397,10 +540,17 @@
         "Ensure fixtures are properly managed",
         "Consider migrating to testify suite"
       ],
-      "related_root_causes": ["test_infra_migration"],
-      "applies_to": ["unit", "integration"],
+      "related_root_causes": [
+        "test_infra_migration"
+      ],
+      "applies_to": [
+        "unit",
+        "integration"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 16,
+      "observed_case_pct": 0.54
     },
     {
       "key": "deprecated_test_framework_usage",
@@ -417,10 +567,17 @@
         "Update to modern Go testing patterns",
         "Remove deprecated framework dependencies"
       ],
-      "related_root_causes": ["test_infra_migration"],
-      "applies_to": ["unit", "integration"],
+      "related_root_causes": [
+        "test_infra_migration"
+      ],
+      "applies_to": [
+        "unit",
+        "integration"
+      ],
       "severity": 1,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 58,
+      "observed_case_pct": 1.97
     },
     {
       "key": "time_sleep_for_sync",
@@ -437,10 +594,18 @@
         "Use wait loop with backoff",
         "Add proper event notification"
       ],
-      "related_root_causes": ["async_timing_issue"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "async_timing_issue"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 85,
+      "observed_case_pct": 2.89
     },
     {
       "key": "insufficient_timeout",
@@ -457,10 +622,18 @@
         "Use context with appropriate deadline",
         "Make timeout configurable via environment"
       ],
-      "related_root_causes": ["async_timing_issue"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "async_timing_issue"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 101,
+      "observed_case_pct": 3.43
     },
     {
       "key": "async_wait_without_backoff",
@@ -477,10 +650,18 @@
         "Use library utilities for wait/retry",
         "Add jitter to prevent thundering herd"
       ],
-      "related_root_causes": ["async_timing_issue"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "async_timing_issue"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 1,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 45,
+      "observed_case_pct": 1.53
     },
     {
       "key": "clock_skew_dependency",
@@ -497,10 +678,18 @@
         "Allow tolerance in time comparisons",
         "Mock time for deterministic tests"
       ],
-      "related_root_causes": ["async_timing_issue"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "async_timing_issue"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 33,
+      "observed_case_pct": 1.12
     },
     {
       "key": "real_tikv_dependency",
@@ -517,10 +706,16 @@
         "Add proper retry for cluster operations",
         "Isolate TiKV-specific tests"
       ],
-      "related_root_causes": ["external_dependency"],
-      "applies_to": ["realtikv"],
+      "related_root_causes": [
+        "external_dependency"
+      ],
+      "applies_to": [
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 17,
+      "observed_case_pct": 0.58
     },
     {
       "key": "network_without_retry",
@@ -537,10 +732,17 @@
         "Handle transient errors gracefully",
         "Use idempotent operations when possible"
       ],
-      "related_root_causes": ["external_dependency"],
-      "applies_to": ["integration", "realtikv"],
+      "related_root_causes": [
+        "external_dependency"
+      ],
+      "applies_to": [
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 8,
+      "observed_case_pct": 0.27
     },
     {
       "key": "hardcoded_port_or_resource",
@@ -557,10 +759,18 @@
         "Use temporary directories",
         "Generate unique resource names"
       ],
-      "related_root_causes": ["external_dependency"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "external_dependency"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 26,
+      "observed_case_pct": 0.88
     },
     {
       "key": "shared_table_without_isolation",
@@ -577,10 +787,18 @@
         "Drop tables in defer/t.Cleanup()",
         "Use transactions and rollback"
       ],
-      "related_root_causes": ["shared_state_pollution"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "shared_state_pollution"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 18,
+      "observed_case_pct": 0.61
     },
     {
       "key": "unsupported_pushdown",
@@ -597,10 +815,18 @@
         "Materialize virtual/generated expressions at the right layer (keep TopN/Sort on root when needed)",
         "Add regression tests to assert correctness across TiKV/TiFlash paths"
       ],
-      "related_root_causes": ["nondeterministic_plan_selection"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "nondeterministic_plan_selection"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 3,
+      "observed_case_pct": 0.1
     },
     {
       "key": "finalizer_timing_dependency",
@@ -617,10 +843,19 @@
         "If finalizers must be used, guard callbacks during teardown and avoid fatal assertions in finalizers",
         "Use deterministic synchronization (poll/Eventually) rather than relying on GC timing"
       ],
-      "related_root_causes": ["async_timing_issue"],
-      "applies_to": ["unit", "integration", "realtikv"],
+      "related_root_causes": [
+        "async_timing_issue"
+      ],
+      "applies_to": [
+        "unit",
+        "integration",
+        "realtikv"
+      ],
       "severity": 2,
-      "status": "active"
+      "status": "active",
+      "observed_case_count": 3,
+      "observed_case_pct": 0.1
     }
-  ]
+  ],
+  "observed_total_cases": 2944
 }
