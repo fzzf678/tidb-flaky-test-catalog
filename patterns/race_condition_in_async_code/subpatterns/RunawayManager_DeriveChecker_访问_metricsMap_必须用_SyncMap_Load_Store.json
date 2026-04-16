@@ -1,0 +1,62 @@
+{
+  "key": "`RunawayManager.DeriveChecker` 访问 `metricsMap` 必须用 `SyncMap.Load/Store`",
+  "family": "race_condition_in_async_code",
+  "summary": "`RunawayManager.DeriveChecker` 会在 runtime 路径里并发读取和填充 `metricsMap`，不能继续用普通 Go map；要么加锁，要么改成 `SyncMap.Load/Store`。",
+  "mechanism": "这条是非常具体的 runtime counter/cache 子模式：`DeriveChecker` 一边根据 `resourceGroupName` 判断 active 状态，一边懒取或创建 `metricsMap` 里的 prometheus counter。如果 `metricsMap` 还是普通 map，多个并发请求同时进入 `DeriveChecker` 时就会在 `counter, ok := rm.metricsMap[...]` 和后续写回处撞出 race。修复也非常固定：把 `metricsMap` 改成 `generic.SyncMap`，并在 `DeriveChecker` 里统一走 `Load/Store`。",
+  "signals_required": [
+    "代码对象是 `RunawayManager` 或等价 resource-group runaway 管理组件。",
+    "并发入口是 `DeriveChecker` 或等价按资源组派生 checker/counter 的 runtime 路径。",
+    "共享字段是 `metricsMap` 这类按 group name 索引 counter 的长期存活 map。",
+    "修复核心是把普通 map 改成 `SyncMap` 或等价并发 map，并把访问改成 `Load/Store`。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `RunawayManager`、`DeriveChecker`、`metricsMap`、`prometheus.Counter`、`generic.SyncMap`、`Load`、`Store`。",
+    "同时出现 `activeGroup`、`resourceGroupName`、`RunawayCheckerCounter` 会进一步增信。",
+    "目录通常落在 `pkg/domain/resourcegroup/runaway.go` 或相邻 resourcegroup 主线。"
+  ],
+  "negative_guards": [
+    "如果共享 map 是更泛化的 manager 字段，而不是 `DeriveChecker` 里按 group 派生 counter 的 `metricsMap`，更接近 broader manager/map 子模式。",
+    "如果修复不是 `SyncMap/Load/Store`，而是 snapshot copy-on-read 或 alias 断开，不属于这条。",
+    "如果问题是全局 config / sysvar 的标量开关，不要因为都和 resource group 相关就并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；`RunawayManager.DeriveChecker + metricsMap + SyncMap.Load/Store` 是非常硬的机械模式。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到 `metricsMap` 字段，但看不清它是否只在单线程初始化时使用。",
+      "虽然用了 `Load/Store`，但 patch 看起来在做普通重构而不是修 race。"
+    ]
+  },
+  "scope": [
+    "resource group / runaway manager / prometheus counter 缓存主线。",
+    "任何在 runtime 路径中按 key 懒创建 metric counter 的长期存活管理器。"
+  ],
+  "fix_hints": [
+    "按 key 懒创建 runtime counter 时，不要继续用普通 Go map。",
+    "优先用并发 map 或专用锁，把 `Load/Store` 包成统一 helper。",
+    "不要在 `DeriveChecker` 这种高并发 runtime 路径里裸写 map。"
+  ],
+  "related_subpatterns": [
+    "长期存活的 manager/handler 共享 map 被多个并发入口直接读写",
+    "全局 `bool/seed` 配置开关不能裸读写；要么走 atomic accessor，要么降到 session scope"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-49354",
+        "note": "`RunawayManager.DeriveChecker` 并发访问 `metricsMap`，修复改成 `generic.SyncMap` + `Load/Store`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-44339",
+        "note": "这条是 mock resource manager client 的 `groups` map，并不是 `DeriveChecker` 的 counter cache。"
+      },
+      {
+        "case_id": "pr-21836",
+        "note": "这条是 `MPPTaskHandler.TunnelSet` 并发注册/建连，不是 metrics counter cache。"
+      }
+    ]
+  }
+}

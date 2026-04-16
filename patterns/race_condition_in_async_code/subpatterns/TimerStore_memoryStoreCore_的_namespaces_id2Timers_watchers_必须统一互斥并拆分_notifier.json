@@ -1,0 +1,62 @@
+{
+  "key": "`TimerStore.memoryStoreCore` 的 `namespaces/id2Timers/watchers` 必须统一互斥并拆分 notifier",
+  "family": "race_condition_in_async_code",
+  "summary": "`memoryStoreCore` 同时持有 `namespaces`、`id2Timers` 和 `watchers` 这组 live 共享状态，`Create/List/Update/Delete/Watch/notify` 不能混着裸访问；需要统一互斥，必要时把 watcher/notifier 生命周期拆出去。",
+  "mechanism": "这类问题不是单个 `List` 漏锁那么简单，而是内存 timer store 把索引 map、按 namespace 分组的 map，以及 watcher 列表都放在同一个长期存活对象里。写路径、读路径和通知路径交错执行时，很容易出现一边在改 `id2Timers/namespaces`，另一边在枚举 `watchers` 或关闭 watcher 的复合竞态。修复通常分两层：一层是为 core 状态统一加锁；另一层是把 watch/notify 生命周期抽到独立 notifier，避免 core 锁和 watcher 生命周期缠在一起。",
+  "signals_required": [
+    "代码对象是 `memoryStoreCore` 或等价的内存 timer store 核心结构，且同时持有 `namespaces`、`id2Timers`、`watchers` 这类共享状态。",
+    "`Create/List/Update/Delete/Watch/notify` 这几类入口会并发访问这组共享状态。",
+    "问题不是单个 helper 忘记拿锁，而是 core 状态和 watcher 生命周期需要统一互斥或重新分层。",
+    "修复核心是给 core 状态补统一锁，并把 watcher/notify 逻辑拆到独立 notifier 或等价对象。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `memoryStoreCore`、`namespaces`、`id2Timers`、`watchers`、`notify`、`WatchSupported`、`memTimerWatchEventNotifier`。",
+    "patch 常见 `mu sync.Mutex`、`n.mu.Lock()`、`Watch(ctx)` 改成 `return s.notifier.Watch(ctx)`。",
+    "目录通常落在 `timer/api/mem_store.go`、`timer/api/store.go` 或相邻 timer runtime/test 主线。"
+  ],
+  "negative_guards": [
+    "如果只是单个 `List` / `IsXxx` helper 漏掉读侧锁，更接近 `只读 helper/List/IsXxx 访问共享 map 却漏掉读侧锁`。",
+    "如果只是 cleanup/reuse 时 `delete(map, k)` 漏锁，更接近 `cleanup/reuse/reset 路径清空共享 map 时漏锁`。",
+    "如果问题对象不是 timer store 的复合状态，而是简单的单个 manager map，不要并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；timer store core 把 map 状态和 watcher 生命周期混在一起，是很强的复合共享状态信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到 `memoryStoreCore` 和一个 map，但看不清 watcher/notifier 生命周期是否也卷入竞态。",
+      "共享状态虽然在一个 struct 里，但所有入口已经证明是严格串行。"
+    ]
+  },
+  "scope": [
+    "timer store / watcher / notifier / runtime cache 一类带监听机制的内存状态组件。",
+    "任何同时维护多张索引 map 和 watcher 列表的长期存活对象。"
+  ],
+  "fix_hints": [
+    "先明确哪些状态属于 core 数据，哪些属于 watcher/notifier 生命周期，不要继续混在同一个 struct 里。",
+    "core 的 `Create/List/Update/Delete` 和 watcher 注册/移除都必须遵守统一锁纪律。",
+    "必要时把 `notify/Watch` 拆成独立 notifier，避免 core 锁和 watcher close/remove 互相缠绕。"
+  ],
+  "related_subpatterns": [
+    "只读 helper/List/IsXxx 访问共享 map 却漏掉读侧锁",
+    "cleanup/reuse/reset 路径清空共享 map 时漏锁"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-44446",
+        "note": "`memoryStoreCore` 的 `namespaces/id2Timers/watchers` 需要整体重构同步；修复把 watcher 生命周期拆到独立 notifier。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-44577",
+        "note": "这条更像 `memoryStoreCore.List` 单个只读 helper 漏锁，是 timer store 的更细 sibling。"
+      },
+      {
+        "case_id": "pr-42019",
+        "note": "这条是 cleanup/reuse 时清 `rootStats` map 漏锁，不涉及 watcher/notifier 生命周期。"
+      }
+    ]
+  }
+}

@@ -1,15 +1,15 @@
 {
   "family": "race_condition_in_async_code",
   "kind": "retrieval_signals",
-  "version": "v37",
-  "description": "Repository-scan retrieval hints for the 40 race_condition_in_async_code subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "version": "v38",
+  "description": "Repository-scan retrieval hints for the 55 race_condition_in_async_code subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
   "defaults": {
     "purpose": "candidate_retrieval_only",
     "verdict_requires_subpattern_json": true,
     "group_match_semantics": "For grep_keywords_all_groups, every group should match at least one keyword before the candidate is treated as high-priority.",
     "any_match_semantics": "grep_keywords_any is only for weak recall and should not be used alone for risk judgment.",
     "exclude_semantics": "grep_keywords_exclude are soft down-rank hints by default unless the caller explicitly chooses hard exclusions.",
-    "rg_template_semantics": "Prefer broad_recall first for speed. If repo layout may differ across versions or broad_recall is too sparse, run fallback_no_path. Use group_intersection only for optional narrowing after recall.",
+    "rg_template_semantics": "For full-repo historical scanning, run fallback_no_path first. broad_recall is an optional path-prioritized fast path. Use group_intersection only for coarse filtering after recall.",
     "path_globs_semantics": "path_globs are soft search-priority hints, not hard absence proofs. If broad_recall is empty or implausibly sparse, rerun fallback_no_path before concluding the pattern is absent."
   },
   "entries": [
@@ -3252,6 +3252,262 @@
           "name": "group_intersection",
           "intent": "按“global logger 主线 + capturer/hook + 串行/互斥信号”三组做粗筛。",
           "command": "cd <repo_root> && rg -l -0 -F -e ReplaceGlobals -e 'global logger' -e logutil -g '**/*_test.go' -g 'pkg/util/logutil/**/*' -g 'pkg/executor/oomtest/**/*' -g 'tests/**/*' . | xargs -0 -r rg -l -0 -F -e capturer -e capture -e hook | xargs -0 -r rg -n -H -F -e 'sync.Mutex' -e sequentially -e serial -e test"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`MPPTaskHandler.TunnelSet` 在 `HandleEstablishConn/registerTunnel/getAndActiveTunnel` 之间并发读写",
+      "pattern_file": "MPPTaskHandler_TunnelSet_在_HandleEstablishConn_registerTunnel_getAndActiveTunnel_之间并发读写.json",
+      "grepability": "high",
+      "path_globs": [
+        "store/mockstore/unistore/cophandler/**/*",
+        "pkg/store/mockstore/unistore/cophandler/**/*",
+        "executor/**/*",
+        "pkg/executor/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "MPPTaskHandler",
+        "TunnelSet",
+        "HandleEstablishConn",
+        "registerTunnel",
+        "getAndActiveTunnel",
+        "ExchangerTunnel",
+        "tunnelSetLock"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "MPPTaskHandler",
+          "TunnelSet"
+        ],
+        [
+          "HandleEstablishConn",
+          "registerTunnel",
+          "getAndActiveTunnel"
+        ],
+        [
+          "ExchangerTunnel",
+          "tunnelSetLock",
+          "TaskId",
+          "connectedCh"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "metricsMap",
+        "groups",
+        "memoryStoreCore",
+        "authUsers"
+      ],
+      "first_pass_query_hint": "先找 `MPPTaskHandler/TunnelSet`，再确认 `HandleEstablishConn/registerTunnel/getAndActiveTunnel` 是否会并发查改同一张 tunnel map。",
+      "rg_templates": [
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找 MPP tunnel handler 的共享 `TunnelSet` 访问点。",
+          "command": "cd <repo_root> && rg -n -F -e MPPTaskHandler -e TunnelSet -e HandleEstablishConn -e registerTunnel -e getAndActiveTunnel -e ExchangerTunnel -e tunnelSetLock ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“MPP handler + TunnelSet + 建连/注册/激活路径”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e MPPTaskHandler -e TunnelSet -g 'store/mockstore/unistore/cophandler/**/*' -g 'pkg/store/mockstore/unistore/cophandler/**/*' -g 'executor/**/*' -g 'pkg/executor/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e HandleEstablishConn -e registerTunnel -e getAndActiveTunnel | xargs -0 -r rg -n -H -F -e ExchangerTunnel -e tunnelSetLock -e TaskId -e connectedCh"
+        },
+        {
+          "name": "broad_recall",
+          "intent": "先在 mock unistore / MPP 主线粗召回 tunnel lifecycle 相关关键词。",
+          "command": "cd <repo_root> && rg -n -F -g 'store/mockstore/unistore/cophandler/**/*' -g 'pkg/store/mockstore/unistore/cophandler/**/*' -g 'executor/**/*' -g 'pkg/executor/**/*' -g '**/*_test.go' -e MPPTaskHandler -e TunnelSet -e HandleEstablishConn -e registerTunnel -e getAndActiveTunnel -e ExchangerTunnel -e tunnelSetLock ."
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`stmtSummaryByDigestElement.authUsers` 赋给 `BindableStatement.Users` 前必须 copy-on-read",
+      "pattern_file": "stmtSummaryByDigestElement_authUsers_赋给_BindableStatement_前必须_copy_on_read.json",
+      "grepability": "high",
+      "path_globs": [
+        "util/stmtsummary/**/*",
+        "pkg/util/stmtsummary/**/*",
+        "bindinfo/**/*",
+        "pkg/bindinfo/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "stmtSummaryByDigestElement",
+        "authUsers",
+        "BindableStatement",
+        "Users",
+        "maps.Copy",
+        "make(map[string]struct{})"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "stmtSummaryByDigestElement",
+          "authUsers"
+        ],
+        [
+          "BindableStatement",
+          "Users"
+        ],
+        [
+          "maps.Copy",
+          "make(map[string]struct{})",
+          "clone",
+          "copy"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "Labels",
+        "StoreGlobalConfig",
+        "TunnelSet",
+        "metricsMap",
+        "memoryStoreCore"
+      ],
+      "first_pass_query_hint": "先找内部 live map `authUsers` 被导出为 `BindableStatement.Users` 的位置，再确认修复是否用 `make(map...) + maps.Copy` 断开 alias。",
+      "rg_templates": [
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找 statement summary 导出对象上的 map alias/copy-on-read 位置。",
+          "command": "cd <repo_root> && rg -n -F -e stmtSummaryByDigestElement -e authUsers -e BindableStatement -e Users -e 'maps.Copy' -e 'make(map[string]struct{})' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“内部 live map + 外部结果对象 + copy-on-read 修法”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e stmtSummaryByDigestElement -e authUsers -g 'util/stmtsummary/**/*' -g 'pkg/util/stmtsummary/**/*' -g 'bindinfo/**/*' -g 'pkg/bindinfo/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e BindableStatement -e Users | xargs -0 -r rg -n -H -F -e 'maps.Copy' -e 'make(map[string]struct{})' -e clone -e copy"
+        },
+        {
+          "name": "broad_recall",
+          "intent": "先在 statement summary / bindable statement 主线粗召回 `authUsers`、结果对象和 copy-on-read 信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'util/stmtsummary/**/*' -g 'pkg/util/stmtsummary/**/*' -g 'bindinfo/**/*' -g 'pkg/bindinfo/**/*' -g '**/*_test.go' -e stmtSummaryByDigestElement -e authUsers -e BindableStatement -e Users -e 'maps.Copy' -e 'make(map[string]struct{})' ."
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`TimerStore.memoryStoreCore` 的 `namespaces/id2Timers/watchers` 必须统一互斥并拆分 notifier",
+      "pattern_file": "TimerStore_memoryStoreCore_的_namespaces_id2Timers_watchers_必须统一互斥并拆分_notifier.json",
+      "grepability": "medium",
+      "path_globs": [
+        "timer/api/**/*",
+        "pkg/timer/api/**/*",
+        "timer/tablestore/**/*",
+        "pkg/timer/tablestore/**/*",
+        "timer/runtime/**/*",
+        "pkg/timer/runtime/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "memoryStoreCore",
+        "namespaces",
+        "id2Timers",
+        "watchers",
+        "notifier",
+        "memTimerWatchEventNotifier",
+        "Watch(",
+        "Notify("
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "memoryStoreCore",
+          "namespaces",
+          "id2Timers"
+        ],
+        [
+          "watchers",
+          "notifier",
+          "memTimerWatchEventNotifier",
+          "Watch(",
+          "Notify("
+        ],
+        [
+          "Create(",
+          "List(",
+          "Update(",
+          "Delete(",
+          "WatchSupported"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "IsTableLocked",
+        "rootStats",
+        "metricsMap",
+        "authUsers"
+      ],
+      "first_pass_query_hint": "先找 `memoryStoreCore` 上同时维护 `namespaces/id2Timers/watchers` 的位置，再确认 `Watch/notify` 生命周期是否需要独立 notifier。",
+      "rg_templates": [
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找 timer store 里复合 shared state 与 notifier 生命周期纠缠的位置。",
+          "command": "cd <repo_root> && rg -n -F -e memoryStoreCore -e namespaces -e id2Timers -e watchers -e notifier -e memTimerWatchEventNotifier -e 'Watch(' -e 'Notify(' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“memoryStoreCore + 索引 map/state + watcher/notifier 生命周期”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e memoryStoreCore -e namespaces -e id2Timers -g 'timer/api/**/*' -g 'pkg/timer/api/**/*' -g 'timer/tablestore/**/*' -g 'pkg/timer/tablestore/**/*' -g 'timer/runtime/**/*' -g 'pkg/timer/runtime/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e watchers -e notifier -e memTimerWatchEventNotifier -e 'Watch(' -e 'Notify(' | xargs -0 -r rg -n -H -F -e 'Create(' -e 'List(' -e 'Update(' -e 'Delete(' -e WatchSupported"
+        },
+        {
+          "name": "broad_recall",
+          "intent": "先在 timer store / runtime 主线粗召回 core state、watcher 和 notifier 信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'timer/api/**/*' -g 'pkg/timer/api/**/*' -g 'timer/tablestore/**/*' -g 'pkg/timer/tablestore/**/*' -g 'timer/runtime/**/*' -g 'pkg/timer/runtime/**/*' -g '**/*_test.go' -e memoryStoreCore -e namespaces -e id2Timers -e watchers -e notifier -e memTimerWatchEventNotifier -e 'Watch(' -e 'Notify(' ."
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`RunawayManager.DeriveChecker` 访问 `metricsMap` 必须用 `SyncMap.Load/Store`",
+      "pattern_file": "RunawayManager_DeriveChecker_访问_metricsMap_必须用_SyncMap_Load_Store.json",
+      "grepability": "high",
+      "path_globs": [
+        "domain/resourcegroup/**/*",
+        "pkg/domain/resourcegroup/**/*",
+        "ddl/tests/resourcegroup/**/*",
+        "pkg/ddl/tests/resourcegroup/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "RunawayManager",
+        "DeriveChecker",
+        "metricsMap",
+        "generic.SyncMap",
+        "Load(",
+        "Store(",
+        "RunawayCheckerCounter",
+        "resourceGroupName"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "RunawayManager",
+          "DeriveChecker",
+          "metricsMap"
+        ],
+        [
+          "generic.SyncMap",
+          "Load(",
+          "Store("
+        ],
+        [
+          "RunawayCheckerCounter",
+          "resourceGroupName",
+          "prometheus.Counter",
+          "activeGroup"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "TunnelSet",
+        "groups",
+        "authUsers",
+        "memoryStoreCore"
+      ],
+      "first_pass_query_hint": "先找 `RunawayManager/DeriveChecker/metricsMap` 这条 runtime counter cache 主线，再确认修复是否改成 `SyncMap.Load/Store`。",
+      "rg_templates": [
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找 resource-group runaway manager 上的 `metricsMap` 并发访问。",
+          "command": "cd <repo_root> && rg -n -F -e RunawayManager -e DeriveChecker -e metricsMap -e 'generic.SyncMap' -e 'Load(' -e 'Store(' -e RunawayCheckerCounter -e resourceGroupName ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“RunawayManager 主线 + metricsMap + SyncMap/Load/Store 修法”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e RunawayManager -e DeriveChecker -e metricsMap -g 'domain/resourcegroup/**/*' -g 'pkg/domain/resourcegroup/**/*' -g 'ddl/tests/resourcegroup/**/*' -g 'pkg/ddl/tests/resourcegroup/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e 'generic.SyncMap' -e 'Load(' -e 'Store(' | xargs -0 -r rg -n -H -F -e RunawayCheckerCounter -e resourceGroupName -e 'prometheus.Counter' -e activeGroup"
+        },
+        {
+          "name": "broad_recall",
+          "intent": "先在 resourcegroup 主线粗召回 `RunawayManager/DeriveChecker/metricsMap` 与 `SyncMap` 信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'domain/resourcegroup/**/*' -g 'pkg/domain/resourcegroup/**/*' -g 'ddl/tests/resourcegroup/**/*' -g 'pkg/ddl/tests/resourcegroup/**/*' -g '**/*_test.go' -e RunawayManager -e DeriveChecker -e metricsMap -e 'generic.SyncMap' -e 'Load(' -e 'Store(' -e RunawayCheckerCounter -e resourceGroupName ."
         }
       ]
     }

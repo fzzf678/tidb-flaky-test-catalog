@@ -2,12 +2,12 @@
 
 这份文档回答一个很具体的问题：
 
-- 当前这 `51` 个 subpattern，能不能直接给 agent 看？
+- 当前这 `55` 个 subpattern，能不能直接给 agent 看？
 
 答案是：
 
 - **能**，但它们现在更适合做“判定层”。
-- 如果目标是**覆盖整个仓库**去扫存量测试，仅靠这 `51` 个 JSON 还不够快，也不够像“检索层”。
+- 如果目标是**覆盖整个仓库**去扫存量测试，仅靠这 `55` 个 JSON 还不够快，也不够像“检索层”。
 - 更实用的方式是分成两层：
   - 第一层：**检索层**
     - 用 grep / 路径 / 关键词组合，把全仓里的测试先缩成候选集
@@ -16,7 +16,7 @@
 
 也就是说：
 
-- 当前 `51` 个 JSON 不该被废掉
+- 当前 `55` 个 JSON 不该被废掉
 - 但如果要给 agent 做全仓扫描，最好再补一层更硬的“检索信号”
 - 现在这层已经有了一个结构化 sidecar 文件：
   - `retrieval_signals.json`
@@ -27,13 +27,13 @@
 
 - `retrieval_signals.json`
   - 当前 agent / 自动化真正执行的结构化检索层
-  - 已经落到 `v37`
+  - 已经落到 `v38`
   - 这里的 `rg_templates` 是当前最权威的可执行入口
 - `subpatterns/`
-  - 当前 `51` 个正式 subpattern JSON 的集中目录
+  - 当前 `55` 个正式 subpattern JSON 的集中目录
   - 这部分是 verdict layer，不和 `retrieval_signals.json` 混放
 - `第二轮聚类草案.md`
-  - 负责维护 `51` 个正式 subpattern 的完整 case inventory
+  - 负责维护 `55` 个正式 subpattern 的完整 case inventory
   - 里面已经把更多正例和边界 case 补齐
 - 本文档
   - 负责解释“检索层应该怎么用”
@@ -74,7 +74,7 @@
 
 ## 使用方式
 
-让 agent 扫全仓时，不要直接把 `51` 个 JSON 当成 `51` 条逐个硬匹配的规则。
+让 agent 扫全仓时，不要直接把 `55` 个 JSON 当成 `55` 条逐个硬匹配的规则。
 
 正确顺序应该是：
 
@@ -97,7 +97,7 @@
 
 ## 当前落地状态
 
-现在 `retrieval_signals.json` 已经不只是“字段建议”，而是已经落到 `v37`，并覆盖了当前 `51` 个正式 subpattern。
+现在 `retrieval_signals.json` 已经不只是“字段建议”，而是已经落到 `v38`，并覆盖了当前 `55` 个正式 subpattern。
 
 当前默认使用的 `rg_templates` 是：
 
@@ -113,9 +113,9 @@
 
 这一步的目标不是降低误报，而是先让新 agent 在全仓里更稳定地“找得到”。误报控制仍然主要留在 verdict layer，但检索阶段允许先保留一部分 false positive。
 
-另外，`51` 个正式 subpattern 当前更完整的正例 / 边界 case 盘点，已经并回：
+另外，`55` 个正式 subpattern 当前更完整的正例 / 边界 case 盘点，已经并回：
 
-- `第二轮聚类草案.md` 里的“51 个正式 subpattern 的当前案例清单”
+- `第二轮聚类草案.md` 里的“55 个正式 subpattern 的当前案例清单”
 
 所以如果要回答“这个 subpattern 目前到底落了哪些 case”，应优先看草案；如果要回答“agent 该怎么检索”，优先看本文和 `retrieval_signals.json`。
 
@@ -125,7 +125,7 @@
 
 说明：
 
-- 当前 `51` 个正式 subpattern 的权威可执行版本，以 `retrieval_signals.json` 为准
+- 当前 `55` 个正式 subpattern 的权威可执行版本，以 `retrieval_signals.json` 为准
 - 本文下面保留的是代表性示例，方便人读和理解字段设计
 - 真正给 agent 扫仓库时，优先直接读取 `retrieval_signals.json`
 
@@ -1695,7 +1695,7 @@
 
 如果问题是：
 
-- “这 `51` 个能不能直接给 agent 看？”
+- “这 `55` 个能不能直接给 agent 看？”
 
 答案是：
 

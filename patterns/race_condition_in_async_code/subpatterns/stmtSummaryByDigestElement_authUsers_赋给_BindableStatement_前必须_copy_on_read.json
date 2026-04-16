@@ -1,0 +1,62 @@
+{
+  "key": "`stmtSummaryByDigestElement.authUsers` 赋给 `BindableStatement.Users` 前必须 copy-on-read",
+  "family": "race_condition_in_async_code",
+  "summary": "语句摘要里的 `authUsers` 是 live 共享 map，不能直接别名赋给对外暴露的 `BindableStatement.Users`；必须在导出前做 copy-on-read。",
+  "mechanism": "这类问题不是一般性的 map 读写漏锁，而是“内部 live map 被直接挂到外部结果对象上”。调用方以为拿到的是快照，实际上 `BindableStatement.Users` 和内部 `stmtSummaryByDigestElement.authUsers` 共享同一张底层 map；后台摘要更新继续写这张 map 时，就会在结果导出或后续使用处触发 race。修复非常固定：新建目标 map，然后 `maps.Copy` 或等价深拷贝。",
+  "signals_required": [
+    "内部长期存活对象持有共享 map，例如 `authUsers` 这类 live runtime state。",
+    "代码把这张共享 map 直接赋给外部结果对象字段，例如 `BindableStatement.Users = ssElement.authUsers`。",
+    "外部结果对象语义上应当是只读快照，而不是继续与内部 live state 共享底层 map。",
+    "修复核心是 `make(map...)` + `maps.Copy` / 等价 copy-on-read，而不是给调用方补锁。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `stmtSummaryByDigestElement`、`authUsers`、`BindableStatement`、`Users`、`maps.Copy`。",
+    "问题常落在 statement summary / bindable statement 导出或聚合主线。",
+    "patch 常直接把 `Users: ssElement.authUsers` 改成 `Users: make(map[string]struct{})` 后再复制。"
+  ],
+  "negative_guards": [
+    "如果问题不是把共享 map alias 给外部对象，而是多个入口直接并发读写 map，本质更接近 manager/map 并发入口子模式。",
+    "如果共享对象是 global config 的 nested map（如 `Labels`），更接近全局 config clone/store 子模式。",
+    "如果问题还混有后台 task sessionctx 隔离、cancel/close 等复合机制，需要谨慎区分，不要仅凭有 map copy 就误判。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；“live 共享 map 直接 alias 给外部结果对象”是很硬的 copy-on-read 缺失模式。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清这个外部对象是否真的是 snapshot 语义。",
+      "共享 map 虽然被赋值出去，但后续没有任何并发写路径继续更新它。"
+    ]
+  },
+  "scope": [
+    "statement summary / bindable statement / 导出只读结果对象的主线。",
+    "任何把内部 live map 直接塞进外部结果结构体字段的代码。"
+  ],
+  "fix_hints": [
+    "对外导出 snapshot 结构时，不要直接复用内部 live map。",
+    "优先 `make(map...)` 后逐项复制，或使用 `maps.Copy` / 等价深拷贝。",
+    "如果返回对象需要长期存活，必须彻底断开与内部 runtime state 的别名关系。"
+  ],
+  "related_subpatterns": [
+    "全局 config 的嵌套 map（如 `Labels`）不能原地改写，必须 clone 后再 StoreGlobalConfig",
+    "后台 refresh/reload 更新共享 cache 时先 clone 副本再 atomic swap 发布"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-39721",
+        "note": "`BindableStatement.Users` 直接拿 `stmtSummaryByDigestElement.authUsers`，修复为 `make(map...)` 后 `maps.Copy`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-13465",
+        "note": "这条同样有 bind cache copy 不彻底的问题，但还混有 evolve task/sessionctx 隔离，是更混合的 bundle。"
+      },
+      {
+        "case_id": "pr-45563",
+        "note": "这条是 global config 的 nested map `Labels` clone/store，不是 statement summary 导出对象。"
+      }
+    ]
+  }
+}
