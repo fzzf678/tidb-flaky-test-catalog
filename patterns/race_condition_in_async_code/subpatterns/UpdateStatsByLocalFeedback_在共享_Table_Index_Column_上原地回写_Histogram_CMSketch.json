@@ -1,0 +1,62 @@
+{
+  "key": "UpdateStatsByLocalFeedback 在共享 Table/Index/Column 上原地回写 Histogram/CMSketch",
+  "family": "race_condition_in_async_code",
+  "summary": "local feedback 的即时生效路径先从 stats handle 取出共享 `Table`，再在同一条更新链路里直接把 `UpdateHistogram(...)` / `UpdateCMSketch(...)` 的结果回写到共享 `Index` / `Column` 上；如果没有先做 `tblStats.copy()` 和 `newIdx/newCol` 副本，这条回写就会与并发读路径共享同一份统计对象。",
+  "mechanism": "这类问题的关键不是 `tableStatsFromStorage` 一类 from-storage 加载路径，也不是 `Handle.rateMap/globalMap/feedback` 的共享 map 互斥，而是 `UpdateStatsByLocalFeedback` 这种 local feedback apply path 本身会把 query feedback 立刻反馈回 stats cache。只要这条路径先拿到 `tblStats := h.GetTableStats(...)` / `GetPartitionStats(...)`，随后又直接调用 `UpdateHistogram(...)`、`UpdateCMSketch(...)` 去改 `idx/col`，就会把共享 `Table/Index/Column` 原地改坏；planner、executor 或其他 stats 读路径一旦并发读取，就会在 `-race` 下报共享对象并发读写。稳定修法通常是先 `newTblStats := tblStats.copy()`，再做 `newIdx := *idx` / `newCol := *col`，把 histogram/CMSketch 更新都落到副本上，最后统一 `UpdateTableStats(...)` 发布。",
+  "signals_required": [
+    "代码位于 `UpdateStatsByLocalFeedback` 或等价的 local feedback apply/update 路径，而不是 `tableStatsFromStorage` / `TableStatsFromStorage` 一类 from-storage 加载路径。",
+    "逻辑先拿到共享 `tblStats := h.GetTableStats(...)` 或 `GetPartitionStats(...)` 的结果，而不是每次都新建独占 `Table`。",
+    "同一段逻辑会根据 feedback 回写 `UpdateHistogram(...)`、`UpdateCMSketch(...)` 或等价的 histogram/CMSketch 更新。",
+    "如果没有 `newTblStats := tblStats.copy()` 且没有 `newIdx := *idx` / `newCol := *col` 这类副本回写，再通过 `UpdateTableStats(...)` 发布，就属于这条模式。"
+  ],
+  "signals_optional": [
+    "常见锚点有 `newTblStats := tblStats.copy()`、`newIdx := *idx`、`newCol := *col`、`h.UpdateTableStats([]*Table{newTblStats}, nil)`。",
+    "后续版本同一路径可能出现 `splitFeedbackByQueryType`、`decodeIntValues`、`fb.tp == indexType`、`GetPartitionStats(table.Meta(), fb.physicalID)` 这类 local feedback 变体信号。",
+    "有些修复会顺手补 `Histogram.Len() == 0` / nil guard，但这只是附带防护，不是这条 subpattern 的主信号。"
+  ],
+  "negative_guards": [
+    "如果问题核心是 `tableStatsFromStorage` / `TableStatsFromStorage` 从共享 cache 取 `Table` 后补写字段，更接近 `从共享 stats cache 取 Table 后，在 tableStatsFromStorage 补写字段前漏掉 table.copy`。",
+    "如果问题核心是 `Handle.rateMap` / `globalMap` / `feedback` 这些共享 map/slice 的互斥保护，更接近 stats handle 共享反馈状态子线，不是这条 local feedback 写回对象子线。",
+    "如果问题核心是 async global stats merge 读取 live `partitionStats/statsInfo`，更接近 `异步 global stats merge 直接共享 partitionStats/statsInfo，缺少 copy-on-read 快照`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；local feedback 写回链路里直接修改共享 Table/Index/Column，是很稳定的结构性 data race 信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清 `tblStats` 是否真的来自共享 stats cache / handle，而不是当前调用栈独占的新对象。",
+      "虽然位于 local feedback 更新路径，但所有 histogram/CMSketch 回写都已经明确发生在 `newTblStats/newIdx/newCol` 副本上。"
+    ]
+  },
+  "scope": [
+    "早期 `statistics/update.go` 中 `UpdateStatsByLocalFeedback` 一类 local feedback apply path。",
+    "后续迁移到 `statistics/handle/update.go` / `pkg/statistics/handle/update.go` 后，仍保留同一类 `tblStats.copy + newIdx/newCol + UpdateTableStats` 结构的路径。"
+  ],
+  "fix_hints": [
+    "从 `GetTableStats` / `GetPartitionStats` 拿到 `tblStats` 后，先 `newTblStats := tblStats.copy()`，不要直接在共享 `tblStats` 上回写。",
+    "更新 index/column stats 时，先 `newIdx := *idx` / `newCol := *col`，再把 `UpdateHistogram/UpdateCMSketch` 结果写入副本。",
+    "统一通过 `UpdateTableStats(...)` 发布副本；不要把 `UpdateHistogram/UpdateCMSketch` 的结果直接塞回共享 `idx/col`。"
+  ],
+  "related_subpatterns": [
+    "从共享 stats cache 取 Table 后，在 tableStatsFromStorage 补写字段前漏掉 table.copy",
+    "异步 global stats merge 直接共享 partitionStats/statsInfo，缺少 copy-on-read 快照"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-6859",
+        "note": "`UpdateStatsByLocalFeedback` 引入后，修复锚点就是 `newTblStats := tblStats.copy()`、`newIdx/newCol`、`UpdateHistogram/UpdateCMSketch` 与 `UpdateTableStats` 这一整套 copy-before-write 回写纪律。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-6565",
+        "note": "这里也在 stats/feedback 线上补 `Pseudo/ErrorRate` 与 `table.copy()`，但核心是共享 stats cache 对象的 from-storage / pseudo 更新，不是 `UpdateStatsByLocalFeedback` 直接回写 histogram/CMSketch。"
+      },
+      {
+        "case_id": "pr-6901",
+        "note": "这条线在 `statistics/update.go` 里也和 feedback 紧邻，但修复核心是 `Handle.rateMap` 的共享 map 互斥，不是 `newTblStats/newIdx/newCol` 这条 local feedback 写回对象子模式。"
+      }
+    ]
+  }
+}

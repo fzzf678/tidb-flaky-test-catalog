@@ -1,0 +1,62 @@
+{
+  "key": "`LFU.cache.Set` 触发 `reject/onEvict` 时，`resultKeySet/cost` 更新顺序交错",
+  "family": "race_condition_in_async_code",
+  "summary": "stats cache 的 LFU 实现会同时维护底层 `cache`、影子索引 `resultKeySet` 和内存计数 `cost`；如果 `Put` 先调用 `cache.Set(...)`，而容量不足时又会同步触发 `onReject/onEvict` 去修改这些共享状态，那么 `resultKeySet`、`cost` 与底层 cache 的更新顺序就会交错，导致 data race 或不一致的可见状态。",
+  "mechanism": "这类问题不是整个 `statsCache` snapshot 的发布门禁，也不是 LRU/map cache 的通用 `RWMutex` 保护，而是 LFU 路径里一条很具体的顺序竞态：`Put` 调 `cache.Set(tblID, tbl, cost)` 时，如果容量已满，底层 LFU 可能触发 `reject` / `onEvict` 回调；而 `Put` 自己随后还会更新 `resultKeySet` 和 `cost`。由于 `onEvict` 也会操作同一组影子状态，若 `resultKeySet/cost` 更新放在 `cache.Set` 之后，就会和回调交错，导致内存计数或 `Values()` 看到的影子状态不一致。稳定修法通常是先更新 `resultKeySet` 和 `cost`，再执行 `cache.Set`；同时 `Values()` 这类读取路径优先从 `resultKeySet` 取值，而不是再去底层 cache 二次查找。",
+  "signals_required": [
+    "代码位于 stats cache 的 LFU 实现内部，而不是外层 `statsCache` snapshot publish 或通用 LRU/map cache 接口层。",
+    "逻辑同时出现 `cache.Set(...)`、`resultKeySet`、`cost` 以及 `onReject/onEvict` 或等价 reject/evict 回调。",
+    "`Put` 路径会在一次写入里同时影响底层 cache、影子 key/value 集合和内存计数，而 reject/evict 回调也会修改其中至少一部分共享状态。",
+    "修复核心是调整 `resultKeySet/cost` 与 `cache.Set` 的顺序，或让读取改为依赖同一份影子状态，而不是仅仅加一把通用锁。"
+  ],
+  "signals_optional": [
+    "强锚点包括 `s.cache.Set(tblID, tbl, cost)`、`s.resultKeySet.AddKeyValue(...)`、`s.cost.Add(cost)`、`func (s *LFU) onReject(`、`func (s *LFU) onEvict(`。",
+    "另一组强锚点是注释里直接说明 `reject` 可能触发 `onEvict`，以及“Both inserting into resultKeySet and evicting will modify the memory cost”。",
+    "后续补强通常会把 `Values()` 从 `s.cache.Get(k)` 改成 `s.resultKeySet.Get(k)`，保证读到的也是同一份影子状态。"
+  ],
+  "negative_guards": [
+    "如果问题核心是整个 `statsCache` snapshot 的 `copy/update/Store` 发布门禁，更接近 `Handle.statsCache` 整体 snapshot 以 version 做 copy-on-write 发布，缺少串行 store 门禁。",
+    "如果问题核心是 stats cache internal 的 LRU/map cache 通用 `Get/Put/Del/Values/Copy` 需要 `RWMutex` 保护，更接近 cache internals 共享结构读写加锁子线，不是这条 LFU reject/onEvict 顺序交错子线。",
+    "如果问题核心是 partition pseudo table 是否应写入共享 cache，更接近 pseudo table cache 策略子线，不是 LFU `resultKeySet/cost` 顺序问题。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；在 LFU `Put -> cache.Set -> reject/onEvict` 这条链路上，`resultKeySet/cost` 更新顺序交错是很稳定的结构性并发风险信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清 reject/evict 回调是否真的会回写 `resultKeySet`、`cost` 或等价影子状态。",
+      "虽然出现 `resultKeySet` 和 `cache.Set`，但所有共享状态的更新顺序已经明确串行化，且读取也只依赖同一份影子状态。"
+    ]
+  },
+  "scope": [
+    "`statistics/handle/cache/internal/lfu/lfu_cache.go` 一类 LFU stats cache 实现。",
+    "后续若同类逻辑迁移到 `pkg/statistics/handle/cache/internal/lfu` 或等价目录，但仍保留 `resultKeySet + cost + cache.Set + reject/onEvict` 结构，也属于同一子模式。"
+  ],
+  "fix_hints": [
+    "在 `Put` 中先更新 `resultKeySet` 和 `cost`，再调用可能触发 reject/evict 的 `cache.Set`。",
+    "让 `Values()`、`Len()` 等读取路径尽量依赖 `resultKeySet` 这类统一影子状态，不要再跨两份状态源拼装结果。",
+    "如果 reject/onEvict 会回调修改共享状态，要明确这条回调与主写路径的先后关系，避免一前一后都去改同一份内存计数。"
+  ],
+  "related_subpatterns": [
+    "`Handle.statsCache` 整体 snapshot 以 version 做 copy-on-write 发布，缺少串行 store 门禁",
+    "`stats cache internal LRU/map cache` 共享结构被 query/update/copy 路径并发访问，缺少统一 RWMutex"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-46090",
+        "note": "修复直接把 `resultKeySet.AddKeyValue(tblID, tbl)` 与 `s.cost.Add(cost)` 前移到 `s.cache.Set(tblID, tbl, cost)` 之前，并明确注释 reject 可能触发 `onEvict`；随后又把 `Values()` 改为从 `resultKeySet.Get(k)` 读取，正是这条顺序交错子模式的典型锚点。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-44748",
+        "note": "这条更偏 stats cache internal 的 `LRU/map cache` 通用 `Get/Put/Del/Values/Copy` 加 `RWMutex`，不是 LFU `cache.Set` 与 reject/onEvict 的顺序交错。"
+      },
+      {
+        "case_id": "pr-13647",
+        "note": "这条更偏整个 `statsCache` snapshot 的 `copy/update/Store` 发布门禁，不是 LFU 内部 `resultKeySet/cost` 与回调顺序。"
+      }
+    ]
+  }
+}

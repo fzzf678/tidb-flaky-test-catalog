@@ -1,0 +1,62 @@
+{
+  "key": "测试/helper 直接 reset 或 replace 共享 cache/handle 指针",
+  "family": "race_condition_in_async_code",
+  "summary": "测试代码或 test helper 直接重置、替换共享 cache/handle/pointer，而后台 reader、worker 或其他并发路径仍可能持有旧对象或并发访问新对象。",
+  "mechanism": "这类问题不是普通的 map 读写漏锁，而是测试为了快速构造状态，直接把 domain/store 上长期存活的 cache/handle 指针整体替换掉，或者重新 new 一个 cache 对象塞回共享字段。并发路径此时可能还在读取旧对象，或刚切到新对象，导致 race detector 报告指针/底层 slice/cache 状态竞争。稳定修法通常不是继续裸 replace，而是删除这个 helper、改成锁内 reset、或只重置内部状态而不替换对象本身。",
+  "signals_required": [
+    "测试代码或 test helper 直接调用 `Clear/Reset/Replace`，或直接给共享 cache/handle 字段重新赋值。",
+    "被修改的是 store/domain/cache/handle 这类长期存活对象上的共享字段，而不是局部临时变量。",
+    "后台 reader、domain worker、infoschema reader 或其他 goroutine 仍可能并发访问这个共享对象。",
+    "修复核心是避免直接替换对象本身，改为删除 helper、调用对象内的线程安全 reset，或先停掉并发 reader。"
+  ],
+  "signals_optional": [
+    "字段名常见为 `regionCache`、`infoCache`、`cache`、`handle`。",
+    "patch 里常见 `NewRegionCache`、`NewCache`、`Reset`、`MockInfoCacheAndLoadInfoSchema`、`ClearRegionCache`。",
+    "修复后会把 `do.infoCache = infoschema.NewCache(...)` 这类整体替换，改成 `do.infoCache.Reset(...)` 或直接删除 helper。"
+  ],
+  "negative_guards": [
+    "如果问题核心是 cleanup/reuse 路径原地 `delete(map, k)` 清共享 map 时漏锁，更接近 `cleanup/reuse/reset 路径清空共享 map 时漏锁`。",
+    "如果问题不是测试/helper 主动替换共享对象，而是 owner switch 或后台轮询中维护 progress cache 的生命周期问题，更接近 progress cache / owner-transfer 子簇。",
+    "如果共享对象本身没有被 replace/reset，而只是某个只读 helper 访问 live state 时漏了读侧锁，更接近 `只读 helper/List/IsXxx 访问共享 map 却漏掉读侧锁`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；测试/helper 直接替换长期存活共享 cache/handle 指针，是很强的结构性信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清这个对象是否真会跨 goroutine 生命周期存活。",
+      "reset/replace 发生时可以证明相关后台 reader 已经完全停止。"
+    ]
+  },
+  "scope": [
+    "store、domain、infoschema、cache、handle 等测试辅助接口。",
+    "任何在测试里直接替换共享 cache/pointer，而真实并发路径仍可能访问它的场景。"
+  ],
+  "fix_hints": [
+    "优先避免在测试/helper 中直接重新赋值共享 cache/handle 指针。",
+    "如果必须清状态，优先提供对象内的线程安全 `Reset`，而不是 new 一个新对象再替换掉原字段。",
+    "如果对象确实必须整体替换，先明确停止后台 reader/domain worker，再做替换。"
+  ],
+  "related_subpatterns": [
+    "cleanup/reuse/reset 路径清空共享 map 时漏锁",
+    "长期存活的 manager/handler 共享 map 被多个并发入口直接读写"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-2833",
+        "note": "测试通过 `ClearRegionCache` 直接把 store 的 `regionCache` 替换成新对象，修复为删除该 helper 及其调用。"
+      },
+      {
+        "case_id": "pr-39802",
+        "note": "`MockInfoCacheAndLoadInfoSchema` 原先直接替换 `do.infoCache`，修复为对现有 `InfoCache` 做线程安全 `Reset`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-37766",
+        "note": "更像 owner switch / progress cache 生命周期问题，不是测试/helper 直接 replace 共享 cache 指针。"
+      }
+    ]
+  }
+}

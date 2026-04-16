@@ -1,0 +1,66 @@
+{
+  "key": "stats Handle / SessionStatsCollector 在 dump/clear 路径直接重置 live feedback/globalMap/collector state，缺少锁内 snapshot-swap",
+  "family": "race_condition_in_async_code",
+  "summary": "statistics handle 会长期持有 `globalMap`、`feedback` 以及 `SessionStatsCollector` 的 `mapper/rateMap/feedback/next` 等 live state；如果 `DumpStatsDeltaToKV`、`DumpStatsFeedbackToKV`、`UpdateStatsByLocalFeedback`、`Clear`、`ClearForTest` 这类 dump/clear 路径直接遍历、清空或重建这些 live 结构，而没有先在锁内做 snapshot-swap，就会和并发 update/sweep/test 线程撞出 data race。",
+  "mechanism": "这类问题的核心不是某个单独 `map` 漏锁，而是 stats handle/collector 有一批会被持续追加、合并、清理、回放的共享状态：`Handle.globalMap`、`Handle.feedback`、`SessionStatsCollector.mapper`、`SessionStatsCollector.rateMap`、`SessionStatsCollector.feedback`、`SessionStatsCollector.next` 等。如果 dump 或测试清理路径直接在 live 结构上做 `range`、`delete`、整体替换、`make(...)` 重建，而另一边的 session collector / background sweep 还在继续写，就会发生共享状态并发读写。稳定修法通常是先在拥有者锁内把当前 live state swap 成一份新的空容器，把旧快照摘出来，再在锁外或受控范围内继续 dump/merge/reset；测试清理也应提供带锁的 `ClearForTest()`，而不是从外层 handle 直接裸改 collector 字段。",
+  "signals_required": [
+    "代码位于 `statistics Handle` 或 `SessionStatsCollector` 的维护路径，而不是 planner/executor 的普通 stats 消费路径。",
+    "逻辑属于 `sweepList`、`DumpStatsDeltaToKV`、`DumpStatsFeedbackToKV`、`UpdateStatsByLocalFeedback`、`Clear`、`ClearForTest` 一类 dump/clear/reset 路径。",
+    "被操作的是 `globalMap`、`feedback`、`mapper`、`rateMap`、`colMap`、`next` 这类 live collector state，而不是单个 table stats 对象。",
+    "修复核心是“先加锁，再 snapshot-swap / ClearForTest / 用新空容器替换旧 live state”，而不是只给某个普通读写点补一把局部 mutex。"
+  ],
+  "signals_optional": [
+    "常见锚点包括 `h.feedback.Lock()`、`h.globalMap.Lock()`、`feedback := h.feedback.data`、`deltaMap := h.globalMap.data`、`h.feedback.data = statistics.NewQueryFeedbackMap()`。",
+    "另一个强锚点是 `SessionStatsCollector.ClearForTest()` 里带锁重置 `mapper/feedback/rateMap/colMap/next/deleted`。",
+    "相关函数名常见为 `sweepList`、`DumpStatsDeltaToKV`、`DumpStatsFeedbackToKV`、`UpdateStatsByLocalFeedback`、`ClearForTest`。"
+  ],
+  "negative_guards": [
+    "如果问题核心只是 `Handle.rateMap` 在 feedback merge / update 路径被并发访问，更接近 `rateMap` 聚合互斥这一条 sibling，不是这条 dump/clear 前 snapshot-swap 模式。",
+    "如果问题核心是 `pid2tid` / `schemaVersion` 这类 partition mapping 元数据需要锁保护，更接近 partition-id 映射子线，不是这条 collector state dump/reset 模式。",
+    "如果问题核心是 `tableStatsFromStorage` / `UpdateStatsByLocalFeedback` 在共享 `Table/Index/Column` 上原地补写 histogram/CMSketch，更接近 stats object copy-on-write 子线，不是这条 live collector state snapshot-swap。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；在 dump/clear/reset 路径直接操作 live feedback/globalMap/collector state 而不先 snapshot-swap，是很稳定的结构性 data race 信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清这些 map/feedback/collector 字段是否仍可能被其他 session collector 或后台 sweep 并发写入。",
+      "虽然在 dump/clear 路径里重置状态，但已经先在拥有者锁内换出快照，后续只处理 detached snapshot。"
+    ]
+  },
+  "scope": [
+    "statistics handle / session collector 的 delta、feedback、rateMap 维护路径。",
+    "测试里直接调用 `StatsHandle.Clear` / `SessionStatsCollector.ClearForTest` 这类 reset 入口的路径。"
+  ],
+  "fix_hints": [
+    "不要直接在 live `globalMap/feedback/collector` 上做 dump/reset；先在拥有者锁内 swap 成新空容器，再处理旧快照。",
+    "对测试清理路径，优先提供带锁的 `ClearForTest()` 或等价 helper，不要从外层裸改 `SessionStatsCollector` 字段。",
+    "如果 dump 过程中还需要把失败项并回 live state，先处理 detached snapshot，结束后再在锁内 merge 回去。"
+  ],
+  "related_subpatterns": [
+    "UpdateStatsByLocalFeedback 在共享 Table/Index/Column 上原地回写 Histogram/CMSketch",
+    "从共享 stats cache 取 Table 后，在 tableStatsFromStorage 补写字段前漏掉 table.copy"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-30550",
+        "note": "修复点是给 `Handle.globalMap` / `Handle.feedback` 单独上锁，并在 `sweepList`、`DumpStatsDeltaToKV`、`DumpStatsFeedbackToKV`、`UpdateStatsByLocalFeedback` 里先 snapshot-swap 再处理。"
+      },
+      {
+        "case_id": "pr-44562",
+        "note": "测试清理路径不再直接重建 `listHead`；而是给 `SessionStatsCollector` 加 `ClearForTest()`，在锁内重置 `mapper/feedback/rateMap/colMap/next/deleted` 这一整组 live state。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-6901",
+        "note": "这条更偏 `Handle.rateMap` 在 feedback merge / update 路径的互斥保护；虽然也在 stats update 主线里，但不是 dump/clear 前 snapshot-swap live collector state。"
+      },
+      {
+        "case_id": "pr-7305",
+        "note": "这里的核心是 `pid2tid` / `schemaVersion` 这类 partition mapping 元数据加锁，不是 `globalMap/feedback/collector` 的 dump/reset 同步。"
+      }
+    ]
+  }
+}

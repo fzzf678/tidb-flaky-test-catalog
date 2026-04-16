@@ -1,0 +1,62 @@
+{
+  "key": "`Handle.statsCache` 整体 snapshot 以 version 做 copy-on-write 发布，缺少串行 store 门禁",
+  "family": "race_condition_in_async_code",
+  "summary": "stats handle 会把整份 `statsCache` 作为长期存活的共享快照放在 `atomic.Value` 里；如果 `Update`、`GetPartitionStats`、`LoadNeededHistograms` 这些路径都能从旧 cache 派生出一个新 snapshot 并直接 `Store` 回去，而没有统一的串行 publish 门禁和 version 比较，旧 snapshot 就可能覆盖新 snapshot，并和并发读写路径撞出 cache 更新 data race。",
+  "mechanism": "这类问题的关键不是单个 `Table` 补写前漏 `table.copy()`，也不是 `pid2tid/schemaVersion` 这类局部映射缓存，而是整个 `statsCache` 的发布模型：多条路径先 `Load()` 当前 cache，再基于旧值 `copy()/update()/CopyAndUpdate()` 生成一份新快照，最后发布回全局共享 cache。只要这个 publish 没有集中经过同一把 owner lock 或 version 门禁，就会出现两个 writer 基于不同 oldCache 派生各自的新快照，后到达的旧版本 snapshot 覆盖掉先到达的新版本 snapshot，或者在并发读路径下暴露不一致状态。稳定修法通常是把整包发布统一收敛到类似 `updateStatsCache(newCache)` 的 helper 中，在 helper 里拿锁并比较 `oldCache.version <= newCache.version` 后再 `Store(newCache)`。",
+  "signals_required": [
+    "代码位于 stats handle / statscache 主线，操作对象是整份 `statsCache/StatsCache` 快照，而不是单个 `Table/Index/Column`。",
+    "逻辑会先从共享 cache 读出旧快照，再调用 `copy()/update()/CopyAndUpdate()` 一类接口派生新快照。",
+    "多个写路径都可能发布整包新 cache，例如 `Update`、`GetPartitionStats`、`LoadNeededHistograms`、`FlushStats` 等。",
+    "修复核心是增加统一的 publish helper、owner mutex 或 version 门禁，避免旧 snapshot 覆盖新 snapshot，而不是只给单个 map/list 补锁。"
+  ],
+  "signals_optional": [
+    "强锚点包括 `statsCache struct { tables ...; version uint64 }`、`updateStatsCache(`、`statsCache.update(`、`CopyAndUpdate(`、`oldCache.version <= newCache.version`、`statsCache.Lock()`、`statsCache.Store(newCache)`。",
+    "常见修复形态是把 `lastVersion` 从其他共享字段迁回 `statsCache.version`，让整包 cache 快照自带版本。",
+    "同一 patch 里常会同时把 `atomic.Value` 外再包一层 mutex，只允许 publish 侧串行写入。"
+  ],
+  "negative_guards": [
+    "如果问题核心是 `tableStatsFromStorage` 或 `UpdateStatsByLocalFeedback` 在共享 `Table/Index/Column` 上原地补写，更接近 stats object copy-before-write 子线，不是整包 `statsCache` snapshot 发布。",
+    "如果问题核心是 `Handle.pid2tid/schemaVersion` 这类分区映射缓存的锁保护，更接近 `Handle.pid2tid/schemaVersion` 分区 physicalID 到 tableID 映射缓存被并发读写，缺少统一锁保护。",
+    "如果问题核心是 stats cache 内部的 LRU/LFU/map cache 自身共享结构要加 `RWMutex` 或调整 eviction 顺序，更接近 cache internals 子线，不是整包 snapshot publish 子线。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；多个 writer 基于不同旧快照派生并发布整包 `statsCache`，却没有串行 store / version 门禁，是很稳定的结构性并发风险信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清这些 `copy()/update()/CopyAndUpdate()` 是否真的在并发写路径上发布回共享 cache，而不是局部临时快照。",
+      "虽然 patch 中出现整包 cache copy/update，但所有发布都已经明确通过集中 helper 做了锁保护或 version/CAS 门禁。"
+    ]
+  },
+  "scope": [
+    "早期 `statistics/handle.go` / `statistics/handle/statscache.go` 中基于 `atomic.Value` 的整包 stats cache 发布逻辑。",
+    "后续若演进到 `StatsCache.CopyAndUpdate` / `Version` / `UpdateStatsCache` 等命名，但仍是“从旧快照派生整包新快照再发布”的结构，也属于同一子模式。"
+  ],
+  "fix_hints": [
+    "不要让多个调用点各自直接 `Store` 派生出来的新 cache；统一走一个 publish helper。",
+    "在 publish helper 里做 owner lock + version 门禁，至少避免旧 snapshot 覆盖新 snapshot。",
+    "如果需要从旧 cache 派生新 cache，优先让 version 跟着 snapshot 一起走，不要依赖散落在别处的共享版本字段。"
+  ],
+  "related_subpatterns": [
+    "从共享 stats cache 取 Table 后，在 tableStatsFromStorage 补写字段前漏掉 table.copy",
+    "`Handle.pid2tid/schemaVersion` 分区 physicalID 到 tableID 映射缓存被并发读写，缺少统一锁保护"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-13647",
+        "note": "修复把共享 cache 从裸 `atomic.Value` map 提升为带 `tables/version` 的 `statsCache` 快照，并引入 `updateStatsCache(newCache)`：在锁内比较 `oldCache.version <= newCache.version` 后才 `Store(newCache)`，这是整包 snapshot publish 缺少串行门禁的典型信号。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-44374",
+        "note": "这条也在 `statscache.go` / `GetPartitionStats` 主线上，但核心是不要把 partition pseudo table 发布进共享 cache，以及 cache item 生命周期管理，不是整包 snapshot 的 version 门禁。"
+      },
+      {
+        "case_id": "pr-44748",
+        "note": "这条更偏 stats cache internal 的 `LRU/map cache` 结构重构与 `RWMutex` 保护，不是多 writer 整包 snapshot publish 的串行化。"
+      }
+    ]
+  }
+}

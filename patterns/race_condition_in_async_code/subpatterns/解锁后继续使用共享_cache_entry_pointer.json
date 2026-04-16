@@ -1,0 +1,58 @@
+{
+  "key": "解锁后继续使用共享 cache entry / pointer",
+  "family": "race_condition_in_async_code",
+  "summary": "代码在锁内拿到共享 cache entry 或内部对象指针，解锁后继续返回、保存或访问该指针指向的可变状态，导致其他 goroutine 更新同一 cache entry 时产生 data race。",
+  "mechanism": "这类问题的核心不是 map 本身漏锁，而是锁保护范围和对象生命周期不一致。调用方在持锁期间从 cache 中拿到 `*Region`、`*Entry` 之类内部对象，随后在锁外继续读取其中字段或把它透传给其他逻辑。与此同时，后台路径会在持锁状态下更新同一对象的 leader、peer、索引或其他内部字段。修复通常是锁内拷贝稳定字段、只返回不可变快照，或者明确规定内部对象在解锁后不可继续使用。",
+  "signals_required": [
+    "共享 cache 内部保存的是可变对象指针，而不是天然不可变值。",
+    "代码在持锁期间拿到该指针，解锁后仍继续读取或返回这个指针及其字段。",
+    "其他 goroutine 会在锁保护下更新同一 cache entry 或该对象内部字段。",
+    "修复核心是锁内拷贝稳定字段、拆出 lock-scoped helper，或显式禁止解锁后继续使用该内部对象。"
+  ],
+  "signals_optional": [
+    "函数名常见为 `GetRPCContext`、`getCachedRegion`、`searchCachedRegion`。",
+    "注释里会直接写出“returned object should not be used after unlock”这类约束。",
+    "patch 常见形态是 `meta, peer := region.meta, region.peer` 这类字段拷贝，或把 `GetCachedRegion` 拆成只能在锁内使用的 helper。"
+  ],
+  "negative_guards": [
+    "如果问题只是共享字段自身的并发读写，修复是改成 `atomic.Load/Store`，更接近共享索引/cursor 字段原子化子簇，而不是“解锁后继续持有指针”。",
+    "如果问题核心是测试/helper 直接替换共享 cache/handle 指针，更接近 `测试/helper 直接 reset 或 replace 共享 cache/handle 指针`。",
+    "如果 race 是因为多个入口直接裸读写共享 map，而不是 lock scope 泄露内部对象，更接近 `长期存活的 manager/handler 共享 map 被多个并发入口直接读写`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；解锁后继续使用共享 cache 内部对象，是很强的结构性信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "拿到的对象虽然是指针，但其字段在设计上是不可变快照。",
+      "解锁后只使用了已复制出来的稳定字段，而没有再触碰共享对象本身。"
+    ]
+  },
+  "scope": [
+    "region cache、metadata cache、store cache 等保存内部可变对象指针的组件。",
+    "任何锁内取对象、锁外继续读字段的 cache access 模式。"
+  ],
+  "fix_hints": [
+    "不要在解锁后继续使用 cache 内部对象指针。",
+    "需要锁外使用时，先在锁内拷贝稳定字段或构造只读快照。",
+    "把 lock-scoped helper 和 lock-free helper 明确拆开，避免 API 误用。"
+  ],
+  "related_subpatterns": [
+    "测试/helper 直接 reset 或 replace 共享 cache/handle 指针",
+    "长期存活的 manager/handler 共享 map 被多个并发入口直接读写"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-5171",
+        "note": "`RegionCache` 从 cache 中拿到共享 `*Region` 后在锁外继续使用，修复为锁内复制 `meta/peer` 并把 helper 改成 lock-scoped 语义。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-19198",
+        "note": "更像 `workTiFlashIdx` 这种共享字段原子化，不是解锁后继续持有共享对象指针。"
+      }
+    ]
+  }
+}

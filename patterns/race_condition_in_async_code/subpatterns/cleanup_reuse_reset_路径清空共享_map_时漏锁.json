@@ -1,0 +1,62 @@
+{
+  "key": "cleanup/reuse/reset 路径清空共享 map 时漏锁",
+  "family": "race_condition_in_async_code",
+  "summary": "共享 map 平时读写大体受同一把 mutex 保护，但在 cleanup/reuse/reset 路径里直接 `delete` 或清空共享 map 时漏掉了这把锁。",
+  "mechanism": "这类问题常出现在“为了复用对象而不重新分配 map”的优化路径里。正常读写路径已经围绕共享 map 建立了锁纪律，但 cleanup/reuse/reset 路径为了快速清空旧状态，直接遍历 `delete(map, k)` 或复位共享结构。如果这一步没拿同一把锁，后台 reader 或并发写路径就会在复用窗口里撞上 `concurrent map read and map write` 或 race detector。",
+  "signals_required": [
+    "组件里存在会被复用的共享 map，而不是每次新建一个 request-local map。",
+    "cleanup/reuse/reset 路径会遍历删除、清空或复位这个共享 map，例如 `for k := range m { delete(m, k) }`。",
+    "正常读写路径已经围绕这张共享 map 使用同一把 mutex/RWMutex，或修复核心正是在 cleanup 路径补这把锁。",
+    "修复核心是在 cleanup/reuse/reset 路径上补 `Lock/Unlock`，而不是仅仅调整断言或 sleep。"
+  ],
+  "signals_optional": [
+    "函数名常见为 `New...(... reuse ...)`、`Clear`、`Reset`、`Reuse`。",
+    "共享字段名常见为 `rootStats`、`copStats` 这类运行期聚合 map。",
+    "patch 里常能看到 `delete(`、`reuse.mu.Lock()`、`defer reuse.mu.Unlock()` 这类组合。"
+  ],
+  "negative_guards": [
+    "如果问题只发生在单个 `IsXxx/Get/List` 只读 helper 漏掉读侧锁，更接近 `只读 helper/List/IsXxx 访问共享 map 却漏掉读侧锁`。",
+    "如果修复本质是给整组共享状态做统一 reset/rebuild，或把共享 collector/notifier 整体替换成新的生命周期管理，更接近 shared-state reset/replace 子簇，而不是单点 cleanup 漏锁。",
+    "如果从头到尾没有任何稳定的锁纪律，而是多个并发入口直接裸读写共享 map，更接近 `长期存活的 manager/handler 共享 map 被多个并发入口直接读写`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；cleanup/reuse/reset 路径清共享 map 时漏掉与正常读写一致的锁，是很强的结构性信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清这个 map 是否真是 live shared state，而不是局部临时对象。",
+      "cleanup 路径虽然在删 map，但整个对象生命周期能证明此时没有并发 reader/writer。"
+    ]
+  },
+  "scope": [
+    "runtime stats collector、stats handle、timer/cache/store 等存在对象复用优化的组件。",
+    "任何在 cleanup/reuse/reset 阶段尝试复用共享 map 的并发代码。"
+  ],
+  "fix_hints": [
+    "cleanup/reuse/reset 路径必须遵守与正常读写相同的锁纪律。",
+    "如果需要复用对象，先持锁再清 map；不要在无锁状态下做 `delete` 循环。",
+    "如果 cleanup 与并发读写窗口难以控制，优先考虑新建 map 再 swap，而不是原地清空 live shared map。"
+  ],
+  "related_subpatterns": [
+    "只读 helper/List/IsXxx 访问共享 map 却漏掉读侧锁",
+    "长期存活的 manager/handler 共享 map 被多个并发入口直接读写"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-42019",
+        "note": "`NewRuntimeStatsColl(reuse)` 在复用 `rootStats/copyStats` 时原地 `delete` 清 map，但 cleanup 路径最初没拿 `reuse.mu`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-44446",
+        "note": "更像 timer store 的整组共享状态和 notifier/watcher 生命周期一起重构，不是单点 cleanup 清 map 漏锁。"
+      },
+      {
+        "case_id": "pr-44562",
+        "note": "更像测试或 helper 对共享 collector 整体 `ClearForTest/reset` 的同步问题，不是单点 `delete(map, k)` cleanup 漏锁。"
+      }
+    ]
+  }
+}

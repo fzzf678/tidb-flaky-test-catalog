@@ -1,8 +1,8 @@
 {
   "family": "race_condition_in_async_code",
   "kind": "retrieval_signals",
-  "version": "v4",
-  "description": "Repository-scan retrieval hints for the 18 race_condition_in_async_code subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "version": "v26",
+  "description": "Repository-scan retrieval hints for the 40 race_condition_in_async_code subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
   "defaults": {
     "purpose": "candidate_retrieval_only",
     "verdict_requires_subpattern_json": true,
@@ -921,8 +921,12 @@
       "grepability": "high",
       "path_globs": [
         "store/mockstore/**/*",
+        "domain/infosync/**/*",
+        "domain/resourcegroup/**/*",
+        "pkg/domain/infosync/**/*",
         "pkg/domain/resourcegroup/**/*",
         "ddl/tests/resourcegroup/**/*",
+        "pkg/ddl/tests/resourcegroup/**/*",
         "**/*_test.go"
       ],
       "grep_keywords_any": [
@@ -931,7 +935,8 @@
         "groups",
         "registerTunnel",
         "getAndActiveTunnel",
-        "DeriveChecker"
+        "DeriveChecker",
+        "ListResourceGroups"
       ],
       "grep_keywords_all_groups": [
         [
@@ -945,13 +950,18 @@
           "DeriveChecker",
           "register",
           "derive",
-          "List"
+          "List",
+          "ListResourceGroups"
         ],
         [
           "manager",
+          "Manager",
           "handler",
+          "Handler",
           "mock",
-          "client"
+          "Mock",
+          "client",
+          "Client"
         ]
       ],
       "grep_keywords_exclude": [
@@ -966,17 +976,1561 @@
         {
           "name": "broad_recall",
           "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
-          "command": "rg -n -F -g 'store/mockstore/**/*' -g 'pkg/domain/resourcegroup/**/*' -g 'ddl/tests/resourcegroup/**/*' -g '**/*_test.go' -e TunnelSet -e metricsMap -e groups -e registerTunnel -e getAndActiveTunnel -e DeriveChecker <repo_root>"
+          "command": "cd <repo_root> && rg -n -F -g 'store/mockstore/**/*' -g 'domain/infosync/**/*' -g 'domain/resourcegroup/**/*' -g 'pkg/domain/infosync/**/*' -g 'pkg/domain/resourcegroup/**/*' -g 'ddl/tests/resourcegroup/**/*' -g 'pkg/ddl/tests/resourcegroup/**/*' -g '**/*_test.go' -e TunnelSet -e metricsMap -e groups -e registerTunnel -e getAndActiveTunnel -e DeriveChecker -e ListResourceGroups ."
         },
         {
           "name": "fallback_no_path",
           "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
-          "command": "rg -n -F -e TunnelSet -e metricsMap -e groups -e registerTunnel -e getAndActiveTunnel -e DeriveChecker <repo_root>"
+          "command": "cd <repo_root> && rg -n -F -e TunnelSet -e metricsMap -e groups -e registerTunnel -e getAndActiveTunnel -e DeriveChecker -e ListResourceGroups ."
         },
         {
           "name": "group_intersection",
           "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
-          "command": "rg -l -0 -F -e TunnelSet -e metricsMap -e groups -g 'store/mockstore/**/*' -g 'pkg/domain/resourcegroup/**/*' -g 'ddl/tests/resourcegroup/**/*' -g '**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e registerTunnel -e getAndActiveTunnel -e DeriveChecker -e register -e derive -e List | xargs -0 -r rg -n -F -e manager -e handler -e mock -e client"
+          "command": "cd <repo_root> && rg -l -0 -F -e TunnelSet -e metricsMap -e groups -g 'store/mockstore/**/*' -g 'domain/infosync/**/*' -g 'domain/resourcegroup/**/*' -g 'pkg/domain/infosync/**/*' -g 'pkg/domain/resourcegroup/**/*' -g 'ddl/tests/resourcegroup/**/*' -g 'pkg/ddl/tests/resourcegroup/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e registerTunnel -e getAndActiveTunnel -e DeriveChecker -e register -e derive -e List -e ListResourceGroups | xargs -0 -r rg -n -F -e manager -e Manager -e handler -e Handler -e mock -e Mock -e client -e Client"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "只读 helper/List/IsXxx 访问共享 map 却漏掉读侧锁",
+      "pattern_file": "只读_helper_List_IsXxx_访问共享_map_却漏掉读侧锁.json",
+      "grepability": "high",
+      "path_globs": [
+        "statistics/handle/**/*",
+        "pkg/statistics/handle/**/*",
+        "timer/api/**/*",
+        "pkg/timer/api/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "IsTableLocked",
+        "List(",
+        "tableLocked",
+        "id2Timers",
+        "memoryStoreCore"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "IsTableLocked",
+          "List("
+        ],
+        [
+          "tableLocked",
+          "id2Timers",
+          "memoryStoreCore"
+        ],
+        [
+          "RWMutex",
+          "sync.Mutex",
+          "syncutil.RWMutex",
+          "h.mu.Lock()",
+          "s.mu.Lock()",
+          "mu.Lock()"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "rootStats",
+        "metricsMap",
+        "TunnelSet",
+        "groups"
+      ],
+      "first_pass_query_hint": "先找 `IsXxx/List` 这类只读 helper，再看同文件里写路径是否已经围绕同一把 `mu` 加锁，而 helper 自己直接读取 `tableLocked/id2Timers` 这类 live shared state。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "按 stats handle / timer store 等高相关目录先做第一跳粗召回，快速捞出读 helper 与共享状态字段同文件出现的位置。",
+          "command": "cd <repo_root> && rg -n -F -g 'statistics/handle/**/*' -g 'pkg/statistics/handle/**/*' -g 'timer/api/**/*' -g 'pkg/timer/api/**/*' -g '**/*_test.go' -e IsTableLocked -e 'List(' -e tableLocked -e id2Timers -e memoryStoreCore ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录迁移或版本差异导致路径失效时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e IsTableLocked -e 'List(' -e tableLocked -e id2Timers -e memoryStoreCore ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“只读 helper 名字 + 共享字段 + 同文件锁纪律”三组信号做交集，优先保留真正值得人工判定的候选文件。",
+          "command": "cd <repo_root> && rg -l -0 -F -e IsTableLocked -e 'List(' -g 'statistics/handle/**/*' -g 'pkg/statistics/handle/**/*' -g 'timer/api/**/*' -g 'pkg/timer/api/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e tableLocked -e id2Timers -e memoryStoreCore | xargs -0 -r rg -n -H -F -e RWMutex -e 'sync.Mutex' -e 'syncutil.RWMutex' -e 'h.mu.Lock()' -e 's.mu.Lock()' -e 'mu.Lock()'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "cleanup/reuse/reset 路径清空共享 map 时漏锁",
+      "pattern_file": "cleanup_reuse_reset_路径清空共享_map_时漏锁.json",
+      "grepability": "medium",
+      "path_globs": [
+        "util/execdetails/**/*",
+        "pkg/util/execdetails/**/*",
+        "statistics/handle/**/*",
+        "pkg/statistics/handle/**/*",
+        "timer/api/**/*",
+        "pkg/timer/api/**/*",
+        "timer/tablestore/**/*",
+        "pkg/timer/tablestore/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "NewRuntimeStatsColl",
+        "rootStats",
+        "reuse",
+        "delete(",
+        "ClearForTest",
+        "watchers"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "NewRuntimeStatsColl",
+          "ClearForTest",
+          "Close(",
+          "Notify("
+        ],
+        [
+          "rootStats",
+          "copStats",
+          "watchers",
+          "id2Timers",
+          "namespaces",
+          "mapper"
+        ],
+        [
+          "delete(",
+          "mu.Lock()",
+          "reuse.mu.Lock()",
+          "Lock()"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "TunnelSet",
+        "metricsMap",
+        "tableLocked"
+      ],
+      "first_pass_query_hint": "先找 `reuse/clear/reset/close` 这类 cleanup 入口，再看它是否对 live shared map 做 `delete`、清空或复位；最后确认正常读写路径是否已经围绕同一把 `mu` 建立锁纪律。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按 runtime stats / stats handle / timer cleanup 这些高相关目录做第一跳召回，把 cleanup 入口和共享 map 字段同文件出现的位置捞出来。",
+          "command": "cd <repo_root> && rg -n -F -g 'util/execdetails/**/*' -g 'pkg/util/execdetails/**/*' -g 'statistics/handle/**/*' -g 'pkg/statistics/handle/**/*' -g 'timer/api/**/*' -g 'pkg/timer/api/**/*' -g 'timer/tablestore/**/*' -g 'pkg/timer/tablestore/**/*' -g '**/*_test.go' -e NewRuntimeStatsColl -e rootStats -e reuse -e 'delete(' -e ClearForTest -e watchers ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录结构迁移或历史版本差异导致路径信号不稳时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e NewRuntimeStatsColl -e rootStats -e reuse -e 'delete(' -e ClearForTest -e watchers ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“cleanup 入口 + 共享 map/state + 删除/锁纪律”三组信号做交集，优先保留最像 cleanup 漏锁的候选文件。",
+          "command": "cd <repo_root> && rg -l -0 -F -e NewRuntimeStatsColl -e ClearForTest -e 'Close(' -e 'Notify(' -g 'util/execdetails/**/*' -g 'pkg/util/execdetails/**/*' -g 'statistics/handle/**/*' -g 'pkg/statistics/handle/**/*' -g 'timer/api/**/*' -g 'pkg/timer/api/**/*' -g 'timer/tablestore/**/*' -g 'pkg/timer/tablestore/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e rootStats -e copStats -e watchers -e id2Timers -e namespaces -e mapper | xargs -0 -r rg -n -H -F -e 'delete(' -e 'mu.Lock()' -e 'reuse.mu.Lock()' -e 'Lock()'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "测试/helper 直接 reset 或 replace 共享 cache/handle 指针",
+      "pattern_file": "测试_helper_直接_reset_replace_共享_cache_handle_指针.json",
+      "grepability": "high",
+      "path_globs": [
+        "store/tikv/**/*",
+        "pkg/store/tikv/**/*",
+        "domain/**/*",
+        "pkg/domain/**/*",
+        "infoschema/**/*",
+        "pkg/infoschema/**/*",
+        "executor/**/*",
+        "pkg/executor/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "ClearRegionCache",
+        "MockInfoCacheAndLoadInfoSchema",
+        "regionCache",
+        "infoCache",
+        "NewRegionCache",
+        "NewCache",
+        "Reset("
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "ClearRegionCache",
+          "MockInfoCacheAndLoadInfoSchema"
+        ],
+        [
+          "regionCache",
+          "infoCache"
+        ],
+        [
+          "NewRegionCache",
+          "NewCache",
+          "Reset("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "rootStats",
+        "tableLocked",
+        "metricsMap",
+        "TunnelSet"
+      ],
+      "first_pass_query_hint": "先找测试/helper 入口函数，再看它是否直接对共享 `regionCache/infoCache/cache/handle` 重新赋值或 new 新对象；最后确认修复是不是改成删除 helper 或改为对象内线程安全 `Reset`。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "按 store/domain/infoschema/test helper 相关目录做第一跳召回，把 helper 名字、共享字段名和 reset/replace 信号先捞出来。",
+          "command": "cd <repo_root> && rg -n -F -g 'store/tikv/**/*' -g 'pkg/store/tikv/**/*' -g 'domain/**/*' -g 'pkg/domain/**/*' -g 'infoschema/**/*' -g 'pkg/infoschema/**/*' -g 'executor/**/*' -g 'pkg/executor/**/*' -g '**/*_test.go' -e ClearRegionCache -e MockInfoCacheAndLoadInfoSchema -e regionCache -e infoCache -e NewRegionCache -e NewCache -e 'Reset(' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录结构迁移或跨版本路径变化时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e ClearRegionCache -e MockInfoCacheAndLoadInfoSchema -e regionCache -e infoCache -e NewRegionCache -e NewCache -e 'Reset(' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“helper 入口 + 共享字段 + replace/reset 信号”三组做交集，优先收敛到真正发生 pointer/cache 替换的位置。",
+          "command": "cd <repo_root> && rg -l -0 -F -e ClearRegionCache -e MockInfoCacheAndLoadInfoSchema -g 'store/tikv/**/*' -g 'pkg/store/tikv/**/*' -g 'domain/**/*' -g 'pkg/domain/**/*' -g 'infoschema/**/*' -g 'pkg/infoschema/**/*' -g 'executor/**/*' -g 'pkg/executor/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e regionCache -e infoCache | xargs -0 -r rg -n -H -F -e NewRegionCache -e NewCache -e 'Reset('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "解锁后继续使用共享 cache entry / pointer",
+      "pattern_file": "解锁后继续使用共享_cache_entry_pointer.json",
+      "grepability": "medium",
+      "path_globs": [
+        "store/tikv/**/*",
+        "pkg/store/tikv/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "GetRPCContext",
+        "getCachedRegion",
+        "searchCachedRegion",
+        "should not be used after",
+        "meta, peer :=",
+        "RegionCache"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "GetRPCContext",
+          "getCachedRegion",
+          "searchCachedRegion"
+        ],
+        [
+          "RLock()",
+          "RUnlock()"
+        ],
+        [
+          "meta, peer :=",
+          "should not be used after",
+          "clone it to avoid data race"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "workTiFlashIdx",
+        "atomic.StoreInt32",
+        "atomic.LoadInt32"
+      ],
+      "first_pass_query_hint": "先找 cache getter / RPC context 读取路径，再看是否在锁内拿到共享对象后、解锁后继续用该对象字段；优先命中那些显式写了“unlock 后不要继续使用内部对象”的注释或修法。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 region cache 相关目录里捞出 getter、lock scope 注释和字段拷贝信号，快速定位可能的 lock-scope 泄漏点。",
+          "command": "cd <repo_root> && rg -n -F -g 'store/tikv/**/*' -g 'pkg/store/tikv/**/*' -g '**/*_test.go' -e GetRPCContext -e getCachedRegion -e searchCachedRegion -e 'should not be used after' -e 'meta, peer :=' -e RegionCache ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当路径迁移或跨版本目录变化时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e GetRPCContext -e getCachedRegion -e searchCachedRegion -e 'should not be used after' -e 'meta, peer :=' -e RegionCache ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“getter/helper + lock scope + unlock 后复制/禁止继续使用”三组做交集，优先保留真正的 pointer-after-unlock 风险点。",
+          "command": "cd <repo_root> && rg -l -0 -F -e GetRPCContext -e getCachedRegion -e searchCachedRegion -g 'store/tikv/**/*' -g 'pkg/store/tikv/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e 'RLock()' -e 'RUnlock()' | xargs -0 -r rg -n -H -F -e 'meta, peer :=' -e 'should not be used after' -e 'clone it to avoid data race'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "执行期 helper/pruning 内部的懒建查找 map 被并发查询路径同时读写",
+      "pattern_file": "执行期_helper_pruning_内部的懒建查找_map_被并发查询路径同时读写.json",
+      "grepability": "high",
+      "path_globs": [
+        "executor/**/*",
+        "pkg/executor/**/*",
+        "table/**/*",
+        "pkg/table/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "DirtyDB",
+        "GetDirtyTable",
+        "ForListColumnPruning",
+        "LocatePartition",
+        "LocateRanges",
+        "valueMap",
+        "tables map",
+        "buildPartitionValueMapAndSorted"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "DirtyDB",
+          "GetDirtyTable",
+          "ForListColumnPruning",
+          "LocatePartition",
+          "LocateRanges"
+        ],
+        [
+          "valueMap",
+          "tables map",
+          "buildPartitionValueMapAndSorted",
+          "udb.tables",
+          "lp.valueMap"
+        ],
+        [
+          "parallel",
+          "concurrent map",
+          "index join",
+          "Lock()",
+          "RLock()"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "SessionVars",
+        "userVars",
+        "SetUserVar",
+        "DecodeSessionStates",
+        "TunnelSet",
+        "groups"
+      ],
+      "first_pass_query_hint": "先找执行期 helper / pruning 结构上的 map 字段，再看 `Get*`/`Locate*` 查询路径是否会按需填充这个 map；最后确认这些查询路径是否可能被并发执行。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 executor/table 相关目录里捞出 helper 类型名、查询入口和 map 字段，快速召回执行期懒建 map 的候选位置。",
+          "command": "cd <repo_root> && rg -n -F -g 'executor/**/*' -g 'pkg/executor/**/*' -g 'table/**/*' -g 'pkg/table/**/*' -g '**/*_test.go' -e DirtyDB -e GetDirtyTable -e ForListColumnPruning -e LocatePartition -e LocateRanges -e valueMap -e 'tables map' -e buildPartitionValueMapAndSorted ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当跨版本目录迁移或路径线索不稳定时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e DirtyDB -e GetDirtyTable -e ForListColumnPruning -e LocatePartition -e LocateRanges -e valueMap -e 'tables map' -e buildPartitionValueMapAndSorted ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“helper/查询入口 + 共享 map 字段 + 并发/加锁信号”三组做交集，优先保留真正发生懒建 map 竞态的文件。",
+          "command": "cd <repo_root> && rg -l -0 -F -e DirtyDB -e GetDirtyTable -e ForListColumnPruning -e LocatePartition -e LocateRanges -g 'executor/**/*' -g 'pkg/executor/**/*' -g 'table/**/*' -g 'pkg/table/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e valueMap -e 'tables map' -e buildPartitionValueMapAndSorted -e udb.tables -e lp.valueMap | xargs -0 -r rg -n -H -F -e parallel -e 'concurrent map' -e 'index join' -e 'Lock()' -e 'RLock()'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "TopSQL mock sink/server 的上报结果缓存被后台 worker 与断言线程并发访问",
+      "pattern_file": "TopSQL_mock_sink_server_的上报结果缓存被后台_worker_与断言线程并发访问.json",
+      "grepability": "high",
+      "path_globs": [
+        "util/topsql/**/*",
+        "pkg/util/topsql/**/*",
+        "util/tracecpu/**/*",
+        "pkg/util/tracecpu/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "mockAgentServer",
+        "mockPubSubDataSinkStream",
+        "mockDataSink",
+        "mockDataSink2",
+        "WaitServerCollect",
+        "WaitCollectCnt",
+        "GetLatestRecords",
+        "GetRecords",
+        "GetSQLMetas",
+        "GetPlanMetas",
+        "GetSQLMetaByDigestBlocking",
+        "GetPlanMetaByDigestBlocking",
+        "GetTotalSQLMetas",
+        "ReportData",
+        "DataRecords",
+        "sqlMetas",
+        "planMetas"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "mockAgentServer",
+          "mockPubSubDataSinkStream",
+          "mockDataSink",
+          "mockDataSink2",
+          "DataSink"
+        ],
+        [
+          "records",
+          "sqlMetas",
+          "planMetas",
+          "ReportData",
+          "DataRecords"
+        ],
+        [
+          "WaitServerCollect",
+          "WaitCollectCnt",
+          "GetLatestRecords",
+          "GetRecords",
+          "GetSQLMetas",
+          "GetPlanMetas",
+          "GetSQLMetaByDigestBlocking",
+          "GetPlanMetaByDigestBlocking",
+          "GetTotalSQLMetas",
+          "Lock()",
+          "chan *ReportData",
+          "time.After("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "StatementStatsMap",
+        "Merge(data)",
+        "testResults",
+        "audit"
+      ],
+      "first_pass_query_hint": "先找 TopSQL 的 mock sink/mock stream/mock server 类型，再看它是否把 `records/sqlMetas/planMetas/ReportData` 缓存在内存字段里；最后确认测试线程是不是直接读取这些缓存断言，而后台上报路径仍可能并发写入。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按 TopSQL/tracecpu 目录做第一跳粗召回，把 mock sink/server 类型名和缓存字段先捞出来。",
+          "command": "cd <repo_root> && rg -n -F -g 'util/topsql/**/*' -g 'pkg/util/topsql/**/*' -g 'util/tracecpu/**/*' -g 'pkg/util/tracecpu/**/*' -g '**/*_test.go' -e mockAgentServer -e mockPubSubDataSinkStream -e mockDataSink -e mockDataSink2 -e WaitServerCollect -e WaitCollectCnt -e GetLatestRecords -e GetRecords -e GetSQLMetas -e GetPlanMetas -e GetSQLMetaByDigestBlocking -e GetPlanMetaByDigestBlocking -e GetTotalSQLMetas -e ReportData -e DataRecords -e sqlMetas -e planMetas ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当跨版本重构导致路径变化时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e mockAgentServer -e mockPubSubDataSinkStream -e mockDataSink -e mockDataSink2 -e WaitServerCollect -e WaitCollectCnt -e GetLatestRecords -e GetRecords -e GetSQLMetas -e GetPlanMetas -e GetSQLMetaByDigestBlocking -e GetPlanMetaByDigestBlocking -e GetTotalSQLMetas -e ReportData -e DataRecords -e sqlMetas -e planMetas ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“mock sink/server 类型 + 上报结果缓存字段 + 读取/同步信号”三组做交集，优先保留真正缓存上报结果并被断言线程读取的候选文件。",
+          "command": "cd <repo_root> && rg -l -0 -F -e mockAgentServer -e mockPubSubDataSinkStream -e mockDataSink -e mockDataSink2 -e DataSink -g 'util/topsql/**/*' -g 'pkg/util/topsql/**/*' -g 'util/tracecpu/**/*' -g 'pkg/util/tracecpu/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e records -e sqlMetas -e planMetas -e ReportData -e DataRecords | xargs -0 -r rg -n -H -F -e WaitServerCollect -e WaitCollectCnt -e GetLatestRecords -e GetRecords -e GetSQLMetas -e GetPlanMetas -e GetSQLMetaByDigestBlocking -e GetPlanMetaByDigestBlocking -e GetTotalSQLMetas -e 'Lock()' -e 'chan *ReportData' -e 'time.After('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "异步 global stats merge 直接共享 partitionStats/statsInfo，缺少 copy-on-read 快照",
+      "pattern_file": "异步_global_stats_merge_直接共享_partitionStats_statsInfo_缺少_copy_on_read_快照.json",
+      "grepability": "medium",
+      "path_globs": [
+        "statistics/handle/globalstats/**/*",
+        "pkg/statistics/handle/globalstats/**/*",
+        "statistics/handle/storage/**/*",
+        "pkg/statistics/handle/storage/**/*",
+        "pkg/statistics/handle/util/**/*"
+      ],
+      "grep_keywords_any": [
+        "MergePartitionStats2GlobalStats",
+        "AsyncMergePartitionStats2GlobalStats",
+        "blockingMergePartitionStats2GlobalStats",
+        "partitionStats",
+        "allPartitionStats",
+        "statsInfo",
+        "GetStatsInfo",
+        "loadHistogramAndTopN",
+        "LoadTablePartitionStats",
+        "tidb_enable_async_merge_global_stats"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "MergePartitionStats2GlobalStats",
+          "AsyncMergePartitionStats2GlobalStats",
+          "blockingMergePartitionStats2GlobalStats"
+        ],
+        [
+          "partitionStats",
+          "allPartitionStats",
+          "statsInfo"
+        ],
+        [
+          "GetStatsInfo",
+          "loadHistogramAndTopN",
+          "LoadTablePartitionStats"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "MergeGlobalStatsTopNByConcurrency",
+        "merge_worker.go",
+        "disjointNDV",
+        "topn.go"
+      ],
+      "first_pass_query_hint": "先找 global stats merge 主线入口，再看异步 worker 是否直接消费 `partitionStats/allPartitionStats/statsInfo`；如果同文件还出现 `GetStatsInfo/loadHistogramAndTopN/LoadTablePartitionStats`，通常就是这条 snapshot/copy-on-read 子模式。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 globalstats / storage 相关目录里粗召回 merge 入口、partition stats 变量和 snapshot 读取锚点。",
+          "command": "cd <repo_root> && rg -n -F -g 'statistics/handle/globalstats/**/*' -g 'pkg/statistics/handle/globalstats/**/*' -g 'statistics/handle/storage/**/*' -g 'pkg/statistics/handle/storage/**/*' -g 'pkg/statistics/handle/util/**/*' -e MergePartitionStats2GlobalStats -e AsyncMergePartitionStats2GlobalStats -e blockingMergePartitionStats2GlobalStats -e partitionStats -e allPartitionStats -e statsInfo -e GetStatsInfo -e loadHistogramAndTopN -e LoadTablePartitionStats -e tidb_enable_async_merge_global_stats ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录迁移、包路径变化或版本跨度较大时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e MergePartitionStats2GlobalStats -e AsyncMergePartitionStats2GlobalStats -e blockingMergePartitionStats2GlobalStats -e partitionStats -e allPartitionStats -e statsInfo -e GetStatsInfo -e loadHistogramAndTopN -e LoadTablePartitionStats -e tidb_enable_async_merge_global_stats ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“global stats merge 入口 + partition stats/live state + snapshot/copy 读取锚点”三组做交集，优先保留真正处理 async global stats snapshot 的候选文件。",
+          "command": "cd <repo_root> && rg -l -0 -F -e MergePartitionStats2GlobalStats -e AsyncMergePartitionStats2GlobalStats -e blockingMergePartitionStats2GlobalStats -g 'statistics/handle/globalstats/**/*' -g 'pkg/statistics/handle/globalstats/**/*' -g 'statistics/handle/storage/**/*' -g 'pkg/statistics/handle/storage/**/*' -g 'pkg/statistics/handle/util/**/*' . | xargs -0 -r rg -l -0 -F -e partitionStats -e allPartitionStats -e statsInfo | xargs -0 -r rg -n -H -F -e GetStatsInfo -e loadHistogramAndTopN -e LoadTablePartitionStats"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "从共享 stats cache 取 Table 后，在 tableStatsFromStorage 补写字段前漏掉 table.copy",
+      "pattern_file": "从共享_stats_cache_取_Table_后_在_tableStatsFromStorage_补写字段前漏掉_table_copy.json",
+      "grepability": "high",
+      "path_globs": [
+        "statistics/statscache.go",
+        "statistics/table.go",
+        "statistics/handle.go",
+        "statistics/handle/**/*",
+        "pkg/statistics/handle/**/*"
+      ],
+      "grep_keywords_any": [
+        "tableStatsFromStorage",
+        "TableStatsFromStorage",
+        "table.copy()",
+        "table.Copy()",
+        "We copy it before writing to avoid race",
+        "cmSketchFromStorage",
+        "indexStatsFromStorage",
+        "columnStatsFromStorage",
+        "Histogram: *hg",
+        "CMSketch: cms",
+        "col2Idx",
+        "colNameID"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "tableStatsFromStorage",
+          "TableStatsFromStorage"
+        ],
+        [
+          "table.copy()",
+          "table.Copy()",
+          "We copy it before writing to avoid race"
+        ],
+        [
+          "Histogram: *hg",
+          "CMSketch: cms",
+          "cmSketchFromStorage",
+          "indexStatsFromStorage",
+          "columnStatsFromStorage",
+          "col2Idx",
+          "colNameID",
+          "ErrorRate: errorRate"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "updateStatsCache",
+        "latestVersion",
+        "statsCache struct",
+        "internal/cache",
+        "globalstats"
+      ],
+      "first_pass_query_hint": "先找 `tableStatsFromStorage` / `TableStatsFromStorage`，再看它是否从共享 `statsCache` 取出现有 `Table` 并立即 `table.copy()`；最后确认同一段逻辑是否继续补写 `Histogram/CMSketch/col2Idx/colNameID` 等字段。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 stats cache / table / handle 相关文件里粗召回 from-storage 入口、`table.copy()` 和补写字段锚点。",
+          "command": "cd <repo_root> && rg -n -F -g 'statistics/statscache.go' -g 'statistics/table.go' -g 'statistics/handle.go' -g 'statistics/handle/**/*' -g 'pkg/statistics/handle/**/*' -e tableStatsFromStorage -e TableStatsFromStorage -e 'table.copy()' -e 'table.Copy()' -e 'We copy it before writing to avoid race' -e cmSketchFromStorage -e indexStatsFromStorage -e columnStatsFromStorage -e 'Histogram: *hg' -e 'CMSketch: cms' -e col2Idx -e colNameID ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录变化或早期文件布局不同的时候，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e tableStatsFromStorage -e TableStatsFromStorage -e 'table.copy()' -e 'table.Copy()' -e 'We copy it before writing to avoid race' -e cmSketchFromStorage -e indexStatsFromStorage -e columnStatsFromStorage -e 'Histogram: *hg' -e 'CMSketch: cms' -e col2Idx -e colNameID ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“from-storage 入口 + table.copy + 补写字段锚点”三组做交集，优先保留 shared Table load path 的候选文件。这个交集对 `6565/13647` 一类相邻 case 也可能有召回，最终仍需 verdict layer 人工判断。",
+          "command": "cd <repo_root> && rg -l -0 -F -e tableStatsFromStorage -e TableStatsFromStorage -g 'statistics/statscache.go' -g 'statistics/table.go' -g 'statistics/handle.go' -g 'statistics/handle/**/*' -g 'pkg/statistics/handle/**/*' . | xargs -0 -r rg -l -0 -F -e 'table.copy()' -e 'table.Copy()' -e 'We copy it before writing to avoid race' | xargs -0 -r rg -n -H -F -e 'Histogram: *hg' -e 'CMSketch: cms' -e cmSketchFromStorage -e indexStatsFromStorage -e columnStatsFromStorage -e col2Idx -e colNameID -e 'ErrorRate: errorRate'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "UpdateStatsByLocalFeedback 在共享 Table/Index/Column 上原地回写 Histogram/CMSketch",
+      "pattern_file": "UpdateStatsByLocalFeedback_在共享_Table_Index_Column_上原地回写_Histogram_CMSketch.json",
+      "grepability": "medium",
+      "path_globs": [
+        "statistics/update.go",
+        "statistics/handle/update.go",
+        "pkg/statistics/handle/update.go"
+      ],
+      "grep_keywords_any": [
+        "UpdateStatsByLocalFeedback",
+        "local feedback",
+        "newTblStats := tblStats.copy()",
+        "newIdx := *idx",
+        "newCol := *col",
+        "UpdateHistogram(",
+        "UpdateCMSketch(",
+        "UpdateTableStats(",
+        "splitFeedbackByQueryType",
+        "GetPartitionStats("
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "UpdateStatsByLocalFeedback",
+          "local feedback"
+        ],
+        [
+          "newTblStats := tblStats.copy()",
+          "newIdx := *idx",
+          "newCol := *col"
+        ],
+        [
+          "UpdateHistogram(",
+          "UpdateCMSketch(",
+          "UpdateTableStats("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "tableStatsFromStorage",
+        "TableStatsFromStorage",
+        "rateMap",
+        "globalMap",
+        "GetStatsInfo"
+      ],
+      "first_pass_query_hint": "先找 `UpdateStatsByLocalFeedback` / `local feedback` 回写入口，再看同一函数里是否同时出现 `tblStats.copy + newIdx/newCol + UpdateHistogram/UpdateCMSketch/UpdateTableStats`。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 stats update 主线文件里粗召回 local feedback 回写入口、copy-before-write 锚点和 histogram/CMSketch 回写信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'statistics/update.go' -g 'statistics/handle/update.go' -g 'pkg/statistics/handle/update.go' -e UpdateStatsByLocalFeedback -e 'local feedback' -e 'newTblStats := tblStats.copy()' -e 'newIdx := *idx' -e 'newCol := *col' -e 'UpdateHistogram(' -e 'UpdateCMSketch(' -e 'UpdateTableStats(' -e splitFeedbackByQueryType -e 'GetPartitionStats(' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或 update 路径被拆分时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e UpdateStatsByLocalFeedback -e 'local feedback' -e 'newTblStats := tblStats.copy()' -e 'newIdx := *idx' -e 'newCol := *col' -e 'UpdateHistogram(' -e 'UpdateCMSketch(' -e 'UpdateTableStats(' -e splitFeedbackByQueryType -e 'GetPartitionStats(' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“local feedback 回写入口 + copy-before-write 锚点 + histogram/CMSketch 发布”三组做交集，优先保留真正的 local feedback 写回对象路径。",
+          "command": "cd <repo_root> && rg -l -0 -F -e UpdateStatsByLocalFeedback -e 'local feedback' -g 'statistics/update.go' -g 'statistics/handle/update.go' -g 'pkg/statistics/handle/update.go' . | xargs -0 -r rg -l -0 -F -e 'newTblStats := tblStats.copy()' -e 'newIdx := *idx' -e 'newCol := *col' | xargs -0 -r rg -n -H -F -e 'UpdateHistogram(' -e 'UpdateCMSketch(' -e 'UpdateTableStats('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "stats Handle / SessionStatsCollector 在 dump/clear 路径直接重置 live feedback/globalMap/collector state，缺少锁内 snapshot-swap",
+      "pattern_file": "stats_Handle_SessionStatsCollector_在_dump_clear_路径直接重置_live_feedback_globalMap_collector_state_缺少锁内_snapshot_swap.json",
+      "grepability": "medium",
+      "path_globs": [
+        "statistics/handle/handle.go",
+        "statistics/handle/update.go",
+        "pkg/statistics/handle/handle.go",
+        "pkg/statistics/handle/update.go",
+        "statistics/handle.go",
+        "statistics/update.go"
+      ],
+      "grep_keywords_any": [
+        "SessionStatsCollector",
+        "globalMap",
+        "feedback",
+        "ClearForTest",
+        "sweepList",
+        "DumpStatsDeltaToKV",
+        "DumpStatsFeedbackToKV",
+        "UpdateStatsByLocalFeedback",
+        "h.feedback.Lock()",
+        "h.globalMap.Lock()",
+        "statistics.NewQueryFeedbackMap()"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "SessionStatsCollector",
+          "globalMap",
+          "feedback"
+        ],
+        [
+          "ClearForTest",
+          "sweepList",
+          "DumpStatsDeltaToKV",
+          "DumpStatsFeedbackToKV",
+          "UpdateStatsByLocalFeedback"
+        ],
+        [
+          "h.feedback.Lock()",
+          "h.globalMap.Lock()",
+          "feedback := h.feedback.data",
+          "deltaMap := h.globalMap.data",
+          "h.feedback.data = statistics.NewQueryFeedbackMap()",
+          "h.globalMap.data = make(tableDeltaMap)",
+          "s.feedback = statistics.NewQueryFeedbackMap()",
+          "s.colMap = make(colStatsUsageMap)"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "pid2tid",
+        "schemaVersion",
+        "tableStatsFromStorage",
+        "newTblStats := tblStats.copy()",
+        "UpdateHistogram(",
+        "UpdateCMSketch("
+      ],
+      "first_pass_query_hint": "先找 stats handle / collector 的 dump 或 clear 入口，再看它是不是先对 `globalMap/feedback/collector state` 做锁内 snapshot-swap；`ClearForTest`、`feedback := h.feedback.data`、`deltaMap := h.globalMap.data` 都是强锚点。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 stats handle/update 主线文件里粗召回 collector、globalMap/feedback 和 dump/clear 入口。",
+          "command": "cd <repo_root> && rg -n -F -g 'statistics/handle/handle.go' -g 'statistics/handle/update.go' -g 'pkg/statistics/handle/handle.go' -g 'pkg/statistics/handle/update.go' -g 'statistics/handle.go' -g 'statistics/update.go' -e SessionStatsCollector -e globalMap -e feedback -e ClearForTest -e sweepList -e DumpStatsDeltaToKV -e DumpStatsFeedbackToKV -e UpdateStatsByLocalFeedback -e 'h.feedback.Lock()' -e 'h.globalMap.Lock()' -e 'statistics.NewQueryFeedbackMap()' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录变化或 handle/update 路径被拆分时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e SessionStatsCollector -e globalMap -e feedback -e ClearForTest -e sweepList -e DumpStatsDeltaToKV -e DumpStatsFeedbackToKV -e UpdateStatsByLocalFeedback -e 'h.feedback.Lock()' -e 'h.globalMap.Lock()' -e 'statistics.NewQueryFeedbackMap()' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“collector/globalMap/feedback + dump/clear 入口 + snapshot-swap 锚点”三组做交集，优先保留真正 live collector state dump/reset 的候选文件。",
+          "command": "cd <repo_root> && rg -l -0 -F -e SessionStatsCollector -e globalMap -e feedback -g 'statistics/handle/handle.go' -g 'statistics/handle/update.go' -g 'pkg/statistics/handle/handle.go' -g 'pkg/statistics/handle/update.go' -g 'statistics/handle.go' -g 'statistics/update.go' . | xargs -0 -r rg -l -0 -F -e ClearForTest -e sweepList -e DumpStatsDeltaToKV -e DumpStatsFeedbackToKV -e UpdateStatsByLocalFeedback | xargs -0 -r rg -n -H -F -e 'h.feedback.Lock()' -e 'h.globalMap.Lock()' -e 'feedback := h.feedback.data' -e 'deltaMap := h.globalMap.data' -e 'h.feedback.data = statistics.NewQueryFeedbackMap()' -e 'h.globalMap.data = make(tableDeltaMap)' -e 's.feedback = statistics.NewQueryFeedbackMap()' -e 's.colMap = make(colStatsUsageMap)'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`SessionStatsCollector.rateMap -> Handle.rateMap -> UpdateErrorRate` 链路直接聚合共享误差率 map，缺少统一互斥",
+      "pattern_file": "SessionStatsCollector_rateMap_Handle_rateMap_UpdateErrorRate_链路直接聚合共享误差率_map_缺少统一互斥.json",
+      "grepability": "medium",
+      "path_globs": [
+        "statistics/update.go",
+        "statistics/handle/update.go",
+        "pkg/statistics/handle/update.go",
+        "statistics/handle.go",
+        "statistics/handle/handle.go",
+        "pkg/statistics/handle/handle.go"
+      ],
+      "grep_keywords_any": [
+        "rateMap",
+        "errorRateDeltaMap",
+        "StoreQueryFeedback",
+        "UpdateErrorRate",
+        "rateMap.update(",
+        "rateMap.merge(",
+        "delete(h.mu.rateMap, id)",
+        "for id, item := range h.mu.rateMap"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "rateMap",
+          "errorRateDeltaMap"
+        ],
+        [
+          "StoreQueryFeedback",
+          "UpdateErrorRate"
+        ],
+        [
+          "h.mu.rateMap.merge(",
+          "for id, item := range h.mu.rateMap",
+          "delete(h.mu.rateMap, id)"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "globalMap.data",
+        "feedback := h.feedback.data",
+        "deltaMap := h.globalMap.data",
+        "tableStatsFromStorage",
+        "ClearForTest",
+        "pid2tid",
+        "schemaVersion"
+      ],
+      "first_pass_query_hint": "先找 feedback update 主线里的 `rateMap` / `errorRateDeltaMap`，再确认是否同时出现 `StoreQueryFeedback`、`UpdateErrorRate` 与 `merge/range/delete rateMap` 这三段链路；命中 `h.mu.rateMap.merge(`、`for id, item := range h.mu.rateMap`、`delete(h.mu.rateMap, id)` 这组锚点时，基本就在这条子模式上。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 statistics feedback/update 主线文件里粗召回 `rateMap`、`UpdateErrorRate` 与 query feedback 入口。",
+          "command": "cd <repo_root> && rg -n -F -g 'statistics/update.go' -g 'statistics/handle/update.go' -g 'pkg/statistics/handle/update.go' -g 'statistics/handle.go' -g 'statistics/handle/handle.go' -g 'pkg/statistics/handle/handle.go' -e rateMap -e errorRateDeltaMap -e StoreQueryFeedback -e UpdateErrorRate -e 'rateMap.update(' -e 'rateMap.merge(' -e 'delete(h.mu.rateMap, id)' -e 'for id, item := range h.mu.rateMap' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或 update 路径被拆分时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e rateMap -e errorRateDeltaMap -e StoreQueryFeedback -e UpdateErrorRate -e 'rateMap.update(' -e 'rateMap.merge(' -e 'delete(h.mu.rateMap, id)' -e 'for id, item := range h.mu.rateMap' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“rateMap/errorRateDeltaMap + feedback 写入/消费入口 + merge/range/delete 锚点”三组做交集，优先保留真正的共享误差率 map 聚合路径。",
+          "command": "cd <repo_root> && rg -l -0 -F -e rateMap -e errorRateDeltaMap -g 'statistics/update.go' -g 'statistics/handle/update.go' -g 'pkg/statistics/handle/update.go' -g 'statistics/handle.go' -g 'statistics/handle/handle.go' -g 'pkg/statistics/handle/handle.go' . | xargs -0 -r rg -l -0 -F -e StoreQueryFeedback -e UpdateErrorRate | xargs -0 -r rg -n -H -F -e 'h.mu.rateMap.merge(' -e 'for id, item := range h.mu.rateMap' -e 'delete(h.mu.rateMap, id)'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`Handle.pid2tid/schemaVersion` 分区 physicalID 到 tableID 映射缓存被并发读写，缺少统一锁保护",
+      "pattern_file": "Handle_pid2tid_schemaVersion_分区_physicalID_到_tableID_映射缓存被并发读写_缺少统一锁保护.json",
+      "grepability": "medium",
+      "path_globs": [
+        "statistics/handle.go",
+        "statistics/boostrap.go",
+        "statistics/bootstrap.go",
+        "statistics/dump.go",
+        "statistics/table.go",
+        "statistics/handle/handle.go",
+        "statistics/handle/bootstrap.go"
+      ],
+      "grep_keywords_any": [
+        "pid2tid",
+        "schemaVersion",
+        "buildPartitionID2TableID",
+        "getTableByPhysicalID",
+        "SchemaMetaVersion()",
+        "PhysicalID",
+        "GetPartitionStats(",
+        "h.mu.pid2tid",
+        "h.mu.schemaVersion"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "pid2tid",
+          "schemaVersion"
+        ],
+        [
+          "getTableByPhysicalID",
+          "buildPartitionID2TableID",
+          "SchemaMetaVersion()"
+        ],
+        [
+          "h.mu.pid2tid",
+          "h.mu.schemaVersion",
+          "h.mu.Lock()"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "rateMap",
+        "globalMap",
+        "feedback := h.feedback.data",
+        "deltaMap := h.globalMap.data",
+        "ClearForTest",
+        "newTblStats := tblStats.copy()",
+        "UpdateHistogram("
+      ],
+      "first_pass_query_hint": "先找 partition stats 加载主线里的 `pid2tid/schemaVersion`，再确认是否同时出现 `getTableByPhysicalID/buildPartitionID2TableID/SchemaMetaVersion()` 与 `h.mu.pid2tid/h.mu.schemaVersion/h.mu.Lock()` 这组锚点；命中“字段迁入 h.mu + 根据 schema version 重建映射”时，基本就在这条子模式上。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 partition stats / handle 主线文件里粗召回 `pid2tid`、`schemaVersion` 与 physicalID 映射相关代码。",
+          "command": "cd <repo_root> && rg -n -F -g 'statistics/handle.go' -g 'statistics/boostrap.go' -g 'statistics/bootstrap.go' -g 'statistics/dump.go' -g 'statistics/table.go' -g 'statistics/handle/handle.go' -g 'statistics/handle/bootstrap.go' -e pid2tid -e schemaVersion -e buildPartitionID2TableID -e getTableByPhysicalID -e 'SchemaMetaVersion()' -e PhysicalID -e 'GetPartitionStats(' -e 'h.mu.pid2tid' -e 'h.mu.schemaVersion' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或 partition stats 逻辑被拆分时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e pid2tid -e schemaVersion -e buildPartitionID2TableID -e getTableByPhysicalID -e 'SchemaMetaVersion()' -e PhysicalID -e 'GetPartitionStats(' -e 'h.mu.pid2tid' -e 'h.mu.schemaVersion' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“pid2tid/schemaVersion + partition 映射 helper + h.mu 锚点”三组做交集，优先保留真正的 Handle 分区映射缓存同步路径。",
+          "command": "cd <repo_root> && rg -l -0 -F -e pid2tid -e schemaVersion -g 'statistics/handle.go' -g 'statistics/boostrap.go' -g 'statistics/bootstrap.go' -g 'statistics/dump.go' -g 'statistics/table.go' -g 'statistics/handle/handle.go' -g 'statistics/handle/bootstrap.go' . | xargs -0 -r rg -l -0 -F -e getTableByPhysicalID -e buildPartitionID2TableID -e 'SchemaMetaVersion()' | xargs -0 -r rg -n -H -F -e 'h.mu.pid2tid' -e 'h.mu.schemaVersion' -e 'h.mu.Lock()'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`Handle.statsCache` 整体 snapshot 以 version 做 copy-on-write 发布，缺少串行 store 门禁",
+      "pattern_file": "Handle_statsCache_整体_snapshot_以_version_做_copy_on_write_发布_缺少串行_store_门禁.json",
+      "grepability": "medium",
+      "path_globs": [
+        "statistics/handle.go",
+        "statistics/handle/statscache.go",
+        "statistics/handle/handle.go",
+        "statistics/handle/statscacheinner.go",
+        "pkg/statistics/handle/handle.go",
+        "pkg/statistics/handle/cache/statscache.go"
+      ],
+      "grep_keywords_any": [
+        "statsCache",
+        "StatsCache",
+        "version uint64",
+        "updateStatsCache",
+        "statsCache.update(",
+        "CopyAndUpdate(",
+        "statsCache.Load()",
+        "statsCache.Store(",
+        "oldCache.version",
+        "newCache.version"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "statsCache",
+          "StatsCache",
+          "version uint64"
+        ],
+        [
+          "updateStatsCache",
+          "statsCache.update(",
+          "CopyAndUpdate("
+        ],
+        [
+          "oldCache.version",
+          "newCache.version",
+          "statsCache.Lock()",
+          "statsCache.Store("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "pid2tid",
+        "schemaVersion",
+        "rateMap",
+        "globalMap",
+        "cacheInternalItem",
+        "StatsCacheInner",
+        "lfu",
+        "lru",
+        "mapcache"
+      ],
+      "first_pass_query_hint": "先找整包 `statsCache/StatsCache` 的 snapshot/update/publish 逻辑，再确认是否同时出现 `updateStatsCache` 或 `CopyAndUpdate` 一类派生入口，以及 `oldCache.version/newCache.version/statsCache.Lock()/Store` 这组发布门禁锚点；命中“旧快照派生新快照 + 带 version 门禁的集中 publish”时，基本就在这条子模式上。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 stats handle / statscache 主线文件里粗召回整包 cache snapshot 的更新与发布逻辑。",
+          "command": "cd <repo_root> && rg -n -F -g 'statistics/handle.go' -g 'statistics/handle/statscache.go' -g 'statistics/handle/handle.go' -g 'statistics/handle/statscacheinner.go' -g 'pkg/statistics/handle/handle.go' -g 'pkg/statistics/handle/cache/statscache.go' -e statsCache -e StatsCache -e 'version uint64' -e updateStatsCache -e 'statsCache.update(' -e 'CopyAndUpdate(' -e 'statsCache.Load()' -e 'statsCache.Store(' -e 'oldCache.version' -e 'newCache.version' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或 stats cache 路径重构时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e statsCache -e StatsCache -e 'version uint64' -e updateStatsCache -e 'statsCache.update(' -e 'CopyAndUpdate(' -e 'statsCache.Load()' -e 'statsCache.Store(' -e 'oldCache.version' -e 'newCache.version' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“stats cache/version + snapshot 派生入口 + publish 门禁锚点”三组做交集，优先保留真正的整包 snapshot publish 路径。",
+          "command": "cd <repo_root> && rg -l -0 -F -e statsCache -e StatsCache -e 'version uint64' -g 'statistics/handle.go' -g 'statistics/handle/statscache.go' -g 'statistics/handle/handle.go' -g 'statistics/handle/statscacheinner.go' -g 'pkg/statistics/handle/handle.go' -g 'pkg/statistics/handle/cache/statscache.go' . | xargs -0 -r rg -l -0 -F -e updateStatsCache -e 'statsCache.update(' -e 'CopyAndUpdate(' | xargs -0 -r rg -n -H -F -e 'oldCache.version' -e 'newCache.version' -e 'statsCache.Lock()' -e 'statsCache.Store('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`LFU.cache.Set` 触发 `reject/onEvict` 时，`resultKeySet/cost` 更新顺序交错",
+      "pattern_file": "LFU_cache_Set_触发_reject_onEvict_时_resultKeySet_cost_更新顺序交错.json",
+      "grepability": "medium",
+      "path_globs": [
+        "statistics/handle/cache/internal/lfu/lfu_cache.go",
+        "statistics/handle/cache/internal/lfu/key_set.go",
+        "statistics/handle/cache/internal/lfu/key_set_shard.go",
+        "pkg/statistics/handle/cache/internal/lfu/lfu_cache.go",
+        "pkg/statistics/handle/cache/internal/lfu/key_set.go"
+      ],
+      "grep_keywords_any": [
+        "lfu",
+        "resultKeySet",
+        "keySet",
+        "cache.Set(",
+        "onReject",
+        "onEvict",
+        "reject",
+        "evict",
+        "cost.Add(",
+        "resultKeySet.AddKeyValue",
+        "resultKeySet.Get("
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "lfu",
+          "resultKeySet",
+          "keySet"
+        ],
+        [
+          "cache.Set(",
+          "onReject",
+          "onEvict",
+          "reject",
+          "evict"
+        ],
+        [
+          "resultKeySet.AddKeyValue",
+          "cost.Add(",
+          "Values()",
+          "resultKeySet.Get("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "updateStatsCache",
+        "CopyAndUpdate",
+        "statsCache.Store(",
+        "oldCache.version",
+        "newCache.version",
+        "sync.RWMutex",
+        "MapCache",
+        "StatsCacheInner"
+      ],
+      "first_pass_query_hint": "先找 LFU 实现里的 `resultKeySet` / `cache.Set` / `onEvict`，再确认是否同时出现“`Put` 改 `resultKeySet/cost`”与“`reject/onEvict` 也会改同一组状态”这两段逻辑；命中 `resultKeySet.AddKeyValue`、`cost.Add(`、`cache.Set(`、`onReject/onEvict`，且 `Values()` 改成走 `resultKeySet.Get(` 时，基本就在这条子模式上。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 LFU 实现文件里粗召回 `resultKeySet`、`cache.Set`、reject/evict 与 cost 更新逻辑。",
+          "command": "cd <repo_root> && rg -n -F -g 'statistics/handle/cache/internal/lfu/lfu_cache.go' -g 'statistics/handle/cache/internal/lfu/key_set.go' -g 'statistics/handle/cache/internal/lfu/key_set_shard.go' -g 'pkg/statistics/handle/cache/internal/lfu/lfu_cache.go' -g 'pkg/statistics/handle/cache/internal/lfu/key_set.go' -e lfu -e resultKeySet -e keySet -e 'cache.Set(' -e onReject -e onEvict -e reject -e evict -e 'cost.Add(' -e 'resultKeySet.AddKeyValue' -e 'resultKeySet.Get(' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或 LFU 文件被拆分时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e lfu -e resultKeySet -e keySet -e 'cache.Set(' -e onReject -e onEvict -e reject -e evict -e 'cost.Add(' -e 'resultKeySet.AddKeyValue' -e 'resultKeySet.Get(' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“lfu/resultKeySet + reject/evict 回调 + 影子状态更新/读取锚点”三组做交集，优先保留真正的 LFU 顺序交错路径。",
+          "command": "cd <repo_root> && rg -l -0 -F -e lfu -e resultKeySet -e keySet -g 'statistics/handle/cache/internal/lfu/lfu_cache.go' -g 'statistics/handle/cache/internal/lfu/key_set.go' -g 'statistics/handle/cache/internal/lfu/key_set_shard.go' -g 'pkg/statistics/handle/cache/internal/lfu/lfu_cache.go' -g 'pkg/statistics/handle/cache/internal/lfu/key_set.go' . | xargs -0 -r rg -l -0 -F -e 'cache.Set(' -e onReject -e onEvict -e reject -e evict | xargs -0 -r rg -n -H -F -e 'resultKeySet.AddKeyValue' -e 'cost.Add(' -e 'Values()' -e 'resultKeySet.Get('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`stats cache internal LRU/map cache` 共享结构被 `Get/Put/Del/Values/Copy` 路径并发访问，缺少统一 `RWMutex`",
+      "pattern_file": "stats_cache_internal_LRU_map_cache_共享结构被_Get_Put_Del_Values_Copy_路径并发访问_缺少统一_RWMutex.json",
+      "grepability": "medium",
+      "path_globs": [
+        "statistics/handle/internal/cache/lru/lru_cache.go",
+        "statistics/handle/internal/cache/mapcache/map_cache.go",
+        "statistics/handle/statscache.go",
+        "pkg/statistics/handle/internal/cache/lru/lru_cache.go",
+        "pkg/statistics/handle/internal/cache/mapcache/map_cache.go"
+      ],
+      "grep_keywords_any": [
+        "sync.RWMutex",
+        "RWMutex",
+        "StatsCacheInner",
+        "MapCache",
+        "innerItemLruCache",
+        "elements map",
+        "GetByQuery",
+        "PutByQuery",
+        "FreshMemUsage",
+        "Front()",
+        "RLock()",
+        "RUnlock()",
+        "Lock()",
+        "Unlock()"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "sync.RWMutex",
+          "RWMutex",
+          "RLock()",
+          "RUnlock()",
+          "Lock()",
+          "Unlock()"
+        ],
+        [
+          "StatsCacheInner",
+          "MapCache",
+          "innerItemLruCache",
+          "elements map"
+        ],
+        [
+          "GetByQuery",
+          "Get(",
+          "PutByQuery",
+          "Put(",
+          "Del(",
+          "Values()",
+          "Keys()",
+          "Copy()",
+          "FreshMemUsage",
+          "Front()"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "resultKeySet",
+        "onReject",
+        "onEvict",
+        "cache.Set(",
+        "updateStatsCache",
+        "CopyAndUpdate",
+        "oldCache.version",
+        "newCache.version"
+      ],
+      "first_pass_query_hint": "先找 cache internal 实现里的 `sync.RWMutex/RLock/Lock`，再确认是否同时出现 `StatsCacheInner/MapCache/innerItemLruCache` 这类 internal type 锚点，以及 `Get/Put/Del/Values/Copy/FreshMemUsage/Front` 这一整串 API；三组都在时，基本就在这条 internal cache 通用锁子模式上。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 stats cache internal 实现文件里粗召回 `RWMutex`、接口层与整组 cache APIs。",
+          "command": "cd <repo_root> && rg -n -F -g 'statistics/handle/internal/cache/lru/lru_cache.go' -g 'statistics/handle/internal/cache/mapcache/map_cache.go' -g 'statistics/handle/statscache.go' -g 'pkg/statistics/handle/internal/cache/lru/lru_cache.go' -g 'pkg/statistics/handle/internal/cache/mapcache/map_cache.go' -e 'sync.RWMutex' -e RWMutex -e StatsCacheInner -e MapCache -e innerItemLruCache -e 'elements map' -e GetByQuery -e PutByQuery -e FreshMemUsage -e 'Front()' -e 'RLock()' -e 'RUnlock()' -e 'Lock()' -e 'Unlock()' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或 internal cache 文件被拆分时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e 'sync.RWMutex' -e RWMutex -e StatsCacheInner -e MapCache -e innerItemLruCache -e 'elements map' -e GetByQuery -e PutByQuery -e FreshMemUsage -e 'Front()' -e 'RLock()' -e 'RUnlock()' -e 'Lock()' -e 'Unlock()' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“RWMutex 读写锁锚点 + internal type 锚点 + cache API 全家桶”三组做交集，优先保留真正的 internal cache 通用锁路径。",
+          "command": "cd <repo_root> && rg -l -0 -F -e 'sync.RWMutex' -e RWMutex -e 'RLock()' -e 'RUnlock()' -e 'Lock()' -e 'Unlock()' -g 'statistics/handle/internal/cache/lru/lru_cache.go' -g 'statistics/handle/internal/cache/mapcache/map_cache.go' -g 'statistics/handle/statscache.go' -g 'pkg/statistics/handle/internal/cache/lru/lru_cache.go' -g 'pkg/statistics/handle/internal/cache/mapcache/map_cache.go' . | xargs -0 -r rg -l -0 -F -e StatsCacheInner -e MapCache -e innerItemLruCache -e 'elements map' | xargs -0 -r rg -n -H -F -e GetByQuery -e 'Get(' -e PutByQuery -e 'Put(' -e 'Del(' -e 'Values()' -e 'Keys()' -e 'Copy()' -e FreshMemUsage -e 'Front()'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`GetPartitionStats` miss 后临时构造 `PseudoTable` 却回填共享 `statsCache`",
+      "pattern_file": "GetPartitionStats_miss_后临时构造_PseudoTable_却回填共享_statsCache.json",
+      "grepability": "medium",
+      "path_globs": [
+        "statistics/handle.go",
+        "statistics/handle/handle.go",
+        "statistics/handle/statscache.go",
+        "pkg/statistics/handle/handle.go",
+        "pkg/statistics/handle/cache/statscache.go"
+      ],
+      "grep_keywords_any": [
+        "GetPartitionStats(",
+        "PseudoTable(",
+        "GetPartitionInfo()",
+        "partition",
+        "PhysicalID = pid",
+        "updateStatsCache",
+        "statsCache.update(",
+        "statsCacheLen()"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "GetPartitionStats(",
+          "PseudoTable("
+        ],
+        [
+          "GetPartitionInfo()",
+          "partition",
+          "PhysicalID = pid"
+        ],
+        [
+          "updateStatsCache",
+          "statsCache.update(",
+          "statsCacheLen()"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "oldCache.version",
+        "newCache.version",
+        "CopyAndUpdate(",
+        "StatsCacheInner",
+        "sync.RWMutex",
+        "resultKeySet",
+        "onEvict"
+      ],
+      "first_pass_query_hint": "先找 `GetPartitionStats` miss 路径里的 `PseudoTable` 构造，再确认同一分支里是否同时出现 `PhysicalID = pid` / `GetPartitionInfo()` 这类 partition 身份锚点，以及 `updateStatsCache(statsCache.update(...))` 或 `statsCacheLen()` 这组共享 cache 写回信号；命中“miss 时造 pseudo table + 绑定 partition + 顺手回填 cache”时，基本就在这条子模式上。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 partition stats miss 路径相关文件里粗召回 `GetPartitionStats`、`PseudoTable` 与 shared cache writeback 锚点。",
+          "command": "cd <repo_root> && rg -n -F -g 'statistics/handle.go' -g 'statistics/handle/handle.go' -g 'statistics/handle/statscache.go' -g 'pkg/statistics/handle/handle.go' -g 'pkg/statistics/handle/cache/statscache.go' -e 'GetPartitionStats(' -e 'PseudoTable(' -e 'GetPartitionInfo()' -e partition -e 'PhysicalID = pid' -e updateStatsCache -e 'statsCache.update(' -e 'statsCacheLen()' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或 handle/statscache 路径变化时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e 'GetPartitionStats(' -e 'PseudoTable(' -e 'GetPartitionInfo()' -e partition -e 'PhysicalID = pid' -e updateStatsCache -e 'statsCache.update(' -e 'statsCacheLen()' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“GetPartitionStats/PseudoTable + partition 身份锚点 + shared cache writeback”三组做交集，优先保留真正的 pseudo table 回填路径。",
+          "command": "cd <repo_root> && rg -l -0 -F -e 'GetPartitionStats(' -e 'PseudoTable(' -g 'statistics/handle.go' -g 'statistics/handle/handle.go' -g 'statistics/handle/statscache.go' -g 'pkg/statistics/handle/handle.go' -g 'pkg/statistics/handle/cache/statscache.go' . | xargs -0 -r rg -l -0 -F -e 'GetPartitionInfo()' -e partition -e 'PhysicalID = pid' | xargs -0 -r rg -n -H -F -e updateStatsCache -e 'statsCache.update(' -e 'statsCacheLen()'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`twoPhaseCommit.doActionOnBatches` 并行 batch goroutine 复用父 `Backoffer`",
+      "pattern_file": "twoPhaseCommit_doActionOnBatches_并行_batch_goroutine_复用父_Backoffer.json",
+      "grepability": "medium",
+      "path_globs": [
+        "store/tikv/2pc.go",
+        "store/tikv/backoff.go",
+        "pkg/store/tikv/2pc.go",
+        "pkg/store/tikv/backoff.go",
+        "util/execdetails/execdetails.go",
+        "pkg/util/execdetails/execdetails.go"
+      ],
+      "grep_keywords_any": [
+        "doActionOnBatches(",
+        "actionCommit",
+        "batches",
+        "Backoffer",
+        "singleBatchBackoffer",
+        "Clone()",
+        "Fork()",
+        "totalSleep",
+        "CommitBackoffTime",
+        "BackoffTypes",
+        "atomic.AddInt64",
+        "go func",
+        "concurrent goroutines",
+        "same backoffer"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "doActionOnBatches(",
+          "actionCommit",
+          "batches"
+        ],
+        [
+          "singleBatchBackoffer",
+          "Clone()",
+          "Fork()"
+        ],
+        [
+          "go func",
+          "concurrent goroutines",
+          "same backoffer",
+          "totalSleep",
+          "CommitBackoffTime",
+          "BackoffTypes",
+          "atomic.AddInt64"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "secondaryBo := NewBackoffer",
+        "NewBackoffer(context.Background(), CommitMaxBackoff)",
+        "getTxnStatusFromLock",
+        "ResolveLocks(",
+        "CheckTxnStatus",
+        "RequestBuilder"
+      ],
+      "first_pass_query_hint": "先找 `doActionOnBatches` 这类 2PC 并行 batch 主线，再确认每个 batch goroutine 是否通过 `singleBatchBackoffer = backoffer.Clone()/Fork()` 派生独立 `Backoffer`，以及同一 patch 是否还在处理 `totalSleep/CommitBackoffTime/BackoffTypes` 这些共享回退统计；命中“batch goroutine + singleBatchBackoffer + backoff 统计聚合”时，基本就在这条子模式上。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 2PC/backoff/commit detail 相关文件里粗召回并行 batch + Backoffer + 统计字段锚点。",
+                  "command": "cd <repo_root> && rg -n -F -g 'store/tikv/2pc.go' -g 'store/tikv/backoff.go' -g 'pkg/store/tikv/2pc.go' -g 'pkg/store/tikv/backoff.go' -g 'util/execdetails/execdetails.go' -g 'pkg/util/execdetails/execdetails.go' -e 'doActionOnBatches(' -e actionCommit -e batches -e Backoffer -e singleBatchBackoffer -e 'Clone()' -e 'Fork()' -e totalSleep -e CommitBackoffTime -e BackoffTypes -e 'atomic.AddInt64' -e 'go func' -e 'concurrent goroutines' -e 'same backoffer' ."
+                },
+                {
+                  "name": "fallback_no_path",
+                  "intent": "跨版本目录迁移或 2PC/backoff 文件路径变化时，去掉路径限制做全仓兜底召回。",
+                  "command": "cd <repo_root> && rg -n -F -e 'doActionOnBatches(' -e actionCommit -e batches -e Backoffer -e singleBatchBackoffer -e 'Clone()' -e 'Fork()' -e totalSleep -e CommitBackoffTime -e BackoffTypes -e 'atomic.AddInt64' -e 'go func' -e 'concurrent goroutines' -e 'same backoffer' ."
+                },
+                {
+                  "name": "group_intersection",
+                  "intent": "按“2PC batch 主线 + singleBatchBackoffer 派生 + backoff 统计聚合”三组做交集，优先保留真正的 batch Backoffer 复用路径。",
+                  "command": "cd <repo_root> && rg -l -0 -F -e 'doActionOnBatches(' -e actionCommit -e batches -g 'store/tikv/2pc.go' -g 'store/tikv/backoff.go' -g 'pkg/store/tikv/2pc.go' -g 'pkg/store/tikv/backoff.go' -g 'util/execdetails/execdetails.go' -g 'pkg/util/execdetails/execdetails.go' . | xargs -0 -r rg -l -0 -F -e singleBatchBackoffer -e 'Clone()' -e 'Fork()' | xargs -0 -r rg -n -H -F -e 'go func' -e 'concurrent goroutines' -e 'same backoffer' -e totalSleep -e CommitBackoffTime -e BackoffTypes -e 'atomic.AddInt64'"
+                }
+              ]
+    },
+    {
+      "subpattern_key": "`IndexJoin / IndexLookupJoin / IndexLookupMergeJoin` 每个 inner worker 复制自己的 `indexRanges`",
+      "pattern_file": "IndexJoin_IndexLookupJoin_IndexLookupMergeJoin_每个_inner_worker_复制自己的_indexRanges.json",
+      "grepability": "high",
+      "path_globs": [
+        "executor/index_lookup_join.go",
+        "executor/new_index_lookup_join.go",
+        "executor/index_lookup_merge_join.go",
+        "executor/index_lookup_hash_join.go",
+        "planner/core/exhaust_physical_plans.go",
+        "planner/core/physical_plans.go",
+        "pkg/executor/index_lookup_join.go",
+        "pkg/executor/index_lookup_merge_join.go",
+        "pkg/executor/index_lookup_hash_join.go",
+        "pkg/planner/core/exhaust_physical_plans.go",
+        "pkg/planner/core/physical_plans.go"
+      ],
+      "grep_keywords_any": [
+        "IndexLookUpJoin",
+        "IndexLookUpMergeJoin",
+        "newInnerWorker",
+        "newInnerMergeWorker",
+        "indexHashJoinInnerWorker",
+        "indexRanges",
+        "MutableRanges",
+        "Range()",
+        "copiedRanges :=",
+        "ran.Clone()",
+        "copy join's indexRanges",
+        "multiple inner workers run concurrently",
+        "buildExecutorForIndexJoin",
+        "keyOff2IdxOff"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "IndexLookUpJoin",
+          "IndexLookUpMergeJoin",
+          "newInnerWorker",
+          "newInnerMergeWorker",
+          "indexHashJoinInnerWorker"
+        ],
+        [
+          "indexRanges",
+          "MutableRanges",
+          "Ranges",
+          "Range()"
+        ],
+        [
+          "copiedRanges :=",
+          "ran.Clone()",
+          "copy join's indexRanges",
+          "multiple inner workers run concurrently"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "buildUnionScanFromReader",
+        "builder.Plan",
+        "TmpConstant",
+        "joinResult",
+        "resultCh",
+        "joinChkResourceCh"
+      ],
+      "first_pass_query_hint": "先找 index join inner worker 主线上的 `indexRanges/MutableRanges`，再确认 worker 初始化里是否显式构造 `copiedRanges` 并逐个 `ran.Clone()`；如果同一 patch 同时出现 `copy join's indexRanges` 或 `multiple inner workers run concurrently` 这类注释，通常就是这条 range 复用子模式。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 index join / merge join / planner range 相关文件里粗召回 inner worker + indexRanges + clone 信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'executor/index_lookup_join.go' -g 'executor/new_index_lookup_join.go' -g 'executor/index_lookup_merge_join.go' -g 'executor/index_lookup_hash_join.go' -g 'planner/core/exhaust_physical_plans.go' -g 'planner/core/physical_plans.go' -g 'pkg/executor/index_lookup_join.go' -g 'pkg/executor/index_lookup_merge_join.go' -g 'pkg/executor/index_lookup_hash_join.go' -g 'pkg/planner/core/exhaust_physical_plans.go' -g 'pkg/planner/core/physical_plans.go' -e IndexLookUpJoin -e IndexLookUpMergeJoin -e newInnerWorker -e newInnerMergeWorker -e indexHashJoinInnerWorker -e indexRanges -e MutableRanges -e 'Range()' -e 'copiedRanges :=' -e 'ran.Clone()' -e \"copy join's indexRanges\" -e 'multiple inner workers run concurrently' -e buildExecutorForIndexJoin -e keyOff2IdxOff ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或执行器文件重构时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e IndexLookUpJoin -e IndexLookUpMergeJoin -e newInnerWorker -e newInnerMergeWorker -e indexHashJoinInnerWorker -e indexRanges -e MutableRanges -e 'Range()' -e 'copiedRanges :=' -e 'ran.Clone()' -e \"copy join's indexRanges\" -e 'multiple inner workers run concurrently' -e buildExecutorForIndexJoin -e keyOff2IdxOff ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“inner worker 主线 + range 对象 + copiedRanges/Clone 修复”三组做交集，优先保留真正的 worker 级 range 复用路径。",
+          "command": "cd <repo_root> && rg -l -0 -F -e IndexLookUpJoin -e IndexLookUpMergeJoin -e newInnerWorker -e newInnerMergeWorker -e indexHashJoinInnerWorker -g 'executor/index_lookup_join.go' -g 'executor/new_index_lookup_join.go' -g 'executor/index_lookup_merge_join.go' -g 'executor/index_lookup_hash_join.go' -g 'planner/core/exhaust_physical_plans.go' -g 'planner/core/physical_plans.go' -g 'pkg/executor/index_lookup_join.go' -g 'pkg/executor/index_lookup_merge_join.go' -g 'pkg/executor/index_lookup_hash_join.go' -g 'pkg/planner/core/exhaust_physical_plans.go' -g 'pkg/planner/core/physical_plans.go' . | xargs -0 -r rg -l -0 -F -e indexRanges -e MutableRanges -e Ranges -e 'Range()' | xargs -0 -r rg -n -H -F -e 'copiedRanges :=' -e 'ran.Clone()' -e \"copy join's indexRanges\" -e 'multiple inner workers run concurrently'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`IndexJoin / IndexMergeJoin / IndexHashJoin` 每个 inner worker 重建自己的 `TmpConstant`",
+      "pattern_file": "IndexJoin_IndexMergeJoin_IndexHashJoin_每个_inner_worker_重建自己的_TmpConstant.json",
+      "grepability": "high",
+      "path_globs": [
+        "executor/index_lookup_join.go",
+        "executor/index_lookup_merge_join.go",
+        "executor/index_lookup_hash_join.go",
+        "planner/core/exhaust_physical_plans.go",
+        "pkg/executor/index_lookup_join.go",
+        "pkg/executor/index_lookup_merge_join.go",
+        "pkg/executor/index_lookup_hash_join.go",
+        "pkg/planner/core/exhaust_physical_plans.go"
+      ],
+      "grep_keywords_any": [
+        "lastColHelper",
+        "nextColCompareFilters",
+        "ColWithCmpFuncManager",
+        "TmpConstant",
+        "nextCwf",
+        "TargetCol",
+        "make([]*expression.Constant",
+        "newInnerWorker",
+        "newInnerMergeWorker",
+        "indexHashJoinInnerWorker",
+        "inner worker",
+        "concurrently"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "newInnerWorker",
+          "newInnerMergeWorker",
+          "indexHashJoinInnerWorker"
+        ],
+        [
+          "lastColHelper",
+          "nextColCompareFilters",
+          "ColWithCmpFuncManager"
+        ],
+        [
+          "TmpConstant",
+          "nextCwf",
+          "make([]*expression.Constant",
+          "TargetCol"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "indexRanges",
+        "MutableRanges",
+        "copiedRanges :=",
+        "joinResult",
+        "resultCh",
+        "buildUnionScanFromReader"
+      ],
+      "first_pass_query_hint": "先找 inner worker 主线上的 `lastColHelper/nextColCompareFilters`，再确认同一 patch 是否显式做了 `nextCwf := *e.lastColHelper` 和 `nextCwf.TmpConstant = make(...)`；命中这两步时，基本就是 per-worker scratch helper 重建这条子模式。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在索引 join inner worker 和 planner helper 相关文件里粗召回 lastColHelper/TmpConstant/nextCwf 信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'executor/index_lookup_join.go' -g 'executor/index_lookup_merge_join.go' -g 'executor/index_lookup_hash_join.go' -g 'planner/core/exhaust_physical_plans.go' -g 'pkg/executor/index_lookup_join.go' -g 'pkg/executor/index_lookup_merge_join.go' -g 'pkg/executor/index_lookup_hash_join.go' -g 'pkg/planner/core/exhaust_physical_plans.go' -e lastColHelper -e nextColCompareFilters -e ColWithCmpFuncManager -e TmpConstant -e nextCwf -e TargetCol -e 'make([]*expression.Constant' -e newInnerWorker -e newInnerMergeWorker -e indexHashJoinInnerWorker -e 'inner worker' -e concurrently ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或执行器文件重构时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e lastColHelper -e nextColCompareFilters -e ColWithCmpFuncManager -e TmpConstant -e nextCwf -e TargetCol -e 'make([]*expression.Constant' -e newInnerWorker -e newInnerMergeWorker -e indexHashJoinInnerWorker -e 'inner worker' -e concurrently ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“inner worker 主线 + compare helper + TmpConstant 重建”三组做交集，优先保留真正的 per-worker scratch helper 修复。",
+          "command": "cd <repo_root> && rg -l -0 -F -e newInnerWorker -e newInnerMergeWorker -e indexHashJoinInnerWorker -g 'executor/index_lookup_join.go' -g 'executor/index_lookup_merge_join.go' -g 'executor/index_lookup_hash_join.go' -g 'planner/core/exhaust_physical_plans.go' -g 'pkg/executor/index_lookup_join.go' -g 'pkg/executor/index_lookup_merge_join.go' -g 'pkg/executor/index_lookup_hash_join.go' -g 'pkg/planner/core/exhaust_physical_plans.go' . | xargs -0 -r rg -l -0 -F -e lastColHelper -e nextColCompareFilters -e ColWithCmpFuncManager | xargs -0 -r rg -n -H -F -e TmpConstant -e nextCwf -e 'make([]*expression.Constant' -e TargetCol"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`buildUnionScanForIndexJoin` 直接改写共享 `builder.Plan`",
+      "pattern_file": "buildUnionScanForIndexJoin_直接改写共享_builder_Plan.json",
+      "grepability": "medium",
+      "path_globs": [
+        "executor/builder.go",
+        "executor/index_lookup_join.go",
+        "pkg/executor/builder.go",
+        "pkg/executor/index_lookup_join.go"
+      ],
+      "grep_keywords_any": [
+        "buildUnionScanForIndexJoin",
+        "buildUnionScanFromReader",
+        "builder.Plan",
+        "dataReaderBuilder",
+        "childBuilder := &dataReaderBuilder",
+        "UnionScanExec",
+        "buildAndSortAddedRows()",
+        "local child builder",
+        "Plan of dataReaderBuilder directly",
+        "Be careful to avoid data race"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "buildUnionScanForIndexJoin",
+          "buildUnionScanFromReader",
+          "UnionScanExec"
+        ],
+        [
+          "builder.Plan",
+          "dataReaderBuilder",
+          "childBuilder := &dataReaderBuilder"
+        ],
+        [
+          "Plan of dataReaderBuilder directly",
+          "local child builder",
+          "Be careful to avoid data race",
+          "buildAndSortAddedRows()"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "forDataReaderBuilder",
+        "getSnapshotTS",
+        "forUpdateTS",
+        "indexRanges",
+        "TmpConstant"
+      ],
+      "first_pass_query_hint": "先找 union scan 的 `buildUnionScanForIndexJoin/buildUnionScanFromReader`，再确认是否直接改写共享 `builder.Plan` 或共享 `b.err`，以及补丁是否引入局部 `childBuilder` 来隔离 plan。命中这三步时，基本就是这条 builder 复用子模式。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 union scan / index lookup join builder 相关文件里粗召回 builder.Plan 与 childBuilder 信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'executor/builder.go' -g 'executor/index_lookup_join.go' -g 'pkg/executor/builder.go' -g 'pkg/executor/index_lookup_join.go' -e buildUnionScanForIndexJoin -e buildUnionScanFromReader -e 'builder.Plan' -e dataReaderBuilder -e 'childBuilder := &dataReaderBuilder' -e UnionScanExec -e 'buildAndSortAddedRows()' -e 'local child builder' -e 'Plan of dataReaderBuilder directly' -e 'Be careful to avoid data race' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或 builder 代码重构时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e buildUnionScanForIndexJoin -e buildUnionScanFromReader -e 'builder.Plan' -e dataReaderBuilder -e 'childBuilder := &dataReaderBuilder' -e UnionScanExec -e 'buildAndSortAddedRows()' -e 'local child builder' -e 'Plan of dataReaderBuilder directly' -e 'Be careful to avoid data race' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“union scan helper + builder.Plan/dataReaderBuilder + local childBuilder/data-race 注释”三组做交集，优先保留真正的 builder 复用修复。",
+          "command": "cd <repo_root> && rg -l -0 -F -e buildUnionScanForIndexJoin -e buildUnionScanFromReader -e UnionScanExec -g 'executor/builder.go' -g 'executor/index_lookup_join.go' -g 'pkg/executor/builder.go' -g 'pkg/executor/index_lookup_join.go' . | xargs -0 -r rg -l -0 -F -e 'builder.Plan' -e dataReaderBuilder -e 'childBuilder := &dataReaderBuilder' | xargs -0 -r rg -n -H -F -e 'Plan of dataReaderBuilder directly' -e 'local child builder' -e 'Be careful to avoid data race' -e 'buildAndSortAddedRows()'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`executorBuilder.forDataReaderBuilder` 预取隔离 read TS，避免并发复用会话态",
+      "pattern_file": "executorBuilder_forDataReaderBuilder_预取隔离_read_TS_避免并发复用会话态.json",
+      "grepability": "medium",
+      "path_globs": [
+        "executor/builder.go",
+        "executor/index_lookup_join.go",
+        "executor/index_lookup_merge_join.go",
+        "executor/index_lookup_hash_join.go",
+        "pkg/executor/builder.go",
+        "pkg/executor/index_lookup_join.go",
+        "pkg/executor/index_lookup_merge_join.go",
+        "pkg/executor/index_lookup_hash_join.go"
+      ],
+      "grep_keywords_any": [
+        "forDataReaderBuilder",
+        "getSnapshotTS",
+        "dataReaderTS",
+        "snapshotReadTS",
+        "forUpdateTS",
+        "newDataReaderBuilder",
+        "dataReaderBuilder",
+        "thread safe",
+        "issue #30468",
+        "dataReaderBuilder can be used in concurrent goroutines"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "forDataReaderBuilder",
+          "getSnapshotTS",
+          "newDataReaderBuilder"
+        ],
+        [
+          "dataReaderTS",
+          "snapshotReadTS",
+          "forUpdateTS"
+        ],
+        [
+          "thread safe",
+          "issue #30468",
+          "dataReaderBuilder can be used in concurrent goroutines"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "builder.Plan",
+        "buildUnionScanFromReader",
+        "indexRanges",
+        "TmpConstant",
+        "joinResult"
+      ],
+      "first_pass_query_hint": "先找 `forDataReaderBuilder/getSnapshotTS/newDataReaderBuilder`，再确认同一 patch 是否显式冻结 `dataReaderTS`，以及提交说明/注释里是否直接写了 `thread safe` / `issue #30468` / `dataReaderBuilder can be used in concurrent goroutines`。这三组同时出现时，基本就是 data reader 私有 read TS 这条子模式。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 executor builder / index lookup join 主线上粗召回 `forDataReaderBuilder`、`getSnapshotTS`、`dataReaderTS` 相关信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'executor/builder.go' -g 'executor/index_lookup_join.go' -g 'executor/index_lookup_merge_join.go' -g 'executor/index_lookup_hash_join.go' -g 'pkg/executor/builder.go' -g 'pkg/executor/index_lookup_join.go' -g 'pkg/executor/index_lookup_merge_join.go' -g 'pkg/executor/index_lookup_hash_join.go' -e forDataReaderBuilder -e getSnapshotTS -e dataReaderTS -e snapshotReadTS -e forUpdateTS -e newDataReaderBuilder -e dataReaderBuilder -e 'thread safe' -e 'issue #30468' -e 'dataReaderBuilder can be used in concurrent goroutines' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或 executor builder 重构时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e forDataReaderBuilder -e getSnapshotTS -e dataReaderTS -e snapshotReadTS -e forUpdateTS -e newDataReaderBuilder -e dataReaderBuilder -e 'thread safe' -e 'issue #30468' -e 'dataReaderBuilder can be used in concurrent goroutines' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“dataReaderBuilder 主线 + read TS 冻结 + 并发/thread-safe 注释”三组做交集，优先保留真正的私有 read TS 修复。",
+          "command": "cd <repo_root> && rg -l -0 -F -e forDataReaderBuilder -e getSnapshotTS -e newDataReaderBuilder -g 'executor/builder.go' -g 'executor/index_lookup_join.go' -g 'executor/index_lookup_merge_join.go' -g 'executor/index_lookup_hash_join.go' -g 'pkg/executor/builder.go' -g 'pkg/executor/index_lookup_join.go' -g 'pkg/executor/index_lookup_merge_join.go' -g 'pkg/executor/index_lookup_hash_join.go' . | xargs -0 -r rg -l -0 -F -e dataReaderTS -e snapshotReadTS -e forUpdateTS | xargs -0 -r rg -n -H -F -e 'thread safe' -e 'issue #30468' -e 'dataReaderBuilder can be used in concurrent goroutines'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`IndexHashJoin.keepOuterOrder` 每处理一个 task 都重新 `getNewJoinResult`，避免复用已发送的 `joinResult` holder",
+      "pattern_file": "IndexHashJoin_keepOuterOrder_每处理一个_task_都重新_getNewJoinResult_避免复用已发送的_joinResult_holder.json",
+      "grepability": "medium",
+      "path_globs": [
+        "executor/index_lookup_hash_join.go",
+        "executor/join_test.go",
+        "pkg/executor/index_lookup_hash_join.go",
+        "pkg/executor/join_test.go"
+      ],
+      "grep_keywords_any": [
+        "keepOuterOrder",
+        "getNewJoinResult",
+        "joinResult",
+        "resultCh",
+        "joinChkResourceCh",
+        "result holder",
+        "after handling a task",
+        "orded IndexHashJoin",
+        "ordered IndexHashJoin",
+        "has been sent to the resultCh",
+        "has been sent to the joinChkResourceCh"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "keepOuterOrder",
+          "orded IndexHashJoin",
+          "ordered IndexHashJoin"
+        ],
+        [
+          "result holder",
+          "after handling a task",
+          "WITHOUT getNewJoinResult"
+        ],
+        [
+          "resultCh",
+          "joinChkResourceCh",
+          "has been sent to the resultCh",
+          "has been sent to the joinChkResourceCh"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "ctx.Done()",
+        "select {",
+        "chunk resource channel",
+        "limit",
+        "indexRanges",
+        "TmpConstant"
+      ],
+      "first_pass_query_hint": "先找 ordered `IndexHashJoin` 的 `keepOuterOrder` 路径，再确认同一 patch 是否显式写了 `after handling a task` / `result holder` / `WITHOUT getNewJoinResult` 这类 bugfix 语义锚点，以及旧 `joinResult` 已经发到 `resultCh` / `joinChkResourceCh`。这三组同时出现时，基本就是 holder handoff 后误复用这条子模式。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 ordered `IndexHashJoin` 主线里粗召回 `keepOuterOrder`、`getNewJoinResult`、`resultCh` / `joinChkResourceCh` 相关信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'executor/index_lookup_hash_join.go' -g 'executor/join_test.go' -g 'pkg/executor/index_lookup_hash_join.go' -g 'pkg/executor/join_test.go' -e keepOuterOrder -e getNewJoinResult -e joinResult -e resultCh -e joinChkResourceCh -e 'result holder' -e 'after handling a task' -e 'orded IndexHashJoin' -e 'ordered IndexHashJoin' -e 'has been sent to the resultCh' -e 'has been sent to the joinChkResourceCh' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或 ordered `IndexHashJoin` 代码重构时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e keepOuterOrder -e getNewJoinResult -e joinResult -e resultCh -e joinChkResourceCh -e 'result holder' -e 'after handling a task' -e 'orded IndexHashJoin' -e 'ordered IndexHashJoin' -e 'has been sent to the resultCh' -e 'has been sent to the joinChkResourceCh' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“ordered hash join 主线 + 重新领取 result holder + resultCh/joinChkResourceCh handoff”三组做交集，优先保留真正的 holder 误复用修复。",
+          "command": "cd <repo_root> && rg -l -0 -F -e keepOuterOrder -e 'orded IndexHashJoin' -e 'ordered IndexHashJoin' -g 'executor/index_lookup_hash_join.go' -g 'executor/join_test.go' -g 'pkg/executor/index_lookup_hash_join.go' -g 'pkg/executor/join_test.go' . | xargs -0 -r rg -l -0 -F -e 'result holder' -e 'after handling a task' -e 'WITHOUT getNewJoinResult' | xargs -0 -r rg -n -H -F -e resultCh -e joinChkResourceCh -e 'has been sent to the resultCh' -e 'has been sent to the joinChkResourceCh'"
         }
       ]
     }

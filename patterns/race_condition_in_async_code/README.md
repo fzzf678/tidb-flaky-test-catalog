@@ -44,7 +44,7 @@
 - `retrieval_signals.json`
   - 结构化 sidecar 检索文件，给 agent / 自动化扫描使用；承载全仓扫描时的路径、关键词、组合和降权信号
 - `subpatterns/`
-  - 当前 `18` 个正式 subpattern JSON 统一放在这里
+  - 当前 `39` 个正式 subpattern JSON 统一放在这里
   - `retrieval_signals.json` 不放进这个目录，避免把检索层和判定层混在一起
 
 ## 第一批正式 subpattern
@@ -61,6 +61,12 @@
 - `同一 session 的上一个 RecordSet 未 Close 就执行下一条 SQL`
 - `测试改写全局 lease 干扰后台 refresh loader`
 - `多个 cop iterator 共享可变 KV request RequestBuilder`
+- ``twoPhaseCommit.doActionOnBatches` 并行 batch goroutine 复用父 `Backoffer``
+- ``IndexJoin / IndexLookupJoin / IndexLookupMergeJoin` 每个 inner worker 复制自己的 `indexRanges``
+- ``IndexJoin / IndexMergeJoin / IndexHashJoin` 每个 inner worker 重建自己的 `TmpConstant``
+- ``buildUnionScanForIndexJoin` 直接改写共享 `builder.Plan`` 
+- ``executorBuilder.forDataReaderBuilder` 预取隔离 read TS，避免并发复用会话态``
+- ``IndexHashJoin.keepOuterOrder` 每处理一个 task 都重新 `getNewJoinResult`，避免复用已发送的 `joinResult` holder``
 - `WaitGroup Add Done 顺序竞态`
 - `并发 callback 共享结果 slice append reset snapshot 未统一加锁`
 - `懒初始化映射或指针需要一次性发布`
@@ -69,6 +75,22 @@
 - `有状态 mock encoder 被多个 processor 误复用`
 - `DDL callback 目标 job 过滤与单次触发控制`
 - `长期存活的 manager/handler 共享 map 被多个并发入口直接读写`
+- `只读 helper/List/IsXxx 访问共享 map 却漏掉读侧锁`
+- `cleanup/reuse/reset 路径清空共享 map 时漏锁`
+- `测试/helper 直接 reset 或 replace 共享 cache/handle 指针`
+- `解锁后继续使用共享 cache entry / pointer`
+- `执行期 helper/pruning 内部的懒建查找 map 被并发查询路径同时读写`
+- `TopSQL mock sink/server 的上报结果缓存被后台 worker 与断言线程并发访问`
+- `异步 global stats merge 直接共享 partitionStats/statsInfo，缺少 copy-on-read 快照`
+- `从共享 stats cache 取 Table 后，在 tableStatsFromStorage 补写字段前漏掉 table.copy`
+- `UpdateStatsByLocalFeedback 在共享 Table/Index/Column 上原地回写 Histogram/CMSketch`
+- `stats Handle / SessionStatsCollector 在 dump/clear 路径直接重置 live feedback/globalMap/collector state，缺少锁内 snapshot-swap`
+- ``SessionStatsCollector.rateMap -> Handle.rateMap -> UpdateErrorRate` 链路直接聚合共享误差率 map，缺少统一互斥`
+- ``Handle.pid2tid/schemaVersion` 分区 physicalID 到 tableID 映射缓存被并发读写，缺少统一锁保护`
+- ``Handle.statsCache` 整体 snapshot 以 version 做 copy-on-write 发布，缺少串行 store 门禁`
+- ``LFU.cache.Set` 触发 `reject/onEvict` 时，`resultKeySet/cost` 更新顺序交错`
+- ``stats cache internal LRU/map cache` 共享结构被 `Get/Put/Del/Values/Copy` 路径并发访问，缺少统一 `RWMutex``
+- ``GetPartitionStats` miss 后临时构造 `PseudoTable` 却回填共享 `statsCache``
 
 当前草案里列出的稳定候选已经全部落成正式 JSON。下一步如果继续扩展，需要回到 `502` case 台账里继续挖新的高纯度细簇。
 
@@ -83,12 +105,12 @@
 
 这 6 条都还是 `race_condition_in_async_code` family 内部的继续细化，不是跨 family 的通用 backlog。更细的 seed case 和预期子方向，统一记录在 `第二轮聚类草案.md`。
 
-另外，18 个正式 subpattern 的完整 case inventory 现在已经直接并回了 `第二轮聚类草案.md`：
+另外，40 个正式 subpattern 的完整 case inventory 现在已经直接并回了 `第二轮聚类草案.md`：
 
 - `subpatterns/` 里的正式 JSON `examples.positive`
   - 仍然保留为高纯度锚点子集
-- `第二轮聚类草案.md` 里的“18 个正式 subpattern 的当前案例清单”
-  - 则负责记录当前 18 个正式 subpattern 在 `逐例梳理台账.tsv` 中已经能明确落下来的完整 case inventory
+- `第二轮聚类草案.md` 里的“40 个正式 subpattern 的当前案例清单”
+  - 则负责记录当前 40 个正式 subpattern 在 `逐例梳理台账.tsv` 中已经能明确落下来的完整 case inventory
 
 ## 第二轮收敛时的边界约束
 

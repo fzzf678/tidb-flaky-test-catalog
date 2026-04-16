@@ -1,0 +1,62 @@
+{
+  "key": "`stats cache internal LRU/map cache` 共享结构被 `Get/Put/Del/Values/Copy` 路径并发访问，缺少统一 `RWMutex`",
+  "family": "race_condition_in_async_code",
+  "summary": "stats cache 的 internal cache 层会长期持有 `elements`、`lru.cache`、`trackingCost`、`tables` 等共享结构；如果 `Get/Put/Del/Values/Keys/Copy/FreshMemUsage/Front` 这些读写/遍历/复制路径没有围绕同一套 internal state 统一用 `RWMutex` 保护，就会在 query/update/copy 并发时撞出 data race。",
+  "mechanism": "这类问题的关键不是 whole-cache snapshot 的 version publish，也不是 LFU `reject/onEvict` 顺序交错，而是 cache internals 自身就是一套长期存活的共享结构：例如 LRU 里的 `elements map`、`innerItemLruCache.cache`、`trackingCost`，以及 map cache 里的 `tables/memUsage`。一旦 `Get/Put/Del/Values/Keys/Map/Len/FreshMemUsage/Copy/Front` 这些接口在不同 goroutine 间并发访问，而没有把所有读路径放到 `RLock/RUnlock`、所有写路径放到 `Lock/Unlock` 的同一 discipline 下，就会出现读写或写写竞争。稳定修法通常是把 internal cache 抽成显式 `StatsCacheInner` 接口，并在具体实现（尤其是 LRU cache）里给整组共享结构加统一 `sync.RWMutex`，让 `Get/Put/Del/Values/Copy/FreshMemUsage/Front` 全都遵循同一套锁规则。",
+  "signals_required": [
+    "代码位于 stats cache internal 实现层，而不是外层 `Handle.updateStatsCache`/`CopyAndUpdate` 发布门禁或单个 table copy-before-write 路径。",
+    "存在长期存活的 internal shared state，如 `elements map`、`lru.cache`、`trackingCost`、`tables`、`memUsage` 等，被多个 cache API 共同访问。",
+    "同一 patch 会同时改动多组 cache API，例如 `Get/Put/Del/Values/Keys/Copy/FreshMemUsage/Front`，而不是只改一个点。",
+    "修复核心是给整组 cache APIs 统一补 `sync.RWMutex` 保护或等价读写锁 discipline，而不是只调整回调顺序或 whole-cache 发布顺序。"
+  ],
+  "signals_optional": [
+    "强锚点包括 `type StatsInnerCache struct { ... sync.RWMutex }`、`s.RLock()/s.RUnlock()`、`s.Lock()/s.Unlock()`、`elements map[int64]*lruMapElement`、`innerItemLruCache`。",
+    "另一组强锚点是把 `statsCacheInner` 抽成公开 `StatsCacheInner` 接口，并把 `MapCache` / `LRU` 实现迁入 `internal/cache/...` 子目录。",
+    "常见改动会覆盖 `GetByQuery`、`Get`、`PutByQuery`、`Put`、`Del`、`Cost`、`Keys`、`Values`、`Map`、`Len`、`FreshMemUsage`、`Copy`、`Front` 这一整串接口。"
+  ],
+  "negative_guards": [
+    "如果问题核心是 LFU `cache.Set` 触发 `reject/onEvict` 时，`resultKeySet/cost` 更新顺序交错，更接近 `LFU.cache.Set` 触发 `reject/onEvict` 时，`resultKeySet/cost` 更新顺序交错。",
+    "如果问题核心是 `Handle.statsCache` 整体 snapshot 的 `copy/update/Store` 发布门禁，更接近 `Handle.statsCache` 整体 snapshot 以 version 做 copy-on-write 发布，缺少串行 store 门禁。",
+    "如果问题核心是 partition pseudo table 是否应写入共享 cache，更接近 pseudo table cache 策略或 cache item 生命周期子线，不是这条 internal cache 通用锁 discipline。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；cache internals 的整组共享结构如果被 `Get/Put/Del/Values/Copy` 等路径并发访问却缺少统一 `RWMutex`，是很稳定的结构性 data race 信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清这些 API 是否真的共享同一份 internal state，而不是各自操作独占对象。",
+      "虽然 patch 里出现多组 cache APIs，但所有读写已经明确都遵循同一套 `RWMutex` discipline，或 shared state 已被拆散为互不共享的对象。"
+    ]
+  },
+  "scope": [
+    "`statistics/handle/internal/cache/lru`、`statistics/handle/internal/cache/mapcache` 这类 stats cache internal 实现。",
+    "后续如果目录迁移到 `pkg/statistics/handle/internal/cache/...`，但仍是“internal cache 共享结构 + 一整组 APIs + 统一 RWMutex”这一结构，也属于同一子模式。"
+  ],
+  "fix_hints": [
+    "不要只给单个热点方法补锁；先枚举共享 internal state，再确保所有访问这些状态的 `Get/Put/Del/Values/Copy/FreshMemUsage/Front` 都遵循同一套读写锁规则。",
+    "对只读方法用 `RLock/RUnlock`，对会改 `elements/lru/tables/memUsage/trackingCost` 的方法用 `Lock/Unlock`。",
+    "如果 internal cache 需要支持多种实现，优先把通用 API 收敛到明确接口，再在每个实现内部各自保证锁 discipline。"
+  ],
+  "related_subpatterns": [
+    "`LFU.cache.Set` 触发 `reject/onEvict` 时，`resultKeySet/cost` 更新顺序交错",
+    "`Handle.statsCache` 整体 snapshot 以 version 做 copy-on-write 发布，缺少串行 store 门禁"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-44748",
+        "note": "修复把 cache internals 抽成 `StatsCacheInner` 接口，并在 `StatsInnerCache` 上统一加 `sync.RWMutex`，让 `Get/Put/Del/Values/Keys/Copy/FreshMemUsage/Front` 这整组接口都走同一套 `RLock/Lock` 纪律，这是 internal shared-state 通用加锁子模式的典型锚点。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-46090",
+        "note": "这条更偏 LFU `cache.Set` 与 `reject/onEvict` 之间 `resultKeySet/cost` 的顺序交错，不是 internal cache 全家桶 API 的统一 `RWMutex`。"
+      },
+      {
+        "case_id": "pr-13647",
+        "note": "这条更偏 whole-cache snapshot 的 `copy/update/Store` 发布门禁，而不是 internal cache `Get/Put/Del/Values/Copy` 统一锁 discipline。"
+      }
+    ]
+  }
+}

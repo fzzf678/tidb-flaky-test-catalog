@@ -1,0 +1,66 @@
+{
+  "key": "`IndexHashJoin.keepOuterOrder` 每处理一个 task 都重新 `getNewJoinResult`，避免复用已发送的 `joinResult` holder",
+  "family": "race_condition_in_async_code",
+  "summary": "当 `IndexHashJoin` 走 `keepOuterOrder` 路径时，`joinResult` 会被发送到 `resultCh` 或把内部 `chk` 归还到 `joinChkResourceCh`。如果 inner worker 处理完一个 task 后不重新领取新的 `joinResult` holder，而是继续复用刚刚交出去的旧对象，就会把已经跨 goroutine 交出所有权的结果 holder 再次写入，导致错误结果、阻塞或 data race。",
+  "mechanism": "这条模式的关键不是普通的 channel close / ctx cancel，而是“可变结果 holder 的所有权交接”。`keepOuterOrder` 场景下，一个 task 的结果会被主线程按顺序消费，worker 侧在把 `joinResult` 发到 `resultCh` 或把 `joinResult.chk` 放回 `joinChkResourceCh` 后，旧 holder 已经不再归当前 goroutine 独占。如果 worker 紧接着 fetch 下一个 task 却没有 `getNewJoinResult(ctx)`，就会在后续 `doJoinInOrder`/`handleTask` 中继续写旧 holder，形成典型的 async hand-off 后误复用。稳定修法是：每处理完一个 `keepOuterOrder` task，就显式重新 `getNewJoinResult(ctx)`，保证下一个 task 使用全新的结果 holder。",
+  "signals_required": [
+    "代码位于 `executor/index_lookup_hash_join.go` 的 `IndexHashJoin` / `indexHashJoinInnerWorker` 主线，强锚点通常是 `keepOuterOrder`、`getNewJoinResult`、`joinResult`。",
+    "补丁明确在处理“一个 task 结束后不能继续复用旧 result holder”的问题，提交标题或说明里常出现 `getNewJoinResult after handling a task`、`result holder`、`orded/ordered IndexHashJoin`。",
+    "存在结果 holder 已经通过 channel 交出所有权的结构性信号，典型锚点是 `resultCh`、`joinChkResourceCh`，以及注释里的 `the old joinResult has been sent to the resultCh or to the joinChkResourceCh`。",
+    "修复核心是 `if task.keepOuterOrder { joinResult, ok = iw.getNewJoinResult(ctx) ... }` 这类“每个 task 后重新领取 holder”的逻辑，而不是只改 channel close 或 cancel。"
+  ],
+  "signals_optional": [
+    "高信号补充锚点包括 `doJoinInOrder`、`close(resultCh)`、`joinResult.src <- joinResult.chk`、`WITHOUT getNewJoinResult`。",
+    "如果测试里显式设置 `order by`、`INL_HASH_JOIN`、`tidb_index_lookup_join_concurrency=1`、`tidb_index_join_batch_size`，通常是在稳定复现 ordered IndexHashJoin 这条路径。",
+    "和这条模式很近的语句描述包括 `after handling a task`、`fetch another task`、`main thread` / `inner worker` 之间的结果 holder 交接。"
+  ],
+  "negative_guards": [
+    "如果问题核心是 `joinChkResourceCh` 在 `Close()` 中被关闭、接收端需要 `select { case <-ctx.Done(): ... }` 才能安全退出，应归入 channel 生命周期 / close-receive race 的 sibling，而不是这条 holder 误复用模式。",
+    "如果问题核心是 `resultCh` 在 consumer `Close()` 后无人再读，producer 需要 `select { case <-ctx.Done(): case resultCh <- joinResult: }` 避免阻塞发送，应归入 send-after-close / cancel-aware send 的 sibling。",
+    "如果问题核心是 `indexRanges`、`TmpConstant` 这类 per-worker scratch state 复用，也不应并入这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；`keepOuterOrder + getNewJoinResult + resultCh/joinChkResourceCh holder handoff` 这组信号的结构性很强。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然出现了 `keepOuterOrder/resultCh`，但看不清补丁是否真的在解决“旧 joinResult holder 已交出后被继续复用”。",
+      "代码里出现了 `joinResult` / `resultCh`，但没有 `getNewJoinResult` 或 `result holder` 这组重新领用新 holder 的关键锚点。"
+    ]
+  },
+  "scope": [
+    "`executor/index_lookup_hash_join.go` / `pkg/executor/index_lookup_hash_join.go` 的 ordered `IndexHashJoin` inner worker 主线。",
+    "`executor/join_test.go` / `pkg/executor/join_test.go` 中用于复现 `INL_HASH_JOIN ... order by ...` 的 ordered join 测试。"
+  ],
+  "fix_hints": [
+    "当 `joinResult` 已经通过 `resultCh` / `joinChkResourceCh` 交出给别的 goroutine 后，不要继续在当前 worker 里复用它。",
+    "对 `keepOuterOrder` 路径，在每个 task 处理完之后立即重新 `getNewJoinResult(ctx)`，把下一个 task 和上一轮已经交出的 holder 彻底隔离。",
+    "不要把这条修法退化成 channel close / cancel 逻辑；这里的第一性问题是 holder 所有权交接后仍继续写。"
+  ],
+  "related_subpatterns": [
+    "`IndexJoin / IndexMergeJoin / IndexHashJoin` 每个 inner worker 重建自己的 `TmpConstant`",
+    "`IndexJoin / IndexLookupJoin / IndexLookupMergeJoin` 每个 inner worker 复制自己的 `indexRanges`"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-13451",
+        "note": "ordered `IndexHashJoin` 的 inner worker 在 `keepOuterOrder` 场景下，处理完一个 task 后如果不重新 `getNewJoinResult(ctx)`，就会继续复用已经发到 `resultCh` / `joinChkResourceCh` 的旧 `joinResult` holder。补丁直接在 `if task.keepOuterOrder { ... }` 后重新领取新的 result holder。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-18266",
+        "note": "这条看起来也涉及 `joinChkResourceCh`，但核心是 `Close()` 时 channel close/receive 生命周期竞态，修法是不再 close 资源 channel 并让接收方尊重 `ctx.Done()`。"
+      },
+      {
+        "case_id": "pr-35820",
+        "note": "这条也在 ordered `IndexHashJoin` 的 `resultCh` 主线上，但核心是 consumer 关闭后 producer 向满的 `resultCh` 阻塞发送；修法是 `select { case <-ctx.Done(): case resultCh <- joinResult: }`，不是 holder 交接后误复用。"
+      },
+      {
+        "case_id": "pr-12349",
+        "note": "这条是 `keepOuterOrder` 执行路径的引入背景样本，能看到 `resultCh` / ordered hash join 结构，但没有 `getNewJoinResult` 这组修复锚点，不应误判成这里。"
+      }
+    ]
+  }
+}

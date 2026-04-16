@@ -1,0 +1,74 @@
+{
+  "key": "`IndexJoin / IndexMergeJoin / IndexHashJoin` 每个 inner worker 重建自己的 `TmpConstant`",
+  "family": "race_condition_in_async_code",
+  "summary": "索引 join 系列执行器在多个 inner worker 并发运行时，如果共享同一个 `ColWithCmpFuncManager.TmpConstant` scratch buffer，就会在比较表达式构造和 range 计算时并发改写临时常量，导致 data race 或结果不稳定。",
+  "mechanism": "`ColWithCmpFuncManager` 里的 `TmpConstant` 不是只读元数据，而是执行期每次构造 compare/filter/range 时都会被写入的临时常量数组。`IndexJoin / IndexMergeJoin / IndexHashJoin` 又会并发启动多个 inner worker；如果这些 worker 直接共用 `e.lastColHelper` 或其中的 `TmpConstant`，就会在 `Value` / `RetType` / compare expression 构造上互相踩状态。稳定修法通常是：每个 worker 先浅拷贝一份 `lastColHelper` 到 `nextCwf`，再重新 `make([]*expression.Constant, ...)` 填满独立的 `TmpConstant`，最后把这份私有 helper 挂回 worker。",
+  "signals_required": [
+    "代码位于 `IndexJoin / IndexMergeJoin / IndexHashJoin` 的 inner worker 主线上，强锚点通常是 `newInnerWorker`、`newInnerMergeWorker`、`indexHashJoinInnerWorker`。",
+    "同一逻辑里存在共享 compare helper 或其派生字段，例如 `lastColHelper`、`nextColCompareFilters`、`ColWithCmpFuncManager`。",
+    "被共享的可变 scratch state 明确是 `TmpConstant`，或等价的 `make([]*expression.Constant, ...)` 临时常量数组。",
+    "修复核心是每个 worker 单独构造 `nextCwf := *e.lastColHelper` 再重建 `nextCwf.TmpConstant`，而不是继续复用父 helper。"
+  ],
+  "signals_optional": [
+    "高信号组合锚点包括 `TargetCol`、`nextColCompareFilters`、`RetType`、`inner worker to avoid data race when the inner workers is running concurrently`。",
+    "patch 往往会把 `targetCol/tmpConstant` 改成导出字段 `TargetCol/TmpConstant`，便于在 worker 侧重建私有 helper。",
+    "如果同一 patch 还在 `planner/core/exhaust_physical_plans.go` 调整 `ColWithCmpFuncManager` 结构定义，通常也是这条子模式的强旁证。"
+  ],
+  "negative_guards": [
+    "如果问题核心是每个 worker 复制 `indexRanges` / `MutableRanges`，应归入相邻的 range 复用子模式，而不是这条 scratch helper 子模式。",
+    "如果问题核心是 `buildUnionScanFromReader` / `builder.Plan` 这类 builder 复用，不应命中这条 `TmpConstant` 子模式。",
+    "如果问题核心是 `joinResult` / `resultCh` / `joinChkResourceCh` 的 holder 生命周期或资源通道关闭竞态，也不应并入这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；“inner worker 并发 + 共享 lastColHelper/TmpConstant + 每 worker 重建 nextCwf.TmpConstant”是非常稳定的结构性信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然出现了 `TmpConstant`，但看不清它是否真的被多个 worker 共享并在运行期改写。",
+      "helper 名称相似，但进入 worker 前已经做了深拷贝，`TmpConstant` 不再共享底层数组。"
+    ]
+  },
+  "scope": [
+    "`executor/index_lookup_join.go`、`executor/index_lookup_merge_join.go`、`executor/index_lookup_hash_join.go` 这些索引 join inner worker 路径。",
+    "`planner/core/exhaust_physical_plans.go` 里 `ColWithCmpFuncManager` 的结构定义与 compare helper 规划逻辑，只要它最终服务于 per-worker 私有 `TmpConstant`，也属于同一子模式。"
+  ],
+  "fix_hints": [
+    "不要把父级 `lastColHelper` 直接塞给多个 inner worker；每个 worker 先复制 helper，再重建自己的 `TmpConstant`。",
+    "把 `TmpConstant` 看成执行期 scratch buffer，而不是可安全共享的只读配置。",
+    "凡是会在 `BuildRanges` / compare expression 构造里改写的临时常量，都要放在 worker 私有 helper 上。"
+  ],
+  "related_subpatterns": [
+    "`IndexJoin / IndexLookupJoin / IndexLookupMergeJoin` 每个 inner worker 复制自己的 `indexRanges`",
+    "多个 cop iterator 共享可变 KV request RequestBuilder"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-13669",
+        "note": "`IndexJoin` 的 `newInnerWorker` 明确把 `lastColHelper` 复制到 `nextCwf`，然后重建 `nextCwf.TmpConstant`，避免多个 inner worker 并发修改同一份临时常量。"
+      },
+      {
+        "case_id": "pr-13713",
+        "note": "`IndexMergeJoin` 的 `newInnerMergeWorker` 采用同一套修法：复制 `lastColHelper`，再逐个创建独立的 `TmpConstant` 元素。"
+      },
+      {
+        "case_id": "pr-13714",
+        "note": "`IndexHashJoin` 的 `indexHashJoinInnerWorker` 同样在 worker 初始化时重建 `nextCwf.TmpConstant`，说明这是一条跨三种索引 join 形态复现的稳定子模式。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-5425",
+        "note": "更像每个 inner worker 复制 `indexRanges`；没有 `TmpConstant` / `lastColHelper` 这组 scratch helper 锚点。"
+      },
+      {
+        "case_id": "pr-12024",
+        "note": "虽然同样在 index merge join worker 主线，但这条 patch 里的核心稳定修法是 `indexRanges` clone，不是 `TmpConstant` 重建。"
+      },
+      {
+        "case_id": "pr-13451",
+        "note": "这条更偏 `joinResult` / `resultCh` / `joinChkResourceCh` 的 holder 生命周期问题，不涉及 compare helper scratch state。"
+      }
+    ]
+  }
+}

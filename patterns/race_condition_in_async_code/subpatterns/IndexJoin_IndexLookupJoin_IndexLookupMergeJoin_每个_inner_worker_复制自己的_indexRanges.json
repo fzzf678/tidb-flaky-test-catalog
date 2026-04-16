@@ -1,0 +1,74 @@
+{
+  "key": "`IndexJoin / IndexLookupJoin / IndexLookupMergeJoin` 每个 inner worker 复制自己的 `indexRanges`",
+  "family": "race_condition_in_async_code",
+  "summary": "索引 join 一类执行器会并发启动多个 inner worker；如果这些 worker 共用同一份可变 `indexRanges`，并在 lookup / build kv ranges 时原地填值或重建 range，就会触发 data race 或偶发错结果。",
+  "mechanism": "`indexRanges` 不是只读常量，它会随着每批 outer keys 被改写 `LowVal/HighVal`、转换成 kv ranges，或者在 plan-cache 复用场景下被 `MutableRanges` 重新构造。`IndexJoin / IndexLookupJoin / IndexLookupMergeJoin / IndexHashJoin` 又会并发起多个 inner worker；如果这些 worker 直接共用 `e.indexRanges / v.Ranges`，就会在 range 填值和读取时互相踩状态。稳定修法通常是：每个 worker 进入并发路径前，先把 `indexRanges` clone 成自己的 `copiedRanges`，必要时再用 `MutableRanges.Range()` / `Rebuild()` 管理可变范围。",
+  "signals_required": [
+    "代码位于 `IndexJoin / IndexLookupJoin / IndexLookupMergeJoin / IndexHashJoin` 的 inner worker 主线上，强锚点通常是 `newInnerWorker`、`newInnerMergeWorker`、`indexHashJoinInnerWorker`、`buildExecutorForIndexJoin`。",
+    "存在多个 inner worker 并发运行的结构性信号，例如 `IndexLookupJoinConcurrency`、`multiple inner workers run concurrently`、`go` 启 worker 后每个 worker 消费任务通道。",
+    "多个 worker 会接触同一批 join range 状态，锚点通常是 `indexRanges`、`v.Ranges`、`MutableRanges`、`Range()` 这一组对象。",
+    "修复核心是给每个 worker 单独复制 range，例如 `copiedRanges := ...`、`ran.Clone()`、`copy join's indexRanges for every worker`，而不是继续把父对象直接塞进 worker。"
+  ],
+  "signals_optional": [
+    "高信号组合锚点包括 `keyOff2IdxOff`、`buildKvRangesForIndexJoin`、`buildExecutorForIndexJoin`、`Range()`、`MutableRanges`。",
+    "补丁里常见注释是 `Since multiple inner workers run concurrently, we should copy join's indexRanges for every worker to avoid data race.`。",
+    "如果 patch 同时把 planner 里的 `Ranges []*ranger.Range` 改成 `Ranges ranger.MutableRanges`，通常是这条子模式在 plan-cache / range rebuild 场景下的延伸。"
+  ],
+  "negative_guards": [
+    "如果问题核心是 `buildUnionScanFromReader` / `builder.Plan` / child builder 这类 builder 或 plan 复用，而不是每个 worker 共用 `indexRanges`，更接近相邻的 builder 共享状态子模式。",
+    "如果问题核心是 `ColWithCmpFuncManager.TmpConstant`、compare helper、临时表达式常量等 per-worker scratch state，应归入相邻的 helper 临时状态复用子模式，而不是这条 range 复用模式。",
+    "如果问题核心是 `joinResult`、`resultCh`、`joinChkResourceCh`、holder/chunk 所有权交接后仍继续写，属于结果 holder 生命周期子模式，不应混入这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；“多个 inner worker 并发 + 共享 indexRanges + 每 worker clone ranges 修复”是非常稳定的结构性信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然出现了 `indexRanges`，但看不清 worker 里是否真的会原地改写 range 内容。",
+      "对象名叫 `indexRanges`，但进入 worker 前已经转换成只读副本或纯值对象，不再共享底层可变状态。"
+    ]
+  },
+  "scope": [
+    "`executor/index_lookup_join.go`、`executor/new_index_lookup_join.go`、`executor/index_lookup_merge_join.go`、`executor/index_lookup_hash_join.go` 等索引 join inner worker 执行路径。",
+    "`planner/core/*` 里为索引 join 构造 `Ranges` / `MutableRanges` 的路径，只要它最终服务于并发 inner worker 对 range 的独立副本需求，也属于同一子模式。"
+  ],
+  "fix_hints": [
+    "不要把父级 `indexRanges` 直接塞给多个 inner worker；每个 worker 在启动时先 clone 一份自己的 `copiedRanges`。",
+    "如果 ranges 需要在 plan-cache 复用时重建，用 `MutableRanges` / `Range()` / `Rebuild()` 管理，但 worker 侧仍要拿独立副本。",
+    "把 `buildKvRangesForIndexJoin` 这类会原地填值的逻辑限制在 worker 私有 range 上，不要让不同 worker 共享同一底层 range slice。"
+  ],
+  "related_subpatterns": [
+    "多个 cop iterator 共享可变 KV request RequestBuilder",
+    "`twoPhaseCommit.doActionOnBatches` 并行 batch goroutine 复用父 `Backoffer`"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-5425",
+        "note": "`NewIndexLookUpJoin` 的 inner worker 明确复制 `join.indexRanges`，并逐个 `ran.Clone()`；注释直接说明多个 inner worker 并发时要 copy ranges 才能避免 data race。"
+      },
+      {
+        "case_id": "pr-12024",
+        "note": "`IndexLookUpMergeJoin` 落地时同样把 `v.Ranges` 带入 inner worker，并在 worker 侧 clone `copiedRanges`，避免 merge join 多个 inner worker 共用一份 range 状态。"
+      },
+      {
+        "case_id": "pr-29238",
+        "note": "plan-cache 场景把 planner/executor 里的 `Ranges` 升级成 `MutableRanges`，但 worker 侧仍保留 `copiedRanges + ran.Clone()`；说明核心仍是“每个 inner worker 独享一份 `indexRanges`”。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-8031",
+        "note": "虽然同样位于 index lookup join / inner worker 主线，也带 `indexRanges` 参数，但核心修复是 `buildUnionScanFromReader` 使用局部 child builder，防止共享 `builder.Plan` 产生竞态。"
+      },
+      {
+        "case_id": "pr-13669",
+        "note": "这条 patch 周围仍能看到 `indexRanges` clone，但真正新增修复点是给每个 inner worker 单独构建 `ColWithCmpFuncManager.TmpConstant`，核心不是 range 复用。"
+      },
+      {
+        "case_id": "pr-13451",
+        "note": "这条更像 `joinResult` / `resultCh` / holder 所有权交接问题；没有 `indexRanges` clone 这组 range 复用锚点。"
+      }
+    ]
+  }
+}

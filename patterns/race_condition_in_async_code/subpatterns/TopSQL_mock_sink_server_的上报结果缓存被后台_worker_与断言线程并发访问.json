@@ -1,0 +1,70 @@
+{
+  "key": "TopSQL mock sink/server 的上报结果缓存被后台 worker 与断言线程并发访问",
+  "family": "race_condition_in_async_code",
+  "summary": "TopSQL reporter 或 tracecpu 测试里的 mock sink、mock stream、mock agent server 把上报结果缓存在内存字段里，而后台 worker/stream 还在持续写这些字段时，测试线程就直接读取并断言同一份缓存。",
+  "mechanism": "这类问题不是长期存活 manager 的共享 map，也不是普通 callback 结果 slice，而是 TopSQL 测试专用的 mock sink/server 自己保存 `records`、`sqlMetas`、`planMetas` 或 `ReportData`。后台 reporter、gRPC stream 或数据下沉 worker 会异步写这些缓存，测试线程却直接读字段、查 meta 或断言长度；如果没有 `mutex`、线程安全 getter，或者 channel 化的所有权交接，就会在 `-race` 下报 data race，或出现断言偶发漂移。稳定修法通常是给 mock state 加锁并只暴露线程安全 getter，或者把异步结果通过 channel 交给断言线程后再断言。",
+  "signals_required": [
+    "测试里存在 TopSQL 相关的 mock sink、mock stream、mock agent server，且它把上报结果缓存在内存字段里。",
+    "后台 reporter、stream 或 worker 会异步写这些缓存字段，例如 `records`、`sqlMetas`、`planMetas`、`data`、`ReportData`。",
+    "测试线程会在后台路径仍可能运行时，直接读取这些缓存、查 meta、取 latest records 或做长度/内容断言。",
+    "修复核心是给 mock state 加 `mutex` 并提供线程安全 getter，或改成 channel + bounded wait 的结果交接，而不是继续直接读共享字段。"
+  ],
+  "signals_optional": [
+    "函数或类型名常见为 `mockAgentServer`、`mockPubSubDataSinkStream`、`mockDataSink`、`mockDataSink2`。",
+    "观察/断言入口常见为 `WaitServerCollect`、`WaitCollectCnt`、`GetLatestRecords`、`GetRecords`、`GetSQLMetas`、`GetPlanMetas`、`GetSQLMetaByDigestBlocking`、`GetPlanMetaByDigestBlocking`。",
+    "字段名常见为 `records`、`sqlMetas`、`planMetas`、`DataRecords`、`ReportData`。"
+  ],
+  "negative_guards": [
+    "如果问题是 callback 把结果 append 到共享 slice，而主线程同时 reset/snapshot/断言这个 slice，更接近 `并发 callback 共享结果 slice append reset snapshot 未统一加锁`。",
+    "如果问题是 callback 直接 `Merge(data)` 到共享 map/`StatementStatsMap`，但没有 mock sink/server 这一层，更接近 callback 合并共享 map 子族，而不是这条 TopSQL mock 缓存模式。",
+    "如果 race 同时严重依赖 `time.Sleep`、全局配置切换或其他 timing bundle，先不要直接命中这条；那更像 mixed bundle，需要单独拆开。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；TopSQL mock sink/server 的上报结果缓存被后台 worker 与断言线程并发访问，是很稳定的结构性信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清测试线程是否只在后台 worker 完全退出之后才读取缓存。",
+      "断言读到的其实是 channel 交接后的独立副本，而不是共享缓存本身。"
+    ]
+  },
+  "scope": [
+    "TopSQL reporter test、pubsub/single target data sink test、tracecpu/topsql mock agent server test。",
+    "任何通过 mock sink/server 缓存上报结果，再由测试线程直接读缓存断言的异步测试。"
+  ],
+  "fix_hints": [
+    "优先给 mock sink/server 的缓存字段加 `mutex`，并通过线程安全 getter 暴露读取接口。",
+    "如果断言只需要最终一份 `ReportData`，优先改成 channel 交接，再配合 bounded wait。",
+    "不要在后台上报仍在运行时直接读取 mock 的 `records/sqlMetas/planMetas/data` 字段。"
+  ],
+  "related_subpatterns": [
+    "并发 callback 共享结果 slice append reset snapshot 未统一加锁",
+    "共享摘要收集器 Reset Update 交错竞态"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-24988",
+        "note": "TopSQL mock agent server 的 `records/sqlMetas/planMetas` 被流式上报与断言线程并发访问，修复为加锁并提供 `GetRecords/GetSQLMetas/GetPlanMetas`。"
+      },
+      {
+        "case_id": "pr-31340",
+        "note": "TopSQL reporter test 的 mock stream/data sink 状态被后台 worker 与断言线程并发访问，修复为给 mock stream 加锁并围绕缓存做线程安全读取。"
+      },
+      {
+        "case_id": "pr-31440",
+        "note": "reporter test 共享 `mockDataSink` 状态被后台上报线程与断言线程并发访问，修复为改成 `chan *ReportData` + bounded wait。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-24892",
+        "note": "TopSQL/tracecpu 相关，但同时混有 `Sleep` 和全局配置切换；更像 race + timing bundle，不直接并入这条纯 mock-cache 模式。"
+      },
+      {
+        "case_id": "pr-31714",
+        "note": "这是 callback `Merge(data)` 到共享 `StatementStatsMap`，更像 callback 合并共享 map 子族，不是 mock sink/server 缓存。"
+      }
+    ]
+  }
+}
