@@ -2,12 +2,12 @@
 
 这份文档回答一个很具体的问题：
 
-- 当前这 `17` 个 subpattern，能不能直接给 agent 看？
+- 当前这 `18` 个 subpattern，能不能直接给 agent 看？
 
 答案是：
 
 - **能**，但它们现在更适合做“判定层”。
-- 如果目标是**覆盖整个仓库**去扫存量测试，仅靠这 `17` 个 JSON 还不够快，也不够像“检索层”。
+- 如果目标是**覆盖整个仓库**去扫存量测试，仅靠这 `18` 个 JSON 还不够快，也不够像“检索层”。
 - 更实用的方式是分成两层：
   - 第一层：**检索层**
     - 用 grep / 路径 / 关键词组合，把全仓里的测试先缩成候选集
@@ -16,7 +16,7 @@
 
 也就是说：
 
-- 当前 `17` 个 JSON 不该被废掉
+- 当前 `18` 个 JSON 不该被废掉
 - 但如果要给 agent 做全仓扫描，最好再补一层更硬的“检索信号”
 - 现在这层已经有了一个结构化 sidecar 文件：
   - `retrieval_signals.json`
@@ -27,13 +27,13 @@
 
 - `retrieval_signals.json`
   - 当前 agent / 自动化真正执行的结构化检索层
-  - 已经落到 `v3`
+  - 已经落到 `v4`
   - 这里的 `rg_templates` 是当前最权威的可执行入口
 - `subpatterns/`
-  - 当前 `17` 个正式 subpattern JSON 的集中目录
+  - 当前 `18` 个正式 subpattern JSON 的集中目录
   - 这部分是 verdict layer，不和 `retrieval_signals.json` 混放
 - `第二轮聚类草案.md`
-  - 负责维护 17 个正式 subpattern 的完整 case inventory
+  - 负责维护 18 个正式 subpattern 的完整 case inventory
   - 里面已经把更多正例和边界 case 补齐
 - 本文档
   - 负责解释“检索层应该怎么用”
@@ -71,7 +71,7 @@
 
 ## 使用方式
 
-让 agent 扫全仓时，不要直接把 `17` 个 JSON 当成 `17` 条逐个硬匹配的规则。
+让 agent 扫全仓时，不要直接把 `18` 个 JSON 当成 `18` 条逐个硬匹配的规则。
 
 正确顺序应该是：
 
@@ -83,7 +83,7 @@
 
 ## 当前落地状态
 
-现在 `retrieval_signals.json` 已经不只是“字段建议”，而是已经落到 `v3`，并补了可直接执行的 `rg_templates`：
+现在 `retrieval_signals.json` 已经不只是“字段建议”，而是已经落到 `v4`，并补了可直接执行的 `rg_templates`：
 
 - `broad_recall`
   - 做更快的当前版本第一跳召回
@@ -96,13 +96,13 @@
 
 这一步的目标不是降低误报，而是先让新 agent 在全仓里更稳定地“找得到”。误报控制暂时仍然主要留在 verdict layer。
 
-另外，17 个正式 subpattern 当前更完整的正例 / 边界 case 盘点，已经并回：
+另外，18 个正式 subpattern 当前更完整的正例 / 边界 case 盘点，已经并回：
 
-- `第二轮聚类草案.md` 里的“17 个正式 subpattern 的当前案例清单”
+- `第二轮聚类草案.md` 里的“18 个正式 subpattern 的当前案例清单”
 
 所以如果要回答“这个 subpattern 目前到底落了哪些 case”，应优先看草案；如果要回答“agent 该怎么检索”，优先看本文和 `retrieval_signals.json`。
 
-## 17 个 subpattern 的检索信号建议
+## 18 个 subpattern 的检索信号建议
 
 下面这些信号，都是**检索层**，不是 verdict 层。
 
@@ -602,11 +602,52 @@
 - `first_pass_query_hint`:
   - 找 “DDL callback + job.Query/ActionTruncateTable/JobStateSynced + once”
 
+### 18. `长期存活的 manager/handler 共享 map 被多个并发入口直接读写`
+
+- `grepability`: `high`
+- `path_globs`:
+  - `store/mockstore/**/*`
+  - `pkg/domain/resourcegroup/**/*`
+  - `ddl/tests/resourcegroup/**/*`
+  - `**/*_test.go`
+- `grep_keywords_any`:
+  - `TunnelSet`
+  - `metricsMap`
+  - `groups`
+  - `registerTunnel`
+  - `getAndActiveTunnel`
+  - `DeriveChecker`
+- `grep_keywords_all_groups`:
+  - group A:
+    - `TunnelSet`
+    - `metricsMap`
+    - `groups`
+  - group B:
+    - `registerTunnel`
+    - `getAndActiveTunnel`
+    - `DeriveChecker`
+    - `register`
+    - `derive`
+    - `List`
+  - group C:
+    - `manager`
+    - `handler`
+    - `mock`
+    - `client`
+- `grep_keywords_exclude`:
+  - `valueMap`
+  - `DirtyDB`
+  - `IsTableLocked`
+  - `rootStats`
+  - `id2Timers`
+- `first_pass_query_hint`:
+  - 先找长期存活对象上的共享 map 字段，再看 register/get/list/activate/derive 这类并发入口是否直接访问它
+
 ## 最后结论
 
 如果问题是：
 
-- “这 17 个能不能直接给 agent 看？”
+- “这 18 个能不能直接给 agent 看？”
 
 答案是：
 
@@ -623,5 +664,5 @@
 - 但应该补一层“检索信号层”
 - 最好把 grep 关键词、关键词组合、目录范围、排除词与现有 JSON 分开管理
 - 目前已经落地的做法就是：
-  - 现有 `17` 个 JSON 继续保留做 verdict layer
+  - 现有 `18` 个 JSON 继续保留做 verdict layer
   - `retrieval_signals.json` 单独承载 retrieval layer

@@ -1,8 +1,8 @@
 {
   "family": "race_condition_in_async_code",
   "kind": "retrieval_signals",
-  "version": "v3",
-  "description": "Repository-scan retrieval hints for the 17 race_condition_in_async_code subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "version": "v4",
+  "description": "Repository-scan retrieval hints for the 18 race_condition_in_async_code subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
   "defaults": {
     "purpose": "candidate_retrieval_only",
     "verdict_requires_subpattern_json": true,
@@ -912,6 +912,71 @@
           "name": "group_intersection",
           "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
           "command": "rg -l -0 -F -e SetHook -e OnJobUpdated -e afterWaitSchemaSynced -g 'pkg/ddl/**/*_test.go' -g 'pkg/ddl/**/*' <repo_root> | xargs -0 -r rg -l -0 -F -e ActionTruncateTable -e job.Query -e JobStateSynced | xargs -0 -r rg -n -F -e once -e sync.Once -e 'only once'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "长期存活的 manager/handler 共享 map 被多个并发入口直接读写",
+      "pattern_file": "长期存活的_manager_handler_共享_map_被多个并发入口直接读写.json",
+      "grepability": "high",
+      "path_globs": [
+        "store/mockstore/**/*",
+        "pkg/domain/resourcegroup/**/*",
+        "ddl/tests/resourcegroup/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "TunnelSet",
+        "metricsMap",
+        "groups",
+        "registerTunnel",
+        "getAndActiveTunnel",
+        "DeriveChecker"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "TunnelSet",
+          "metricsMap",
+          "groups"
+        ],
+        [
+          "registerTunnel",
+          "getAndActiveTunnel",
+          "DeriveChecker",
+          "register",
+          "derive",
+          "List"
+        ],
+        [
+          "manager",
+          "handler",
+          "mock",
+          "client"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "valueMap",
+        "DirtyDB",
+        "IsTableLocked",
+        "rootStats",
+        "id2Timers"
+      ],
+      "first_pass_query_hint": "先找长期存活对象上的共享 map 字段，再看 register/get/list/activate/derive 这类并发入口是否直接访问它。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'store/mockstore/**/*' -g 'pkg/domain/resourcegroup/**/*' -g 'ddl/tests/resourcegroup/**/*' -g '**/*_test.go' -e TunnelSet -e metricsMap -e groups -e registerTunnel -e getAndActiveTunnel -e DeriveChecker <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e TunnelSet -e metricsMap -e groups -e registerTunnel -e getAndActiveTunnel -e DeriveChecker <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e TunnelSet -e metricsMap -e groups -g 'store/mockstore/**/*' -g 'pkg/domain/resourcegroup/**/*' -g 'ddl/tests/resourcegroup/**/*' -g '**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e registerTunnel -e getAndActiveTunnel -e DeriveChecker -e register -e derive -e List | xargs -0 -r rg -n -F -e manager -e handler -e mock -e client"
         }
       ]
     }
