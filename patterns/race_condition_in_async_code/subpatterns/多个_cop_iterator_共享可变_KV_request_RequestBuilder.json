@@ -1,0 +1,62 @@
+{
+  "key": "多个 cop iterator 共享可变 KV request RequestBuilder",
+  "family": "race_condition_in_async_code",
+  "summary": "多个 cop iterator / worker 并发运行时，共用同一个可变 `KV request` 或 `RequestBuilder` 实例。",
+  "mechanism": "`RequestBuilder` 和 request 对象通常会在构建、填充字段、发送前被持续改写；如果多个 iterator / worker 共用同一实例，就会互相覆盖请求状态，导致请求参数串线、数据竞争或偶发失败。",
+  "signals_required": [
+    "diff 中存在多个 cop iterator、scanner 或 worker 并发创建 / 运行。",
+    "它们复用同一个 `RequestBuilder`、`kv.Request` 或等价可变请求对象。",
+    "这些对象在不同 iterator/worker 路径里还会继续被修改、填字段或发送。",
+    "代码没有为每个 iterator 单独构建 request，也没有做深拷贝。"
+  ],
+  "signals_optional": [
+    "修复中出现 per-iterator 独立构建 request、builder clone 或每次调用新建 builder。",
+    "问题对象承载 cop task、range、分页、store 路由等迭代器特定状态。",
+    "失败表现为数据串线、请求参数错乱、并发读写共享 builder。"
+  ],
+  "negative_guards": [
+    "如果共享的是 `Backoffer`、`context` 或其他运行时对象，而不是 request/builder 本身，应归入相邻子模式。",
+    "如果 builder/request 在进入并发路径前已经被冻结成只读对象，不要命中这个子模式。",
+    "如果每个 iterator 都会立刻复制出独立 request，再进入并发执行，应降级为 `needs_more_evidence`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是非常具体的共享可变请求对象被并发复用。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清 request/builder 是否仍会在并发路径中继续被修改。",
+      "对象虽然同名，但可能已经按值复制，不再共享底层状态。"
+    ]
+  },
+  "scope": [
+    "cop iterator、表扫/索引扫、并发 scanner、需要为每个 worker 构建 request 的执行器测试。",
+    "任何请求构建器会被多个并发迭代器共享的场景。"
+  ],
+  "fix_hints": [
+    "为每个 iterator / worker 单独构建 request，不要共享可变 builder。",
+    "如果构建成本高，可在并发前冻结只读模板，再按 worker 派生副本。",
+    "避免把带内部状态的 request/builder 放到共享结构里反复复用。"
+  ],
+  "related_subpatterns": [
+    "twoPhaseCommit 多个 batch goroutine 复用同一个 Backoffer 状态",
+    "LockResolver / CheckTxnStatus 重试路径复用共享 Backoffer"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-61376",
+        "note": "多个 cop iterator 不能共享并发可变的 `KV request / RequestBuilder`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-6472",
+        "note": "更像多个 batch goroutine 复用共享 `Backoffer`。"
+      },
+      {
+        "case_id": "pr-13123",
+        "note": "更像 LockResolver / CheckTxnStatus 重试路径复用共享 `Backoffer`。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "key": "共享摘要收集器 Reset Update 交错竞态",
+  "family": "race_condition_in_async_code",
+  "summary": "共享 summary collector / summary collection 在 `Reset` 与 `Update` 交错时被打乱。",
+  "mechanism": "summary collector 往往既承载当前批次状态，又会被后续批次重置；如果一个路径在 `Reset`，另一个路径同时 `Update` 或补最后一批统计，就会把共享摘要状态清空、覆盖或混入错误批次，导致统计结果偶发不一致。",
+  "signals_required": [
+    "diff 中存在共享 summary collector、summary collection 或批次统计聚合器。",
+    "至少一条路径会对该 collector 做 `Reset` 或等价重置。",
+    "另一条并发路径会在相邻时机对同一个 collector 做 `Update`、收集或补记最后一批数据。",
+    "代码没有用互斥、严格时序或所有权切换来保证 `Reset` 与 `Update` 不交错。"
+  ],
+  "signals_optional": [
+    "修复中把 `Reset` 前移到 `Update` 前，或给 collector 增加串行化保护。",
+    "问题出现在 ingest/import、disttask、批处理统计汇总、阶段切换时。",
+    "测试表现为行数、摘要项、最终统计值偶发错误。"
+  ],
+  "negative_guards": [
+    "如果共享的是结果 slice 的 `append/reset/snapshot`，更接近 `并发 callback 共享结果 slice append reset snapshot 未统一加锁`。",
+    "如果 collector 是每个 worker 私有实例，最终只做串行 merge，不要命中这个子模式。",
+    "如果代码已经明确保证 `Reset` 与后续 `Update` 在单线程阶段切换后发生，应降级为 `needs_more_evidence`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；共享 collector 的 Reset/Update 交错是很强的状态破坏信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清 `Reset` 与 `Update` 是否真的可能并发。",
+      "collector 可能只是值复制后的局部副本，而不是共享实例。"
+    ]
+  },
+  "scope": [
+    "ingest/import、disttask、批处理统计汇总、阶段切换类测试。",
+    "任何存在共享 collector 并会跨批次 reset/update 的代码。"
+  ],
+  "fix_hints": [
+    "把 `Reset` 明确放到下一轮 `Update` 之前，避免交错。",
+    "如果 collector 必须跨 goroutine 共享，给 reset/update 关键区加锁。",
+    "优先使用每批次独立 collector，再在串行阶段汇总。"
+  ],
+  "related_subpatterns": [
+    "并发 callback 共享结果 slice append reset snapshot 未统一加锁",
+    "region job refcount shared ingest data 生命周期"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-64471",
+        "note": "ingest step 的 summary collection 若 `Reset` / `Update` 交错，会把共享摘要状态打乱。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-65523",
+        "note": "更像共享结果 slice 的 `append/reset/snapshot` 竞争。"
+      }
+    ]
+  }
+}

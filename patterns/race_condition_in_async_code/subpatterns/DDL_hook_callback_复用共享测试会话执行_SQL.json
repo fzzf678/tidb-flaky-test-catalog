@@ -1,0 +1,71 @@
+{
+  "key": "DDL hook callback 复用共享测试会话执行 SQL",
+  "family": "race_condition_in_async_code",
+  "summary": "DDL hook/callback 或其派生 goroutine 复用外层 `TestKit`、`session` 或测试 helper，在异步路径里执行 SQL/DDL。",
+  "mechanism": "测试主线程和 DDL callback 如果共用同一个测试会话对象，异步 callback 执行 SQL 时会与主线程的会话状态、事务状态、`StmtCtx`、结果集或 cleanup 流程发生并发冲突，导致 race、状态污染或偶发失败。",
+  "signals_required": [
+    "diff 在 DDL hook/callback 或测试 goroutine 中使用外层已有的 `TestKit`、`session`、`sessionctx` 或同类测试 helper。",
+    "callback / goroutine 会在这个共享会话上执行 SQL、DDL、admin 语句或其他会话操作。",
+    "同一个会话对象仍会被主测试线程或其他 goroutine 使用。",
+    "代码没有为 callback / goroutine 单独创建新的会话实例，也没有通过严格串行化保证单一所有权。"
+  ],
+  "signals_optional": [
+    "共享会话上还会复用 `RecordSet`、`StmtCtx`、`err/jobID` 等额外状态。",
+    "修复中出现 `testkit.NewTestKit`、新建 session、callback 改成只发信号不直接执行 SQL。",
+    "问题发生在 DDL callback、cancel/pause/resume、后台 admin 命令这类测试控制路径。"
+  ],
+  "negative_guards": [
+    "如果 callback 不执行 SQL，只是写共享标志位或错误变量，更接近 `DDL hook callback 写共享变量或标志无锁`。",
+    "如果 callback 复用的是 `context/txn/store` 而不是测试会话对象，更接近 `DDL hook callback 复用共享上下文或事务对象`。",
+    "如果会话对象是 callback 内新建、且没有被主线程继续复用，不要命中这个子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判为 flaky risk；这是典型的共享会话对象被异步路径并发复用。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "共享对象是否真的是同一个会话实例还看不清。",
+      "回调只偶尔读取会话元数据，没有执行 SQL 或改变会话状态。"
+    ]
+  },
+  "scope": [
+    "DDL callback 测试、通过 hook 触发额外 SQL 的测试。",
+    "任何在 goroutine / callback 中复用 `TestKit` 或 session 的测试。"
+  ],
+  "fix_hints": [
+    "为 callback 或 goroutine 单独创建新的 `TestKit` / session，不要与主线程共享。",
+    "如果 callback 只是通知时机，改成 channel/flag 通知，由主线程串行执行 SQL。",
+    "避免在 callback 中持有主线程会话返回的 `RecordSet` 或 `StmtCtx`。"
+  ],
+  "related_subpatterns": [
+    "DDL hook callback 写共享变量或标志无锁",
+    "DDL hook callback 复用共享上下文或事务对象",
+    "同一 session 的上一个 RecordSet 未 Close 就执行下一条 SQL"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-13447",
+        "note": "DDL hook callback 复用同一个 TestKit / session 执行额外 SQL。"
+      },
+      {
+        "case_id": "pr-1656",
+        "note": "goroutine 复用共享 session/test helper 执行 DDL。"
+      },
+      {
+        "case_id": "pr-1669",
+        "note": "goroutine 继续复用共享测试会话执行 DDL。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-49348",
+        "note": "更像同一 session 的旧 RecordSet 未 Close 就继续执行 SQL。"
+      },
+      {
+        "case_id": "pr-1903",
+        "note": "更像 callback 复用共享 context / txn，而不是共享测试会话。"
+      }
+    ]
+  }
+}

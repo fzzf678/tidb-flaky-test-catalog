@@ -1,0 +1,74 @@
+{
+  "key": "goroutine 闭包捕获循环变量",
+  "family": "race_condition_in_async_code",
+  "summary": "在循环里启动 goroutine 或并发子测试时，闭包直接捕获循环变量，导致多个并发执行体共享错误的目标对象。",
+  "mechanism": "Go 闭包会捕获循环变量本身而不是当次迭代的值；如果测试在 `for` / `range` 里起 goroutine 或并发子测试，闭包里直接使用 `i`、`store`、`sql`、`plan`、`case` 等循环变量，就会让多个异步路径读到相同或错误的对象，造成竞态、断言漂移或误命中错误 case。",
+  "signals_required": [
+    "diff 在 `for` / `range` 循环里启动 goroutine、worker 或并发子测试。",
+    "闭包内部直接使用循环变量，例如 `i`、`store`、`sql`、`plan`、`tc`、`case`，没有在循环体内重新绑定，也没有通过参数传入。",
+    "该循环变量决定目标请求、目标 store、执行 SQL、断言 case 或其他测试结果。",
+    "代码里没有 `v := v`、`idx := i`、`go func(v T) { ... }(v)` 这类显式重绑定。"
+  ],
+  "signals_optional": [
+    "修复里把循环变量作为参数传给闭包，或在循环体内创建局部副本。",
+    "场景是并发子测试、后台 scanner、异步 updater、并发查询等需要多次起 goroutine 的测试。",
+    "测试同时还伴随 goroutine 未等待退出，这会进一步放大问题。"
+  ],
+  "negative_guards": [
+    "如果共享的是外层 `err` 等结果变量，而不是循环变量本身，更接近 `goroutine 闭包复用外层错误变量`。",
+    "如果循环变量已经在循环体内显式重新绑定或作为参数传入，不要命中这个子模式。",
+    "如果主问题是 goroutine 生命周期未收好，而捕获变量不是核心机制，应降级为 `needs_more_evidence`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是 Go 并发测试里非常稳定的结构性错误。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "循环变量是否真的参与了异步路径的结果计算还不清楚。",
+      "闭包里虽然出现循环变量名，但代码已经通过参数传递做了值隔离。"
+    ]
+  },
+  "scope": [
+    "在循环里起 goroutine 的单测、并发子测试、后台 worker/扫描器测试。",
+    "任何 `for` / `range` 中闭包直接用循环变量的异步测试代码。"
+  ],
+  "fix_hints": [
+    "在循环体内把循环变量重新绑定到局部变量，例如 `v := v`、`idx := i`。",
+    "或者把循环变量显式作为参数传入闭包。",
+    "如果还伴随 goroutine 未等待退出，补上 `WaitGroup` / channel 收尾。"
+  ],
+  "related_subpatterns": [
+    "goroutine 闭包复用外层错误变量",
+    "WaitGroup Add/Done 顺序竞态"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-14549",
+        "note": "goroutine 闭包捕获循环中的 `store`。"
+      },
+      {
+        "case_id": "pr-23866",
+        "note": "resolveTS updater 复用循环里的 store 指针/字段。"
+      },
+      {
+        "case_id": "pr-33862",
+        "note": "并发子测试共用了错误的 case 参数。"
+      },
+      {
+        "case_id": "pr-36202",
+        "note": "闭包直接捕获循环变量 `i`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-31244",
+        "note": "既有循环变量捕获，也混有 goroutine 未等待退出。"
+      },
+      {
+        "case_id": "pr-672",
+        "note": "更像外层 `err` 变量共享，而不是循环变量捕获。"
+      }
+    ]
+  }
+}

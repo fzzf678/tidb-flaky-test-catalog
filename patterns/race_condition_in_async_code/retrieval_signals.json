@@ -1,0 +1,919 @@
+{
+  "family": "race_condition_in_async_code",
+  "kind": "retrieval_signals",
+  "version": "v3",
+  "description": "Repository-scan retrieval hints for the 17 race_condition_in_async_code subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "defaults": {
+    "purpose": "candidate_retrieval_only",
+    "verdict_requires_subpattern_json": true,
+    "group_match_semantics": "For grep_keywords_all_groups, every group should match at least one keyword before the candidate is treated as high-priority.",
+    "any_match_semantics": "grep_keywords_any is only for weak recall and should not be used alone for risk judgment.",
+    "exclude_semantics": "grep_keywords_exclude are soft down-rank hints by default unless the caller explicitly chooses hard exclusions.",
+    "rg_template_semantics": "Prefer broad_recall first for speed. If repo layout may differ across versions or broad_recall is too sparse, run fallback_no_path. Use group_intersection only for optional narrowing after recall.",
+    "path_globs_semantics": "path_globs are soft search-priority hints, not hard absence proofs. If broad_recall is empty or implausibly sparse, rerun fallback_no_path before concluding the pattern is absent."
+  },
+  "entries": [
+    {
+      "subpattern_key": "DDL hook callback 写共享变量或标志无锁",
+      "pattern_file": "DDL_hook_callback_写共享变量或标志无锁.json",
+      "grepability": "high",
+      "path_globs": [
+        "pkg/ddl/**/*_test.go",
+        "tests/realtikvtest/**/*"
+      ],
+      "grep_keywords_any": [
+        "SetHook",
+        "OnJobUpdated",
+        "OnJobRunBefore",
+        "OnJobRunAfter",
+        "checkOK =",
+        "jobID =",
+        "isPaused =",
+        ".hook ="
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "SetHook",
+          "OnJobUpdated",
+          "OnJobRunBefore",
+          "OnJobRunAfter"
+        ],
+        [
+          "err =",
+          "checkOK =",
+          "jobID =",
+          "isPaused =",
+          "test ="
+        ],
+        [
+          "go func",
+          "callback",
+          "hook"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "atomic.",
+        "sync.Mutex",
+        "CompareAndSwap"
+      ],
+      "first_pass_query_hint": "先找 DDL hook 注册点，再看 callback 内是否直接写外层共享变量。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'pkg/ddl/**/*_test.go' -g 'tests/realtikvtest/**/*' -e SetHook -e OnJobUpdated -e OnJobRunBefore -e OnJobRunAfter -e 'checkOK =' -e 'jobID =' -e 'isPaused =' -e '.hook =' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e SetHook -e OnJobUpdated -e OnJobRunBefore -e OnJobRunAfter -e 'checkOK =' -e 'jobID =' -e 'isPaused =' -e '.hook =' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e SetHook -e OnJobUpdated -e OnJobRunBefore -e OnJobRunAfter -g 'pkg/ddl/**/*_test.go' -g 'tests/realtikvtest/**/*' <repo_root> | xargs -0 -r rg -l -0 -F -e 'err =' -e 'checkOK =' -e 'jobID =' -e 'isPaused =' -e 'test =' | xargs -0 -r rg -n -F -e 'go func' -e callback -e hook"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "DDL hook callback 复用共享上下文或事务对象",
+      "pattern_file": "DDL_hook_callback_复用共享上下文或事务对象.json",
+      "grepability": "medium",
+      "path_globs": [
+        "pkg/ddl/**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "SetHook",
+        "OnJobUpdated",
+        "txn",
+        "ctx",
+        "store"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "SetHook",
+          "OnJobUpdated"
+        ],
+        [
+          "ctx",
+          "txn",
+          "store"
+        ],
+        [
+          "MustExec",
+          "Exec",
+          "Txn("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "context.Background()",
+        "context.WithCancel(",
+        "context.WithTimeout("
+      ],
+      "first_pass_query_hint": "找 DDL callback 是否直接捕获并复用外层 ctx/txn/store。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'pkg/ddl/**/*_test.go' -e SetHook -e OnJobUpdated -e txn -e ctx -e store <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e SetHook -e OnJobUpdated -e txn -e ctx -e store <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e SetHook -e OnJobUpdated -g 'pkg/ddl/**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e ctx -e txn -e store | xargs -0 -r rg -n -F -e MustExec -e Exec -e 'Txn('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "DDL hook callback 复用共享测试会话执行 SQL",
+      "pattern_file": "DDL_hook_callback_复用共享测试会话执行_SQL.json",
+      "grepability": "high",
+      "path_globs": [
+        "pkg/ddl/**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "SetHook",
+        "TestKit",
+        "MustExec",
+        "MustQuery",
+        "session"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "SetHook",
+          "OnJobUpdated"
+        ],
+        [
+          "tk.",
+          "testkit",
+          "session"
+        ],
+        [
+          "MustExec",
+          "Exec",
+          "MustQuery"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "testkit.NewTestKit(",
+        "new session"
+      ],
+      "first_pass_query_hint": "找 DDL callback 是否复用外层 TestKit 或 session 执行 SQL。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'pkg/ddl/**/*_test.go' -e SetHook -e TestKit -e MustExec -e MustQuery -e session <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e SetHook -e TestKit -e MustExec -e MustQuery -e session <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e SetHook -e OnJobUpdated -g 'pkg/ddl/**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e tk. -e testkit -e session | xargs -0 -r rg -n -F -e MustExec -e Exec -e MustQuery"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "goroutine 闭包复用外层错误变量",
+      "pattern_file": "goroutine_闭包复用外层错误变量.json",
+      "grepability": "high",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "go func",
+        "err ="
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "go func"
+        ],
+        [
+          "err ="
+        ],
+        [
+          "wg",
+          "Wait(",
+          "require"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "err :="
+      ],
+      "first_pass_query_hint": "直接搜 go func + err =，优先看测试代码。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g '**/*_test.go' -e 'go func' -e 'err =' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e 'go func' -e 'err =' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e 'go func' -g '**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e 'err =' | xargs -0 -r rg -n -F -e wg -e 'Wait(' -e require"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "goroutine 闭包捕获循环变量",
+      "pattern_file": "goroutine_闭包捕获循环变量.json",
+      "grepability": "high",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "for ",
+        "range ",
+        "go func",
+        "t.Run("
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "for ",
+          "range "
+        ],
+        [
+          "go func",
+          "t.Run("
+        ],
+        [
+          "i",
+          "store",
+          "sql",
+          "plan",
+          "tc",
+          "case"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "i := i",
+        "tc := tc"
+      ],
+      "first_pass_query_hint": "找循环体里起 goroutine / 并发子测试，再看循环变量是否直接被闭包捕获。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g '**/*_test.go' -e 'for ' -e 'range ' -e 'go func' -e 't.Run(' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e 'for ' -e 'range ' -e 'go func' -e 't.Run(' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e 'for ' -e 'range ' -g '**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e 'go func' -e 't.Run(' | xargs -0 -r rg -n -F -e i -e store -e sql -e plan -e tc -e case"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "BindHandle 单例 sctx 并发复用",
+      "pattern_file": "BindHandle_单例_sctx_并发复用.json",
+      "grepability": "medium",
+      "path_globs": [
+        "pkg/bindinfo/**/*",
+        "pkg/planner/**/*"
+      ],
+      "grep_keywords_any": [
+        "BindHandle",
+        "sctx",
+        "capture",
+        "Update(",
+        "prepare"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "BindHandle"
+        ],
+        [
+          "sctx"
+        ],
+        [
+          "Update(",
+          "capture",
+          "prepare",
+          "filter"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "Lock()",
+        "Unlock()",
+        "NewSession"
+      ],
+      "first_pass_query_hint": "找 BindHandle 持有 sctx 且被多条路径共同调用。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'pkg/bindinfo/**/*' -g 'pkg/planner/**/*' -e BindHandle -e sctx -e capture -e 'Update(' -e prepare <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e BindHandle -e sctx -e capture -e 'Update(' -e prepare <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e BindHandle -g 'pkg/bindinfo/**/*' -g 'pkg/planner/**/*' <repo_root> | xargs -0 -r rg -l -0 -F -e sctx | xargs -0 -r rg -n -F -e 'Update(' -e capture -e prepare -e filter"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "BindHandle 共享 parser 并发使用",
+      "pattern_file": "BindHandle_共享_parser_并发使用.json",
+      "grepability": "medium",
+      "path_globs": [
+        "pkg/bindinfo/**/*"
+      ],
+      "grep_keywords_any": [
+        "BindHandle",
+        "parser"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "BindHandle"
+        ],
+        [
+          "parser"
+        ],
+        [
+          "Update(",
+          "capture",
+          "prepare",
+          "Parse"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "parser.New()",
+        "new parser"
+      ],
+      "first_pass_query_hint": "找 BindHandle 是否长期持有共享 parser 并被多路径复用。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'pkg/bindinfo/**/*' -e BindHandle -e parser <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e BindHandle -e parser <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e BindHandle -g 'pkg/bindinfo/**/*' <repo_root> | xargs -0 -r rg -l -0 -F -e parser | xargs -0 -r rg -n -F -e 'Update(' -e capture -e prepare -e Parse"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "同一 session 的上一个 RecordSet 未 Close 就执行下一条 SQL",
+      "pattern_file": "同一_session_的上一个_RecordSet_未_Close_就执行下一条_SQL.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "RecordSet",
+        "ExecutePreparedStmt",
+        "Close()",
+        "MustQuery",
+        "MustExec"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "RecordSet",
+          "ExecutePreparedStmt"
+        ],
+        [
+          "MustExec",
+          "Exec",
+          "MustQuery"
+        ],
+        [
+          "session",
+          "tk."
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "defer rs.Close()",
+        "rs.Close()"
+      ],
+      "first_pass_query_hint": "找拿到 RecordSet 后又在同一 session 上继续执行 SQL 的测试。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g '**/*_test.go' -e RecordSet -e ExecutePreparedStmt -e 'Close()' -e MustQuery -e MustExec <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e RecordSet -e ExecutePreparedStmt -e 'Close()' -e MustQuery -e MustExec <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e RecordSet -e ExecutePreparedStmt -g '**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e MustExec -e Exec -e MustQuery | xargs -0 -r rg -n -F -e session -e tk."
+        }
+      ]
+    },
+    {
+      "subpattern_key": "测试改写全局 lease 干扰后台 refresh loader",
+      "pattern_file": "测试改写全局_lease_干扰后台_refresh_loader.json",
+      "grepability": "high",
+      "path_globs": [
+        "pkg/bindinfo/**/*_test.go",
+        "pkg/statistics/**/*_test.go",
+        "pkg/ttl/**/*_test.go",
+        "pkg/domain/**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "Lease",
+        "schema lease",
+        "stats lease",
+        "CreateMockStoreAndDomain",
+        "BootstrapSession"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "Lease =",
+          "SetLease",
+          "schema lease",
+          "stats lease"
+        ],
+        [
+          "CreateMockStoreAndDomain",
+          "BootstrapSession",
+          "domain"
+        ],
+        [
+          "defer",
+          "Cleanup",
+          "Close"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "set before bootstrap",
+        "restore after teardown"
+      ],
+      "first_pass_query_hint": "找 lease 改写 + domain/bootstrap + defer restore/clean 顺序。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'pkg/bindinfo/**/*_test.go' -g 'pkg/statistics/**/*_test.go' -g 'pkg/ttl/**/*_test.go' -g 'pkg/domain/**/*_test.go' -e Lease -e 'schema lease' -e 'stats lease' -e CreateMockStoreAndDomain -e BootstrapSession <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e Lease -e 'schema lease' -e 'stats lease' -e CreateMockStoreAndDomain -e BootstrapSession <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e 'Lease =' -e SetLease -e 'schema lease' -e 'stats lease' -g 'pkg/bindinfo/**/*_test.go' -g 'pkg/statistics/**/*_test.go' -g 'pkg/ttl/**/*_test.go' -g 'pkg/domain/**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e CreateMockStoreAndDomain -e BootstrapSession -e domain | xargs -0 -r rg -n -F -e defer -e Cleanup -e Close"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "多个 cop iterator 共享可变 KV request RequestBuilder",
+      "pattern_file": "多个_cop_iterator_共享可变_KV_request_RequestBuilder.json",
+      "grepability": "medium",
+      "path_globs": [
+        "pkg/executor/**/*",
+        "pkg/store/**/*"
+      ],
+      "grep_keywords_any": [
+        "RequestBuilder",
+        "kv.Request",
+        "cop iterator",
+        "buildKVReq"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "RequestBuilder",
+          "kv.Request"
+        ],
+        [
+          "iterator",
+          "worker"
+        ],
+        [
+          "build",
+          "send",
+          "cop"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "Clone(",
+        "new builder",
+        "build per iterator"
+      ],
+      "first_pass_query_hint": "找 RequestBuilder 或 kv.Request 是否在多个 iterator/worker 间复用。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'pkg/executor/**/*' -g 'pkg/store/**/*' -e RequestBuilder -e kv.Request -e 'cop iterator' -e buildKVReq <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e RequestBuilder -e kv.Request -e 'cop iterator' -e buildKVReq <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e RequestBuilder -e kv.Request -g 'pkg/executor/**/*' -g 'pkg/store/**/*' <repo_root> | xargs -0 -r rg -l -0 -F -e iterator -e worker | xargs -0 -r rg -n -F -e build -e send -e cop"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "WaitGroup Add Done 顺序竞态",
+      "pattern_file": "WaitGroup_Add_Done_顺序竞态.json",
+      "grepability": "high",
+      "path_globs": [
+        "**/*.go",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "WaitGroup",
+        ".Add(",
+        ".Done(",
+        "jobToWorkerCh",
+        "go func"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          ".Add("
+        ],
+        [
+          ".Done("
+        ],
+        [
+          "jobToWorkerCh <-",
+          "go func",
+          "start worker"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        ".Add(1) before go func",
+        ".Add(1) before send"
+      ],
+      "first_pass_query_hint": "找任务先可执行、再 Add(1) 的顺序错误。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g '**/*.go' -g '**/*_test.go' -e WaitGroup -e '.Add(' -e '.Done(' -e jobToWorkerCh -e 'go func' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e WaitGroup -e '.Add(' -e '.Done(' -e jobToWorkerCh -e 'go func' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e '.Add(' -g '**/*.go' -g '**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e '.Done(' | xargs -0 -r rg -n -F -e 'jobToWorkerCh <-' -e 'go func' -e 'start worker'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "并发 callback 共享结果 slice append reset snapshot 未统一加锁",
+      "pattern_file": "并发_callback_共享结果_slice_append_reset_snapshot_未统一加锁.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "append(",
+        "reset",
+        "snapshot",
+        "testResults",
+        "callback"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "callback",
+          "hook"
+        ],
+        [
+          "append("
+        ],
+        [
+          "reset",
+          "snapshot",
+          "copy("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "mu.Lock()",
+        "mu.Unlock()"
+      ],
+      "first_pass_query_hint": "找 callback append + 主线程 reset/snapshot 同一 slice。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g '**/*_test.go' -e 'append(' -e reset -e snapshot -e testResults -e callback <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e 'append(' -e reset -e snapshot -e testResults -e callback <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e callback -e hook -g '**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e 'append(' | xargs -0 -r rg -n -F -e reset -e snapshot -e 'copy('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "懒初始化映射或指针需要一次性发布",
+      "pattern_file": "lazy_init_map_pointer_publish_once.json",
+      "grepability": "medium",
+      "path_globs": [
+        "pkg/**/*",
+        "pkg/**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "atomic.Pointer",
+        "CompareAndSwap",
+        "sync.Once",
+        "sync.Map",
+        "usedStatsInfo",
+        "mergedInputIdxToOutputIdxes"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "lazy",
+          "init",
+          "nil"
+        ],
+        [
+          "map",
+          "pointer",
+          "cache"
+        ],
+        [
+          "atomic.Pointer",
+          "CompareAndSwap",
+          "sync.Once"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "copy-on-write",
+        "clone"
+      ],
+      "first_pass_query_hint": "找懒初始化共享结构 + Once/CAS/atomic publish。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'pkg/**/*' -g 'pkg/**/*_test.go' -e atomic.Pointer -e CompareAndSwap -e sync.Once -e sync.Map -e usedStatsInfo -e mergedInputIdxToOutputIdxes <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e atomic.Pointer -e CompareAndSwap -e sync.Once -e sync.Map -e usedStatsInfo -e mergedInputIdxToOutputIdxes <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e lazy -e init -e nil -g 'pkg/**/*' -g 'pkg/**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e map -e pointer -e cache | xargs -0 -r rg -n -F -e atomic.Pointer -e CompareAndSwap -e sync.Once"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "共享摘要收集器 Reset Update 交错竞态",
+      "pattern_file": "summary_collector_Reset_Update_交错竞态.json",
+      "grepability": "medium",
+      "path_globs": [
+        "pkg/disttask/**/*",
+        "pkg/lightning/**/*",
+        "tests/realtikvtest/**/*"
+      ],
+      "grep_keywords_any": [
+        "summary",
+        "collector",
+        "Reset",
+        "Update"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "summary",
+          "collector"
+        ],
+        [
+          "Reset"
+        ],
+        [
+          "Update",
+          "collect"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "local copy",
+        "per worker collector"
+      ],
+      "first_pass_query_hint": "找同一个 summary collector 上同时出现 Reset 和 Update。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'pkg/disttask/**/*' -g 'pkg/lightning/**/*' -g 'tests/realtikvtest/**/*' -e summary -e collector -e Reset -e Update <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e summary -e collector -e Reset -e Update <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e summary -e collector -g 'pkg/disttask/**/*' -g 'pkg/lightning/**/*' -g 'tests/realtikvtest/**/*' <repo_root> | xargs -0 -r rg -l -0 -F -e Reset | xargs -0 -r rg -n -F -e Update -e collect"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "region job refcount 保护的共享 ingest data 生命周期",
+      "pattern_file": "region_job_refcount_shared_ingest_data_生命周期.json",
+      "grepability": "medium",
+      "path_globs": [
+        "pkg/lightning/**/*",
+        "pkg/ddl/ingest/**/*"
+      ],
+      "grep_keywords_any": [
+        "refcount",
+        "jobToWorkerCh",
+        "ingest data",
+        "done()",
+        "region job"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "refcount",
+          "Ref"
+        ],
+        [
+          "jobToWorkerCh",
+          "worker"
+        ],
+        [
+          "ingest",
+          "done()",
+          "cleanup"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "all jobs ref before send",
+        "batch ref first"
+      ],
+      "first_pass_query_hint": "找 refcount + jobToWorkerCh + ingest cleanup 生命周期问题。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'pkg/lightning/**/*' -g 'pkg/ddl/ingest/**/*' -e refcount -e jobToWorkerCh -e 'ingest data' -e 'done()' -e 'region job' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e refcount -e jobToWorkerCh -e 'ingest data' -e 'done()' -e 'region job' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e refcount -e Ref -g 'pkg/lightning/**/*' -g 'pkg/ddl/ingest/**/*' <repo_root> | xargs -0 -r rg -l -0 -F -e jobToWorkerCh -e worker | xargs -0 -r rg -n -F -e ingest -e 'done()' -e cleanup"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "有状态 mock encoder 被多个 processor 误复用",
+      "pattern_file": "stateful_mock_encoder_processor_local_state_误复用.json",
+      "grepability": "high",
+      "path_globs": [
+        "pkg/lightning/**/*_test.go",
+        "pkg/importer/**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "NewEncoder",
+        "mock",
+        "processor",
+        "DoAndReturn",
+        "same encoder"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "NewEncoder"
+        ],
+        [
+          "processor",
+          "chunk processor"
+        ],
+        [
+          "mock",
+          "DoAndReturn"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "return new",
+        "new instance",
+        "clone"
+      ],
+      "first_pass_query_hint": "找 NewEncoder + processor + 返回同一 stateful 实例。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'pkg/lightning/**/*_test.go' -g 'pkg/importer/**/*_test.go' -e NewEncoder -e mock -e processor -e DoAndReturn -e 'same encoder' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e NewEncoder -e mock -e processor -e DoAndReturn -e 'same encoder' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e NewEncoder -g 'pkg/lightning/**/*_test.go' -g 'pkg/importer/**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e processor -e 'chunk processor' | xargs -0 -r rg -n -F -e mock -e DoAndReturn"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "DDL callback 目标 job 过滤与单次触发控制",
+      "pattern_file": "DDL_callback_目标_job_过滤_once_控制.json",
+      "grepability": "high",
+      "path_globs": [
+        "pkg/ddl/**/*_test.go",
+        "pkg/ddl/**/*"
+      ],
+      "grep_keywords_any": [
+        "ActionTruncateTable",
+        "job.Query",
+        "JobStateSynced",
+        "sync.Once",
+        "OnJobUpdated"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "SetHook",
+          "OnJobUpdated",
+          "afterWaitSchemaSynced"
+        ],
+        [
+          "ActionTruncateTable",
+          "job.Query",
+          "JobStateSynced"
+        ],
+        [
+          "once",
+          "sync.Once",
+          "only once"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "mutex",
+        "atomic"
+      ],
+      "first_pass_query_hint": "找 DDL callback + job.Query/ActionTruncateTable/JobStateSynced + once。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先按路径优先范围做第一跳粗召回，快速看到当前版本目录结构下的候选位置。",
+          "command": "rg -n -F -g 'pkg/ddl/**/*_test.go' -g 'pkg/ddl/**/*' -e ActionTruncateTable -e job.Query -e JobStateSynced -e sync.Once -e OnJobUpdated <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录重构、历史版本路径不同，或 broad_recall 结果过少时，去掉路径限制做全仓兜底召回。",
+          "command": "rg -n -F -e ActionTruncateTable -e job.Query -e JobStateSynced -e sync.Once -e OnJobUpdated <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
+          "command": "rg -l -0 -F -e SetHook -e OnJobUpdated -e afterWaitSchemaSynced -g 'pkg/ddl/**/*_test.go' -g 'pkg/ddl/**/*' <repo_root> | xargs -0 -r rg -l -0 -F -e ActionTruncateTable -e job.Query -e JobStateSynced | xargs -0 -r rg -n -F -e once -e sync.Once -e 'only once'"
+        }
+      ]
+    }
+  ]
+}

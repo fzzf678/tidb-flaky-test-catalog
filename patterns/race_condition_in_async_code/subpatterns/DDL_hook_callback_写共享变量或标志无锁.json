@@ -1,0 +1,87 @@
+{
+  "key": "DDL hook callback 写共享变量或标志无锁",
+  "family": "race_condition_in_async_code",
+  "summary": "测试注册 DDL hook/callback 后，在异步回调里直接写外层共享变量、标志或指针，且没有同步保护。",
+  "mechanism": "DDL hook/callback 会在 DDL worker 的异步路径里执行；如果回调直接改写测试线程也会读的共享状态，测试主线程与 callback 就会并发读写同一对象，导致 data race、断言漂移或偶发失败。",
+  "signals_required": [
+    "diff 在测试或测试 helper 中注册 DDL hook / callback，例如 `SetHook`、`OnJobUpdated`、`OnJobRunBefore`、`OnJobRunAfter` 等。",
+    "callback 内直接写外层共享可变状态，例如 `err`、`checkOK`、`isPaused`、`jobID`、`test` 指针、结果标志位或共享 struct 字段。",
+    "同一个共享状态会被测试主线程、其他 goroutine 或后续断言路径读取。",
+    "这些共享状态没有通过 `sync.Mutex`、`atomic`、channel 所有权交接或其他显式同步来保护。"
+  ],
+  "signals_optional": [
+    "callback 可能被多次触发，或会被多个不同 job/state 触发，使共享状态更容易被覆盖。",
+    "修复中出现 `mutex`、`atomic.Bool`、`atomic.Int64`、channel 交接，或把共享变量改成 callback 内局部变量。",
+    "callback 写入的是测试控制变量，直接影响主线程是否继续、是否取消 job、是否判定成功。"
+  ],
+  "negative_guards": [
+    "如果 callback 的核心问题是目标 job 过滤不精确、缺少 `once` 控制，而不是无锁共享状态写入，更接近 `DDL callback 目标 job 过滤 / once 控制`。",
+    "如果 callback 只读取不可变常量或局部副本，没有把结果回写到共享外层状态，不要命中这个子模式。",
+    "如果共享状态只在 callback 完整退出后才被读取，且退出顺序由明确的同步原语保证，应降级为 `needs_more_evidence`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是可操作性很强的结构性并发写共享状态问题。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "代码里已经有明确的 `mutex/atomic/channel` 保护，但是否覆盖全部读写点还看不清。",
+      "callback 会写外层状态，但读取路径是否与 callback 真正并发尚不明确。"
+    ]
+  },
+  "scope": [
+    "DDL 相关单测、串行集成测试、cancel/pause/resume/reorg 之类带 hook 的测试。",
+    "任何在测试里通过 hook/callback 观察 DDL 运行时状态的场景。"
+  ],
+  "fix_hints": [
+    "把 callback 与主线程共享的标志位、错误值、指针或计数改成 `mutex` / `atomic` 保护。",
+    "如果只是通知主线程，优先改成 channel 交接而不是共享可变变量。",
+    "避免让 callback 直接读写整个测试 case 对象；只传最小必要数据。"
+  ],
+  "related_subpatterns": [
+    "DDL hook callback 复用共享上下文或事务对象",
+    "DDL hook callback 复用共享测试会话执行 SQL",
+    "DDL callback 目标 job 过滤 / once 控制"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-1617",
+        "note": "DDL hook / hook 赋值与访问无锁。"
+      },
+      {
+        "case_id": "pr-1687",
+        "note": "DDL hook callback 写共享变量，无锁与测试线程并发。"
+      },
+      {
+        "case_id": "pr-1759",
+        "note": "hook 指针更新与 callback 调用并发发生。"
+      },
+      {
+        "case_id": "pr-2054",
+        "note": "callback 写共享检查标志 `checkOK` 一类变量。"
+      },
+      {
+        "case_id": "pr-30853",
+        "note": "DDL callback 直接更新共享测试变量。"
+      },
+      {
+        "case_id": "pr-37466",
+        "note": "foreign key 测试中 callback 与测试线程共享变量。"
+      },
+      {
+        "case_id": "pr-9526",
+        "note": "DDL hook 与测试线程共享 `test *testCancelJob` 指针。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-53245",
+        "note": "更像 callback 目标 job 过滤和 `once` 控制不严。"
+      },
+      {
+        "case_id": "pr-53887",
+        "note": "更像 callback 取消错 job，而不是单纯无锁共享变量写入。"
+      }
+    ]
+  }
+}

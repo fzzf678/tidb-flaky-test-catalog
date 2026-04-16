@@ -1,0 +1,62 @@
+{
+  "key": "region job refcount 保护的共享 ingest data 生命周期",
+  "family": "race_condition_in_async_code",
+  "summary": "共享 ingest data 的生命周期依赖 region job refcount，但 job 在 refcount 补齐前就被发布到 worker。",
+  "mechanism": "如果共享 ingest data 需要靠多个 region job 的 refcount 保活，而某些 job 在所有引用计数补齐之前就先被送进 worker 执行，快完成的 job 可能提前把 refcount 打到 0，导致共享 ingest data 被过早清理，后续 job 观察到空数据或缺失状态，产生偶发失败。",
+  "signals_required": [
+    "diff 中存在多个 region job / worker 共享同一份 ingest data 或等价共享后端数据。",
+    "共享数据的生命周期依赖 job refcount、done/release 或类似引用计数机制。",
+    "job 在所有相关 refcount 补齐之前就被送入 `jobToWorkerCh`、队列或 worker 路径。",
+    "某个 job 可能更早完成并触发清理，从而让其他仍未完成的 job 失去共享数据。"
+  ],
+  "signals_optional": [
+    "修复中先为所有 job 补齐 refcount，再统一发布给 worker。",
+    "问题常被空 job、快路径 job 或轻量 job 提前完成放大。",
+    "失败表现为后续 job 观察到共享 ingest data 缺失、被清空或状态不一致。"
+  ],
+  "negative_guards": [
+    "如果问题只是 `WaitGroup.Add(1)` 晚于任务投递，而没有共享 ingest data 生命周期，不要命中这个子模式。",
+    "如果共享的是全局 singleton backend 使用权，而不是一组 job 共享的数据保活，更接近全局资源门控子模式。",
+    "如果每个 job 都持有自己的独立数据副本，不要命中这个子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是共享后端数据生命周期被过早清理的强信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "refcount 是否真的保护共享 ingest data 还不够明确。",
+      "job 虽然先发布了，但没有证据表明它可能先完成并触发清理。"
+    ]
+  },
+  "scope": [
+    "lightning local backend、region job、ingest/import、共享后端数据的 worker pool 测试。",
+    "任何共享数据保活依赖多个 job refcount 的场景。"
+  ],
+  "fix_hints": [
+    "先为所有 job 补齐 refcount，再发布给 worker。",
+    "把共享 ingest data 的释放条件和 job 发布步骤解耦，避免快任务先清理。",
+    "对空 job / 快完成 job 单独做生命周期保护。"
+  ],
+  "related_subpatterns": [
+    "WaitGroup Add Done 顺序竞态",
+    "多个 cop iterator 共享可变 KV request RequestBuilder"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-64767",
+        "note": "必须先给所有 region job 补齐 refcount，再发到 `jobToWorkerCh`，避免共享 ingest data 被过早清理。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-43210",
+        "note": "更像全局 ingest backend 使用权竞争 / 门控。"
+      },
+      {
+        "case_id": "pr-66703",
+        "note": "更像一般性的 `WaitGroup Add/Done` 顺序竞态。"
+      }
+    ]
+  }
+}

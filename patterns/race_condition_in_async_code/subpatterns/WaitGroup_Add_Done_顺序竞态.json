@@ -1,0 +1,58 @@
+{
+  "key": "WaitGroup Add Done 顺序竞态",
+  "family": "race_condition_in_async_code",
+  "summary": "任务已经投递或 goroutine 已可能开始执行时，`WaitGroup.Add(1)` 才发生，导致 `Done()` 抢先于 `Add()`。",
+  "mechanism": "`WaitGroup` 需要在任务真正可执行之前完成 `Add(1)`；如果代码先把任务送进 channel、先启动 worker，或者让 worker 有机会先跑到 `Done()`，再去 `Add(1)`，就会出现计数为负、提前收尾或偶发 hang 的顺序竞态。",
+  "signals_required": [
+    "diff 使用 `WaitGroup` 跟踪 worker / job 完成情况。",
+    "任务投递、goroutine 启动或 worker 可执行时机发生在 `wg.Add(1)` 之前。",
+    "worker 路径里会调用对应的 `Done()`。",
+    "代码没有保证 `Add(1)` 在任务对外可见之前完成。"
+  ],
+  "signals_optional": [
+    "修复中把 `Add(1)` 前移到 `go` / channel send / job publish 之前。",
+    "失败表现为负计数 panic、偶发提前退出、`Wait()` 永远等不到或错误归零。",
+    "场景经常出现在 job 分发、worker pool、后台 task executor。"
+  ],
+  "negative_guards": [
+    "如果问题是 `Add` 与 `Wait` 在 shutdown 阶段并发，而不是任务投递顺序问题，更接近 lifecycle / shutdown sequencing。",
+    "如果 `Add(1)` 已经稳定地发生在任务暴露给 worker 之前，不要命中这个子模式。",
+    "如果 worker 根本不负责对该 `WaitGroup` 调 `Done()`，不要命中这个子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是 Go 并发代码里非常明确的顺序错误。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "worker 是否可能在 `Add(1)` 之前真正开始执行还看不清。",
+      "代码虽然顺序可疑，但任务暴露时机被其他同步原语挡住了。"
+    ]
+  },
+  "scope": [
+    "job 分发、worker pool、后台 task executor、异步调度测试。",
+    "任何把任务放入 channel / 队列并用 `WaitGroup` 跟踪收尾的代码。"
+  ],
+  "fix_hints": [
+    "先 `wg.Add(1)`，再把任务送入 channel 或启动 goroutine。",
+    "如果任务可能被多个路径接管，把 `Add` 和任务发布放进同一个原子化步骤。",
+    "避免让 worker 在收到任务前就有机会调用 `Done()`。"
+  ],
+  "related_subpatterns": [
+    "goroutine 闭包复用外层错误变量",
+    "goroutine 闭包捕获循环变量"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-66703",
+        "note": "`jobWg.Add(1)` 必须发生在 `jobInCh <- job` 之前。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-42129",
+        "note": "更像 shutdown 期间 `WaitGroup.Add` 与 `Wait` 并发。"
+      }
+    ]
+  }
+}

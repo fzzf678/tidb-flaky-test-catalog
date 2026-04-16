@@ -1,0 +1,66 @@
+{
+  "key": "同一 session 的上一个 RecordSet 未 Close 就执行下一条 SQL",
+  "family": "race_condition_in_async_code",
+  "summary": "同一 `session` / `TestKit` 上一个查询返回的 `RecordSet` 尚未关闭，就继续执行下一条 SQL 或 DDL。",
+  "mechanism": "`RecordSet` 往往仍持有 session 级执行状态、资源清理逻辑或后台扫描路径；如果同一会话在旧 `RecordSet` 尚未 `Close` 时继续执行下一条 SQL，就会让 cleanup、后续执行、schema 变化或内部状态重置发生交叉，导致竞态和偶发失败。",
+  "signals_required": [
+    "diff 中同一 `session`、`TestKit` 或等价会话对象先获得一个 `RecordSet`。",
+    "旧 `RecordSet` 在继续执行下一条 SQL / DDL / admin 语句前没有显式 `Close`。",
+    "后续语句仍复用同一个会话对象，而不是新建会话。",
+    "旧 `RecordSet` 的 cleanup、读取或依赖资源仍可能在后续语句执行时存在。"
+  ],
+  "signals_optional": [
+    "后续操作涉及 schema 变更、prepared statement、admin pause/resume 或其他会修改会话状态的行为。",
+    "修复中显式补上 `rs.Close()`，或把后续动作挪到新的 session 上执行。",
+    "问题在测试里表现为 session 重入、cleanup 竞争、背景路径与新语句交错。"
+  ],
+  "negative_guards": [
+    "如果共享的是 callback 与主线程之间的 `RecordSet/jobID/err`，更接近 DDL callback 共享测试状态子模式。",
+    "如果 `RecordSet` 已经被完整消费并显式 `Close`，不要命中这个子模式。",
+    "如果后续语句使用的是新建 session，而不是同一会话重入，不要命中这个子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是非常具体的同一会话重入形态。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清旧 `RecordSet` 是否已经被关闭或完全消费。",
+      "后续动作虽然复用了 helper 名称，但底层是否仍是同一个 session 不明确。"
+    ]
+  },
+  "scope": [
+    "prepared statement、admin 命令、schema 变更测试。",
+    "任何手动拿 `RecordSet` 后又在同一 session 上继续执行 SQL 的测试代码。"
+  ],
+  "fix_hints": [
+    "在复用同一 session 前显式 `Close` 旧 `RecordSet`。",
+    "如果必须保留旧结果集，给后续 SQL 新建独立 session。",
+    "避免在 callback 或辅助 goroutine 中持有主线程 session 的活跃 `RecordSet`。"
+  ],
+  "related_subpatterns": [
+    "DDL hook callback 复用共享测试会话执行 SQL",
+    "BindHandle 单例 sctx 并发复用"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-49348",
+        "note": "同一 session 的旧 `RecordSet` 未 Close 就继续执行下一条 SQL。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-35134",
+        "note": "更像 `RecordSet` close / lifecycle 问题，而不是明确的同一 session 重入。"
+      },
+      {
+        "case_id": "pr-44438",
+        "note": "更像 DDL callback 与主线程共享 `RecordSet/jobID/err`。"
+      },
+      {
+        "case_id": "pr-44783",
+        "note": "同样更接近 callback 共享命令结果状态。"
+      }
+    ]
+  }
+}
