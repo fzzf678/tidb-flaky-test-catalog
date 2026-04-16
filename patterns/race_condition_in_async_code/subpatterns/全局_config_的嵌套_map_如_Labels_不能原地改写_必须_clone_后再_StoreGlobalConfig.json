@@ -1,0 +1,66 @@
+{
+  "key": "全局 config 的嵌套 map（如 `Labels`）不能原地改写，必须 clone 后再 `StoreGlobalConfig`",
+  "family": "race_condition_in_async_code",
+  "summary": "即使最外层 `cfg := *config.GetGlobalConfig()` 已经复制了一层，里面的 `map` 仍然是共享引用。像 `cfg.Labels` 这样的 nested map 不能继续原地改，必须先 clone map，再把 clone 后的新 map 赋回并 `StoreGlobalConfig`。",
+  "mechanism": "这类 bug 很迷惑，因为开发者经常以为 `cfg := *GetGlobalConfig()` 已经完成隔离。但对于 `map`、`slice` 这类引用字段，浅拷贝只复制 header，不会复制底层数据。于是 `cfg.Labels[k] = v` 实际还在改共享的旧 map，会和读路径并发冲突。稳定修法是：先把旧 `Labels` 内容拷到一个新 map，再把新增/覆盖后的 map 赋给 `cfg.Labels`，最后 `StoreGlobalConfig(&cfg)`。",
+  "signals_required": [
+    "问题对象是 global config 里的 nested `map` / `slice` / 引用字段，强锚点通常是 `cfg := *config.GetGlobalConfig()` 后继续改 `cfg.Labels`。",
+    "旧代码在浅拷贝 config 后，仍然对共享 nested map 原地 `cfg.Labels[k] = v` 或等价写入。",
+    "修复显式 clone 旧 map 内容到新 map，再把新 map 赋回 `cfg.Labels` 后 `StoreGlobalConfig`。",
+    "补丁或注释里明确提到 `data race`、`must not be changed`、`Labels`。"
+  ],
+  "signals_optional": [
+    "高信号注释包括 `Be careful of data race. The key & value of cfg.Labels must not be changed.`。",
+    "高信号测试包括 `TestSetLabelsConcurrentWithGetLabel`、并发 label update 与 config read。",
+    "常见代码形态是 `for k, v := range cfg.Labels { labels[k] = v }` 然后 `cfg.Labels = labels`。"
+  ],
+  "negative_guards": [
+    "如果问题对象只是单个标量字段，不要并到这里。",
+    "如果问题是整个 global config struct 原地改写而没有 nested map 结构，可归入 `UpdateGlobal/StoreGlobalConfig` 子模式。",
+    "如果问题对象是普通 cache/map 而不是 global config nested map，不要并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判为 flaky risk；`浅拷贝 config + nested map 原地改写 + clone map 后 StoreGlobalConfig` 是非常强的机械模式。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然看到了 `Labels`，但不能确认旧 map 是否与全局 config 共享底层数据。",
+      "补丁只是在测试里调整了 goroutine 停止条件，没有修正 nested map 的 clone/publish 逻辑。"
+    ]
+  },
+  "scope": [
+    "`server/http_handler.go`、config update handler、所有更新全局 labels/tags/options map 的路径。",
+    "任何 shallow-copy config 后继续写 nested map 的代码。"
+  ],
+  "fix_hints": [
+    "不要以为 `cfg := *GetGlobalConfig()` 就能安全改 nested map。",
+    "对 `map` / `slice` 字段要单独 clone，修改 clone 后的新对象，再 `StoreGlobalConfig`。",
+    "如果测试还要并发读取 config，务必用 clone 后的新 map 做 publish。"
+  ],
+  "related_subpatterns": [
+    "测试更新全局 config 必须 `UpdateGlobal` / `StoreGlobalConfig`，并配对 `RestoreFunc`",
+    "后台 refresh/reload 更新共享 cache 时先 clone 副本再 atomic swap 发布"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-45563",
+        "note": "`cfg := *GetGlobalConfig()` 后不能继续原地改 `cfg.Labels`；修复先把旧 labels 拷到新 map，再 `cfg.Labels = labels` 后 `StoreGlobalConfig`。"
+      },
+      {
+        "case_id": "pr-45579",
+        "note": "在 `TestSetLabelsConcurrentWithGetLabel` 回归里继续收紧这条模式，并把测试本身也迁到更稳的 config update 方式。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-17964",
+        "note": "这条是 global config struct 的通用 update/restore 主模式，不强调 nested map alias。"
+      },
+      {
+        "case_id": "pr-21415",
+        "note": "这条是单个标量字段 copy + `StoreGlobalConfig`，没有 nested map alias。"
+      }
+    ]
+  }
+}

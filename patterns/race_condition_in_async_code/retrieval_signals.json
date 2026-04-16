@@ -1,7 +1,7 @@
 {
   "family": "race_condition_in_async_code",
   "kind": "retrieval_signals",
-  "version": "v26",
+  "version": "v37",
   "description": "Repository-scan retrieval hints for the 40 race_condition_in_async_code subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
   "defaults": {
     "purpose": "candidate_retrieval_only",
@@ -2163,19 +2163,19 @@
         {
           "name": "broad_recall",
           "intent": "先在 2PC/backoff/commit detail 相关文件里粗召回并行 batch + Backoffer + 统计字段锚点。",
-                  "command": "cd <repo_root> && rg -n -F -g 'store/tikv/2pc.go' -g 'store/tikv/backoff.go' -g 'pkg/store/tikv/2pc.go' -g 'pkg/store/tikv/backoff.go' -g 'util/execdetails/execdetails.go' -g 'pkg/util/execdetails/execdetails.go' -e 'doActionOnBatches(' -e actionCommit -e batches -e Backoffer -e singleBatchBackoffer -e 'Clone()' -e 'Fork()' -e totalSleep -e CommitBackoffTime -e BackoffTypes -e 'atomic.AddInt64' -e 'go func' -e 'concurrent goroutines' -e 'same backoffer' ."
-                },
-                {
-                  "name": "fallback_no_path",
-                  "intent": "跨版本目录迁移或 2PC/backoff 文件路径变化时，去掉路径限制做全仓兜底召回。",
-                  "command": "cd <repo_root> && rg -n -F -e 'doActionOnBatches(' -e actionCommit -e batches -e Backoffer -e singleBatchBackoffer -e 'Clone()' -e 'Fork()' -e totalSleep -e CommitBackoffTime -e BackoffTypes -e 'atomic.AddInt64' -e 'go func' -e 'concurrent goroutines' -e 'same backoffer' ."
-                },
-                {
-                  "name": "group_intersection",
-                  "intent": "按“2PC batch 主线 + singleBatchBackoffer 派生 + backoff 统计聚合”三组做交集，优先保留真正的 batch Backoffer 复用路径。",
-                  "command": "cd <repo_root> && rg -l -0 -F -e 'doActionOnBatches(' -e actionCommit -e batches -g 'store/tikv/2pc.go' -g 'store/tikv/backoff.go' -g 'pkg/store/tikv/2pc.go' -g 'pkg/store/tikv/backoff.go' -g 'util/execdetails/execdetails.go' -g 'pkg/util/execdetails/execdetails.go' . | xargs -0 -r rg -l -0 -F -e singleBatchBackoffer -e 'Clone()' -e 'Fork()' | xargs -0 -r rg -n -H -F -e 'go func' -e 'concurrent goroutines' -e 'same backoffer' -e totalSleep -e CommitBackoffTime -e BackoffTypes -e 'atomic.AddInt64'"
-                }
-              ]
+          "command": "cd <repo_root> && rg -n -F -g 'store/tikv/2pc.go' -g 'store/tikv/backoff.go' -g 'pkg/store/tikv/2pc.go' -g 'pkg/store/tikv/backoff.go' -g 'util/execdetails/execdetails.go' -g 'pkg/util/execdetails/execdetails.go' -e 'doActionOnBatches(' -e actionCommit -e batches -e Backoffer -e singleBatchBackoffer -e 'Clone()' -e 'Fork()' -e totalSleep -e CommitBackoffTime -e BackoffTypes -e 'atomic.AddInt64' -e 'go func' -e 'concurrent goroutines' -e 'same backoffer' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "跨版本目录迁移或 2PC/backoff 文件路径变化时，去掉路径限制做全仓兜底召回。",
+          "command": "cd <repo_root> && rg -n -F -e 'doActionOnBatches(' -e actionCommit -e batches -e Backoffer -e singleBatchBackoffer -e 'Clone()' -e 'Fork()' -e totalSleep -e CommitBackoffTime -e BackoffTypes -e 'atomic.AddInt64' -e 'go func' -e 'concurrent goroutines' -e 'same backoffer' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“2PC batch 主线 + singleBatchBackoffer 派生 + backoff 统计聚合”三组做交集，优先保留真正的 batch Backoffer 复用路径。",
+          "command": "cd <repo_root> && rg -l -0 -F -e 'doActionOnBatches(' -e actionCommit -e batches -g 'store/tikv/2pc.go' -g 'store/tikv/backoff.go' -g 'pkg/store/tikv/2pc.go' -g 'pkg/store/tikv/backoff.go' -g 'util/execdetails/execdetails.go' -g 'pkg/util/execdetails/execdetails.go' . | xargs -0 -r rg -l -0 -F -e singleBatchBackoffer -e 'Clone()' -e 'Fork()' | xargs -0 -r rg -n -H -F -e 'go func' -e 'concurrent goroutines' -e 'same backoffer' -e totalSleep -e CommitBackoffTime -e BackoffTypes -e 'atomic.AddInt64'"
+        }
+      ]
     },
     {
       "subpattern_key": "`IndexJoin / IndexLookupJoin / IndexLookupMergeJoin` 每个 inner worker 复制自己的 `indexRanges`",
@@ -2531,6 +2531,727 @@
           "name": "group_intersection",
           "intent": "按“ordered hash join 主线 + 重新领取 result holder + resultCh/joinChkResourceCh handoff”三组做交集，优先保留真正的 holder 误复用修复。",
           "command": "cd <repo_root> && rg -l -0 -F -e keepOuterOrder -e 'orded IndexHashJoin' -e 'ordered IndexHashJoin' -g 'executor/index_lookup_hash_join.go' -g 'executor/join_test.go' -g 'pkg/executor/index_lookup_hash_join.go' -g 'pkg/executor/join_test.go' . | xargs -0 -r rg -l -0 -F -e 'result holder' -e 'after handling a task' -e 'WITHOUT getNewJoinResult' | xargs -0 -r rg -n -H -F -e resultCh -e joinChkResourceCh -e 'has been sent to the resultCh' -e 'has been sent to the joinChkResourceCh'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "同一个 `TestKit/session` 被两个 goroutine 或后台路径并发复用",
+      "pattern_file": "同一个_TestKit_session_被两个_goroutine_或后台路径并发复用.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "pkg/ttl/**/*",
+        "pkg/executor/**/*",
+        "pkg/session/**/*",
+        "pkg/testkit/**/*",
+        "tests/**/*"
+      ],
+      "grep_keywords_any": [
+        "TestKit",
+        "testkit.NewTestKit",
+        "tk.Se",
+        "tk.Session()",
+        "sessionctx.Context",
+        "go func",
+        "runWithSystemSession",
+        "getSysSession",
+        "Using same tk in different goroutines may lead to data race",
+        "new session",
+        "TTL",
+        "testkit",
+        "misusing of testkit",
+        "two queries concurrently",
+        "concurrently",
+        "errCh"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "TestKit",
+          "testkit",
+          "tk.Se",
+          "tk.Session()",
+          "sessionctx.Context"
+        ],
+        [
+          "go func",
+          "runWithSystemSession",
+          "getSysSession",
+          "TTL",
+          "view",
+          "concurrently",
+          "errCh"
+        ],
+        [
+          "data race",
+          "same tk in different goroutines",
+          "new session",
+          "testkit.NewTestKit",
+          "misusing of testkit",
+          "two queries concurrently"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "RecordSet",
+        "rs.Close()",
+        "OnJobUpdated",
+        "SetHook"
+      ],
+      "first_pass_query_hint": "先找共享 `TestKit/session` 的测试，再确认是否存在第二条异步路径（goroutine、TTL、view build、系统 session），以及修复是否改成新建私有 session。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在测试、TTL、executor、session 等主线文件里粗召回共享 `TestKit/session` 与第二条异步路径。",
+          "command": "cd <repo_root> && rg -n -F -g '**/*_test.go' -g 'pkg/ttl/**/*' -g 'pkg/executor/**/*' -g 'pkg/session/**/*' -g 'pkg/testkit/**/*' -g 'tests/**/*' -e TestKit -e testkit -e 'testkit.NewTestKit' -e 'tk.Se' -e 'tk.Session()' -e 'sessionctx.Context' -e 'go func' -e runWithSystemSession -e getSysSession -e 'Using same tk in different goroutines may lead to data race' -e 'new session' -e TTL -e 'misusing of testkit' -e 'two queries concurrently' -e concurrently -e errCh ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先把共享 `TestKit/session` 与异步第二路径相关候选先找出来。",
+          "command": "cd <repo_root> && rg -n -F -e TestKit -e testkit -e 'testkit.NewTestKit' -e 'tk.Se' -e 'tk.Session()' -e 'sessionctx.Context' -e 'go func' -e runWithSystemSession -e getSysSession -e 'Using same tk in different goroutines may lead to data race' -e 'new session' -e TTL -e 'misusing of testkit' -e 'two queries concurrently' -e concurrently -e errCh ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“共享 TestKit/session + 第二条异步路径 + data-race/new-session 修复语义”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e TestKit -e testkit -e 'tk.Se' -e 'tk.Session()' -e 'sessionctx.Context' -g '**/*_test.go' -g 'pkg/ttl/**/*' -g 'pkg/executor/**/*' -g 'pkg/session/**/*' -g 'pkg/testkit/**/*' -g 'tests/**/*' . | xargs -0 -r rg -l -0 -F -e 'go func' -e runWithSystemSession -e getSysSession -e TTL -e view -e concurrently -e errCh | xargs -0 -r rg -n -H -F -e 'data race' -e 'same tk in different goroutines' -e 'new session' -e 'testkit.NewTestKit' -e 'misusing of testkit' -e 'two queries concurrently'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "共享 `SessionVars/StmtCtx` 字段 save-and-restore 临时改写，应改成显式参数传递",
+      "pattern_file": "共享_SessionVars_StmtCtx_字段_save_restore_临时改写_应改成显式参数传递.json",
+      "grepability": "medium",
+      "path_globs": [
+        "pkg/session/**/*",
+        "pkg/sessionctx/**/*",
+        "pkg/types/**/*",
+        "pkg/executor/**/*",
+        "pkg/util/**/*"
+      ],
+      "grep_keywords_any": [
+        "SessionVars",
+        "StmtCtx",
+        "InRestrictedSQL",
+        "timeZone",
+        "origin :=",
+        "old :=",
+        "defer func()",
+        "explicitTz",
+        "ParseTime(",
+        "ignoreClientCharsetAndCollation",
+        "sessionVars",
+        "s.sessionVars.InRestrictedSQL",
+        "forceUTF8SQL"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "SessionVars",
+          "sessionVars",
+          "StmtCtx",
+          "InRestrictedSQL",
+          "timeZone"
+        ],
+        [
+          "origin :=",
+          "old :=",
+          "save",
+          "restore",
+          "defer func()"
+        ],
+        [
+          "explicitTz",
+          "ParseTime(",
+          "ignoreClientCharsetAndCollation",
+          "forceUTF8SQL",
+          "parameter"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "SQLDigest",
+        "GetPlanDigest",
+        "ProcessInfo",
+        "GenLogFields"
+      ],
+      "first_pass_query_hint": "先找共享 `SessionVars/StmtCtx` 字段的 save-and-restore 临时改写，再确认修复是否改成把值提成显式参数，而不是继续侧写共享上下文。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 session / stmtctx / types 等主线粗召回 save-and-restore 结构与显式参数修法。",
+          "command": "cd <repo_root> && rg -n -F -g 'pkg/session/**/*' -g 'pkg/sessionctx/**/*' -g 'pkg/types/**/*' -g 'pkg/executor/**/*' -g 'pkg/util/**/*' -e SessionVars -e sessionVars -e StmtCtx -e InRestrictedSQL -e 's.sessionVars.InRestrictedSQL' -e timeZone -e 'origin :=' -e 'old :=' -e 'defer func()' -e explicitTz -e 'ParseTime(' -e ignoreClientCharsetAndCollation -e forceUTF8SQL ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找共享上下文字段 save-and-restore 的结构性信号。",
+          "command": "cd <repo_root> && rg -n -F -e SessionVars -e sessionVars -e StmtCtx -e InRestrictedSQL -e 's.sessionVars.InRestrictedSQL' -e timeZone -e 'origin :=' -e 'old :=' -e 'defer func()' -e explicitTz -e 'ParseTime(' -e ignoreClientCharsetAndCollation -e forceUTF8SQL ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“共享 SessionVars/StmtCtx 字段 + save/restore 模式 + 显式参数修法”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e SessionVars -e sessionVars -e StmtCtx -e InRestrictedSQL -e timeZone -g 'pkg/session/**/*' -g 'pkg/sessionctx/**/*' -g 'pkg/types/**/*' -g 'pkg/executor/**/*' -g 'pkg/util/**/*' . | xargs -0 -r rg -l -0 -F -e 'origin :=' -e 'old :=' -e save -e restore -e 'defer func()' | xargs -0 -r rg -n -H -F -e explicitTz -e 'ParseTime(' -e ignoreClientCharsetAndCollation -e forceUTF8SQL -e parameter"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "异步 resource tag / TopSQL 回调直接读取共享 `StmtCtx` 的 `SQLDigest/planDigest`，应先取局部快照",
+      "pattern_file": "异步_resource_tag_TopSQL_回调直接读取共享_StmtCtx_SQLDigest_planDigest_应先取局部快照.json",
+      "grepability": "high",
+      "path_globs": [
+        "pkg/sessionctx/**/*",
+        "pkg/util/topsql/**/*",
+        "pkg/util/resourcegrouptag/**/*",
+        "pkg/executor/**/*"
+      ],
+      "grep_keywords_any": [
+        "GetResourceGroupTagger",
+        "GetResourceGroupTagByLabel",
+        "SQLDigest",
+        "GetPlanDigest",
+        "EncodeResourceGroupTag",
+        "callback",
+        "closure",
+        "tagger"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "GetResourceGroupTagger",
+          "GetResourceGroupTagByLabel",
+          "tagger"
+        ],
+        [
+          "SQLDigest",
+          "GetPlanDigest",
+          "EncodeResourceGroupTag"
+        ],
+        [
+          "callback",
+          "closure",
+          "return func",
+          "local digest"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "ProcessInfo",
+        "GenLogFields",
+        "COM_STMT_FETCH",
+        "origin :="
+      ],
+      "first_pass_query_hint": "先找 resource tag / TopSQL 回调入口，再确认闭包里是否直接读共享 `StmtCtx` digest 字段，以及修复是否改成先取局部 digest 快照。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 resource tag / TopSQL 主线粗召回 tagger、digest 与 callback 结构。",
+          "command": "cd <repo_root> && rg -n -F -g 'pkg/sessionctx/**/*' -g 'pkg/util/topsql/**/*' -g 'pkg/util/resourcegrouptag/**/*' -g 'pkg/executor/**/*' -e GetResourceGroupTagger -e GetResourceGroupTagByLabel -e SQLDigest -e GetPlanDigest -e EncodeResourceGroupTag -e callback -e closure -e tagger ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找异步 callback 直接读共享 digest 的候选。",
+          "command": "cd <repo_root> && rg -n -F -e GetResourceGroupTagger -e GetResourceGroupTagByLabel -e SQLDigest -e GetPlanDigest -e EncodeResourceGroupTag -e callback -e closure -e tagger ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“resource tag/TopSQL 回调入口 + digest 字段 + 闭包/局部快照语义”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e GetResourceGroupTagger -e GetResourceGroupTagByLabel -e tagger -g 'pkg/sessionctx/**/*' -g 'pkg/util/topsql/**/*' -g 'pkg/util/resourcegrouptag/**/*' -g 'pkg/executor/**/*' . | xargs -0 -r rg -l -0 -F -e SQLDigest -e GetPlanDigest -e EncodeResourceGroupTag | xargs -0 -r rg -n -H -F -e callback -e closure -e 'return func' -e 'local digest'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`cursor fetch` 期间不得复用 cached `StatementContext`；后台 coprocessor 仍持有旧 `memtracker`",
+      "pattern_file": "cursor_fetch_期间不得复用_cached_StatementContext_后台_coprocessor_仍持有旧_memtracker.json",
+      "grepability": "high",
+      "path_globs": [
+        "server/**/*",
+        "pkg/server/**/*",
+        "executor/**/*",
+        "pkg/executor/**/*"
+      ],
+      "grep_keywords_any": [
+        "COM_STMT_FETCH",
+        "cursor",
+        "StatementContext",
+        "ResetContextOfStmt",
+        "memtracker",
+        "ServerStatusCursorExists",
+        "coprocessor"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "COM_STMT_FETCH",
+          "cursor",
+          "ServerStatusCursorExists"
+        ],
+        [
+          "StatementContext",
+          "ResetContextOfStmt",
+          "stmtctx"
+        ],
+        [
+          "memtracker",
+          "coprocessor",
+          "background"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "ProcessInfo",
+        "GenLogFields",
+        "SQLDigest",
+        "GetPlanDigest"
+      ],
+      "first_pass_query_hint": "先找 `COM_STMT_FETCH` / cursor 主线，再确认是否复用了 cached `StatementContext`，以及后台 coprocessor 是否还持有旧 `memtracker`。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 server / executor 主线粗召回 cursor fetch、stmt ctx 与 memtracker 信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'server/**/*' -g 'pkg/server/**/*' -g 'executor/**/*' -g 'pkg/executor/**/*' -e COM_STMT_FETCH -e cursor -e StatementContext -e ResetContextOfStmt -e memtracker -e ServerStatusCursorExists -e coprocessor ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找 cursor fetch 期间复用 cached stmt ctx 的候选。",
+          "command": "cd <repo_root> && rg -n -F -e COM_STMT_FETCH -e cursor -e StatementContext -e ResetContextOfStmt -e memtracker -e ServerStatusCursorExists -e coprocessor ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“cursor fetch 主线 + cached StatementContext + memtracker/cop”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e COM_STMT_FETCH -e cursor -e ServerStatusCursorExists -g 'server/**/*' -g 'pkg/server/**/*' -g 'executor/**/*' -g 'pkg/executor/**/*' . | xargs -0 -r rg -l -0 -F -e StatementContext -e ResetContextOfStmt -e stmtctx | xargs -0 -r rg -n -H -F -e memtracker -e coprocessor -e background"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`ProcessInfo/GenLogFields` 不能直接引用共享 `StmtCtx.TableIDs/IndexNames`；应在 `SetProcessInfo` 时复制快照",
+      "pattern_file": "ProcessInfo_GenLogFields_不能直接引用共享_StmtCtx_TableIDs_IndexNames_应在_SetProcessInfo_时复制快照.json",
+      "grepability": "high",
+      "path_globs": [
+        "server/**/*",
+        "pkg/server/**/*",
+        "pkg/session/**/*",
+        "pkg/util/**/*"
+      ],
+      "grep_keywords_any": [
+        "SetProcessInfo",
+        "ProcessInfo",
+        "GenLogFields",
+        "TableIDs",
+        "IndexNames",
+        "StmtCtx",
+        "ShowProcess"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "SetProcessInfo",
+          "ProcessInfo",
+          "GenLogFields",
+          "ShowProcess"
+        ],
+        [
+          "TableIDs",
+          "IndexNames"
+        ],
+        [
+          "StmtCtx",
+          "append(",
+          "copy",
+          "snapshot"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "COM_STMT_FETCH",
+        "memtracker",
+        "SQLDigest",
+        "GetPlanDigest"
+      ],
+      "first_pass_query_hint": "先找 `ProcessInfo/GenLogFields` 主线，再确认是否直接读共享 `StmtCtx.TableIDs/IndexNames`，以及修复是否改成在 `SetProcessInfo` 时复制切片快照。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 process info / logging 主线粗召回 `TableIDs/IndexNames` 与快照复制信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'server/**/*' -g 'pkg/server/**/*' -g 'pkg/session/**/*' -g 'pkg/util/**/*' -e SetProcessInfo -e ProcessInfo -e GenLogFields -e TableIDs -e IndexNames -e StmtCtx -e ShowProcess ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找 process info / logging 直接引用共享 stmt ctx 切片的候选。",
+          "command": "cd <repo_root> && rg -n -F -e SetProcessInfo -e ProcessInfo -e GenLogFields -e TableIDs -e IndexNames -e StmtCtx -e ShowProcess ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“ProcessInfo/logging 主线 + TableIDs/IndexNames + snapshot copy 语义”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e SetProcessInfo -e ProcessInfo -e GenLogFields -e ShowProcess -g 'server/**/*' -g 'pkg/server/**/*' -g 'pkg/session/**/*' -g 'pkg/util/**/*' . | xargs -0 -r rg -l -0 -F -e TableIDs -e IndexNames | xargs -0 -r rg -n -H -F -e StmtCtx -e 'append(' -e copy -e snapshot"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`SysVar` 模板对象不能共享可变 `Value`；读取方 deep copy，写入方重新注册新对象",
+      "pattern_file": "SysVar_模板对象不能共享可变_Value_读取方_deep_copy_写入方重新注册新对象.json",
+      "grepability": "high",
+      "path_globs": [
+        "sessionctx/variable/**/*",
+        "pkg/sessionctx/variable/**/*"
+      ],
+      "grep_keywords_any": [
+        "SysVar",
+        "GetSysVar",
+        "GetSysVars",
+        "SetSysVar",
+        "RegisterSysVar",
+        "Clone()",
+        "deep copy",
+        ".Value"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "SysVar",
+          "GetSysVar",
+          "GetSysVars",
+          "SetSysVar",
+          "RegisterSysVar"
+        ],
+        [
+          "Clone()",
+          "deep copy",
+          "clone"
+        ],
+        [
+          ".Value",
+          "Value:",
+          "new SysVar",
+          "RegisterSysVar"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "StoreGlobalConfig",
+        "Labels",
+        "atomic."
+      ],
+      "first_pass_query_hint": "先找 system variable registry / `SysVar` 模板对象，再确认问题是否是共享模板对象里的可变 `Value`，以及修复是否改成 deep copy 或重新注册新对象。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 system variable 主线粗召回 `SysVar`、clone 与重新注册相关信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'sessionctx/variable/**/*' -g 'pkg/sessionctx/variable/**/*' -e SysVar -e GetSysVar -e GetSysVars -e SetSysVar -e RegisterSysVar -e 'Clone()' -e 'deep copy' -e '.Value' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找共享 `SysVar` 模板对象的可变字段。",
+          "command": "cd <repo_root> && rg -n -F -e SysVar -e GetSysVar -e GetSysVars -e SetSysVar -e RegisterSysVar -e 'Clone()' -e 'deep copy' -e '.Value' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“SysVar/registry 主线 + deep copy/clone + Value/重新注册语义”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e SysVar -e GetSysVar -e GetSysVars -e SetSysVar -e RegisterSysVar -g 'sessionctx/variable/**/*' -g 'pkg/sessionctx/variable/**/*' . | xargs -0 -r rg -l -0 -F -e 'Clone()' -e 'deep copy' -e clone | xargs -0 -r rg -n -H -F -e '.Value' -e 'new SysVar' -e RegisterSysVar"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "后台 refresh/reload 更新共享 cache 时先 clone 副本再 atomic swap 发布",
+      "pattern_file": "后台_refresh_reload_更新共享_cache_时先_clone_副本再_atomic_swap_发布.json",
+      "grepability": "medium",
+      "path_globs": [
+        "privilege/**/*",
+        "pkg/privilege/**/*",
+        "bindinfo/**/*",
+        "pkg/bindinfo/**/*"
+      ],
+      "grep_keywords_any": [
+        "refresh",
+        "reload",
+        "cache",
+        "clone",
+        "copy",
+        "atomic.Value",
+        "Store(",
+        "swap",
+        "bind cache",
+        "privilege cache"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "refresh",
+          "reload",
+          "update",
+          "bind cache",
+          "privilege"
+        ],
+        [
+          "cache",
+          "handle",
+          "snapshot"
+        ],
+        [
+          "clone",
+          "copy",
+          "atomic.Value",
+          "Store(",
+          "swap"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "statsCache",
+        "version",
+        "UpdateGlobal",
+        "Labels"
+      ],
+      "first_pass_query_hint": "先找后台 refresh/reload 主线，再确认共享 cache 是否通过 clone 副本后再 `atomic.Value` / swap 发布，而不是原地改共享对象。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 privilege / bind cache 主线粗召回 refresh/reload、clone 与 atomic publish 信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'privilege/**/*' -g 'pkg/privilege/**/*' -g 'bindinfo/**/*' -g 'pkg/bindinfo/**/*' -e refresh -e reload -e cache -e clone -e copy -e 'atomic.Value' -e 'Store(' -e swap -e 'bind cache' -e 'privilege cache' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找后台 refresh/reload 的 clone-and-swap 发布。",
+          "command": "cd <repo_root> && rg -n -F -e refresh -e reload -e cache -e clone -e copy -e 'atomic.Value' -e 'Store(' -e swap -e 'bind cache' -e 'privilege cache' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“refresh/reload 主线 + 共享 cache 对象 + clone/atomic swap 发布”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e refresh -e reload -e update -e 'bind cache' -e privilege -g 'privilege/**/*' -g 'pkg/privilege/**/*' -g 'bindinfo/**/*' -g 'pkg/bindinfo/**/*' . | xargs -0 -r rg -l -0 -F -e cache -e handle -e snapshot | xargs -0 -r rg -n -H -F -e clone -e copy -e 'atomic.Value' -e 'Store(' -e swap"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "全局 `bool/seed` 配置开关不能裸读写；要么走 atomic accessor，要么降到 session scope",
+      "pattern_file": "全局_bool_seed_配置开关不能裸读写_要么_atomic_要么降到_session_scope.json",
+      "grepability": "high",
+      "path_globs": [
+        "config/**/*",
+        "pkg/config/**/*",
+        "sessionctx/variable/**/*",
+        "pkg/sessionctx/variable/**/*",
+        "planner/**/*",
+        "pkg/planner/**/*",
+        "executor/**/*",
+        "pkg/executor/**/*"
+      ],
+      "grep_keywords_any": [
+        "AtomicBool",
+        "atomic.Load",
+        "atomic.Store",
+        "atomic.Int32",
+        "PlanCacheEnabled",
+        "PreparedPlanCacheEnabled",
+        "PreparedPlanCacheEnabled()",
+        "EnableSlowLog",
+        "EnableCollectExecutionInfo",
+        "RandSeed",
+        "session scope"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "PlanCacheEnabled",
+          "PreparedPlanCacheEnabled",
+          "PreparedPlanCacheEnabled()",
+          "EnableSlowLog",
+          "EnableCollectExecutionInfo",
+          "RandSeed",
+          "seed"
+        ],
+        [
+          "AtomicBool",
+          "atomic.Load",
+          "atomic.Store",
+          "atomic.Int32",
+          "accessor"
+        ],
+        [
+          "session scope",
+          "SessionVars",
+          "session",
+          "SetSession"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "StoreGlobalConfig",
+        "Labels",
+        "ReplaceGlobals"
+      ],
+      "first_pass_query_hint": "先找进程级共享标量开关或 seed，再确认修复是否改成 atomic accessor，或者直接把能力降到 session scope。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 config / variable / planner / executor 主线粗召回全局标量开关、atomic 访问器与 session-scope 修法。",
+          "command": "cd <repo_root> && rg -n -F -g 'config/**/*' -g 'pkg/config/**/*' -g 'sessionctx/variable/**/*' -g 'pkg/sessionctx/variable/**/*' -g 'planner/**/*' -g 'pkg/planner/**/*' -g 'executor/**/*' -g 'pkg/executor/**/*' -e AtomicBool -e 'atomic.Load' -e 'atomic.Store' -e 'atomic.Int32' -e PlanCacheEnabled -e PreparedPlanCacheEnabled -e 'PreparedPlanCacheEnabled()' -e EnableSlowLog -e EnableCollectExecutionInfo -e RandSeed -e 'session scope' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找全局标量开关 / seed 的 atomic 或 session-scope 修法。",
+          "command": "cd <repo_root> && rg -n -F -e AtomicBool -e 'atomic.Load' -e 'atomic.Store' -e 'atomic.Int32' -e PlanCacheEnabled -e PreparedPlanCacheEnabled -e 'PreparedPlanCacheEnabled()' -e EnableSlowLog -e EnableCollectExecutionInfo -e RandSeed -e 'session scope' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“全局标量开关/seed + atomic/accessor + session-scope 或 accessor 语义”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e PlanCacheEnabled -e PreparedPlanCacheEnabled -e 'PreparedPlanCacheEnabled()' -e EnableSlowLog -e EnableCollectExecutionInfo -e RandSeed -e seed -g 'config/**/*' -g 'pkg/config/**/*' -g 'sessionctx/variable/**/*' -g 'pkg/sessionctx/variable/**/*' -g 'planner/**/*' -g 'pkg/planner/**/*' -g 'executor/**/*' -g 'pkg/executor/**/*' . | xargs -0 -r rg -l -0 -F -e AtomicBool -e 'atomic.Load' -e 'atomic.Store' -e 'atomic.Int32' -e accessor | xargs -0 -r rg -n -H -F -e 'session scope' -e SessionVars -e session -e SetSession -e accessor"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "测试更新全局 config 必须 `UpdateGlobal` / `StoreGlobalConfig`，并配对 `RestoreFunc`",
+      "pattern_file": "测试更新全局_config_必须_UpdateGlobal_StoreGlobalConfig_并配对_RestoreFunc.json",
+      "grepability": "high",
+      "path_globs": [
+        "config/**/*",
+        "pkg/config/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "GetGlobalConfig",
+        "UpdateGlobal",
+        "StoreGlobalConfig",
+        "RestoreFunc",
+        "newConfig := *oldConfig",
+        "restore"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "GetGlobalConfig",
+          "UpdateGlobal",
+          "StoreGlobalConfig"
+        ],
+        [
+          "RestoreFunc",
+          "restore",
+          "oldConfig"
+        ],
+        [
+          "test",
+          "newConfig := *oldConfig",
+          "config"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "Labels",
+        "AtomicBool",
+        "ReplaceGlobals"
+      ],
+      "first_pass_query_hint": "先找测试里改全局 config 的代码，再确认是否用了 `UpdateGlobal/StoreGlobalConfig` 以及配对的 `RestoreFunc`，而不是原地改共享对象。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 config 与测试主线粗召回 `UpdateGlobal/StoreGlobalConfig/RestoreFunc` 相关信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'config/**/*' -g 'pkg/config/**/*' -g '**/*_test.go' -e GetGlobalConfig -e UpdateGlobal -e StoreGlobalConfig -e RestoreFunc -e 'newConfig := *oldConfig' -e restore ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找测试对 global config 的 clone/store/restore 更新。",
+          "command": "cd <repo_root> && rg -n -F -e GetGlobalConfig -e UpdateGlobal -e StoreGlobalConfig -e RestoreFunc -e 'newConfig := *oldConfig' -e restore ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“global config 入口 + restore 配对 + test/newConfig 语义”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e GetGlobalConfig -e UpdateGlobal -e StoreGlobalConfig -g 'config/**/*' -g 'pkg/config/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e RestoreFunc -e restore -e oldConfig | xargs -0 -r rg -n -H -F -e test -e 'newConfig := *oldConfig' -e config"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "全局 config 的嵌套 map（如 `Labels`）不能原地改写，必须 clone 后再 `StoreGlobalConfig`",
+      "pattern_file": "全局_config_的嵌套_map_如_Labels_不能原地改写_必须_clone_后再_StoreGlobalConfig.json",
+      "grepability": "high",
+      "path_globs": [
+        "config/**/*",
+        "pkg/config/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "GetGlobalConfig",
+        "StoreGlobalConfig",
+        "Labels",
+        "map[string]string",
+        "clone",
+        "maps.Clone"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "GetGlobalConfig",
+          "StoreGlobalConfig"
+        ],
+        [
+          "Labels",
+          "map[string]string"
+        ],
+        [
+          "clone",
+          "maps.Clone",
+          "make(map[string]string)"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "RestoreFunc",
+        "AtomicBool",
+        "ReplaceGlobals"
+      ],
+      "first_pass_query_hint": "先找 global config 的 nested map（尤其 `Labels`），再确认是否在浅拷贝 config 后继续原地改 shared map，以及修复是否改成先 clone 再 `StoreGlobalConfig`。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 config 与测试主线粗召回 `Labels`、nested map 与 clone/store 信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'config/**/*' -g 'pkg/config/**/*' -g '**/*_test.go' -e GetGlobalConfig -e StoreGlobalConfig -e Labels -e 'map[string]string' -e clone -e 'maps.Clone' ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找 global config nested map 的 clone/store 修法。",
+          "command": "cd <repo_root> && rg -n -F -e GetGlobalConfig -e StoreGlobalConfig -e Labels -e 'map[string]string' -e clone -e 'maps.Clone' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“global config 入口 + Labels/nested map + clone/store 语义”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e GetGlobalConfig -e StoreGlobalConfig -g 'config/**/*' -g 'pkg/config/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e Labels -e 'map[string]string' | xargs -0 -r rg -n -H -F -e clone -e 'maps.Clone' -e 'make(map[string]string)'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "测试不要改 process-global logger；需要串行隔离或带互斥的 log capturer",
+      "pattern_file": "测试不要改_process_global_logger_需要串行隔离或带互斥的_log_capturer.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "pkg/util/logutil/**/*",
+        "pkg/executor/oomtest/**/*",
+        "tests/**/*"
+      ],
+      "grep_keywords_any": [
+        "ReplaceGlobals",
+        "global logger",
+        "log capturer",
+        "zap",
+        "sync.Mutex",
+        "sequentially",
+        "capture"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "ReplaceGlobals",
+          "global logger",
+          "logutil"
+        ],
+        [
+          "capturer",
+          "capture",
+          "hook"
+        ],
+        [
+          "sync.Mutex",
+          "sequentially",
+          "serial",
+          "test"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "StoreGlobalConfig",
+        "Labels",
+        "AtomicBool"
+      ],
+      "first_pass_query_hint": "先找测试里是否替换 process-global logger，再确认同进程还有其他并发日志路径，以及修复是否改成串行隔离或带 `sync.Mutex` 的 capturer。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在测试与 logutil 主线粗召回 global logger 替换、capturer 与串行隔离信号。",
+          "command": "cd <repo_root> && rg -n -F -g '**/*_test.go' -g 'pkg/util/logutil/**/*' -g 'pkg/executor/oomtest/**/*' -g 'tests/**/*' -e ReplaceGlobals -e 'global logger' -e 'log capturer' -e zap -e 'sync.Mutex' -e sequentially -e capture ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找 process-global logger 在测试里被替换的候选。",
+          "command": "cd <repo_root> && rg -n -F -e ReplaceGlobals -e 'global logger' -e 'log capturer' -e zap -e 'sync.Mutex' -e sequentially -e capture ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“global logger 主线 + capturer/hook + 串行/互斥信号”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e ReplaceGlobals -e 'global logger' -e logutil -g '**/*_test.go' -g 'pkg/util/logutil/**/*' -g 'pkg/executor/oomtest/**/*' -g 'tests/**/*' . | xargs -0 -r rg -l -0 -F -e capturer -e capture -e hook | xargs -0 -r rg -n -H -F -e 'sync.Mutex' -e sequentially -e serial -e test"
         }
       ]
     }

@@ -1,0 +1,66 @@
+{
+  "key": "后台 refresh/reload 更新共享 cache 时先 clone 副本再 atomic swap 发布",
+  "family": "race_condition_in_async_code",
+  "summary": "后台 goroutine 定期 refresh / reload 共享 cache 时，不能在读者仍在访问的旧 cache 上原地补写；应先构造新副本，再用 atomic swap / handle publish 一次性发布。",
+  "mechanism": "这类问题常见于 privilege cache、bind cache、handle cache 等长期存活的共享缓存。后台线程想增量更新时，如果直接改老 cache 的 map/slice/entry，就会和读者的并发访问撞上。稳定修法是：先 clone/copy 老 cache 到新副本，在新副本上做更新，最后用 `atomic.Value`、handle `Store` 或等价 publish 动作一次性交付给读者。读者始终只看到完整快照，不会看到“更新一半”的共享对象。",
+  "signals_required": [
+    "代码对象是长期存活、被多个 goroutine 共享读取的 cache / handle / snapshot。",
+    "补丁说明或代码能看出后台 refresh / reload / update 线程会定期更新它。",
+    "修复明确采用 clone/copy-on-write + atomic publish，而不是继续原地改旧 cache。",
+    "发布动作通过 `atomic.Value`、`Store`、新 handle 指针替换或等价一次性快照切换完成。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `atomic.Value`、`Handle`、`privHandle`、`BindCache`、`newBc`、`copy-on-write`、`load bind data race condition`。",
+    "典型语义包括 `readers see a consistent snapshot`、`thread safe handle`、`clone map/slices then swap`。",
+    "这类补丁经常伴随后台 goroutine、bootstrap loader、周期性 update loop。"
+  ],
+  "negative_guards": [
+    "如果问题对象是 `statsCache` 的版本化 snapshot publish，更接近 stats 方向已有的专属子模式。",
+    "如果只是懒初始化 map/pointer 需要 publish-once，更接近 `懒初始化映射或指针需要一次性发布`。",
+    "如果问题对象不是 cache snapshot，而是全局 config struct / nested map，不要并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判为 flaky risk；`后台 refresh cache + clone 副本 + atomic publish` 是非常稳的 cache race 修法。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看到了 `Store` 或 `atomic.Value`，但不清楚是不是在切换整个 cache 快照。",
+      "看到了 cache 更新，但没有证据表明旧 cache 同时被其他 goroutine 持续读取。"
+    ]
+  },
+  "scope": [
+    "后台 privilege/bind/cache loader、bootstrap reload、长期存活 handle/cache 主线。",
+    "任何读多写少、更新时需要切快照的共享 cache。"
+  ],
+  "fix_hints": [
+    "不要在被读者共享访问的旧 cache 上原地改 map/slice/entry。",
+    "先 clone/copy 出新副本，在副本上完成更新，再统一 publish。",
+    "把 publish 点设计成一次性切换，让读者只看到完整快照。"
+  ],
+  "related_subpatterns": [
+    "懒初始化映射或指针需要一次性发布",
+    "`Handle.statsCache` 整体 snapshot 以 version 做 copy-on-write 发布，缺少串行 store 门禁"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-2489",
+        "note": "privilege handle 改成 thread-safe handle，后台 privilege load/update 通过 `atomic.Value` 发布新的 cache snapshot。"
+      },
+      {
+        "case_id": "pr-9008",
+        "note": "bind cache 更新改成 copy-on-write：先 clone cache/map/slices，再把新 cache 一次性换上去，避免 loader 和读者并发撞车。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-13647",
+        "note": "这条更偏 stats cache 的 versioned snapshot publish，已有 stats 专属子模式。"
+      },
+      {
+        "case_id": "pr-40976",
+        "note": "这条更偏 lazy init / publish-once，而不是后台 refresh/reload 的 cache 更新。"
+      }
+    ]
+  }
+}

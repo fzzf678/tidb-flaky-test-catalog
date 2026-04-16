@@ -1,0 +1,66 @@
+{
+  "key": "共享 `SessionVars/StmtCtx` 字段 save-and-restore 临时改写，应改成显式参数传递",
+  "family": "race_condition_in_async_code",
+  "summary": "代码先暂时改写共享 `SessionVars` 或 `StmtCtx` 的某个字段，执行一段 parse/time/内部逻辑后再 restore；并发路径一旦同时读取该字段就会 data race。",
+  "mechanism": "这类问题的本质是“把共享上下文字段当作函数入参暂存”。典型写法是 `origin := ...; sharedField = ...; defer restore`，字段常见为 `SessionVars.InRestrictedSQL`、`StmtCtx.TimeZone` 等。只要这个共享上下文可能被并发路径看到，save-and-restore 就不是线程安全技巧，而是确定性的共享状态竞态。稳定修法是把这个临时语义改成显式参数，例如新增 `ignoreClientCharsetAndCollation`、`explicitTz` 等入参，彻底去掉对共享字段的临时改写。",
+  "signals_required": [
+    "补丁前存在典型 save-and-restore 结构，例如 `origin := xxx`、`sharedField = newValue`、`defer func() { sharedField = origin }()`。",
+    "被临时改写的是共享 `SessionVars` 或 `StmtCtx` 字段，而不是 goroutine 私有局部变量。",
+    "并发风险来自 parse/time/内部执行路径会在异步场景下再次读取该共享字段。",
+    "修复不是加锁，而是删掉这段临时改写，改成显式参数传递或局部上下文对象。"
+  ],
+  "signals_optional": [
+    "高信号字段包括 `InRestrictedSQL`、`TimeZone`、`StmtCtx`。",
+    "高信号函数包括 `ParseWithParamsInternal`、`ParseWithParams`、`GetTimeValue`、`ParseTime`。",
+    "高信号新增参数包括 `ignoreClientCharsetAndCollation`、`explicitTz`、`timezone argument`。"
+  ],
+  "negative_guards": [
+    "如果问题核心是异步回调频繁读取共享 `StmtCtx` 字段，但没有 save-and-restore 临时改写，更接近 `异步 resource tag / TopSQL 回调直接读取共享 StmtCtx 的 SQLDigest/planDigest，应先取局部快照`。",
+    "如果问题核心是 `ProcessInfo` / logging 之类观测路径直接引用共享 `StmtCtx` 切片，更接近对应的 snapshot 子模式。",
+    "如果共享对象是整个 `session/TestKit` 被并发复用，而不仅仅是某个字段 save-and-restore，不要并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判为 flaky risk；`origin := ...; field = ...; defer restore` 作用在共享 `SessionVars/StmtCtx` 上是非常硬的机械信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看到了 restore 结构，但改写的是局部对象或一次性新建的上下文实例。",
+      "新增参数只是普通重构，无法确认它是在消除共享字段的临时改写。"
+    ]
+  },
+  "scope": [
+    "`session/session.go`、`types/time.go`、`expression/helper.go` 这类 parse/time/context plumbing 主线。",
+    "任何通过共享 `SessionVars` / `StmtCtx` 偷传临时语义的代码。"
+  ],
+  "fix_hints": [
+    "不要用共享 `SessionVars/StmtCtx` 字段做 save-and-restore 传参。",
+    "把临时语义变成显式参数，或构造局部上下文对象只传给本次调用。",
+    "优先删掉 `origin := ...; defer restore` 这种对共享字段的副作用式写法。"
+  ],
+  "related_subpatterns": [
+    "异步 resource tag / TopSQL 回调直接读取共享 `StmtCtx` 的 `SQLDigest/planDigest`，应先取局部快照",
+    "同一个 `TestKit/session` 被两个 goroutine 或后台路径并发复用"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-31058",
+        "note": "`ParseWithParamsInternal` 通过 `origin := s.sessionVars.InRestrictedSQL` + restore 临时改写共享字段；修复改成显式布尔参数 `ignoreClientCharsetAndCollation`。"
+      },
+      {
+        "case_id": "pr-41146",
+        "note": "`getColDefaultValue` / `ParseTime` 相关链路不能再临时改 `StmtCtx.TimeZone`；修复新增 `explicitTz` 参数避免副作用。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-30296",
+        "note": "这条是异步 callback 不应反复读取共享 `SQLDigest/planDigest`，核心是先 snapshot 到局部变量，不是 save-and-restore。"
+      },
+      {
+        "case_id": "pr-45127",
+        "note": "这条是 `ProcessInfo` 对共享 `StmtCtx.TableIDs/IndexNames` 做快照复制，不是临时改写再恢复。"
+      }
+    ]
+  }
+}

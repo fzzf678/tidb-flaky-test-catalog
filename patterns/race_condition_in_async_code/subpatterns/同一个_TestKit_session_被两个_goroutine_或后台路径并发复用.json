@@ -1,0 +1,80 @@
+{
+  "key": "同一个 `TestKit/session` 被两个 goroutine 或后台路径并发复用",
+  "family": "race_condition_in_async_code",
+  "summary": "同一个 `TestKit`、`session`、`sessionctx.Context` 或其派生会话对象被两个 goroutine、executor 并行路径或后台 domain/TTL 路径同时使用。",
+  "mechanism": "`session`/`TestKit` 不是 goroutine-safe 的。如果测试线程、回调、后台 worker、view build、TTL job manager 或 goroutine 中的 `ResultSet` 消费路径继续共用同一个会话对象，就会在 `StmtCtx`、事务状态、当前 DB、ProcessInfo、结果集和内部 parser / executor 状态上发生并发读写。稳定修法不是补锁，而是拆 ownership：为第二条并发路径新建 `TestKit`、sys session 或 internal session。",
+  "signals_required": [
+    "补丁或测试里能看出两个并发执行路径共用同一个 `TestKit`、`session`、`sessionctx.Context`、`tk.Session()`、`tk.Se` 或等价会话对象。",
+    "第二条路径是真正的异步/并发路径，例如 `go func`、后台 domain/TTL 路径、join build/probe 并行、view build 并发执行或 goroutine 中消费 `ResultSet`。",
+    "共享会话对象会被继续执行 SQL、构建 plan、读取/写入 `StmtCtx`、消费 `ResultSet` 或做其他会话态操作。",
+    "修复核心是给并发路径换成新的 `TestKit` / sys session / internal session，或把原先共享的会话拆成两个独立实例。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `testkit.NewTestKit`、`tk1/tk2`、`runWithSystemSession`、`getSysSession`、`AdvancedSysSessionPool`、`sessionFactory`、`ResultSetToStringSlice(ctx, tk.Se, rs)`。",
+    "测试/注释里直接出现 `runs two queries concurrently`、`Using same tk in different goroutines may lead to data race`、`session is not goroutine-safe` 之类描述。",
+    "修复后常见形态是 `tk -> tk1/tk2`、`tk -> tkInternal`、`sctx -> sysCtx`、`regular session -> internal session`。"
+  ],
+  "negative_guards": [
+    "如果共享的是 `RecordSet` 生命周期，问题核心是上一条 SQL 的 `RecordSet` 未 `Close` 就继续执行下一条 SQL，更接近 `同一 session 的上一个 RecordSet 未 Close 就执行下一条 SQL`。",
+    "如果问题只是在 callback 中复用共享测试会话执行 DDL/SQL，而且语义高度绑定 DDL hook，更接近 `DDL hook callback 复用共享测试会话执行 SQL`。",
+    "如果问题核心不是整個会话对象复用，而只是 `StmtCtx` 某几个字段需要 copy/snapshot，应归到更细的 `StmtCtx` 子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判为 flaky risk；共享 `TestKit/session` 被并发路径复用是非常硬的结构性问题。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看到了多个会话变量名，但不能确认它们是不是同一个实例。",
+      "第二条路径只读某个不可变快照，没有继续在共享会话上执行 SQL / plan build / result consume。"
+    ]
+  },
+  "scope": [
+    "测试里同时使用 `TestKit` 和 goroutine / callback / background path 的场景。",
+    "runtime code 中把当前 `sessionctx.Context` 直接借给另一个并发 executor / sys path / TTL path 的场景。"
+  ],
+  "fix_hints": [
+    "不要把同一个 `TestKit/session` 借给第二个 goroutine 或后台路径继续使用。",
+    "为并发路径新建独立 `TestKit`、sys session 或 internal session，明确所有权边界。",
+    "如果只是需要通知时机，用 channel/flag 传信号，不要把共享会话对象传进异步路径。"
+  ],
+  "related_subpatterns": [
+    "DDL hook callback 复用共享测试会话执行 SQL",
+    "同一 session 的上一个 RecordSet 未 Close 就执行下一条 SQL",
+    "`ProcessInfo/GenLogFields` 不能直接引用共享 `StmtCtx.TableIDs/IndexNames`；应在 `SetProcessInfo` 时复制快照",
+    "`cursor fetch` 期间不得复用 cached `StatementContext`；后台 coprocessor 仍持有旧 `memtracker`"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-24923",
+        "note": "测试里同一个 `TestKit` 跑两条并发查询；修复把会话使用边界重新理顺。"
+      },
+      {
+        "case_id": "pr-24769",
+        "note": "goroutine 中用 `session.ResultSetToStringSlice(ctx, tk1.Se, rs)` 消费结果集，修复显式拆出新的 `TestKit`，避免继续共用主线程 `tk.Se`。"
+      },
+      {
+        "case_id": "pr-33946",
+        "note": "构建 view plan 时不能继续借用当前 executor 的 `sessionctx.Context`；修复改成 `runWithSystemSession` / `getSysSession`。"
+      },
+      {
+        "case_id": "pr-34866",
+        "note": "patch 里直接写了 `Using same tk in different goroutines may lead to data race`，修复把并发路径拆成独立 `TestKit`。"
+      },
+      {
+        "case_id": "pr-67243",
+        "note": "TTL test 不能继续复用 regular `TestKit` session 与 job manager / domain 后台路径共享 `StmtCtx`，修复切到 internal session。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-13447",
+        "note": "这条更偏 DDL hook callback 复用共享测试会话执行 SQL，优先归入 DDL callback 专属子模式。"
+      },
+      {
+        "case_id": "pr-49348",
+        "note": "这条更偏同一 session 的旧 `RecordSet` 未 `Close` 就继续执行 SQL，不是两个 goroutine 并发复用整个会话对象。"
+      }
+    ]
+  }
+}

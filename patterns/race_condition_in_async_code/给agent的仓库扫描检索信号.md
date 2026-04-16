@@ -2,12 +2,12 @@
 
 这份文档回答一个很具体的问题：
 
-- 当前这 `39` 个 subpattern，能不能直接给 agent 看？
+- 当前这 `51` 个 subpattern，能不能直接给 agent 看？
 
 答案是：
 
 - **能**，但它们现在更适合做“判定层”。
-- 如果目标是**覆盖整个仓库**去扫存量测试，仅靠这 `39` 个 JSON 还不够快，也不够像“检索层”。
+- 如果目标是**覆盖整个仓库**去扫存量测试，仅靠这 `51` 个 JSON 还不够快，也不够像“检索层”。
 - 更实用的方式是分成两层：
   - 第一层：**检索层**
     - 用 grep / 路径 / 关键词组合，把全仓里的测试先缩成候选集
@@ -16,7 +16,7 @@
 
 也就是说：
 
-- 当前 `39` 个 JSON 不该被废掉
+- 当前 `51` 个 JSON 不该被废掉
 - 但如果要给 agent 做全仓扫描，最好再补一层更硬的“检索信号”
 - 现在这层已经有了一个结构化 sidecar 文件：
   - `retrieval_signals.json`
@@ -27,17 +27,18 @@
 
 - `retrieval_signals.json`
   - 当前 agent / 自动化真正执行的结构化检索层
-  - 已经落到 `v26`
+  - 已经落到 `v37`
   - 这里的 `rg_templates` 是当前最权威的可执行入口
 - `subpatterns/`
-  - 当前 `40` 个正式 subpattern JSON 的集中目录
+  - 当前 `51` 个正式 subpattern JSON 的集中目录
   - 这部分是 verdict layer，不和 `retrieval_signals.json` 混放
 - `第二轮聚类草案.md`
-  - 负责维护 40 个正式 subpattern 的完整 case inventory
+  - 负责维护 `51` 个正式 subpattern 的完整 case inventory
   - 里面已经把更多正例和边界 case 补齐
 - 本文档
   - 负责解释“检索层应该怎么用”
-  - 以及概括每个 subpattern 该关注什么类型的 grep/path/关键词组合
+  - 当前以扫描流程、字段含义、模板使用方法为主
+  - 权威的逐 subpattern 可执行检索信号以 `retrieval_signals.json` 为准
   - 不再重复维护完整 case 列表，避免和草案双份漂移
 
 ## 建议新增的“检索层”字段
@@ -64,47 +65,69 @@
 - `rg_templates`
   - 可直接执行的 `rg` 命令模板
   - 目标是让新 agent 不需要自己临场设计 grep 组合，先按模板跑出第一批候选
-  - 当前建议至少包含：
-    - `broad_recall`
+  - 当前主要使用：
     - `fallback_no_path`
     - `group_intersection`
+  - `broad_recall`
+    - 仍然保留作兼容模板
+    - 但不是默认入口
 
 ## 使用方式
 
-让 agent 扫全仓时，不要直接把 `40` 个 JSON 当成 `40` 条逐个硬匹配的规则。
+让 agent 扫全仓时，不要直接把 `51` 个 JSON 当成 `51` 条逐个硬匹配的规则。
 
 正确顺序应该是：
 
-1. 如果是跨版本扫描，或者怀疑不同版本发生了目录迁移，默认先执行 `fallback_no_path`
-2. 如果只是想先做更快的当前版本试跑，再把 `broad_recall` 当可选第一跳
-3. 如果还需要进一步收窄，再执行 `group_intersection`
-4. 如果还需要补搜，再回退到 `path_globs + grep_keywords_any + grep_keywords_all_groups` 手动拼查询
-5. 再把候选文件 / 测试函数交给 `subpatterns/` 里的 subpattern JSON 做严格判定
+1. 直接执行 `fallback_no_path`
+   - 这是默认入口
+   - 如果 scan root 是仓库根，就按**全仓范围**执行
+   - 这一步不再把 `path_globs` 当限制条件
+2. 如果 `fallback_no_path` 召回结果过大，再执行 `group_intersection` 做粗筛
+   - 这一步仍然是检索层
+   - 目标是缩小候选，不是做最终判定
+3. 对粗筛出来的 candidate，agent 必须**逐个打开代码人工判断**
+   - 这一步不能交给脚本自动判定
+   - 尤其是 async / goroutine / callback / shared-state 这类模式，必须逐例看代码
+   - 这一层允许有一定 false positive，先把可疑候选留下
+4. 再把候选文件 / 测试函数交给 `subpatterns/` 里的 JSON 做结构化判定
+   - 重点看 `signals_required`
+   - 再结合 `signals_optional` 与 `negative_guards`
+   - 最后再决定是不是命中该 subpattern
+5. 如果还需要补搜，再回退到 `path_globs + grep_keywords_any + grep_keywords_all_groups` 手动拼查询
 
 ## 当前落地状态
 
-现在 `retrieval_signals.json` 已经不只是“字段建议”，而是已经落到 `v26`，并补了可直接执行的 `rg_templates`：
+现在 `retrieval_signals.json` 已经不只是“字段建议”，而是已经落到 `v37`，并覆盖了当前 `51` 个正式 subpattern。
 
-- `broad_recall`
-  - 做更快的当前版本第一跳召回
-  - 仍然优先利用当前版本的目录结构
+当前默认使用的 `rg_templates` 是：
+
 - `fallback_no_path`
-  - 当版本重构、目录迁移、历史路径差异导致 `path_globs` 失效时，做全仓兜底召回
-  - 如果 scan root 是仓库根，就按全仓范围执行，不再把 `path_globs` 当限制条件
+  - 直接做全仓兜底召回
+  - 当 scan root 是仓库根时，就是扫整个仓库
+  - 不限制 `path_globs`
 - `group_intersection`
-  - 做按组交集收窄
+  - 在 `fallback_no_path` 结果太多时，继续做按组粗筛
+- `broad_recall`
+  - 仍然保留
+  - 但不是默认入口
 
-这一步的目标不是降低误报，而是先让新 agent 在全仓里更稳定地“找得到”。误报控制暂时仍然主要留在 verdict layer。
+这一步的目标不是降低误报，而是先让新 agent 在全仓里更稳定地“找得到”。误报控制仍然主要留在 verdict layer，但检索阶段允许先保留一部分 false positive。
 
-另外，40 个正式 subpattern 当前更完整的正例 / 边界 case 盘点，已经并回：
+另外，`51` 个正式 subpattern 当前更完整的正例 / 边界 case 盘点，已经并回：
 
-- `第二轮聚类草案.md` 里的“40 个正式 subpattern 的当前案例清单”
+- `第二轮聚类草案.md` 里的“51 个正式 subpattern 的当前案例清单”
 
 所以如果要回答“这个 subpattern 目前到底落了哪些 case”，应优先看草案；如果要回答“agent 该怎么检索”，优先看本文和 `retrieval_signals.json`。
 
-## 40 个 subpattern 的检索信号建议
+## 已正式化 subpattern 的检索信号示例
 
 下面这些信号，都是**检索层**，不是 verdict 层。
+
+说明：
+
+- 当前 `51` 个正式 subpattern 的权威可执行版本，以 `retrieval_signals.json` 为准
+- 本文下面保留的是代表性示例，方便人读和理解字段设计
+- 真正给 agent 扫仓库时，优先直接读取 `retrieval_signals.json`
 
 ### 1. `DDL hook callback 写共享变量或标志无锁`
 
@@ -1672,7 +1695,7 @@
 
 如果问题是：
 
-- “这 40 个能不能直接给 agent 看？”
+- “这 `51` 个能不能直接给 agent 看？”
 
 答案是：
 

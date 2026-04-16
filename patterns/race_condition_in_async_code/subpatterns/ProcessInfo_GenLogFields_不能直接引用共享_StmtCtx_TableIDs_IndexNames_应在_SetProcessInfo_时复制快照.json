@@ -1,0 +1,62 @@
+{
+  "key": "`ProcessInfo/GenLogFields` 不能直接引用共享 `StmtCtx.TableIDs/IndexNames`；应在 `SetProcessInfo` 时复制快照",
+  "family": "race_condition_in_async_code",
+  "summary": "观测/日志路径里的 `ProcessInfo` 不能直接挂着共享 `StmtCtx.TableIDs`、`IndexNames` 这类执行中仍会变化的切片；应在 `SetProcessInfo` 时就复制到 `ProcessInfo` 自己的快照字段。",
+  "mechanism": "`ShowProcess`、`GenLogFields`、日志采集等观测路径经常和查询执行并发进行。如果 `ProcessInfo` 只是转手保存了 `StmtCtx` 指针，后续日志线程再去读 `StmtCtx.TableIDs` / `IndexNames`，就会和查询执行线程的更新交错。稳定修法是把这些会变的字段在 `SetProcessInfo` 时复制到 `ProcessInfo` 自己的 `TableIDs` / `IndexNames` 快照里，之后日志只读快照。",
+  "signals_required": [
+    "代码位于 `ProcessInfo` / `ShowProcess` / `GenLogFields` / logging 主线，强锚点通常是 `SetProcessInfo`、`ProcessInfo`、`GenLogFields`、`TableIDs`、`IndexNames`。",
+    "旧代码从 `info.StmtCtx.TableIDs`、`info.StmtCtx.IndexNames` 或等价共享 `StmtCtx` 字段直接读取可变切片。",
+    "修复在 `ProcessInfo` 结构里新增独立字段，或在 `SetProcessInfo` 时把共享 `StmtCtx` 的字段复制到快照里。",
+    "日志/观测线程后续改成只读快照字段，而不是继续追着共享 `StmtCtx` 读。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `ShowProcess`、`MockSessionManager`、`GenLogFields(233, ps, true)`、`table_ids`、`index_names`。",
+    "测试里常会有一个 goroutine 反复 `ShowProcess` / `GenLogFields`，主线程同时跑 index scan / query。",
+    "补丁常见形态是 `ProcessInfo` 增加 `TableIDs []int64`、`IndexNames []string` 并在 `util/util.go` 把读取源改成这些字段。"
+  ],
+  "negative_guards": [
+    "如果问题核心是整个 `session/TestKit` 被另一个 goroutine 复用，不要并到这里。",
+    "如果问题核心是 cursor fetch 期间 cached stmt ctx / memtracker 被复用，应归入 cursor 专属子模式。",
+    "如果只是共享 `StmtCtx` 的 digest 在 callback 里读取，更接近 resource tag / TopSQL digest snapshot 子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判为 flaky risk；`ProcessInfo -> shared StmtCtx slice -> GenLogFields` 是非常稳定的可观察链路。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然看到了 `ProcessInfo` / `GenLogFields`，但不能确认读取的是共享 `StmtCtx` 上仍会变的字段。",
+      "字段已经是 value copy，只是名字与 `StmtCtx` 相似。"
+    ]
+  },
+  "scope": [
+    "`session/session.go` 的 `SetProcessInfo` 主线。",
+    "`util/processinfo.go`、`util/util.go`、日志/观测路径。"
+  ],
+  "fix_hints": [
+    "在 `SetProcessInfo` 入口处就把会变化的 `StmtCtx` 字段复制到 `ProcessInfo` 自己的字段里。",
+    "日志 / 观测线程只读 `ProcessInfo` 快照，不要再反向追到共享 `StmtCtx`。",
+    "对切片 / map 字段要做真正的 copy，而不是只复制 slice header。"
+  ],
+  "related_subpatterns": [
+    "`cursor fetch` 期间不得复用 cached `StatementContext`；后台 coprocessor 仍持有旧 `memtracker`",
+    "异步 resource tag / TopSQL 回调直接读取共享 `StmtCtx` 的 `SQLDigest/planDigest`，应先取局部快照"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-45127",
+        "note": "`GenLogFields` 不再从 `info.StmtCtx.TableIDs/IndexNames` 直接读，而是改成读取 `SetProcessInfo` 时复制进去的 `ProcessInfo.TableIDs/IndexNames` 快照。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-40023",
+        "note": "这条同样涉及 `StmtCtx` 被异步路径引用，但核心是 cursor fetch 期间 cached stmt ctx / memtracker 复用。"
+      },
+      {
+        "case_id": "pr-30296",
+        "note": "这条是 digest callback 快照，不是 `ProcessInfo` 字段快照。"
+      }
+    ]
+  }
+}

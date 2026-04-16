@@ -1,0 +1,66 @@
+{
+  "key": "测试更新全局 config 必须 `UpdateGlobal` / `StoreGlobalConfig`，并配对 `RestoreFunc`",
+  "family": "race_condition_in_async_code",
+  "summary": "测试如果要改 process-wide global config，不能直接改 `config.GetGlobalConfig()` 返回对象的字段；应复制 config、经 `UpdateGlobal` / `StoreGlobalConfig` 发布，并且配对 `RestoreFunc` 恢复。",
+  "mechanism": "global config 是全进程共享对象。测试里最危险的写法是直接 `config.GetGlobalConfig().Xxx = ...` 或先拿指针后原地改，因为其他 goroutine 可能正在读同一个对象。稳定修法是：基于当前 config 复制出新 config，在副本上改值，然后通过 `UpdateGlobal` 或 `StoreGlobalConfig` 一次性发布；同时用 `RestoreFunc` 保证测试结束后恢复原值，避免跨测试污染。",
+  "signals_required": [
+    "问题对象是 process-wide global config struct，而不是 session vars。",
+    "旧代码直接对 `config.GetGlobalConfig()` 返回对象原地改字段，或测试中先保存旧值再直接写回。",
+    "修复引入 `UpdateGlobal`、`StoreGlobalConfig`、`RestoreFunc` 或等价 copy-update-store 流程。",
+    "补丁目标同时包含“避免 data race”和“测试后恢复原配置”。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `UpdateGlobal(func(conf *config.Config) { ... })`、`defer config.RestoreFunc()()`、`newConfig := *oldConfig`、`config.StoreGlobalConfig(&newConfig)`。",
+    "常见场景是 DDL / executor / planner / tidb-server tests 大批量从直接改 global config 迁移到 `UpdateGlobal`。",
+    "与之配套的文案常出现 `fix data race caused by update global config`。"
+  ],
+  "negative_guards": [
+    "如果问题对象是单个标量 flag，且修法是 `AtomicBool` / `atomic.Load/Store`，更接近全局标量开关子模式。",
+    "如果问题对象是 global config 里的 nested map（如 `Labels`）被原地改写，更接近 map clone/store 子模式。",
+    "如果只是把测试移到串行 suite，没有 copy/update/store 这组结构，不要并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判为 flaky risk；`GetGlobalConfig 原地改写 -> UpdateGlobal/StoreGlobalConfig + RestoreFunc` 是非常稳定的修法签名。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看到了 `StoreGlobalConfig`，但不能确认旧代码是不是原地改共享 config。",
+      "恢复逻辑只恢复个别字段，没有完整的 copy/update/store 语义。"
+    ]
+  },
+  "scope": [
+    "`config/config.go` 和所有测试里改全局 config 的主线。",
+    "任何需要临时切换全局 config 再恢复的测试。"
+  ],
+  "fix_hints": [
+    "测试不要直接写 `config.GetGlobalConfig().Xxx = ...`。",
+    "统一走 copy -> update -> `StoreGlobalConfig` / `UpdateGlobal` -> `RestoreFunc` 这条流程。",
+    "只要改了 process-wide config，就必须显式恢复。"
+  ],
+  "related_subpatterns": [
+    "全局 `bool/seed` 配置开关不能裸读写；要么走 atomic accessor，要么降到 session scope",
+    "全局 config 的嵌套 map（如 `Labels`）不能原地改写，必须 clone 后再 `StoreGlobalConfig`"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-17964",
+        "note": "专门引入 `UpdateGlobal` / `RestoreFunc`，把大量测试从直接改 `GetGlobalConfig()` 迁到 copy-update-restore 流程。"
+      },
+      {
+        "case_id": "pr-21415",
+        "note": "`EnableCollectExecutionInfo` 不再原地改共享 config，而是 `newConfig := *oldConfig` 后 `config.StoreGlobalConfig(&newConfig)`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-45563",
+        "note": "这条是 `cfg.Labels` nested map 需要单独 clone，虽然也会 `StoreGlobalConfig`，但关键风险点是 map 原地改写。"
+      },
+      {
+        "case_id": "pr-16722",
+        "note": "这条是 process-global logger 污染，不是 global config struct 的 copy/update/store。"
+      }
+    ]
+  }
+}

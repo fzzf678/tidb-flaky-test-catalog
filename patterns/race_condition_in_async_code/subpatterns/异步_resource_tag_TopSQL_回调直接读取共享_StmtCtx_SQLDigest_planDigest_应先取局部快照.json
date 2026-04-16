@@ -1,0 +1,62 @@
+{
+  "key": "异步 resource tag / TopSQL 回调直接读取共享 `StmtCtx` 的 `SQLDigest/planDigest`，应先取局部快照",
+  "family": "race_condition_in_async_code",
+  "summary": "返回给 client-go / TopSQL / resource group tagger 的异步回调闭包不要继续在执行时读取共享 `StmtCtx.SQLDigest()` / `GetPlanDigest()`；应在创建闭包前先把 digest 快照到局部变量。",
+  "mechanism": "这类回调通常会在异步请求发送、resource tag encode 或 client-go callback 中执行。如果闭包里每次都直接读 `StmtCtx.SQLDigest()`、`GetPlanDigest()` 或 `GetResourceGroupTagByLabel()`，就等于让后台路径持续读取共享 `StatementContext` 的可变 digest 状态。稳定修法是在创建回调时先计算 `normalized, digest := sc.SQLDigest()` 和 `_, planDigest := sc.GetPlanDigest()`，然后闭包只使用这些局部快照。",
+  "signals_required": [
+    "代码位于 `StmtCtx` / resource tag / TopSQL callback 主线，强锚点通常是 `GetResourceGroupTagger`、`GetResourceGroupTagByLabel`、`SQLDigest`、`GetPlanDigest`、`EncodeResourceGroupTag`。",
+    "问题代码把共享 `StmtCtx` 直接 capture 进返回的闭包或异步 callback 中。",
+    "修复在闭包外先把 `normalized/digest/planDigest` 读到局部变量，再让闭包只消费这些局部快照。",
+    "补丁意图是避免异步 callback 频繁访问共享 digest 状态，而不是普通 API 重命名。"
+  ],
+  "signals_optional": [
+    "高信号文字包括 `reduce data race of sql digest`、`Avoid frequent access to Statement.SQLDigest in client-go callback`。",
+    "常见代码形态是删除 `GetResourceGroupTagByLabel` 这类直接触碰共享 `StmtCtx` 的 helper。",
+    "也常伴随 `if len(normalized) == 0 { return }` 之类基于局部快照的短路逻辑。"
+  ],
+  "negative_guards": [
+    "如果问题是共享 `StmtCtx` 字段被 save-and-restore 临时改写，更接近 `共享 SessionVars/StmtCtx 字段 save-and-restore 临时改写，应改成显式参数传递`。",
+    "如果问题是 `ProcessInfo` / logging / cursor 这种观测路径或 cached stmt ctx 生命周期，不要并到这里。",
+    "如果代码没有异步回调/闭包，只是在同一 goroutine 中普通读取 digest，不要命中。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判为 flaky risk；`共享 StmtCtx digest + 异步 callback capture + 闭包外局部快照` 这组结构很强。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然看到了 `SQLDigest/GetPlanDigest`，但不确定它是否运行在异步 callback 闭包中。",
+      "只是普通地把 digest 变量改了名字，没有看出在消除共享 `StmtCtx` 的并发读取。"
+    ]
+  },
+  "scope": [
+    "`sessionctx/stmtctx/stmtctx.go`、`executor/executor.go` 一类 resource tag / TopSQL plumbing 代码。",
+    "任何把共享 `StmtCtx` 里的 digest 字段直接暴露给异步 callback 的场景。"
+  ],
+  "fix_hints": [
+    "创建 callback 前先把需要的 digest / planDigest 读到局部变量。",
+    "不要在异步回调执行期间再去碰共享 `StmtCtx`。",
+    "如果已有 helper 会在闭包里间接读取共享 `StmtCtx`，优先删掉 helper 或把 helper 改成只接受快照值。"
+  ],
+  "related_subpatterns": [
+    "共享 `SessionVars/StmtCtx` 字段 save-and-restore 临时改写，应改成显式参数传递",
+    "`ProcessInfo/GenLogFields` 不能直接引用共享 `StmtCtx.TableIDs/IndexNames`；应在 `SetProcessInfo` 时复制快照"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-30296",
+        "note": "`GetResourceGroupTagger` / `newLockCtx` 不再让异步 callback 反复读取共享 `StmtCtx.SQLDigest()` / `GetPlanDigest()`；修复把 digest 先快照到局部变量。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-40023",
+        "note": "这条是 cursor fetch 期间 cached `StatementContext` / memtracker 生命周期复用，不是 digest callback snapshot。"
+      },
+      {
+        "case_id": "pr-45127",
+        "note": "这条是 `ProcessInfo` 复制 `TableIDs/IndexNames`，同样属于 snapshot 思路，但字段和异步路径都不同。"
+      }
+    ]
+  }
+}

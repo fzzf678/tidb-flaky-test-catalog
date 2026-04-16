@@ -1,6 +1,6 @@
-# 给新 agent 扫描历史记录的 Prompt 模板
+# 给新 agent 扫描存量测试的 Prompt 模板
 
-这个模板用于让一个**全新的 agent**在当前 worktree 扫描**历史代码 / 存量测试**，判断是否能仅依据当前 subpattern 找出潜在 flaky tests。
+这个模板用于让一个**全新的 agent**在当前 worktree 扫描**存量测试**，判断是否能仅依据当前 subpattern 找出潜在 flaky tests。
 
 这份文件本身就是 Markdown 模板。后续只需要替换必要占位符，然后把下面的模板块整体发给新 agent 即可。
 
@@ -8,7 +8,7 @@
 
 把下面模板里的占位符替换掉后，直接发给新 agent：
 
-- `<worktree_path>`：目标 worktree / repo 路径
+- `<worktree_path>`：当前要扫描的 worktree / repo 绝对路径
 
 当前 family 目录在模板里已经直接写死为当前绝对路径：
 
@@ -44,17 +44,16 @@
 
 3. 本次扫描直接覆盖 `<worktree_path>` 下的整个仓库。
 
-4. 在扫描测试时，直接按 `retrieval_signals.json` 里的 `fallback_no_path` 做粗筛。
+4. 在扫描测试时，直接按 `retrieval_signals.json` 里的 `fallback_no_path` 做全仓粗筛。
 
-5. 对粗筛出来的每个 candidate，agent 必须逐个打开代码人工判断；这一步不能交给脚本自动判定，也不能批量凭感觉打标签。
+5. 对粗筛出来的每个 candidate，必须逐个打开代码人工判断。
+- 这一步不能交给脚本自动判定。
+- 尤其是 async / goroutine / callback / shared-state 这类问题，必须逐例看代码。
+- 这一层允许有一定 false positive，先把可疑候选留下，不要过早压掉。
 - 对每个 candidate，都要对相关 subpattern 做结构化匹配：
 - `signals_required` 命中了哪些
 - `signals_optional` 命中了哪些
 - `negative_guards` 是否命中
-- 这一步可以适当放宽，不要过早压掉候选：
-  - 只要主要信号已经比较像，就可以先保留
-  - 允许有一定 false positive
-  - 宁可多报一些候选，也不要因为阈值过严把潜在 flaky test 提前漏掉
 - 如果证据已经比较闭合，可以放到 `high_confidence_findings`
 - 如果还不完全闭合，但已经值得人工继续看，也保留到 `needs_more_evidence`
 
