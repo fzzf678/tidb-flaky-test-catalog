@@ -1,8 +1,8 @@
 {
   "family": "race_condition_in_async_code",
   "kind": "retrieval_signals",
-  "version": "v38",
-  "description": "Repository-scan retrieval hints for the 55 race_condition_in_async_code subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "version": "v39",
+  "description": "Repository-scan retrieval hints for the 56 race_condition_in_async_code subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
   "defaults": {
     "purpose": "candidate_retrieval_only",
     "verdict_requires_subpattern_json": true,
@@ -3191,6 +3191,76 @@
           "name": "group_intersection",
           "intent": "按“global config 入口 + Labels/nested map + clone/store 语义”三组做粗筛。",
           "command": "cd <repo_root> && rg -l -0 -F -e GetGlobalConfig -e StoreGlobalConfig -g 'config/**/*' -g 'pkg/config/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e Labels -e 'map[string]string' | xargs -0 -r rg -n -H -F -e clone -e 'maps.Clone' -e 'make(map[string]string)'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "全局 `lease/TTL` 数值旋钮不能裸读写；必须封装 `atomic` getter/setter",
+      "pattern_file": "全局_lease_TTL_数值旋钮不能裸读写_必须封装_atomic_getter_setter.json",
+      "grepability": "high",
+      "path_globs": [
+        "statistics/handle/**/*",
+        "pkg/statistics/handle/**/*",
+        "store/tikv/**/*",
+        "pkg/store/tikv/**/*",
+        "domain/**/*",
+        "pkg/domain/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "Lease()",
+        "SetLease(",
+        "ManagedLockTTL",
+        "atomic.LoadUint64",
+        "atomic.StoreUint64",
+        "atomic2.Duration",
+        "lease.Load()",
+        "lease.Store("
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "Lease()",
+          "SetLease(",
+          "ManagedLockTTL"
+        ],
+        [
+          "atomic.LoadUint64",
+          "atomic.StoreUint64",
+          "atomic2.Duration",
+          "lease.Load()",
+          "lease.Store("
+        ],
+        [
+          "time.Duration",
+          "LockTtl",
+          "ticker",
+          "stats lease",
+          "NeedAnalyzeTable"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "Lease = 0",
+        "bindinfo.Lease = 0",
+        "sync.Once",
+        "SetSystemTZ",
+        "AtomicBool"
+      ],
+      "first_pass_query_hint": "先找全局 `lease/TTL` 数值旋钮，再确认修复是否把裸读写改成 `atomic` getter/setter，而不是单纯把 `lease` 设为 `0` 停后台 loop。",
+      "rg_templates": [
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找 `Lease()/SetLease()`、`ManagedLockTTL` 与 `atomic` 封装。",
+          "command": "cd <repo_root> && rg -n -F -e 'Lease()' -e 'SetLease(' -e ManagedLockTTL -e 'atomic.LoadUint64' -e 'atomic.StoreUint64' -e 'atomic2.Duration' -e 'lease.Load()' -e 'lease.Store(' ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“数值旋钮名字 + atomic 封装 + duration/TTL 使用场景”三组做粗筛。",
+          "command": "cd <repo_root> && rg -l -0 -F -e 'Lease()' -e 'SetLease(' -e ManagedLockTTL -g 'statistics/handle/**/*' -g 'pkg/statistics/handle/**/*' -g 'store/tikv/**/*' -g 'pkg/store/tikv/**/*' -g 'domain/**/*' -g 'pkg/domain/**/*' -g '**/*_test.go' . | xargs -0 -r rg -l -0 -F -e 'atomic.LoadUint64' -e 'atomic.StoreUint64' -e 'atomic2.Duration' -e 'lease.Load()' -e 'lease.Store(' | xargs -0 -r rg -n -H -F -e 'time.Duration' -e LockTtl -e ticker -e 'stats lease' -e NeedAnalyzeTable"
+        },
+        {
+          "name": "broad_recall",
+          "intent": "先在 stats handle / tikv TTL / domain 主线粗召回 `lease/TTL` 数值旋钮与 `atomic` 封装信号。",
+          "command": "cd <repo_root> && rg -n -F -g 'statistics/handle/**/*' -g 'pkg/statistics/handle/**/*' -g 'store/tikv/**/*' -g 'pkg/store/tikv/**/*' -g 'domain/**/*' -g 'pkg/domain/**/*' -g '**/*_test.go' -e 'Lease()' -e 'SetLease(' -e ManagedLockTTL -e 'atomic.LoadUint64' -e 'atomic.StoreUint64' -e 'atomic2.Duration' -e 'lease.Load()' -e 'lease.Store(' ."
         }
       ]
     },

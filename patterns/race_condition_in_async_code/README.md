@@ -44,7 +44,7 @@
 - `retrieval_signals.json`
   - 结构化 sidecar 检索文件，给 agent / 自动化扫描使用；承载全仓扫描时的路径、关键词、组合和降权信号
 - `subpatterns/`
-  - 当前 `55` 个正式 subpattern JSON 统一放在这里
+  - 当前 `56` 个正式 subpattern JSON 统一放在这里
   - `retrieval_signals.json` 不放进这个目录，避免把检索层和判定层混在一起
 
 ## 第一批正式 subpattern
@@ -102,6 +102,7 @@
 - ``LFU.cache.Set` 触发 `reject/onEvict` 时，`resultKeySet/cost` 更新顺序交错`
 - ``stats cache internal LRU/map cache` 共享结构被 `Get/Put/Del/Values/Copy` 路径并发访问，缺少统一 `RWMutex``
 - ``GetPartitionStats` miss 后临时构造 `PseudoTable` 却回填共享 `statsCache``
+- ``全局 `lease/TTL` 数值旋钮不能裸读写；必须封装 `atomic` getter/setter``
 - `全局 bool/seed 配置开关不能裸读写；要么走 atomic accessor，要么降到 session scope`
 - `测试更新全局 config 必须 UpdateGlobal/StoreGlobalConfig，并配对 RestoreFunc`
 - `全局 config 的嵌套 map（如 Labels）不能原地改写，必须 clone 后再 StoreGlobalConfig`
@@ -120,12 +121,12 @@
 
 这 6 条都还是 `race_condition_in_async_code` family 内部的继续细化，不是跨 family 的通用 backlog。更细的 seed case 和预期子方向，统一记录在 `第二轮聚类草案.md`。
 
-另外，55 个正式 subpattern 的完整 case inventory 现在已经直接并回了 `第二轮聚类草案.md`：
+另外，56 个正式 subpattern 的完整 case inventory 现在已经直接并回了 `第二轮聚类草案.md`：
 
 - `subpatterns/` 里的正式 JSON `examples.positive`
   - 仍然保留为高纯度锚点子集
-- `第二轮聚类草案.md` 里的“55 个正式 subpattern 的当前案例清单”
-  - 则负责记录当前 55 个正式 subpattern 在 `逐例梳理台账.tsv` 中已经能明确落下来的完整 case inventory
+- `第二轮聚类草案.md` 里的“56 个正式 subpattern 的当前案例清单”
+  - 则负责记录当前 56 个正式 subpattern 在 `逐例梳理台账.tsv` 中已经能明确落下来的完整 case inventory
 
 ## 第二轮收敛时的边界约束
 
