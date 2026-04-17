@@ -1,0 +1,75 @@
+{
+  "key": "测试改 `lease/TTL/global knob` 前要先停后台 loop",
+  "family": "race_condition_in_async_code",
+  "summary": "测试如果要改 `lease`、`TTL` 或同类全局周期旋钮，必须在 bootstrap / domain / mock store 初始化前就把后台 loop 停掉；不能等 worker 已经启动后再补改。",
+  "mechanism": "很多测试会把 `bindinfo.Lease`、stats lease 或同类全局 knob 设成 `0`，目的不是让这个数值字段本身变成线程安全，而是让 bind loader、stats worker、refresh loop 这类后台 goroutine 根本不要启动。如果这个 knob 改得太晚，例如 `BootstrapSession`、`CreateMockStoreAndDomain`、`CreateMockStore` 之后才改，后台 loop 可能已经按旧值起起来，接下来就会和测试线程交错，导致 stale cache、额外 refresh、偶发断言失败。稳定修法很一致：把 knob 改写前移到 loop 启动点之前，并在测试结束后恢复。",
+  "signals_required": [
+    "测试直接改写全局 `lease/TTL/global knob`，例如 `bindinfo.Lease = 0`、`SetStatsLease(0)`、`SetSchemaLease(0)` 这类会影响后台周期任务的旋钮。",
+    "对应模块存在会由该 knob 控制的后台 loop / updater / loader / worker，而不是普通单线程初始化值。",
+    "修复核心是把 knob 改写放到 `BootstrapSession`、`CreateMockStoreAndDomain`、`CreateMockStore`、suite setup 或等价启动点之前，确保后台 loop 根本不启动。",
+    "问题的本质是“先停 loop 再测”的启动时序要求，而不是给 knob 本身补 `atomic` 读写封装。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `originLease`、`defer` 恢复、`BootstrapSession`、`CreateMockStoreAndDomain`、`CreateMockStore`、`SetUpSuite`。",
+    "补丁或 PR 说明直接提到 background goroutine、loader、refresh、stats worker、updater、stale cache。",
+    "同一 patch 里常能同时看到 `SetSchemaLease(0)` / `SetStatsLease(0)` 与 domain/bootstrap 初始化。"
+  ],
+  "negative_guards": [
+    "如果修复核心是把 `Lease` / `TTL` 改成 `atomic.Load/Store`、`atomic2.Duration`、`Lease()/SetLease()`，应归到“全局 `lease/TTL` 数值旋钮不能裸读写；必须封装 `atomic` getter/setter`”。",
+    "如果后台 loop 已经允许继续运行，修复是给 cache/update 路径补互斥、copy-on-write 或原子 swap，不要并到这里。",
+    "如果只是普通全局 config 更新与恢复，没有后台 loop 启停时序，不要并到这里。",
+    "如果核心是 `sync.Once`、singleton init-before-use 或其他一次性初始化问题，应转到相邻的全局初始化子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是测试通过“先关 loop”隔离后台异步路径的稳定机械模式。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "能看到 knob 改写，但看不清 loop 是否确实由它控制，或是否已经在改写前启动。",
+      "patch 里虽然有 `Lease = 0` / `SetStatsLease(0)`，但无法确认这次改动的关键是否就是“前移到启动点之前”。"
+    ]
+  },
+  "scope": [
+    "bindinfo / stats / schema / TTL 等带 lease 或周期刷新 loop 的测试。",
+    "任何通过把全局 knob 设成 `0` 或等价禁用值，来阻止后台 worker 启动的测试隔离场景。"
+  ],
+  "fix_hints": [
+    "如果测试依赖后台 loop 静止，必须在 `BootstrapSession` / `CreateMockStoreAndDomain` / `CreateMockStore` 之前就设好禁用值。",
+    "测试结束后要配对恢复全局 knob，避免把 suite 级状态泄漏到后续用例。",
+    "如果运行时仍需要多 goroutine 并发读写该 knob，另起 `atomic` accessor 子模式处理，不要把两个修法混成一条。"
+  ],
+  "related_subpatterns": [
+    "测试改写全局 lease 干扰后台 refresh loader",
+    "全局 `lease/TTL` 数值旋钮不能裸读写；必须封装 `atomic` getter/setter"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-3435",
+        "note": "在 suite setup 里提前 `SetStatsLease(0)`，避免 stats background loop 以默认 lease 启动。"
+      },
+      {
+        "case_id": "pr-10949",
+        "note": "`bindinfo.Lease = 0` 放在 `BootstrapSession` 前，阻止 bind cache updater 启动。"
+      },
+      {
+        "case_id": "pr-29053",
+        "note": "把 `bindinfo.Lease = 0` 从 `CreateMockStoreAndDomain` 之后前移到之前，修正启动顺序。"
+      },
+      {
+        "case_id": "pr-66559",
+        "note": "在 `CreateMockStore` 前先把 `bindinfo.Lease` 设为 `0`，避免 background binding loader 启动。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-7901",
+        "note": "一半是 `SetStatsLease(0)` 的 loop 停止时序，另一半又混有 `SetSystemTZ` 的 `sync.Once`。"
+      },
+      {
+        "case_id": "pr-10771",
+        "note": "虽然也涉及 stats lease，但核心修法是给 `Handle.Lease` 增加 `atomic` accessor，而不是仅仅前移停 loop。"
+      }
+    ]
+  }
+}

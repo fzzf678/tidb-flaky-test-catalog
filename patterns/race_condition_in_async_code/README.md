@@ -44,7 +44,7 @@
 - `retrieval_signals.json`
   - 结构化 sidecar 检索文件，给 agent / 自动化扫描使用；承载全仓扫描时的路径、关键词、组合和降权信号
 - `subpatterns/`
-  - 当前 `56` 个正式 subpattern JSON 统一放在这里
+  - 当前 `57` 个正式 subpattern JSON 统一放在这里
   - `retrieval_signals.json` 不放进这个目录，避免把检索层和判定层混在一起
 
 ## 第一批正式 subpattern
@@ -60,6 +60,7 @@
 - `BindHandle 共享 parser 并发使用`
 - `同一 session 的上一个 RecordSet 未 Close 就执行下一条 SQL`
 - `测试改写全局 lease 干扰后台 refresh loader`
+- ``测试改 `lease/TTL/global knob` 前要先停后台 loop``
 - `多个 cop iterator 共享可变 KV request RequestBuilder`
 - ``twoPhaseCommit.doActionOnBatches` 并行 batch goroutine 复用父 `Backoffer``
 - ``IndexJoin / IndexLookupJoin / IndexLookupMergeJoin` 每个 inner worker 复制自己的 `indexRanges``
@@ -121,12 +122,12 @@
 
 这 6 条都还是 `race_condition_in_async_code` family 内部的继续细化，不是跨 family 的通用 backlog。更细的 seed case 和预期子方向，统一记录在 `第二轮聚类草案.md`。
 
-另外，56 个正式 subpattern 的完整 case inventory 现在已经直接并回了 `第二轮聚类草案.md`：
+另外，57 个正式 subpattern 的完整 case inventory 现在已经直接并回了 `第二轮聚类草案.md`：
 
 - `subpatterns/` 里的正式 JSON `examples.positive`
   - 仍然保留为高纯度锚点子集
-- `第二轮聚类草案.md` 里的“56 个正式 subpattern 的当前案例清单”
-  - 则负责记录当前 56 个正式 subpattern 在 `逐例梳理台账.tsv` 中已经能明确落下来的完整 case inventory
+- `第二轮聚类草案.md` 里的“57 个正式 subpattern 的当前案例清单”
+  - 则负责记录当前 57 个正式 subpattern 在 `逐例梳理台账.tsv` 中已经能明确落下来的完整 case inventory
 
 ## 第二轮收敛时的边界约束
 

@@ -1,8 +1,8 @@
 {
   "family": "race_condition_in_async_code",
   "kind": "retrieval_signals",
-  "version": "v39",
-  "description": "Repository-scan retrieval hints for the 56 race_condition_in_async_code subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "version": "v40",
+  "description": "Repository-scan retrieval hints for the 57 race_condition_in_async_code subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
   "defaults": {
     "purpose": "candidate_retrieval_only",
     "verdict_requires_subpattern_json": true,
@@ -490,6 +490,77 @@
           "name": "group_intersection",
           "intent": "按关键词分组逐层收窄，只保留同时命中各组信号的候选文件，再定位最后一跳命中位置。",
           "command": "rg -l -0 -F -e 'Lease =' -e SetLease -e 'schema lease' -e 'stats lease' -g 'pkg/bindinfo/**/*_test.go' -g 'pkg/statistics/**/*_test.go' -g 'pkg/ttl/**/*_test.go' -g 'pkg/domain/**/*_test.go' <repo_root> | xargs -0 -r rg -l -0 -F -e CreateMockStoreAndDomain -e BootstrapSession -e domain | xargs -0 -r rg -n -F -e defer -e Cleanup -e Close"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "测试改 `lease/TTL/global knob` 前要先停后台 loop",
+      "pattern_file": "测试改_lease_TTL_global_knob_前要先停后台_loop.json",
+      "grepability": "high",
+      "path_globs": [
+        "bindinfo/**/*_test.go",
+        "pkg/bindinfo/**/*_test.go",
+        "executor/**/*_test.go",
+        "pkg/executor/**/*_test.go",
+        "statistics/**/*_test.go",
+        "pkg/statistics/**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "bindinfo.Lease = 0",
+        "SetStatsLease(0)",
+        "SetSchemaLease(0)",
+        "BootstrapSession",
+        "CreateMockStoreAndDomain",
+        "CreateMockStore(",
+        "originLease"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "bindinfo.Lease = 0",
+          "SetStatsLease(0)",
+          "SetSchemaLease(0)",
+          "Lease = 0"
+        ],
+        [
+          "BootstrapSession",
+          "CreateMockStoreAndDomain",
+          "CreateMockStore(",
+          "SetUpSuite"
+        ],
+        [
+          "originLease",
+          "defer",
+          "bindinfo",
+          "stats",
+          "Lease"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "atomic.Load",
+        "atomic.Store",
+        "atomic2.Duration",
+        "Lease()",
+        "SetLease(",
+        "ManagedLockTTL",
+        "sync.Once",
+        "SetSystemTZ"
+      ],
+      "first_pass_query_hint": "先找测试把 `bindinfo.Lease` / `stats lease` 设成禁用值的位置，再确认它是否发生在 `BootstrapSession` / `CreateMockStoreAndDomain` / `CreateMockStore` / suite setup 之前；这一步是为了先停掉后台 loop，而不是给 knob 本身补 `atomic`。",
+      "rg_templates": [
+        {
+          "name": "fallback_no_path",
+          "intent": "默认的全仓兜底召回，不限制路径，优先找测试在启动点之前关闭 lease-driven loop 的信号。",
+          "command": "cd <repo_root> && rg -n -F -e 'bindinfo.Lease = 0' -e 'SetStatsLease(0)' -e 'SetSchemaLease(0)' -e BootstrapSession -e CreateMockStoreAndDomain -e 'CreateMockStore(' -e originLease -e SetUpSuite ."
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“关闭 knob + 启动点 + 顺序/恢复或模块语义”三组做粗筛，优先保留真正体现先停 loop 再启动的候选。",
+          "command": "cd <repo_root> && rg -l -0 -F -e 'bindinfo.Lease = 0' -e 'SetStatsLease(0)' -e 'SetSchemaLease(0)' -e 'Lease = 0' -g 'bindinfo/**/*_test.go' -g 'pkg/bindinfo/**/*_test.go' -g 'executor/**/*_test.go' -g 'pkg/executor/**/*_test.go' -g 'statistics/**/*_test.go' -g 'pkg/statistics/**/*_test.go' . | xargs -0 -r rg -l -0 -F -e BootstrapSession -e CreateMockStoreAndDomain -e 'CreateMockStore(' -e SetUpSuite | xargs -0 -r rg -n -H -F -e originLease -e defer -e bindinfo -e stats -e Lease"
+        },
+        {
+          "name": "broad_recall",
+          "intent": "按历史常见测试主线做带路径优先级的快速第一跳，适合当前目录结构较稳定的版本。",
+          "command": "cd <repo_root> && rg -n -F -g 'bindinfo/**/*_test.go' -g 'pkg/bindinfo/**/*_test.go' -g 'executor/**/*_test.go' -g 'pkg/executor/**/*_test.go' -g 'statistics/**/*_test.go' -g 'pkg/statistics/**/*_test.go' -e 'bindinfo.Lease = 0' -e 'SetStatsLease(0)' -e 'SetSchemaLease(0)' -e BootstrapSession -e CreateMockStoreAndDomain -e 'CreateMockStore(' -e originLease -e SetUpSuite ."
         }
       ]
     },
