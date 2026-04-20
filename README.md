@@ -21,11 +21,15 @@ For a human-readable checklist generated from `review_smells.json`, see `docs/re
 - Review checklist (Markdown): `docs/review_checklist.md`
 - Dictionaries: `taxonomy.json`, `review_smells.json`
 - Schemas: `schemas/`
+- Pattern work backlog: `patterns/其他_smell_细化_backlog.md`
+- Result-order planning: `patterns/结果顺序确定性_细化规划.md`
+- Result-order family: `patterns/nondeterministic_result_order/README.md`
 
 ## Repository Layout
 
 - `cases/`: one flaky case per JSON file (suggested: `cases/<YYYY>/<MM>/pr-<PR>.json`)
 - `docs/`: generated and hand-written reference docs (see `docs/review_checklist.md`)
+- `patterns/`: in-progress pattern formalization notes and backlogs
 - `reports/`: generated reports and stats outputs
 - `taxonomy.json`: root-cause taxonomy dictionary
 - `review_smells.json`: review-smells dictionary

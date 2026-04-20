@@ -1,0 +1,78 @@
+{
+  "key": "统计信息真正 load / materialize / apply 之前不应断言依赖它的计划或统计输出",
+  "family": "plan_stability_and_stats_dependency",
+  "summary": "测试如果断言的对象依赖 real stats / histogram / stats cache，就不能把“已经执行了 analyze / load stats / DDL”误当成“统计信息已经可见”；必须先等 stats 真正 load / materialize / apply。",
+  "mechanism": "这条子模式不是 exact-plan family 里 `b4` 的简单放大版。`b4` 关注的是 exact plan assertion 前先冻结统计信息；这里更一般，断言对象既可能是 plan，也可能是 stats buckets、index usage、selectivity/cardinality 输出或其他依赖 stats cache 的观测值。真正的问题是：测试在 `analyze table`、`load stats`、`HandleDDLEvent`、lazy load 或 DDL 后立刻断言，但 histogram / stats cache / DDL-applied stats 其实还没有真正 materialize、load 或 apply。patch-backed 正例里的修法反复落在：显式 `LoadNeededHistograms()`、显式 `StatsHandle().Update(...)` / `HandleDDLEvent(...)`、等待 `load stats` 生效、或者在检查时跳过仍然 `unInitialized` / 未加载的 stats。核心是：先让依赖的 stats 真正 ready，再断言。",
+  "signals_required": [
+    "断言对象依赖统计信息可见性或 stats-backed plan/stats output，而不是只依赖 planner input。",
+    "patch 的主修法是让统计信息先真正 load / materialize / apply，或在断言时显式识别“stats 尚未 ready”的状态。",
+    "不稳定来源是 stats cache / lazy load / DDL-applied stats / load-stats 生效时序，而不是 sample rate、analyze version 或 selectivity boundary 本身。",
+    "稳定修法落在 `LoadNeededHistograms()`、`StatsHandle().Update(...)`、`HandleDDLEvent(...)`、sync wait / sleep / retry、或 `unInitialized` guard 这一层。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `LoadNeededHistograms`, `StatsHandle().Update`, `HandleDDLEvent`, `load stats`, `show stats_buckets`, `Buckets`, `TopN`, `unInitialized`, `missing`, `lazy load`。",
+    "有些 patch 不直接加同步 API，而是通过等待一小段时间让 `load stats` 真正进入 cache；只要 patch 主修法确实是在等 stats ready，仍然支持这条子模式。",
+    "另一类 patch 会把“直接断言 bucket/TopN 非空”改成“若尚未加载则跳过或先加载”，这也是同机制。"
+  ],
+  "negative_guards": [
+    "如果 patch 主修法是固定 `samplerate`、`analyze version`、predicate-column collection 或避开 threshold-side，应转到 `h3`。",
+    "如果 patch 主修法是把 histogram / selectivity / correlation / async-load item count 之类的导出数值从 exact constant 改成 range / lower-bound，应转到 `h2`，或在 exact-plan family 中回流 `b2`。",
+    "如果 patch 主修法是 exact plan assertion 前冻结 stats 条件，但 scope 明显只服务 exact plan，应优先考虑现有 `assert_exact_plan_or_cost/b4`。",
+    "如果 patch 主修法是 global stats lease / background refresh / global knob / async loop 顺序，应转到 async global knob / background timing 相关 family。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals，且能看出测试失败的直接原因就是“stats 还没 ready 就断言”时，可直接判为 flaky risk。这条在 umbrella family 里是高纯度 stats-side sibling。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然 patch 里看到了 `analyze` / `load stats` / `Update`，但主修法更像常规 feature bugfix，无法确认测试不稳定来自 stats-ready 时序。",
+      "patch 同时大幅修改 analyze inputs、数值断言和 stats-ready 流程，无法判断哪一层才是主机制。"
+    ]
+  },
+  "scope": [
+    "stats / analyze / cardinality / index usage / planner tests 中，对依赖 stats cache 的 plan 或 stats output 的稳定化。",
+    "尤其适用于 lazy-load histogram、`load stats`、DDL-applied stats、global stats / partition stats 可见性这类场景。"
+  ],
+  "fix_hints": [
+    "在 `analyze table`、`load stats`、`HandleDDLEvent` 之后，不要立刻断言依赖 stats 的输出；先显式 update/load 或等待 stats 真正 ready。",
+    "如果测试关心 histogram / bucket / TopN 内部状态，优先显式加载 needed stats，而不是假设它们会 eager 出现在 cache 里。",
+    "如果某些 stats 允许 lazy-load，断言时要能区分“尚未加载”与“真正错误”，避免把未 ready 当成失败。"
+  ],
+  "related_subpatterns": [
+    "精确 plan 断言前必须先冻结统计信息"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-26468",
+        "note": "在 `analyze incremental table` 之后显式 `LoadNeededHistograms()`，再检查 `show stats_buckets` 与 table stats。"
+      },
+      {
+        "case_id": "pr-34150",
+        "note": "在 global stats 检查里遇到未加载的 index buckets 时先跳过，避免把“尚未 load”误判成失败。"
+      },
+      {
+        "case_id": "pr-60514",
+        "note": "在 integration test 里给 `load stats` 前后加入等待，让 partial stats 真正进入可观测状态。"
+      },
+      {
+        "case_id": "pr-66928",
+        "note": "在 `analyze table` 之后显式 `StatsHandle().Update(context.Background(), dom.InfoSchema())`，确保 stats fully loaded into cache 再断言 selectivity/cardinality。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-60333",
+        "note": "这里主修法是把 derived numeric output 从 exact constant 改成更稳的 numeric assertion，更像 `h2` / 现有 `b2`。"
+      },
+      {
+        "case_id": "pr-63702",
+        "note": "这里主修法是 pin analyze inputs / predicate-column collection 条件，更像 `h3`。"
+      },
+      {
+        "case_id": "pr-67202",
+        "note": "这里主问题是 global knob + background refresh timing，不是 stats 本身尚未 load/materialize。"
+      }
+    ]
+  }
+}

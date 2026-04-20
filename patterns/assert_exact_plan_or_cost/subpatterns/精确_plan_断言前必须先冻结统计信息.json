@@ -1,0 +1,83 @@
+{
+  "key": "精确 plan 断言前必须先冻结统计信息",
+  "family": "assert_exact_plan_or_cost",
+  "summary": "测试如果想稳定地断 exact plan，就不能把会波动的统计信息当成隐式前提；必须先冻结 analyze / sample / stats load / selectivity boundary / mock stats 等统计条件。",
+  "mechanism": "这条子模式的关键是：计划本身之所以漂，不是因为 planner inputs 没 pin，也不是 runtime context 污染，而是 exact plan 强依赖统计信息。只要 sampling、bucket、histogram、stats load、pseudo / real stats 切换、auto analyze、或 selectivity 临界点发生变化，计划就可能合法切换。patch-backed 正例里常见修法包括：增大 sample size、调整 bucket / analyze 参数、注入 mock statistics、强制 stats sync load、`DumpStatsDeltaToKV`、或者像 `a>2 -> a>3` 这样故意避开 stats-driven selectivity boundary。",
+  "signals_required": [
+    "测试在做 exact plan assertion，且 patch 的主修法是固定统计信息，而不是单纯改 plan 表示层。",
+    "问题机制是统计信息可见性 / sampling / stats version / selectivity boundary 导致 plan choice 漂移。",
+    "稳定修法落在 analyze / sample / bucket / histogram / mock stats / stats load / pseudo-vs-real stats / query selectivity boundary 这一层。",
+    "如果不先冻结 stats，exact plan assertion 本身就不稳定。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `analyze table`、`mock statistics`、`MaxRegionSampleSize`、`samples`、`buckets`、`stats:pseudo`、`DumpStatsDeltaToKV`、`histogram`。",
+    "一类重要 patch 形态是 explain-testdata 里把 `where a>2` 改成 `where a>3`，本质上是在绕开 selectivity boundary。",
+    "有些 patch 同时改 testdata 和 analyze setup，但主修法仍然是 stats freeze。"
+  ],
+  "negative_guards": [
+    "如果 patch 主修法是 `set @@tidb_*` / hint / `use index` / engine setting 这类 planner inputs pinning，应转到 planner-input sibling。",
+    "如果 patch 主修法是 plan cache / binding / stmt summary / replica / session isolation，应转到 runtime-context sibling。",
+    "如果 patch 主修法只是换成 normalized / brief / `HasPlan`，更接近表示层 sibling。",
+    "如果 patch 主修法只是 numeric text normalization，不应并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 且主修法明确落在 stats freeze 时，可直接判为 flaky risk；这是 exact plan assertion 的高信号 sibling 之一。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然看到了 `analyze table` / stats 相关词，但 patch 更像 feature behavior change 或 test setup 常规补全，无法确认主目标是稳定 exact plan。",
+      "patch 同时出现 planner-input pinning 与 stats freeze，无法确定哪一层是主修法。"
+    ]
+  },
+  "scope": [
+    "planner / analyze / stats 相关测试中对 exact plan 的稳定化。",
+    "尤其适用于 sampling variance、pseudo stats、stats load、selectivity boundary 导致的计划漂移。"
+  ],
+  "fix_hints": [
+    "如果 exact plan assertion 依赖统计信息，优先把 analyze / samples / buckets / stats load 条件显式写死。",
+    "必要时使用 mock statistics 或显式同步 stats，而不是依赖默认 sampling 行为。",
+    "如果只是某个 selectivity 临界点在抖动，可以像历史正例那样避开 boundary，而不是继续卡在阈值附近。"
+  ],
+  "related_subpatterns": [
+    "精确 plan 断言前必须显式 pin planner inputs",
+    "精确 explain / plan tree / operator 文本断言应降到更稳定表示层"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-37576",
+        "note": "通过提高 sample / bucket 相关设置和 `MaxRegionSampleSize`，把 analyze sampling variance 压住。"
+      },
+      {
+        "case_id": "pr-66924",
+        "note": "直接注入 mock statistics，让 limit-pushdown exact plan 不再依赖采样波动。"
+      },
+      {
+        "case_id": "pr-62670",
+        "note": "把 `a>2` 改成 `a>3`，本质上是避开 stats-driven selectivity boundary。"
+      },
+      {
+        "case_id": "pr-61902",
+        "note": "主修法在 stats freeze / stats visibility，而不是 planner input pinning。"
+      },
+      {
+        "case_id": "pr-65119",
+        "note": "exact plan 稳定化依赖固定 stats 条件，而不是单纯改 assertion 文字。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-21657",
+        "note": "这里主修法是 normalized plan / 更稳表示层，不是 stats freeze。"
+      },
+      {
+        "case_id": "pr-56204",
+        "note": "这里主要是 pin planner input `tidb_isolation_read_engines`。"
+      },
+      {
+        "case_id": "pr-66529",
+        "note": "这里核心是 runtime context / session pollution，不是统计信息。"
+      }
+    ]
+  }
+}

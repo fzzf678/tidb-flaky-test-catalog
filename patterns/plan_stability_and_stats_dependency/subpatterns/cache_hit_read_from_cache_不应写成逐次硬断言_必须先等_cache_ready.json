@@ -1,0 +1,80 @@
+{
+  "key": "cache-hit / read-from-cache 不应写成逐次硬断言；必须先等 cache ready，再断稳定性质",
+  "family": "plan_stability_and_stats_dependency",
+  "summary": "测试如果想验证 cache 行为，不能把 `@@last_plan_from_cache = 1`、`HasPlan(..., \"UnionScan\")`、或“每轮都必须 hit cache”写成逐次硬约束；必须先等 cache 真正 ready，再断更稳定的 cache property。",
+  "mechanism": "这条 sibling 和现有 exact-plan family 的 `b5` 不同。这里测试真正关心的往往不是 exact plan text，而是“这条路径有没有读到 cache / 能否稳定复用 cache”。patch-backed 正例里，原测试把 `@@last_plan_from_cache`、`HasPlan(..., \"UnionScan\")` 或逐轮 cache hit 写成硬断言，但真实运行里 cache hit / read-from-cache 还依赖 cache 是否已经 warmup / load ready、某类表或访问路径是否本来就不支持 cache、以及后台刷新 / analyze / range rebuild 带来的偶发 miss。主修法反复落在：先循环等待 cache ready、用 `StmtCtx.ReadFromTableCache` 这类更直接的 runtime signal 代替 plan text、按表类型 / 访问路径区分 expected cacheability、以及把少量偶发 miss 从“真失败”里剥离出来。核心是：先让 cache 进入可观测且稳定的状态，再断言稳定性质，而不是把每一次 hit 都当成必须恒真的不变量。",
+  "signals_required": [
+    "测试主目标是验证 cache hit / read-from-cache / cacheability，而不是做 exact plan text assertion。",
+    "patch 的主修法是修正 cache 行为的观测方式或 readiness 判定，而不是去 pin planner inputs / stats inputs / runtime context。",
+    "不稳定来源是 cache warmup、cache ready 时序、不同 table/path 的合法 cacheability 差异，或少量偶发 miss，而不是查询结果顺序本身。",
+    "稳定修法落在等待 cache ready、改用 `StmtCtx.ReadFromTableCache` / 更直接 runtime signal、区分 expected cacheability、或允许小比例 miss 这一层。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `@@last_plan_from_cache`, `ReadFromTableCache`, `HasPlan(..., \"UnionScan\")`, `cache table`, `alter table ... cache`, `helperCheckPlanCache`, `analyze table`, `UnionScan`。",
+    "一类常见修法是把 `HasPlan(..., \"UnionScan\")` 换成 `StmtCtx.ReadFromTableCache`，因为 plan 文本不是观测 cache 命中的最稳定接口。",
+    "另一类常见修法是先循环执行 query 直到 cache ready，再开始断言；如果 patch 还允许极小 miss rate，只要主修法仍是“别把每轮 hit 当成硬约束”，仍然属于这条子模式。"
+  ],
+  "negative_guards": [
+    "如果 patch 主修法是禁用 prepared / non-prepared plan cache，或要求每次执行重新计算 runtime context / privilege / side effect，应转到 `h5`。",
+    "如果 patch 主修法是 exact plan assertion 受 plan cache / binding / stmt summary / shared session runtime context 污染，应优先考虑现有 `assert_exact_plan_or_cost/b5`。",
+    "如果 patch 主修法只是补 `ORDER BY` / `.Sort()` 来稳定结果顺序，应转到 `nondeterministic_result_order` 相关 family。",
+    "如果 patch 主修法是把 memory / lease / capacity 这类 cache environment knob 先 pin 住，再做 cache 行为断言，更像当前观察池里的 `h6`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals，且能看出失败直接来自“把 cache hit/read-from-cache 写成逐次硬约束”时，可直接判为 flaky risk。这条在 cache-side 是高纯度 sibling。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然 patch 里出现了 `last_plan_from_cache` / `UnionScan` / `ReadFromTableCache`，但主修法更像普通功能扩展，无法确认测试不稳定来自 cache-ready/readiness 观测。",
+      "patch 同时在改 cache 观测、runtime context、结果顺序，且主机制不够单一。"
+    ]
+  },
+  "scope": [
+    "cache table / table cache / plan cache 相关测试中，对 cache hit/read-from-cache 观测方式的稳定化。",
+    "尤其适用于 `@@last_plan_from_cache`、`HasPlan(..., \"UnionScan\")`、cached table warmup、partition/table-path cacheability 差异这类场景。"
+  ],
+  "fix_hints": [
+    "如果测试验证的是“是否从 cache 读取”，优先使用更直接的 runtime signal，而不是依赖 plan text 或单次 `@@last_plan_from_cache`。",
+    "在 cache 需要 warmup / load 的场景里，先等 cache ready 再断言，不要把前几轮 miss 当成真失败。",
+    "如果不同表类型 / 访问路径的 cacheability 本来就不同，断言要按路径区分 expected behavior，而不是统一硬写成 `1`。",
+    "对 unavoidable 的极少量 miss，优先设置阈值容忍，只把明显超标当失败。"
+  ],
+  "related_subpatterns": [
+    "cache reuse 不应遮蔽 execution-time context",
+    "精确 plan 断言前必须固定 runtime context"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-30139",
+        "note": "直接删掉 `TestPartitionWithVariedDatasources` 里逐轮 `@@last_plan_from_cache = 1` 的硬断言，因为不同路径并不保证每次都稳定命中 cache。"
+      },
+      {
+        "case_id": "pr-32139",
+        "note": "把 `HasPlan(..., \"UnionScan\")` 改成 `StmtCtx.ReadFromTableCache`，并循环执行直到 cached table 真正 ready，再判断是否读到 cache。"
+      },
+      {
+        "case_id": "pr-33299",
+        "note": "把 `expectedFromPlanCache` 按 `trangeIdx/thashIdx/tnormalIdx` 区分，说明不同表/访问路径的 cacheability 本来就不一致，不能统一断言成 `1`。"
+      },
+      {
+        "case_id": "pr-36855",
+        "note": "在 repeated cache-check 前补 `analyze table`，并把少量 missed plan cache 收集后按阈值判断，而不是每轮 miss 就立刻 fail。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-43204",
+        "note": "这里主修法是 prepared statement cache 复用了 stale-read TS，需要每次执行重算 runtime context；它还顺手补了 `ORDER BY`，但主机制更像 `h5`。"
+      },
+      {
+        "case_id": "pr-16378",
+        "note": "这里是 exact plan assertion 受 prepared plan cache/runtime context 影响，更接近现有 `assert_exact_plan_or_cost/b5`。"
+      },
+      {
+        "case_id": "pr-8556",
+        "note": "这里主修法是把 `PreparedPlanCacheMaxMemory` 这类 cache environment knob 钉住，更像仍在观察池中的 `h6`。"
+      }
+    ]
+  }
+}

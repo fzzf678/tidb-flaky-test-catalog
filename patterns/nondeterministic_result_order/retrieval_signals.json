@@ -1,0 +1,361 @@
+{
+  "family": "nondeterministic_result_order",
+  "kind": "retrieval_signals",
+  "version": "v8",
+  "description": "Repository-scan retrieval hints for the currently formalized nondeterministic_result_order subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "defaults": {
+    "purpose": "candidate_retrieval_only",
+    "verdict_requires_subpattern_json": true,
+    "group_match_semantics": "For grep_keywords_all_groups, every group should match at least one keyword before the candidate is treated as high-priority.",
+    "any_match_semantics": "grep_keywords_any is only for weak recall; false positives are acceptable at this layer and should be filtered later by manual review plus the verdict-layer subpattern JSON.",
+    "exclude_semantics": "grep_keywords_exclude are soft down-rank hints by default unless the caller explicitly chooses hard exclusions. Prefer recall over precision unless a known noise class causes sibling confusion or unreviewable candidate explosion.",
+    "rg_template_semantics": "Treat broad_recall as the default first hop for coarse repository scanning. Use fallback_no_path only when broad_recall is empty, implausibly sparse, or likely to miss due to path/layout drift. Use group_intersection only as an optional lightweight shrinker after recall; it must never be treated as an absence proof or hard gate.",
+    "path_globs_semantics": "path_globs are soft search-priority hints, not hard absence proofs. If broad_recall is empty or implausibly sparse, rerun fallback_no_path before concluding the pattern is absent. A miss in group_intersection should never override a hit from broad_recall/fallback_no_path."
+  },
+  "entries": [
+    {
+      "subpattern_key": "map / collection / helper 收集结果后未排序就断言",
+      "pattern_file": "map_collection_helper_收集结果后未排序就断言.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "visitInfo",
+        "details",
+        "orderedHandles",
+        "partDefs",
+        "trace",
+        "tagLabels",
+        "schemaNames",
+        "OptimizerCETrace",
+        "TimestampList",
+        "CPUTimeMsList",
+        "resultRows",
+        "sortRows",
+        "sort.Strings(names)"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "visitInfo",
+          "details",
+          "orderedHandles",
+          "partDefs",
+          "trace",
+          "tagLabels",
+          "schemaNames",
+          "OptimizerCETrace",
+          "TimestampList",
+          "CPUTimeMsList",
+          "resultRows",
+          "sortRows"
+        ],
+        [
+          "require.Equal(",
+          "reflect.DeepEqual(",
+          "cmp.Equal(",
+          "DeepEquals",
+          "sort.Strings(",
+          "sort.Slice(",
+          "sort.Sort(",
+          "ElementsMatch("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "execdetails",
+        "require.ElementsMatch(",
+        "assert.ElementsMatch(",
+        "cmpopts.SortSlices(",
+        "slices.Sort("
+      ],
+      "first_pass_query_hint": "第一跳先看 collection / helper 侧的变量锚点本身，以及少量低噪声 helper-side 补充锚点（例如 `OptimizerCETrace`、`resultRows`、`sort.Strings(names)`）；不要一上来把 `require.Equal` / `sort.Slice` 这种全仓通用信号全扫进来。第二跳再叠加 exact-equality / sort 语义缩小候选。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳先抓 collection / helper 变量锚点，再补少量低噪声 helper-side anchors（例如 `OptimizerCETrace`、`resultRows`、`sort.Strings(names)`），避免被全仓通用的 `require.Equal` / `sort.Slice` 放大出海量噪音。",
+          "command": "rg -n -P -g '**/*_test.go' '(\\bvisitInfo\\b|\\bdetails\\b|\\borderedHandles\\b|\\bpartDefs\\b|\\btrace\\b|\\btagLabels\\b|\\bschemaNames\\b|\\bOptimizerCETrace\\b|\\bTimestampList\\b|\\bCPUTimeMsList\\b|\\bresultRows\\b|\\bsortRows\\b|sort\\.Strings\\(names\\))' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录结构变化或 broad_recall 过 sparse 时，去掉路径限制做全仓兜底，但仍然只看 collection / helper 锚点与少量低噪声 helper-side anchors。",
+          "command": "rg -n -P '(\\bvisitInfo\\b|\\bdetails\\b|\\borderedHandles\\b|\\bpartDefs\\b|\\btrace\\b|\\btagLabels\\b|\\bschemaNames\\b|\\bOptimizerCETrace\\b|\\bTimestampList\\b|\\bCPUTimeMsList\\b|\\bresultRows\\b|\\bsortRows\\b|sort\\.Strings\\(names\\))' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳只保留“collection / helper 锚点 + exact compare/sort 语义”在局部窗口里共现的候选；继续故意不把最噪的 `details` / `trace` 放进强筛，并补上 gocheck 风格的 `DeepEquals`。这层强筛也刻意不再收 `schemaNames` / `tagLabels`，因为它们在 repo-scan 里更容易拉出成员存在性 / label membership 这类相邻噪声。",
+          "command": "rg -n -U -P -g '**/*_test.go' '(?s)((\\bvisitInfo\\b|\\borderedHandles\\b|\\bpartDefs\\b|\\bOptimizerCETrace\\b|\\bTimestampList\\b|\\bCPUTimeMsList\\b|\\bresultRows\\b|\\bsortRows\\b|sort\\.Strings\\(names\\)).{0,220}(require\\.Equal\\(|reflect\\.DeepEqual\\(|cmp\\.Equal\\(|DeepEquals\\b|ElementsMatch\\(|sort\\.Strings\\(|sort\\.Slice\\(|sort\\.Sort\\())|((require\\.Equal\\(|reflect\\.DeepEqual\\(|cmp\\.Equal\\(|DeepEquals\\b|ElementsMatch\\(|sort\\.Strings\\(|sort\\.Slice\\(|sort\\.Sort\\().{0,220}(\\bvisitInfo\\b|\\borderedHandles\\b|\\bpartDefs\\b|\\bOptimizerCETrace\\b|\\bTimestampList\\b|\\bCPUTimeMsList\\b|\\bresultRows\\b|\\bsortRows\\b|sort\\.Strings\\(names\\)))' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "多行 SQL 结果做精确顺序断言时，必须显式 ORDER BY 或 Result.Sort",
+      "pattern_file": "多行_SQL_结果做精确顺序断言时_必须显式_ORDER_BY_或_Result_Sort.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "MustQuery(",
+        ".Check(testkit.Rows(",
+        "testkit.Rows(",
+        ".Sort().Check(",
+        "UNION",
+        "union",
+        "JOIN",
+        "join",
+        "GROUP BY",
+        "group by",
+        "SHOW ",
+        "show "
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "MustQuery("
+        ],
+        [
+          ".Check(testkit.Rows(",
+          "testkit.Rows("
+        ],
+        [
+          "UNION",
+          "union",
+          "JOIN",
+          "join",
+          "GROUP BY",
+          "group by",
+          "SHOW ",
+          "show ",
+          "LIMIT",
+          "limit"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        ".Sort().Check(",
+        "ORDER BY",
+        "order by",
+        "Rows()"
+      ],
+      "first_pass_query_hint": "先找真正的多行 exact-order 断言，不要把任何 `Check(testkit.Rows(...))` 都扫进来；优先看 `Rows(\"...\", \"...\")` 这类至少两行的断言，再人工确认 SQL 是否缺少稳定顺序契约。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳只抓“多行 exact-order + 未显式 `.Sort()` 归一化”的断言，避免把单行结果和相邻 `MustQuery` 一起扫进来。",
+          "command": "rg -n -U -P -g '**/*_test.go' '(?s)MustQuery\\((?:(?!\\.Sort\\(\\)\\.Check\\(|MustQuery\\().){0,500}?\\.Check\\(\\s*testkit\\.Rows\\([^\\)]*\"[^\"]+\"\\s*,\\s*\"' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 结果过 sparse 或目录重构时，去掉路径限制做全仓兜底；仍然坚持多行 exact-order 的最小门槛。",
+          "command": "rg -n -U -P '(?s)MustQuery\\((?:(?!\\.Sort\\(\\)\\.Check\\(|MustQuery\\().){0,500}?\\.Check\\(\\s*testkit\\.Rows\\([^\\)]*\"[^\"]+\"\\s*,\\s*\"' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳叠加更像 order-sensitive SQL family 的字面锚点；允许 `.Check(` 与 `testkit.Rows(...)` 之间只出现很短的空白/换行窗口，尽量补回真实链式换行正例，同时排掉已经人工确认的大类噪声：`.Sort(` 归一化、`EXPLAIN` golden、`SHOW WARNINGS` / `SHOW COLUMNS` / `SHOW DATABASES` / `SHOW GRANTS` / `SHOW STATS_*` 这类 metadata-style show。",
+          "command": "rg -n -U -P -g '**/*_test.go' '(?s)MustQuery\\((?![^\\n]*\\.Sort\\(\\)\\.Check\\()(?!(?:[^\\n]*\\b(?:EXPLAIN|explain|SHOW WARNINGS|show warnings|SHOW COLUMNS|show columns|SHOW DATABASES|show databases|SHOW GRANTS|show grants|SHOW STATS_TOPN|show stats_topn|SHOW STATS_BUCKETS|show stats_buckets)\\b))[^\\n]{0,300}\\b(?:UNION|union|JOIN|join|GROUP BY|group by|SHOW|show|LIMIT|limit)\\b(?:(?!MustQuery\\().){0,60}?(?![^\\n]{0,60}\\.Sort\\()\\.Check\\(\\s*testkit\\.Rows\\([^\\)]*\"[^\"]+\"\\s*,\\s*\"' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "ORDER BY 键不唯一时，LIMIT / 结果比对不能断言精确顺序",
+      "pattern_file": "ORDER_BY_键不唯一时_LIMIT_结果比对不能断言精确顺序.json",
+      "grepability": "low",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "ORDER BY",
+        "order by",
+        "LIMIT",
+        "limit",
+        "TopN",
+        "topn",
+        "duplicate",
+        "rand",
+        ".Check(testkit.Rows(",
+        ".Rows()",
+        ".Sort().Rows()",
+        ".Sort().Check(",
+        "partition"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "ORDER BY",
+          "order by"
+        ],
+        [
+          "LIMIT",
+          "limit"
+        ],
+        [
+          "TopN",
+          "topn",
+          "duplicate",
+          "rand",
+          "partition",
+          ".Check(testkit.Rows(",
+          ".Rows()",
+          ".Sort().Rows()",
+          ".Sort().Check(",
+          "Check("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "EXPLAIN",
+        "explain",
+        "ORDER BY a, b",
+        "ORDER BY a,b",
+        "ORDER BY pk",
+        "ORDER BY id"
+      ],
+      "first_pass_query_hint": "这条只能做弱召回：先找已经带 `ORDER BY` 且又叠了 `LIMIT` / compare / TopN` 的测试，再人工确认排序键是否可能重复、是否真的需要二级排序键或整体归一化。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "弱召回：先按测试文件做第一跳粗召回。对这条来说，除了 `.Check(testkit.Rows(...))` 之外，先明确兼容 variable-based compare / materialized rows 形态（至少 `.Rows()` / `.Sort().Rows()`），避免把 `b5` 过度绑定到单一断言字面量。",
+          "command": "rg -n -U -P -g '**/*_test.go' '(?s)MustQuery\\((?:(?!MustQuery\\().){0,300}?\\b(ORDER BY|order by)\\b(?:(?!MustQuery\\().){0,200}?\\b(LIMIT|limit)\\b(?:(?!MustQuery\\().){0,200}?\\.Rows\\(' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 结果过 sparse 或目录结构变化时，去掉路径限制做全仓兜底召回；同样兼容 `.Rows()` / `.Sort().Rows()` 这类 variable-based compare 形态，而不只认 `.Check(testkit.Rows(...))`。",
+          "command": "rg -n -U -P '(?s)MustQuery\\((?:(?!MustQuery\\().){0,300}?\\b(ORDER BY|order by)\\b(?:(?!MustQuery\\().){0,200}?\\b(LIMIT|limit)\\b(?:(?!MustQuery\\().){0,200}?\\.Rows\\(' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "在 broad_recall 基础上，再叠加 TopN / partition / rand / duplicate 这类弱 ties 信号缩小候选；仍然只能做 candidate retrieval。",
+          "command": "rg -n -U -P -g '**/*_test.go' '((TopN|topn|duplicate|rand|partition).{0,200}(ORDER BY|order by).{0,200}(LIMIT|limit))|((ORDER BY|order by).{0,200}(LIMIT|limit).{0,200}(TopN|topn|duplicate|rand|partition))' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "runtime / executor 路径本身应该保序",
+      "pattern_file": "runtime_executor_路径本身应该保序.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/*.go"
+      ],
+      "grep_keywords_any": [
+        "MustHavePlan(",
+        "KeepOrder",
+        "keep order",
+        "keep order:true",
+        "UnionScan",
+        "PhysicalTableScan",
+        "double read",
+        "IndexLookUp",
+        "direct reading",
+        "partition",
+        "ORDER BY",
+        "order by"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "MustHavePlan(",
+          "KeepOrder",
+          "UnionScan",
+          "PhysicalTableScan",
+          "double read",
+          "IndexLookUp",
+          "direct reading"
+        ],
+        [
+          "ORDER BY",
+          "order by",
+          "LIMIT",
+          "limit",
+          "keep order"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        ".Sort().Check(",
+        "sort.Strings(",
+        "sort.Slice(",
+        "sort.Stable(",
+        "sort.SliceStable("
+      ],
+      "first_pass_query_hint": "第一跳先聚焦测试里的 ordered-path 证据，不要把全仓 runtime 实现文件全卷进来；重点看 `MustHavePlan` / `keep order:true` / UnionScan / IndexLookUp 这些测试证据。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳限定在测试文件，优先看 ordered-path regression test 自己留下的证据锚点。",
+          "command": "rg -n -P -g '**/*_test.go' '(MustHavePlan\\(|KeepOrder|keep order:true|UnionScan|PhysicalTableScan|double read|IndexLookUp|direct reading)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 时，改用“runtime path + explicit order contract”组合做全仓兜底。",
+          "command": "rg -n -U -P '((KeepOrder|UnionScan|PhysicalTableScan|double read|IndexLookUp|direct reading)[\\s\\S]{0,200}(ORDER BY|order by|LIMIT|limit))|((ORDER BY|order by|LIMIT|limit)[\\s\\S]{0,200}(KeepOrder|UnionScan|PhysicalTableScan|double read|IndexLookUp|direct reading))' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "按“ordered-path evidence -> explicit order contract”两层粗筛，显式兼容 `MustHavePlan(..., \"UnionScan\" / \"IndexLookUp\")` 这类真实正例，而不只盯行内字面量相邻。",
+          "command": "rg -n -U -P -g '**/*_test.go' '(?s)(?:(?:MustHavePlan\\([^\\n]{0,120}(?:UnionScan|IndexLookUp|PhysicalTableScan)|KeepOrder|direct reading).{0,800}(?:ORDER BY|order by|LIMIT|limit)|(?:ORDER BY|order by|LIMIT|limit).{0,800}(?:MustHavePlan\\([^\\n]{0,120}(?:UnionScan|IndexLookUp|PhysicalTableScan)|KeepOrder|direct reading))' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "sort / comparator / tie-breaker / repeated sort 本身不稳定",
+      "pattern_file": "sort_comparator_tie_breaker_repeated_sort_本身不稳定.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/*.go"
+      ],
+      "grep_keywords_any": [
+        "sort.Stable(",
+        "sort.SliceStable(",
+        "sort.Float64s(",
+        "topNSorter",
+        "SortSampleItems",
+        "Result.Sort(",
+        "compareType(",
+        "tie-breaker",
+        "unstable order",
+        "stable sort"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "sort.Stable(",
+          "sort.SliceStable(",
+          "topNSorter",
+          "SortSampleItems",
+          "Result.Sort(",
+          "compareType(",
+          "sort.Float64s("
+        ],
+        [
+          "stable",
+          "tie-breaker",
+          "unstable order",
+          "compare",
+          "sort"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "require.Less(",
+        "ORDER BY",
+        "order by",
+        ".Check(testkit.Rows(",
+        "visitInfo",
+        "details",
+        "orderedHandles"
+      ],
+      "first_pass_query_hint": "第一跳优先看真正的稳定性锚点，不要再用裸 `Less(` 和通用 `sort.Slice(` 把普通 comparator / 排序逻辑一锅端进来。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳保留能明显指向 stability / comparator 边界的强锚点，同时兼容 helper method 定义（例如 `func (*Result) Sort()`）这类真实修法，并继续避开裸 `Less(` 带来的全仓噪音。",
+          "command": "rg -n -P '(sort\\.Stable\\(|sort\\.SliceStable\\(|sort\\.Float64s\\(|SortSampleItems|Result\\.Sort\\(|func \\([^\\n]{0,40}\\*?Result\\) Sort\\(|compareType\\(|\\btopNSorter\\b|func [^\\n]{0,80} Less\\(i, j int\\)|stable sort|unstable order|tie-breaker)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "兜底时仍然坚持 strong-anchor 方案，并补上 helper method 定义形态，避免重新退回 `Less(` / `sort.Slice(` 的海量误报。",
+          "command": "rg -n -P '(sort\\.Stable\\(|sort\\.SliceStable\\(|sort\\.Float64s\\(|SortSampleItems|Result\\.Sort\\(|func \\([^\\n]{0,40}\\*?Result\\) Sort\\(|compareType\\(|\\btopNSorter\\b|func [^\\n]{0,80} Less\\(i, j int\\)|stable sort|unstable order|tie-breaker)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳只保留带明显稳定性语义的 shortlist：stable-sort / tie-breaker / semantic-sort / known helper 名称，也兼容少量 helper method 定义形态。",
+          "command": "rg -n -P '(SortSampleItems|compareType\\(|sort\\.Stable\\(|sort\\.Float64s\\(|Result\\.Sort\\(|func \\([^\\n]{0,40}\\*?Result\\) Sort\\(|stable sort|unstable order|tie-breaker)' <repo_root>"
+        }
+      ]
+    }
+  ]
+}

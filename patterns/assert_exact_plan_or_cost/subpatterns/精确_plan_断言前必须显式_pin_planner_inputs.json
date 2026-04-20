@@ -1,0 +1,84 @@
+{
+  "key": "精确 plan 断言前必须显式 pin planner inputs",
+  "family": "assert_exact_plan_or_cost",
+  "summary": "测试如果想对 exact plan 做稳定断言，就不能隐式依赖会漂移的 planner inputs；必须先显式 pin 住 knob / hint / cost model / engine setting / `use index` 等输入。",
+  "mechanism": "这条子模式的本质不是表示层太脆，也不是 runtime context 污染，而是测试在没有显式固定 planner inputs 的情况下去断言 exact plan。planner inputs 一旦漂移，计划本身就可能合法变化。patch-backed 正例里反复出现的修法包括：设置 session/global optimizer knob、切换 cost model 版本、固定 isolation read engine、加 hint、`use index`、`fix_control` 等。核心是：先把 planner 的输入空间收紧，再去做 exact plan assertion。",
+  "signals_required": [
+    "测试在做 exact plan assertion，且 patch 的主修法是显式固定 planner inputs，而不是改 plan 表示层。",
+    "planner inputs 可以是 optimizer knob、cost model、engine setting、hint、`use index`、`fix_control` 等。",
+    "如果不固定这些输入，计划本身就会合法漂移，测试不能把当下某个 plan 当成稳定契约。",
+    "修法重心在 `set @@...` / hint / `use index` / `fix_control` 这类显式 pin 输入，而不是 stats 或 runtime context。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `tidb_opt_*`、`tidb_cost_model_version`、`tidb_isolation_read_engines`、`use index`、`/*+ ... */`、`fix_control`。",
+    "很多 patch 会在 pin 住 inputs 之后继续保留 exact explain / brief plan 断言。",
+    "有些 patch 也会顺带迁移到更稳定的 explain 形式，但主修法仍然是 planner inputs pinning。"
+  ],
+  "negative_guards": [
+    "如果 patch 主修法是 normalized / brief / `HasPlan` / property-level assertion，更接近表示层 sibling。",
+    "如果 patch 主修法是 analyze / samples / buckets / mock stats / selectivity boundary，应转到 stats sibling。",
+    "如果 patch 主修法是 plan cache / binding / stmt summary / replica / session pollution，应转到 runtime-context sibling。",
+    "如果 patch 主修法只是对 runtime metric 数值做 parse / regex，不应并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals，且主修法明确是 pin planner inputs 时，可直接判为 flaky risk；这条和 exact plan assertion 的机制绑定非常强。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然看到了 `set @@tidb_*` / hint / `use index`，但 patch 也明显在改 stats 或 runtime context，无法确认主机制在哪。",
+      "planner-input 相关改动只是顺手加的 setup，真正主修法更像表示层降级或 feature bugfix。"
+    ]
+  },
+  "scope": [
+    "planner / casetest / integration tests 中对 exact plan 的稳定化。",
+    "尤其适用于 optimizer knob、cost model、engine setting、hint、`use index` 直接控制计划分支的场景。"
+  ],
+  "fix_hints": [
+    "如果测试真要断 exact plan，先把 planner inputs 显式写进 setup，而不是依赖默认值。",
+    "优先 pin 能直接改变 plan choice 的输入，例如 knob、cost model、engine setting、hint、`use index`。",
+    "不要把“当前默认 planner 配置”当成稳定契约。"
+  ],
+  "related_subpatterns": [
+    "精确 explain / plan tree / operator 文本断言应降到更稳定表示层",
+    "精确 plan 断言前必须先冻结统计信息",
+    "精确 plan 断言前必须固定 runtime context"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-26550",
+        "note": "通过设置 `tidb_opt_limit_push_down_threshold` 固定 plan choice，再保留 exact brief plan 断言。"
+      },
+      {
+        "case_id": "pr-37038",
+        "note": "主修法是显式 pin planner-side 输入，而不是改 assertion 结构。"
+      },
+      {
+        "case_id": "pr-56204",
+        "note": "显式 pin `tidb_isolation_read_engines`，避免 engine 选择漂移导致 exact plan 抖动。"
+      },
+      {
+        "case_id": "pr-65770",
+        "note": "通过 `use index` / planner input 把计划空间收紧后再断言。"
+      },
+      {
+        "case_id": "pr-58546",
+        "note": "修法主轴在 planner inputs pinning，而不是 stats / runtime isolation。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-66924",
+        "note": "这里主要是 mock stats / sampling variance，不应误并到 planner-input sibling。"
+      },
+      {
+        "case_id": "pr-46963",
+        "note": "虽然有 `fix_control` 味道，但 patch-first 主机制是 runtime propagation / eventual context。"
+      },
+      {
+        "case_id": "pr-46849",
+        "note": "这里虽然出现 fix-control 相关背景，但 patch 主修法是把 full explain row compare 降成 property-level assertion。"
+      }
+    ]
+  }
+}

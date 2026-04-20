@@ -1,0 +1,88 @@
+{
+  "key": "sort / comparator / tie-breaker / repeated sort 本身不稳定",
+  "family": "nondeterministic_result_order",
+  "summary": "代码已经试图通过排序稳定结果，但排序 helper、comparator、tie-breaker 或 repeated sort 本身并不稳定，最终仍然会让结果顺序漂移。",
+  "mechanism": "这条子模式不是“忘了排序”，而是“已经在排序，但排序语义本身不稳定”。典型问题包括：comparator 不是严格 total order、equal-key 场景下用了 unstable sort、先后多次排序导致相对顺序漂移、或用字符串化行序替代真正的语义排序。稳定修法通常是改成 `sort.Stable` / `sort.SliceStable`、补 tie-breaker、只做一次有语义的排序，或者把排序对象从字符串表示换成真正的语义值。",
+  "signals_required": [
+    "patch 直接修改 sort helper、sorter、comparator、tie-breaker、`Less` 实现或 repeated sort 逻辑，而不是单纯补 `ORDER BY` / `.Sort()`。",
+    "原有代码已经在做排序、顺序归一化或 ranking，但该排序逻辑本身不足以保证稳定顺序。",
+    "不稳定来源是 comparator / tie-breaker / stable-sort 语义，而不是 query 结果天然无序或 helper collection 忘了排序。",
+    "稳定修法是改 stable sort、补 tie-breaker、改成语义排序、或去掉 repeated unstable sort。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `sort.Stable(`、`sort.SliceStable(`、`Less(`、`topNSorter`、`SortSampleItems`、`compare`、`tie-breaker`、`stable sort`。",
+    "patch 常会把 `sort.Sort` 改成 `sort.Stable`，或显式补 key/id/type 这类 tie-breaker。",
+    "有些 case 不是改 sort API，而是把“行字符串排序”换成真正的语义值排序，例如解析成数值后再排序。"
+  ],
+  "negative_guards": [
+    "如果 patch 只是对 collection / helper 的结果补排序，更接近“map / collection / helper 收集结果后未排序就断言”。",
+    "如果 query 根本没有稳定顺序契约，或者只是补 `ORDER BY` / `.Sort()`，应转到“多行 SQL 结果做精确顺序断言时，必须显式 ORDER BY 或 Result.Sort”。",
+    "如果顺序契约已经存在，但 executor / runtime path 没守住，应转到“runtime / executor 路径本身应该保序”。",
+    "如果问题来自 `ORDER BY` 键不唯一叠加 `LIMIT` / compare，不要并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals时可直接判定为 flaky risk；这条模式专门捕获“已经排序但仍不稳定”的高价值边界。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然看到了 `sort.*` 或 comparator 代码，但看不清是否真的影响最终断言顺序。",
+      "patch 同时还在修 collection order 或 runtime keep-order，无法判断主机制到底是排序 helper 还是别的层次。"
+    ]
+  },
+  "scope": [
+    "test helper / util/testkit / planner / statistics / TopN 等依赖排序来稳定结果的场景。",
+    "任何已经存在排序步骤，但排序实现本身缺少稳定语义的测试和辅助逻辑。"
+  ],
+  "fix_hints": [
+    "如果相同 key 之间的相对顺序也影响结果，优先改成 `sort.Stable` / `sort.SliceStable` 或显式补 tie-breaker。",
+    "不要用字符串化行序替代真正的语义排序；优先对真实值做排序后比较。",
+    "避免 repeated unstable sort；优先收敛成一次有明确 total order 的排序。"
+  ],
+  "related_subpatterns": [
+    "map / collection / helper 收集结果后未排序就断言",
+    "多行 SQL 结果做精确顺序断言时，必须显式 ORDER BY 或 Result.Sort",
+    "runtime / executor 路径本身应该保序"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-5044",
+        "note": "`util/testkit: fix Sort`，说明问题直接落在 `Result.Sort()` helper / comparator 自身。"
+      },
+      {
+        "case_id": "pr-9696",
+        "note": "把 `SortSampleItems` 从 `sort.Sort` 改成 `sort.Stable`，典型的 equal-key 稳定性修法。"
+      },
+      {
+        "case_id": "pr-11095",
+        "note": "window function 执行顺序通过 `sort.SliceStable` 固定，说明不稳定来自排序实现而不是 query 契约缺失。"
+      },
+      {
+        "case_id": "pr-15536",
+        "note": "`GetUsableSetsByGreedy` 通过补 type/id 这类 tie-breaker 固定选择顺序。"
+      },
+      {
+        "case_id": "pr-15898",
+        "note": "patch 主题就是 `avoid sorting multiple times with unstable order`，明确属于 repeated unstable sort。"
+      },
+      {
+        "case_id": "pr-25092",
+        "note": "不再依赖通用行字符串排序，而是解析成语义值后再排序比较。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-2423",
+        "note": "这里更像 collection 结果忘了排序，不是 comparator / sort helper 自己有问题。"
+      },
+      {
+        "case_id": "pr-1612",
+        "note": "核心是 runtime keep-order 语义没有下传，不是 sort helper 自身不稳定。"
+      },
+      {
+        "case_id": "pr-45513",
+        "note": "核心是 `ORDER BY` ties + `LIMIT`，不是排序实现层面的 unstable sort。"
+      }
+    ]
+  }
+}

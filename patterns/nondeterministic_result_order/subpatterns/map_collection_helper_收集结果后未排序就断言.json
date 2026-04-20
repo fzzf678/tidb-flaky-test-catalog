@@ -1,0 +1,88 @@
+{
+  "key": "map / collection / helper 收集结果后未排序就断言",
+  "family": "nondeterministic_result_order",
+  "summary": "测试先把结果收集进 Go collection / helper 返回值，再对集合做精确顺序断言；但这个集合的原始顺序本身不稳定。",
+  "mechanism": "这类问题的核心不是 SQL 直接返回顺序，而是测试先把名字、visitInfo、store / detail / trace / label / partition-name 列表等 helper 结果收集进 slice / collection，再把这个 slice 当成“天然稳定”的序列去比较。顺序不稳定的来源通常是 map 迭代、registry / API 返回列表没有顺序契约、planner / helper 内部收集顺序不保证。稳定修法也很一致：先排序 / 归一化，再断言，或者改成顺序无关的集合语义比较。",
+  "signals_required": [
+    "测试先把结果收集成 Go slice / collection / helper 返回值，例如 `[]string`、`visitInfo`、stores/server 列表，而不是直接在 SQL 结果对象上断言。",
+    "集合来源顺序本身不稳定，例如 map 迭代、registry / API 返回顺序、planner / helper 内部收集顺序不保证。",
+    "后续断言对该集合做精确顺序比较，例如 `require.Equal`、`reflect.DeepEqual`、逐元素比较或按固定下标取值。",
+    "稳定修法是先排序 / 归一化集合，或改成稳定 getter，而不是继续依赖原始收集顺序。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `sort.Strings`、`sort.Slice`、`sort.Sort`、`visitInfoArray`、`details`、`orderedHandles`、`partDefs`、`trace`、`label`、schema/db/name 列表。",
+    "patch 里常同时出现“先 append / collect，再 compare / assert”这两个阶段。",
+    "有些修复不是显式排序，而是把断言改成 `ElementsMatch` / membership 之类的顺序无关比较。"
+  ],
+  "negative_guards": [
+    "如果测试直接对 `MustQuery(...).Check(testkit.Rows(...))` 做多行顺序断言，更接近“多行 SQL 结果做精确顺序断言时，必须显式 ORDER BY 或 Result.Sort”。",
+    "如果 SQL 已经有 `ORDER BY`，但不稳定来自 ties + `LIMIT` / compare，应归到“ORDER BY 键不唯一时，LIMIT / 结果比对不能断言精确顺序”。",
+    "如果 patch 的核心是 executor / planner 运行时必须保持 order，而不是测试端排序 collection，不要并到这里。",
+    "如果 helper 已经排序，但 comparator / sort helper 自身不是 strict total order，应转到“sort / comparator / tie-breaker / repeated sort 本身不稳定”。",
+    "如果 patch 核心是单点 getter / fixture cardinality / 环境差异，而不是 collection order，应该排除。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是一条非常稳定的“先收集、后按不稳定顺序断言”的测试机制。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到排序调用或集合断言，但看不清集合来源是否真的无顺序契约。",
+      "集合虽然来自 helper，但 helper 自身已经承诺稳定顺序，无法确认 flake 真来自 collection order。"
+    ]
+  },
+  "scope": [
+    "planner / executor / server / infoschema / store 等测试中，把 helper 结果收集成 slice 后再断言的场景。",
+    "任何受 map 迭代、registry 枚举或无顺序 API 返回影响的 collection-order 断言。"
+  ],
+  "fix_hints": [
+    "在断言前先对收集到的 slice 做稳定排序，例如 `sort.Strings`、`sort.Slice`、`sort.Sort`。",
+    "如果只需要一个确定对象，不要枚举整个 map / registry，优先改成稳定 getter。",
+    "如果 collection 来源和断言分散在 helper 链路里，先把“收集 -> 归一化 -> 断言”三个阶段显式拆开。"
+  ],
+  "related_subpatterns": [
+    "多行 SQL 结果做精确顺序断言时，必须显式 ORDER BY 或 Result.Sort",
+    "ORDER BY 键不唯一时，LIMIT / 结果比对不能断言精确顺序"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-2423",
+        "note": "对 `visitInfo` slice 做 `sort.Sort(visitInfoArray(v1))` 后再比较。"
+      },
+      {
+        "case_id": "pr-5256",
+        "note": "HTTP schema/db name 列表先排序，再做稳定断言。"
+      },
+      {
+        "case_id": "pr-30235",
+        "note": "把 trace / collection 的顺序敏感断言改成集合语义比较，不再依赖原始收集顺序。"
+      },
+      {
+        "case_id": "pr-44269",
+        "note": "helper/test 侧对 `details` slice 做排序后再比较。"
+      },
+      {
+        "case_id": "pr-10743",
+        "note": "对 stores / addresses slice 做 `sort.Slice`，消除收集顺序不稳定。"
+      },
+      {
+        "case_id": "pr-56813",
+        "note": "对 helper 收集出的列 / partition 名字先排序，再做结果比较。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-11095",
+        "note": "也涉及 map 顺序，但主问题更偏 planner/runtime 执行顺序稳定性，而不是简单 collection 未排序。"
+      },
+      {
+        "case_id": "pr-5044",
+        "note": "这里不是“忘了排序”，而是 `Result.Sort()` comparator 自己不稳定。"
+      },
+      {
+        "case_id": "pr-18633",
+        "note": "这条最终排除；核心更像单行结果错误依赖全局集合 / 环境 cardinality，不是 collection-order family。"
+      }
+    ]
+  }
+}

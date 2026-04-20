@@ -1,0 +1,83 @@
+{
+  "key": "精确 plan 断言前必须固定 runtime context",
+  "family": "assert_exact_plan_or_cost",
+  "summary": "测试如果想稳定地断 exact plan，不能忽略 plan cache / binding / stmt summary / replica / shared session/runtime state 这类运行期上下文；必须先固定或隔离它们。",
+  "mechanism": "这条 sibling 和 planner inputs 不同。这里不是再加一个 optimizer knob 就够了，而是 exact plan assertion 依赖某种运行期上下文：例如 prepared plan cache、plan binding、stmt summary / warning state、事务 / UnionScan runtime context、TiFlash replica availability、共享 suite session 状态等。只要这些 runtime context 没有被隔离、固定或重置，计划就可能在不同执行路径 / 不同会话状态下合法变化。patch-backed 正例里常见修法包括：禁用单条 prepared statement 的缓存、隔离 `show warnings` 所在 session、使用 dedicated explain session、用 `EventuallyMustIndexLookup` 等待 runtime state 生效、重置 shared runtime state。核心是：先固定 runtime context，再做 exact plan assertion。",
+  "signals_required": [
+    "测试在做 exact plan assertion，且 patch 的主修法是固定 / 隔离 runtime context，而不是单纯设置 planner input。",
+    "runtime context 可以是 plan cache、binding、stmt summary / warnings、prepared statement cache、txn / UnionScan runtime state、replica availability、共享 suite session 状态等。",
+    "问题机制是运行期状态污染或传播时序导致 exact plan assertion 不稳定。",
+    "稳定修法落在禁用 / 重置 / 隔离 runtime context，或等待 runtime state 真正生效，而不是把问题降级成只换 explain 表示层。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `PreparedPlanCache`、`UseCache = false`、`PreparedStmts[...]`、`CachedPrepareStmt`、`show warnings`、`explain for connection`、`FoundInPlanCache`、`last_plan_from_cache`、`binding`、`stmt summary`、`EventuallyMustIndexLookup`、`TiFlashReplica`。",
+    "一类典型修法是 dedicated session / dedicated explain session，避免 `show warnings` / `explain for connection` 污染目标 session。",
+    "另一类典型修法是关闭单条 prepared statement 的 cache，或显式等待 runtime propagation 完成。"
+  ],
+  "negative_guards": [
+    "如果 patch 主修法是 `set @@tidb_*`、hint、`use index`、cost model、engine setting，应转到 planner-input sibling。",
+    "如果 patch 主修法是 analyze / sample / mock stats / selectivity boundary，应转到 stats sibling。",
+    "如果 patch 主修法是 normalized / brief / `HasPlan`，更接近表示层 sibling。",
+    "如果 patch 主修法只是 parse runtime metric 数值，不应并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals，且能看出运行期上下文污染 / 传播时序就是 exact plan assertion 抖动来源时，可直接判为 flaky risk。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然看到了 plan cache / binding / replica / warning state 相关词，但 patch 也明显在 pin planner inputs 或改 stats，主机制还不够单一。",
+      "patch 只是顺手重构 suite setup，并不确定 runtime context 才是触发 exact plan 抖动的关键因素。"
+    ]
+  },
+  "scope": [
+    "plan cache / binding / stmt summary / warning state / replica availability / session pollution 相关的 exact plan tests。",
+    "尤其适用于 prepared statement、`explain for connection`、shared suite state、eventual plan-state propagation 场景。"
+  ],
+  "fix_hints": [
+    "如果 exact plan 依赖 runtime state，优先显式隔离 session / runtime context，而不是沿用共享状态。",
+    "对 prepared statement / plan cache 相关 case，必要时禁用单条 statement 的 cache，而不是假设 cache state 恒定。",
+    "如果某个 runtime state 生效有传播时序，优先显式等待它稳定，而不是立刻断 exact plan。"
+  ],
+  "related_subpatterns": [
+    "精确 plan 断言前必须显式 pin planner inputs",
+    "精确 explain / plan tree / operator 文本断言应降到更稳定表示层"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-16378",
+        "note": "通过 `PreparedAst.UseCache = false` 禁用 prepared statement cache，消除 runtime context 干扰。"
+      },
+      {
+        "case_id": "pr-41356",
+        "note": "恢复 global var、清 stmt summary memory，避免 shared runtime state 污染 exact plan regression。"
+      },
+      {
+        "case_id": "pr-46963",
+        "note": "使用 `EventuallyMustIndexLookup`，说明关键问题是 runtime propagation / eventual context。"
+      },
+      {
+        "case_id": "pr-66529",
+        "note": "用 dedicated `tkExplain` session 跑 `explain for connection`，避免 `show warnings` 被污染。"
+      },
+      {
+        "case_id": "pr-25138",
+        "note": "修法主轴在 plan cache / runtime context 隔离，而不是单纯 pin planner knob。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-56204",
+        "note": "这里主要是 isolation read engine 这种 planner input pinning。"
+      },
+      {
+        "case_id": "pr-62670",
+        "note": "这里主问题是 stats-driven selectivity boundary，不是 runtime context。"
+      },
+      {
+        "case_id": "pr-46849",
+        "note": "这里主要是表示层降级成 `HasPlan` / property-level assertion。"
+      }
+    ]
+  }
+}

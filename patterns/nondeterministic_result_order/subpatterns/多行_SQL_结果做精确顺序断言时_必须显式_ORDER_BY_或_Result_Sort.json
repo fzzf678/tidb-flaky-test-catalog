@@ -1,0 +1,83 @@
+{
+  "key": "多行 SQL 结果做精确顺序断言时，必须显式 ORDER BY 或 Result.Sort",
+  "family": "nondeterministic_result_order",
+  "summary": "测试直接对多行 SQL 结果做精确顺序断言时，如果没有稳定的 `ORDER BY` 契约，也没有 `Result.Sort()` 之类的归一化，就会把合法的无序结果误判成 flaky。",
+  "mechanism": "这条子模式发生在测试直接拿 `MustQuery(...).Check(testkit.Rows(...))` 之类的 SQL 结果做精确顺序断言时。只要查询没有稳定的顺序契约，多行结果的返回顺序就可能因为 UNION、JOIN、GROUP BY、SHOW、window / aggregation 输出、并行 scan 或底层执行差异而变化。稳定修法也很清楚：要么在 SQL 上补足 `ORDER BY`，要么在断言前先做 `Result.Sort()` / 等价无序归一化。核心不是“有没有 `.Sort()` 这个调用本身”，而是多行结果是否具备稳定顺序契约。",
+  "signals_required": [
+    "测试直接对 SQL 查询结果做 exact-order 断言，例如 `MustQuery(...).Check(testkit.Rows(...))` 或等价链路。",
+    "断言关注的是多行结果，而不是 `0/1` 行或纯存在性检查。",
+    "SQL 本身没有稳定顺序契约，或者虽然修的是 SQL 结果表达，但表达本身缺少顺序契约，且测试没有做 `Result.Sort()` / 等价无序归一化。",
+    "稳定修法是补 `ORDER BY`、补 `Result.Sort()`，或改成无序比较，而不是修改 runtime keep-order 逻辑。"
+  ],
+  "signals_optional": [
+    "高信号 SQL 家族包括 `UNION`、`JOIN`、`GROUP BY`、`SHOW`、window / aggregation、多表读、并行 scan。",
+    "patch 里常直接把 `Check(...)` 改成 `Sort().Check(...)`，或给 SQL 加上 `ORDER BY`。",
+    "如果同时能看到多行 `testkit.Rows(...)` 期望值，置信度更高。"
+  ],
+  "negative_guards": [
+    "如果 SQL 已经有 `ORDER BY`，但排序键不唯一、`LIMIT` / compare 仍会抖动，应转到“ORDER BY 键不唯一时，LIMIT / 结果比对不能断言精确顺序”。",
+    "如果真正的问题是 executor / distsql / keep-order 路径没有守住顺序契约，不要并到这里。",
+    "如果不是直接 SQL 结果，而是 helper / collection 收集后再断言，应转到“map / collection / helper 收集结果后未排序就断言”。",
+    "如果只是单行结果、空结果或集合语义比较，不应直接命中这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是最典型的多行结果顺序误判机制之一。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到 `.Check(testkit.Rows(...))`，但看不清是否真的是多行、或是否已经有稳定顺序契约。",
+      "patch 同时修改了 executor / runtime keep-order 路径，无法确认主修法到底在断言层还是执行层。"
+    ]
+  },
+  "scope": [
+    "unit / integration / realtikv 测试里直接对多行 SQL 结果做顺序敏感断言的场景。",
+    "尤其适用于 UNION / JOIN / GROUP BY / SHOW 这类天然容易被误当成稳定顺序的查询。"
+  ],
+  "fix_hints": [
+    "如果测试只关心集合内容，不关心顺序，优先用 `Result.Sort()` / 等价无序归一化。",
+    "如果测试确实关心顺序，就把顺序契约写进 SQL，例如补足 `ORDER BY`。",
+    "不要把“当前跑起来通常是这个顺序”当成契约；必须让顺序显式化。"
+  ],
+  "related_subpatterns": [
+    "map / collection / helper 收集结果后未排序就断言",
+    "ORDER BY 键不唯一时，LIMIT / 结果比对不能断言精确顺序"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-3781",
+        "note": "UNION 测试通过 `r.Sort().Check(...)` 消除返回顺序不稳定。"
+      },
+      {
+        "case_id": "pr-4001",
+        "note": "保留无显式顺序契约的查询，但在结果断言前补 `Sort().Check(...)`。"
+      },
+      {
+        "case_id": "pr-1591",
+        "note": "join 测试通过补 `ORDER BY` 稳定多行结果顺序。"
+      },
+      {
+        "case_id": "pr-34130",
+        "note": "修的是 SQL 结果表达本身的顺序契约，例如 `group_concat(... order by ...)`。"
+      },
+      {
+        "case_id": "pr-8442",
+        "note": "UNION 结果在断言前补显式 `ORDER BY`，避免顺序漂移。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-45513",
+        "note": "查询已经有 `ORDER BY`，但排序键不唯一，叠加 `LIMIT` / 边界裁剪后仍会漂，应转到 ties + LIMIT 那条。"
+      },
+      {
+        "case_id": "pr-4470",
+        "note": "主问题是 executor 没有保持应有顺序，不是单纯缺 `ORDER BY` / `Result.Sort()`。"
+      },
+      {
+        "case_id": "pr-5044",
+        "note": "这里不是没做无序归一化，而是 `Result.Sort()` comparator 自己不稳定，应该转到“sort / comparator / tie-breaker / repeated sort 本身不稳定”。"
+      }
+    ]
+  }
+}
