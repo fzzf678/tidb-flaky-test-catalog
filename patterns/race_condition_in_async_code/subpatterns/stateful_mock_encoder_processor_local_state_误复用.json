@@ -1,0 +1,58 @@
+{
+  "key": "有状态 mock encoder 被多个 processor 误复用",
+  "family": "race_condition_in_async_code",
+  "summary": "本应是 processor-local 的 stateful mock / encoder 被多个并发 processor 共享复用。",
+  "mechanism": "很多 mock encoder、processor helper、临时 writer 都带内部状态，本来应该一调用一实例、或一 processor 一实例；如果测试桩或工厂函数返回同一个 stateful 实例给多个并发 processor，就会让内部状态 bleed 到其他调用路径，造成 nondeterministic 行为和偶发失败。",
+  "signals_required": [
+    "diff 中存在 mock/factory/builder，例如 `NewEncoder`，本应为每个 processor / 调用返回独立实例。",
+    "当前实现却把同一个 stateful 实例返回给多个并发 caller / processor。",
+    "该实例在运行时会修改内部状态，例如缓冲区、计数、游标、编码上下文、阶段状态。",
+    "修复的核心是每次调用返回新实例，而不是给共享实例简单加锁。"
+  ],
+  "signals_optional": [
+    "修复中出现 `DoAndReturn`、每次 `NewEncoder` 新建对象、fresh instance per call。",
+    "问题对象是 mock encoder、mock writer、processor helper、stateful test double。",
+    "测试失败难以稳定复现，但可通过 sleep 或增加并发放大。"
+  ],
+  "negative_guards": [
+    "如果共享对象是长期全局 cache，需要 copy-on-write 或 publish-once，更接近其他共享结构子模式。",
+    "如果共享对象本来设计就是只读模板，而每次调用都会 clone 出局部实例，不要命中这个子模式。",
+    "如果修复核心是加锁保护一个必须共享的对象，而不是返回新实例，应降级为 `needs_more_evidence`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；stateful test double 被并发复用是很强的测试引入型失稳信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "对象是否真有内部可变状态还不清楚。",
+      "工厂函数虽然名字像 builder，但返回的可能是无状态值对象。"
+    ]
+  },
+  "scope": [
+    "importer/lightning、processor 并发测试、mock factory / gomock expectation 测试。",
+    "任何工厂函数本应返回 fresh instance，但测试里误返回共享 stateful 对象的场景。"
+  ],
+  "fix_hints": [
+    "让工厂函数每次调用都返回新实例，而不是复用同一个 mock/stateful helper。",
+    "如果必须共享模板，返回 clone 或 copy，不要共享活跃实例。",
+    "在 gomock 场景下优先用 `DoAndReturn` 动态生成新实例。"
+  ],
+  "related_subpatterns": [
+    "懒初始化映射或指针需要一次性发布",
+    "并发 callback 共享结果 slice append reset snapshot 未统一加锁"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-65373",
+        "note": "`NewEncoder` 不能给多个 processor 返回同一个 stateful mock encoder。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-9008",
+        "note": "更像共享 cache 的 copy-on-write / atomic swap，而不是 per-call fresh instance。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "key": "BindHandle 共享 parser 并发使用",
+  "family": "race_condition_in_async_code",
+  "summary": "单例 `BindHandle` 持有共享 parser 实例，并被多个并发路径同时用于解析或更新 binding。",
+  "mechanism": "parser 通常携带内部解析状态，并不适合被多个 goroutine 同时复用；如果 `BindHandle` 把 parser 作为共享字段长期持有，并让多个更新、capture、prepare 或 reload 路径并发调用，就会让 parser 内部状态发生竞态，导致解析结果污染或直接触发 data race。",
+  "signals_required": [
+    "diff 直接触及 `BindHandle` 或同类单例 bind 组件中的 parser 字段。",
+    "同一个 parser 实例会被两个或更多并发路径复用，例如 binding 更新、prepare、capture/filter、后台 reload。",
+    "这些路径会直接调用 parser 的解析、normalize、restore 或相关方法。",
+    "代码没有为每次调用新建 parser，也没有在共享 parser 外层加锁。"
+  ],
+  "signals_optional": [
+    "修复中出现 `parser.New()`、每次调用单独创建 parser，或给共享 parser 使用加锁关键区。",
+    "问题路径来自前台 API 与后台 loop 同时访问 `BindHandle`。",
+    "共享 parser 的使用通常伴随 SQL 字符串解析、binding normalize、hint 处理。"
+  ],
+  "negative_guards": [
+    "如果并发复用的是单例 `sctx` / session context，而不是 parser，更接近 `BindHandle 单例 sctx 并发复用`。",
+    "如果 parser 已经是函数内局部变量或每次调用新建，不要命中这个子模式。",
+    "如果只是 bind cache 的发布/替换一致性问题，而没有共享 parser 调用，不要命中这个子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；共享 parser 的并发调用属于很强的结构性竞态信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "diff 里出现 parser 字段，但是否被并发路径共同调用还不清楚。",
+      "parser 可能只是配置对象或工厂，而不是活跃解析器实例。"
+    ]
+  },
+  "scope": [
+    "bindinfo、binding capture/filter、prepare/normalize、后台 binding reload 相关测试。",
+    "任何长期持有 parser 实例并可能被并发调用的管理类组件。"
+  ],
+  "fix_hints": [
+    "优先改成每次调用新建 parser，而不是共用单例 parser。",
+    "如果必须共享，给 parser 使用关键区加锁，并缩小临界区。",
+    "避免在后台 loop 与前台 API 间复用同一个活跃 parser。"
+  ],
+  "related_subpatterns": [
+    "BindHandle 单例 sctx 并发复用",
+    "测试改写全局 lease 干扰后台 refresh / loader"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-10321",
+        "note": "BindHandle 共享 parser 实例被多个 goroutine 更新 binding 时并发使用。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-49092",
+        "note": "更像单例 `sctx` 会话上下文被并发复用。"
+      },
+      {
+        "case_id": "pr-38223",
+        "note": "更像 `BindHandle` 内部状态替换和读者一致性问题。"
+      }
+    ]
+  }
+}

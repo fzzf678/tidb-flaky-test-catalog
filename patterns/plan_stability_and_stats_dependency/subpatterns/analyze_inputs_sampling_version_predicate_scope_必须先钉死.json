@@ -1,0 +1,79 @@
+{
+  "key": "analyze inputs / sampling / version / predicate-column scope 必须先钉死",
+  "family": "plan_stability_and_stats_dependency",
+  "summary": "测试如果断言的对象依赖统计信息生成方式，就不能把 samplerate、analyze version、all-columns scope、predicate-column collection 或 threshold-side 数据规模当成隐式前提；这些 analyze inputs 必须先钉死。",
+  "mechanism": "这条子模式和 `h1` 的区别是：`h1` 关注 stats 还没真正 ready，这里关注的是 stats 虽然 ready 了，但生成它们的 analyze inputs 本身在漂。只要 `samplerate`、`tidb_analyze_version`、`analyze table ... all columns`、predicate-column collection、或某个 feature 开关控制的 stats scope 没有显式 pin 住，测试观测到的 histogram、selectivity、index estimation、甚至后续 plan/stats 输出都可能合法变化。patch-backed 正例里的主修法通常不是再等一下，而是把 analyze inputs 本身固定下来：例如 `0.9 samplerate -> 1`、固定 analyze version、把 `analyze table` 改成 `analyze table ... all columns`、先触发 predicate-column usage 再 analyze，或避免把数据规模卡在一个不稳定 threshold 边界上。核心是：先固定“stats 是怎么被收集出来的”，再断言依赖它的输出。",
+  "signals_required": [
+    "断言对象依赖统计信息的生成方式，而不是单纯依赖“stats 是否已经 ready”。",
+    "patch 的主修法是显式固定 analyze inputs / scope / version / feature-conditioned collection 行为，而不是等 stats load 完成。",
+    "不稳定来源是采样率、analyze version、all-columns scope、predicate-column collection、或 threshold-side 数据规模导致收集出来的 stats 合法变化。",
+    "稳定修法落在 `samplerate`、`tidb_analyze_version`、`analyze table ... all columns`、usage dump / predicate-column priming、或调整数据规模/阈值这一层。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `0.9 samplerate -> 1`、`set @@tidb_analyze_version`、`analyze table ... all columns`、`DumpColStatsUsageToKV`、predicate columns、`analyze_options`、`topn`、`stats_ver`。",
+    "很多 patch 会在固定 analyze inputs 之后继续保留 plan/stats 断言，说明问题不是断言形式，而是 stats 生成条件不稳定。",
+    "有些 patch 不直接写 feature 名字，但会通过先打一条 query / 收集 usage 再 analyze，来显式钉死 predicate-column scope。"
+  ],
+  "negative_guards": [
+    "如果 patch 主修法是 `LoadNeededHistograms()`、`StatsHandle().Update(...)`、`HandleDDLEvent(...)`、sleep/wait/retry，让 stats 真正 ready，应转到 `h1`。",
+    "如果 patch 主修法是把 histogram / selectivity / correlation / item count 从 exact constant 改成 range / lower-bound，应转到 `h2`。",
+    "如果 patch 主修法只服务 exact plan assertion，且 wording 明显是“先冻结 stats 再断 exact plan”，应优先考虑现有 `assert_exact_plan_or_cost/b4`。",
+    "如果 patch 主修法是 cache / binding / prepared stmt / runtime context 隔离，应转到 cache/runtime 侧 sibling。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals，且主修法明确是在 pin analyze inputs / scope 时，可直接判为 flaky risk。这条是 generalized stats 侧的另一条高纯度 sibling。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然 patch 里看到了 `analyze table` / `stats_ver` / `samplerate`，但主修法更像功能语义变更，而不是测试稳定化。",
+      "patch 同时在改 stats-ready、numeric normalization 和 analyze inputs，无法确认 analyze inputs 才是主机制。"
+    ]
+  },
+  "scope": [
+    "stats / analyze / cardinality / selectivity / planstats 相关测试中，对依赖 stats 生成条件的 plan 或 stats output 的稳定化。",
+    "尤其适用于 samplerate、analyze version、predicate columns、all-columns analyze、threshold-side 数据规模等场景。"
+  ],
+  "fix_hints": [
+    "如果测试依赖 stats 生成方式，优先把 analyze version、samplerate 和 column scope 明确写进 setup，不要依赖默认值。",
+    "对 predicate-column 或 usage-driven stats，先显式触发 usage 收集，再 analyze；不要把 feature 默认行为当成稳定前提。",
+    "如果某个 case 恰好落在 stats threshold 边界附近，优先调整数据规模或 scope，避免继续把测试卡在临界点上。"
+  ],
+  "related_subpatterns": [
+    "统计信息真正 load / materialize / apply 之前不应断言依赖它的计划或统计输出",
+    "精确 plan 断言前必须先冻结统计信息"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-32017",
+        "note": "把 `0.9 samplerate` 改成 `1`，消除 sampled analyze 对 persisted analyze options 的不稳定影响。"
+      },
+      {
+        "case_id": "pr-54440",
+        "note": "predicate-column collection 进入默认路径后，测试通过显式 usage/column-scope setup 来钉死 analyze 行为。"
+      },
+      {
+        "case_id": "pr-62725",
+        "note": "把 `analyze table t` 改成 `analyze table t all columns`，确保新索引估算真正依赖到需要的 column stats。"
+      },
+      {
+        "case_id": "pr-63702",
+        "note": "把 `tidb_analyze_version=1` 固定到 `2`，并配套新的 stats collection 路径，避免版本差异导致 histogram / estimation 断言漂移。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-26468",
+        "note": "这里主修法是 `LoadNeededHistograms()` 让 stats 真正 ready，更像 `h1`。"
+      },
+      {
+        "case_id": "pr-60333",
+        "note": "这里主修法是 derived numeric output 的断言降级，更像 `h2` / 现有 `b2`。"
+      },
+      {
+        "case_id": "pr-67202",
+        "note": "这里主问题是 global stats lease / background refresh timing，不是 analyze inputs 没 pin。"
+      }
+    ]
+  }
+}

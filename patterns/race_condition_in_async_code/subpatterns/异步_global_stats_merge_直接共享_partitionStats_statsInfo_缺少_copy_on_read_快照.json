@@ -1,0 +1,66 @@
+{
+  "key": "异步 global stats merge 直接共享 partitionStats/statsInfo，缺少 copy-on-read 快照",
+  "family": "race_condition_in_async_code",
+  "summary": "global stats 的异步合并路径把 `partitionStats`、`allPartitionStats` 或底层 `statsInfo` 直接交给 I/O worker、CPU worker 或后续 merge 逻辑消费，没有先切出只读快照，导致异步 worker 与其他读取/更新路径共享同一份统计状态。",
+  "mechanism": "这类问题的核心不是 TopN merge 算法错，也不是普通 stats collector reset/update，而是 global stats merge 本身开始异步化之后，仍继续沿用原来的 live `partitionStats/statsInfo` 访问方式。只要 `MergePartitionStats2GlobalStats` / `AsyncMergePartitionStats2GlobalStats` 一类路径会让多个 worker 并发消费 partition-level stats，而这些 stats 不是先通过 `GetStatsInfo(... needCopy)`、预加载快照、或分阶段 load 出独立副本，就会在 `-race` 下报 data race，或者出现合并过程中读到漂移状态。稳定修法通常是先把 worker 需要的 histogram/TopN/FMSketch 拆成副本或快照，再交给异步 merge worker。",
+  "signals_required": [
+    "代码位于 global stats merge 主线，常见入口是 `MergePartitionStats2GlobalStats`、`MergePartitionStats2GlobalStatsByTableID`、`AsyncMergePartitionStats2GlobalStats` 或 `blockingMergePartitionStats2GlobalStats`。",
+    "merge 路径里存在异步 worker、并发 merge、或显式的 I/O / CPU 分阶段处理，而不是单线程局部计算。",
+    "worker 直接依赖 live `partitionStats`、`allPartitionStats`、`statsInfo` 或由它们导出的统计对象，而不是先拿只读快照。",
+    "修复锚点通常会引入 `GetStatsInfo`、`LoadTablePartitionStats`、`loadHistogramAndTopN` 这类“先取快照/先拆数据，再交给 worker”的结构。"
+  ],
+  "signals_optional": [
+    "补丁或代码里常出现 `GetStatsInfo will return the copy of the statsInfo` 这类注释。",
+    "辅助信号常见为 `partitionStats`、`allPartitionStats`、`loadFMSketch`、`loadHistogramAndTopN`、`LoadTablePartitionStats`。",
+    "有些 sibling case 会同时出现 `tidb_enable_async_merge_global_stats`、`EnableAsyncMergeGlobalStats` 等 async 开关。"
+  ],
+  "negative_guards": [
+    "如果问题核心是 `merge_worker.go` / `topn.go` 里的 TopN 聚合逻辑、offset、`disjointNDV` 复位或错误结果，更接近 global stats TopN merge 子线，不是这条 snapshot/copy-on-read 模式。",
+    "如果问题核心是共享 summary collector 被 `Reset/Update` 交错访问，更接近 `共享摘要收集器 Reset Update 交错竞态`。",
+    "如果问题只是普通 stats cache/table/column/index 对象的 copy-on-write，而不在 global stats async merge 主线里，不要直接并入这条。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；异步 global stats merge 继续消费 live partition stats，是很稳定的结构性共享状态竞态信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清 merge 路径是否真的会让多个 worker 并发消费同一份 stats 对象。",
+      "虽然存在 async merge，但传给 worker 的已经是明确复制后的只读快照。"
+    ]
+  },
+  "scope": [
+    "statistics/globalstats 路径里的 global stats merge 主线。",
+    "任何把 partition-level stats 异步汇总成 global stats 的 worker / pipeline。"
+  ],
+  "fix_hints": [
+    "不要把 live `partitionStats` / `statsInfo` 直接交给异步 worker；先通过 `GetStatsInfo(... needCopy)` 或显式 load 阶段拿到副本。",
+    "把读取 partition stats 和 worker merge 拆成两个阶段，保证 worker 只消费不可变快照。",
+    "如果同时保留 blocking / async 两条 merge 路径，要确保两边都遵守同一套 snapshot/copy-on-read 纪律。"
+  ],
+  "related_subpatterns": [
+    "共享摘要收集器 Reset Update 交错竞态",
+    "懒初始化映射或指针需要一次性发布"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-47391",
+        "note": "global stats merge 异步化后，把读取 partition stats 和 worker merge 拆开；检索锚点落在 `AsyncMergePartitionStats2GlobalStats`、`allPartitionStats`、`loadHistogramAndTopN` 这一组结构。"
+      },
+      {
+        "case_id": "pr-47806",
+        "note": "在引入 async merge 开关时，`global_stats.go` 里继续保留 `partitionStats.GetStatsInfo(... needCopy)` 的 copy-on-read 纪律，明确写出“copy of the statsInfo”。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-48757",
+        "note": "这是 global stats TopN merge 的 wrong-result / pooled state reset 子线，核心在 `merge_worker.go` 和 `disjointNDV`，不是 live `partitionStats/statsInfo` snapshot 问题。"
+      },
+      {
+        "case_id": "pr-48852",
+        "note": "这是 TopN 并发聚合算法修正，核心在 `merge_worker.go` / `topn.go` 的合并逻辑，不是 async merge 读取 live stats 对象。"
+      }
+    ]
+  }
+}

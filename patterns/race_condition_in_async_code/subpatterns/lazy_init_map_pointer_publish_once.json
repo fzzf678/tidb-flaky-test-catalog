@@ -1,0 +1,66 @@
+{
+  "key": "懒初始化映射或指针需要一次性发布",
+  "family": "race_condition_in_async_code",
+  "summary": "共享 map / pointer / 派生结构在运行时按需懒初始化，但首次发布没有原子化或一次性保护。",
+  "mechanism": "如果多个 worker 在第一次访问时同时去构造同一个共享 map、pointer 或派生缓存，就会出现重复初始化、部分写入对其他 goroutine 可见，或多个初始化结果互相覆盖的问题。对这种结构，稳定修复通常不是普通读写加锁，而是 `sync.Once`、`atomic.Pointer` + CAS、或先构造副本后一次性发布。",
+  "signals_required": [
+    "diff 中存在共享 map、pointer、索引映射、派生缓存或类似结构，并且它是在运行时第一次使用时才初始化。",
+    "多个 goroutine / worker / 并发执行路径都可能触发这次懒初始化。",
+    "初始化结果会被发布到共享字段上，供后续路径复用。",
+    "代码没有使用 `sync.Once`、`atomic.Pointer`、CAS、copy-on-write publish 或等价的一次性发布机制。"
+  ],
+  "signals_optional": [
+    "修复中出现 `atomic.Pointer`、`CompareAndSwap(nil, ...)`、`sync.Once`、先构造新 map 再一次性 Store。",
+    "共享结构存放的是列映射、统计使用信息、派生索引、内部缓存。",
+    "失败表现既可能是 race，也可能是偶发错误映射、缺项或脏缓存。"
+  ],
+  "negative_guards": [
+    "如果共享结构不是懒初始化，而是长期存在的共享 map/list 被并发原地改写，更接近其他共享状态子模式。",
+    "如果修复核心是 copy-on-write 替换共享 cache，而不是首次 publish-once，不要优先命中这个子模式。",
+    "如果结构只会在单线程初始化完成后再发布给并发路径，不要命中这个子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是共享派生结构懒初始化最常见的并发失稳模式。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清初始化是否真的会被多个并发路径同时触发。",
+      "共享字段虽然是 pointer/map，但可能已经通过其他关键区保证单次发布。"
+    ]
+  },
+  "scope": [
+    "executor、planner、expression、stats 等会在运行时派生缓存或索引映射的组件。",
+    "任何在并发执行中第一次访问时才构造共享结构的代码。"
+  ],
+  "fix_hints": [
+    "优先改成 `sync.Once`、`atomic.Pointer` + CAS 或 copy-on-write 后单次发布。",
+    "先在局部变量里构造完整结构，再一次性发布，不要把半成品暴露给共享字段。",
+    "如果结构只能由单线程构造，明确把构造时机前移到并发路径启动之前。"
+  ],
+  "related_subpatterns": [
+    "BindHandle 共享 parser 并发使用",
+    "并发 callback 共享结果 slice append reset snapshot 未统一加锁"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-51029",
+        "note": "`usedStatsInfo` 需 `atomic pointer + sync.Map / CAS` 做线程安全初始化。"
+      },
+      {
+        "case_id": "pr-53794",
+        "note": "`columnEvaluator.mergedInputIdxToOutputIdxes` 需 `atomic.Pointer + CAS` 做一次性发布。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-9008",
+        "note": "更像共享 cache 的 copy-on-write / atomic swap，而不是首次懒初始化。"
+      },
+      {
+        "case_id": "pr-31714",
+        "note": "更像 callback merge 共享 map 无锁，而不是 publish-once。"
+      }
+    ]
+  }
+}

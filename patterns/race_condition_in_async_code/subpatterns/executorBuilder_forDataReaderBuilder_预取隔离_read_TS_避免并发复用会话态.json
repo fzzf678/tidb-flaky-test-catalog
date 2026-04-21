@@ -1,0 +1,66 @@
+{
+  "key": "`executorBuilder.forDataReaderBuilder` 预取隔离 read TS，避免并发复用会话态",
+  "family": "race_condition_in_async_code",
+  "summary": "当 `dataReaderBuilder` 会在多个 inner worker 或延迟执行路径里继续重建 reader 时，如果它仍直接依赖共享 `executorBuilder` / session 的实时事务态去取 `snapshotTS/forUpdateTS`，就会把别的语句或后续阶段更新过的 TS 混进来，导致 data race 或偶发错结果。",
+  "mechanism": "`dataReaderBuilder` 不只是构建时的局部变量，它可能被 `IndexLookUpJoin`、`IndexLookUpMergeJoin`、`IndexLookUpHashJoin` 等执行器保留下来，在后续 worker/batch/record set drain 阶段继续调用。若它还通过共享 `executorBuilder.getSnapshotTS()` 直接读取 session 里的 `forUpdateTS`、`snapshotReadTS`、TxnCtx 状态，就会出现两个问题：一是并发路径会竞争共享 builder/session 状态，二是不同语句片段可能应该使用不同 read TS（比如 `FOR UPDATE` vs 普通 snapshot read），却被混用。稳定修法通常是：在构造 `dataReaderBuilder` 时先预取一次当前语义对应的 read TS，再克隆出 `builderForDataReader`，设置 `forDataReaderBuilder=true` 和私有 `dataReaderTS`，让后续 worker 只读这份冻结后的 TS，而不是回头再碰共享会话态。",
+  "signals_required": [
+    "代码位于 `executorBuilder` / `dataReaderBuilder` 这条 reader 重建主线，强锚点通常是 `newDataReaderBuilder`、`forDataReaderBuilder`、`dataReaderTS`、`getSnapshotTS`。",
+    "补丁明确在处理不同执行阶段或不同语句片段应使用不同 read TS 的问题，典型锚点是 `snapshotReadTS`、`forUpdateTS`、`select ... for update union select`、`issue #30468`。",
+    "存在 `dataReaderBuilder` 可能被并发 worker 或延迟执行路径复用的结构性信号，提交说明或注释里通常会直接写 `dataReaderBuilder can be used in concurrent goroutines`、`thread safe`。",
+    "修复核心是预取并冻结 data reader 专属 TS，例如 `ts, err := b.getSnapshotTS()`、`builderForDataReader := *b`、`builderForDataReader.forDataReaderBuilder = true`、`builderForDataReader.dataReaderTS = ts`，而不是继续让 worker 运行时回读共享会话态。"
+  ],
+  "signals_optional": [
+    "高信号组合锚点包括 `newDataReaderBuilder(innerPlan)`、`if b.forDataReaderBuilder { return b.dataReaderTS, nil }`、`getSnapshotReadTS`、`getForUpdateTS`。",
+    "补丁常会顺手删除旧的“先在 Open 阶段调用一次 `getSnapshotTS()` 缓存”的 dirty hack，并改成 builder 构造时一次性冻结 TS。",
+    "如果 `buildUnionScanForIndexJoin` 也从 `childBuilder := &dataReaderBuilder{...}` 改成 `builder.newDataReaderBuilder(...)`，通常也是这条子模式的强旁证。"
+  ],
+  "negative_guards": [
+    "如果问题核心是 `buildUnionScanForIndexJoin` 直接改写共享 `builder.Plan` 或共享 `b.err`，应归入相邻的 `builder.Plan` 直改子模式。",
+    "如果问题核心只是 `forUpdateTS` 语义更新时机不对、需要在非 PointGet 计划上重新取一次 TS，而没有 `forDataReaderBuilder/dataReaderTS` 这组冻结 worker 私有 TS 的锚点，应归入相邻的事务 TS 语义子模式。",
+    "如果问题核心是 `indexRanges`、`TmpConstant`、`joinResult` 这类 worker 层可变对象复用，也不应并入这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；“dataReaderBuilder 并发/延迟复用 + 共享 getSnapshotTS 会话态 + forDataReaderBuilder/dataReaderTS 冻结修复”是非常稳定的结构性信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然出现了 `forUpdateTS` / `snapshotReadTS`，但看不清它是否真的会在并发 worker 或延迟重建路径中被复用。",
+      "代码里出现了 `dataReaderBuilder`，但没有 `forDataReaderBuilder/dataReaderTS/newDataReaderBuilder` 这组冻结私有 TS 的关键锚点。"
+    ]
+  },
+  "scope": [
+    "`executor/builder.go` / `pkg/executor/builder.go` 中构造 `dataReaderBuilder`、选择 read TS 的主线。",
+    "`executor/index_lookup_join.go`、`executor/index_lookup_merge_join.go`、`executor/index_lookup_hash_join.go` 等会持有 `readerBuilder` 并在后续阶段继续重建 reader 的执行器路径。"
+  ],
+  "fix_hints": [
+    "不要让 `dataReaderBuilder` 在 worker 运行期再去共享 `executorBuilder/session` 上读 `getSnapshotTS()`；在 builder 创建时一次性冻结当前语义对应的 TS。",
+    "为 data reader 单独复制一份 `executorBuilder`，设置 `forDataReaderBuilder=true` 和私有 `dataReaderTS`，后续只读这份冻结状态。",
+    "把“运行期再碰共享会话态”的 dirty hack 收回到 builder 构造期，避免不同语句片段或后续阶段把错误的 `forUpdateTS/snapshotReadTS` 混进来。"
+  ],
+  "related_subpatterns": [
+    "`buildUnionScanForIndexJoin` 直接改写共享 `builder.Plan`",
+    "`IndexJoin / IndexLookupJoin / IndexLookupMergeJoin` 每个 inner worker 复制自己的 `indexRanges`"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-31956",
+        "note": "补丁核心是引入 `forDataReaderBuilder`、`dataReaderTS` 和 `newDataReaderBuilder`，在创建 data reader 时先冻结正确的 read TS，再让后续 worker/延迟执行路径只读私有 TS；提交说明和注释都明确写到 `dataReaderBuilder` 会在 concurrent goroutines 中使用。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-8031",
+        "note": "这条同样在 `dataReaderBuilder` 主线上，但核心修复点是 `buildUnionScanForIndexJoin` 里不要直接改共享 `builder.Plan`，不是冻结 `dataReaderTS`。"
+      },
+      {
+        "case_id": "pr-13553",
+        "note": "这条更偏 `forUpdateTS` 的取值时机和事务语义修正；没有 `forDataReaderBuilder/dataReaderTS/newDataReaderBuilder` 这组冻结 data reader 私有 TS 的锚点。"
+      },
+      {
+        "case_id": "pr-12024",
+        "note": "虽然在 index lookup merge join / data reader 上下文里，但核心稳定修法仍是 worker 侧 `indexRanges` clone，而不是 `getSnapshotTS` 私有化。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "key": "后台 component 必须显式 Stop/Close/Wait，不能靠 ignore / 自然退出",
+  "family": "test_isolation_and_state_pollution",
+  "summary": "测试拉起或接管了后台 component、worker、manager、queue、server harness 之后，如果不显式 Stop/Close/Wait，它们会在测试窗口外继续运行、留下 goroutine 或污染后续用例；稳定修法必须把这些后台对象真正停干净，而不是靠 goleak ignore、自然退出或只改全局 knob。",
+  "mechanism": "这条子模式的核心不是某个临时句柄没 close，也不是某个全局 TTL/lease/config 被 restore 了没有，而是测试自己拥有或接管了一组会持续运行的后台 component。常见对象包括 domain/store/server harness、metrics view worker、TTLJobManager、stats worker、owner campaign loop、hash-join/backfill worker group、priority queue 等。原始不稳定通常表现为：component 在测试退出后还在跑、cancel 后 goroutine 没真正退出、close-path 没有 wait 完、或者长期靠 `goleak.IgnoreTopFunction(...)` 掩盖。稳定修法也很一致：显式 `Stop()` / `Close()` / `Wait()` / `WaitStopped(...)`，走完整 teardown 链，让后台 component 真正退场，而不是继续依赖自然退出或环境收敛。",
+  "signals_required": [
+    "patch 的 retained 主体明确在处理后台 component / worker / manager / queue / harness 的生命周期，而不是单纯 restore 一个 process-global knob。",
+    "原始不稳定来自后台 component 在测试窗口之外继续运行、cancel 后仍未退出、close-path 没有 wait 完，或长期靠 goleak ignore 掩盖残留。",
+    "稳定修法显式引入或强化了 `Stop()` / `Close()` / `Wait()` / `WaitStopped(...)` / 完整 stopServer-clean-teardown 链，而不是只写 `sleep` / `Eventually`。",
+    "patch 的主轴是把 component 真正停掉，或把 cleanup 绑定到测试生命周期，让 goroutine / worker / manager 确定退出。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `view.Stop()`、`WaitStopped(...)`、`DisableStats4Test()`、`TTLJobManager().Stop()`、`stopServer(...)`、`dom.Close()`、`store.Close()`、`server.Close()`、`WaitGroupWrapper`、`campaignLoop`、`loadStatsWorker`、`VerifyTestMain`、`testleak.AfterTest()`。",
+    "patch 经常同时删除或缩小 `goleak.IgnoreTopFunction(...)` 白名单，因为 retained 目标是不再掩盖后台 worker 残留。",
+    "有些修法会把 `Cancel()` 升级为 `Cancel() + Wait()`，或把局部 `server.Close()` 升级成完整 `stopServer(...)` 链。",
+    "这条 sibling 可以和 namespace isolation 同时出现，但只要 retained 主体更偏 component teardown，优先留在这里。"
+  ],
+  "negative_guards": [
+    "如果 patch 的主体只是 save-and-restore 全局 lease / TTL / retry / config / logger / callback，或者把这些全局量改成 atomic，应迁到 `race_condition_in_async_code` 边界，而不是并到这里。",
+    "如果 patch 只是让测试 `Eventually` / `sleep` 等后台状态收敛，而没有显式 stop/close/wait component，不算这条正例。",
+    "如果 patch 的主体是 `RecordSet` / iterator / backend / engine / chunk / resp.Body 这类临时句柄在所有退出路径上的 close-path 收口，应转到“临时句柄 / backend / engine / iterator 必须在所有退出路径上收口”。",
+    "如果 patch 的主体是切到 per-test 独立 path / port / socket / temp dir / slow-log / storage namespace，应优先转到“共享 namespace 资源必须 per-test 唯一化”。",
+    "如果 patch 只是扩大 `goleak.IgnoreTopFunction(...)` 白名单、直接 `Skip`，或继续靠 ignore 掩盖残留，不算当前方向正例。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这条机制的 retained patch 主体非常稳定，而且跨 domain/store/server/metrics/TTL/worker 多个模块反复出现。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到 `Close()` / `Stop()` / `Wait()` 之类通用动作，但看不清对象是否真是后台 component，而不是普通临时句柄。",
+      "patch 同时混入了大量 global knob / namespace / feature 逻辑，短 diff 下看不清 retained 主体到底是 lifecycle teardown 还是别的机制。",
+      "只能确认曾经有 goleak ignore 或 worker 关键词，但看不出 patch 是否真的把 component 停干净。"
+    ]
+  },
+  "scope": [
+    "domain / store / server / cluster harness 的完整 stop/close/cleanup 链。",
+    "TTL manager、stats worker、auto-analyze priority queue、metrics view worker、owner campaign loop、hash-join/backfill worker group 等后台 component。",
+    "任何测试里会持续运行、需要显式停机或等待退出的 manager / queue / background loop。"
+  ],
+  "fix_hints": [
+    "优先把后台 component 的退出动作显式化：`Stop()`、`Close()`、`Wait()`、`WaitStopped(...)`，而不是依赖测试函数自然返回。",
+    "如果已有 `Cancel()`，检查它是否真的等待 goroutine / loop 退出；必要时补 `WaitGroup` 或显式 wait API。",
+    "不要把 `goleak.IgnoreTopFunction(...)` 当最终修法；更强的修法是删 ignore，并在 helper / `t.Cleanup` / `TestMain` teardown 链里把 worker 真正停掉。",
+    "如果测试只关了最外层对象，检查 domain/store/status server/session pool/queue/worker 是否也被同一条 teardown 链收口。"
+  ],
+  "related_subpatterns": [
+    "共享 namespace 资源必须 per-test 唯一化",
+    "临时句柄 / backend / engine / iterator 必须在所有退出路径上收口",
+    "server / harness 级 test-global 状态必须重建或清理"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-3414",
+        "note": "测试创建 store/domain 后只关了一部分资源，最终补 `store.Close()` 并调整 leaktest 使用方式。"
+      },
+      {
+        "case_id": "pr-4591",
+        "note": "bootstrap 后只关 store 不关 domain，最终改成显式 `dom.Close()`。"
+      },
+      {
+        "case_id": "pr-10953",
+        "note": "stats harness 不再只写 lease 值，而是在初始化阶段直接 `DisableStats4Test()`，避免后台 worker 被拉起。"
+      },
+      {
+        "case_id": "pr-14592",
+        "note": "mock store / RPC client / MVCC store 关闭链补全，底层资源不再泄漏到后续测试。"
+      },
+      {
+        "case_id": "pr-15665",
+        "note": "server/domain/store 不能只 `server.Close()`，最终改成走完整 `stopServer(...)` 链。"
+      },
+      {
+        "case_id": "pr-17667",
+        "note": "integration harness 补 `testleak` 包装，并显式关闭 bootstrap 后拉起的 store/domain。"
+      },
+      {
+        "case_id": "pr-18051",
+        "note": "`CampaignOwner()` 后 `Cancel()` 还不够，最终要求等待 `campaignLoop` 真退出。"
+      },
+      {
+        "case_id": "pr-31896",
+        "note": "unistore / pd / rpc / store / ddl / client 等整套 DDL harness 资源统一补 `Close()` 并用 `VerifyTestMain` 收口。"
+      },
+      {
+        "case_id": "pr-36722",
+        "note": "分散的 clean closure 系统性改成 `t.Cleanup(...)`，把 server / failpoint / runtime cleanup 绑回测试生命周期。"
+      },
+      {
+        "case_id": "pr-37908",
+        "note": "不再靠 `goleak.IgnoreTopFunction` 掩盖 opencensus view worker，而是在测试里显式 `view.Stop()`。"
+      },
+      {
+        "case_id": "pr-38288",
+        "note": "系统性把 `view.Stop()` 接到 helper / `t.Cleanup` / close path 上，移除 goleak ignore。"
+      },
+      {
+        "case_id": "pr-39023",
+        "note": "hash join close-path 改成等待 worker/waiter goroutine 全部退出。"
+      },
+      {
+        "case_id": "pr-40542",
+        "note": "backfill worker manager 在 close-path 上关闭 exit channel、等待 worker，并回收 session/context。"
+      },
+      {
+        "case_id": "pr-50687",
+        "note": "TTL 测试先显式 `Stop()` manager，再控制测试条件，而不是继续让后台 loop 运行。"
+      },
+      {
+        "case_id": "pr-53017",
+        "note": "domain 启动后显式 `dom.TTLJobManager().Stop()`，避免后台 manager 继续调度。"
+      },
+      {
+        "case_id": "pr-60901",
+        "note": "TTL integration tests 不只 `Stop()`，还 `WaitStopped(...)`，确认 manager 真正停下。"
+      },
+      {
+        "case_id": "pr-64817",
+        "note": "auto-analyze priority queue 在关闭 auto analyze 时显式 `pq.Close()`，避免脏队列继承到后续测试。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-29053",
+        "note": "看起来也在处理测试窗口里的后台行为，但 retained 主体是 lease/global knob 与 bootstrap 时序，不是 component teardown。"
+      },
+      {
+        "case_id": "pr-30891",
+        "note": "虽然测试侧顺带补了 Stop/Close，但 patch 主体仍是全局 profiler singleton 的并发边界。"
+      },
+      {
+        "case_id": "pr-42776",
+        "note": "只是把固定 sleep 换成 `Eventually` 等后台状态收敛，不是显式 stop/close/wait component。"
+      },
+      {
+        "case_id": "pr-43399",
+        "note": "继续扩大 goleak ignore 白名单只是 band-aid，不算当前方向正例。"
+      },
+      {
+        "case_id": "pr-48133",
+        "note": "它也会留下 goroutine，但 retained 主体更像 open-failure 下的临时 executor/handle close-path，应该归到第三条 sibling。"
+      }
+    ]
+  }
+}

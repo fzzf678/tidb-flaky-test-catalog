@@ -1,0 +1,84 @@
+{
+  "key": "精确 explain / plan tree / operator 文本断言应降到更稳定表示层",
+  "family": "assert_exact_plan_or_cost",
+  "summary": "测试如果直接把完整 `EXPLAIN` / plan tree / operator 文本整串写死，就会把 plan id、operator 文本细节、展示格式或内部表示层抖动误判成 flaky；更稳的修法是把断言降到 normalized / brief / property-level 表示层。",
+  "mechanism": "这条子模式的核心是：测试并不是在验证真正的计划语义边界，而是在验证完整 explain rows / plan tree / operator 文本的某种具体展示形式。只要 plan id、operator 命名、格式化层、内部 plan tree 表示、甚至某些附带字段轻微变化，测试就可能抖动。稳定修法通常非常一致：把 full explain rows 改成 normalized plan、`plan_tree`、`explain format='brief'`、`HasPlan` / `MustIndexLookup` / `MustHavePlan` 之类的 property-level assertion，或者直接检查更稳定的内部结构字段。",
+  "signals_required": [
+    "测试原本直接断言完整 `EXPLAIN` / plan tree / operator 文本，或等价的整段 plan 展示层字符串。",
+    "patch 的主修法是把断言降到更稳定的表示层，例如 normalized plan、`plan_tree`、`brief`、`HasPlan` / `MustHavePlan` / `MustIndexLookup` 等 property-level assertion。",
+    "问题本体仍然是 exact plan assertion 太脆，而不是 stats、runtime context、或 planner input 本身先漂了。",
+    "修法主轴在“换断言表示层”，而不是通过固定 knob / stats / runtime state 来强行保住原来的 full explain 字符串。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `NormalizePlan`、`DecodeNormalizedPlan`、`plan_normalized_suite`、`ordered_result_mode_suite`、`plan_tree`、`HasPlan`、`MustHavePlan`、`MustIndexLookup`。",
+    "patch 可能把 `Check(testkit.Rows(...))` 改成 plan testdata / helper-based comparison。",
+    "有些 case 不再直接比 explain rows，而是改成检查 `LateMaterializationFilterCondition` 之类更稳定的内部结构。"
+  ],
+  "negative_guards": [
+    "如果 patch 主修法是 parse 数值后做区间 / regex / 结构化比较，更接近“`EXPLAIN ANALYZE` / cost / runtime metric / estimate 数值不应做整串硬编码”。",
+    "如果 patch 主修法是 `set @@tidb_*`、hint、`use index`、cost model、engine setting 这类显式 pin planner inputs，应转到 planner-input sibling。",
+    "如果 patch 主修法是固定 analyze / sample / mock stats / selectivity boundary，应转到 stats sibling。",
+    "如果 patch 主修法是隔离 plan cache / binding / stmt summary / replica / shared runtime state，应转到 runtime-context sibling。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 且主修法明确是把 full explain / plan 展示层断言降到更稳定表示层时，可直接判为 flaky risk；这是 exact plan assertion 最典型的一条。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然看到了 `EXPLAIN` / plan testdata / `HasPlan` 等锚点，但 patch 同时也明显在固定 planner inputs / stats / runtime context，无法确认主修法究竟在哪一层。",
+      "patch 只是顺带改了 testdata / explain rows，但真正主问题更像 feature change 或 planner behavior change，而不是 test stability。"
+    ]
+  },
+  "scope": [
+    "planner / executor / casetest / integration tests 中直接比完整 explain / plan tree 的场景。",
+    "尤其适用于 plan testdata、normalized plan suite、brief / plan_tree 断言迁移。"
+  ],
+  "fix_hints": [
+    "如果测试只关心计划语义，不要继续写死完整 explain rows；优先改成 normalized / `brief` / property-level assertion。",
+    "如果只关心是否走某类算子，优先用 `HasPlan` / `MustHavePlan` / `MustIndexLookup` 一类结构化断言。",
+    "避免把 plan id、operator 展示文本、格式化细节当成稳定契约。"
+  ],
+  "related_subpatterns": [
+    "`EXPLAIN ANALYZE` / cost / runtime metric / estimate 数值不应做整串硬编码",
+    "精确 plan 断言前必须显式 pin planner inputs",
+    "精确 plan 断言前必须固定 runtime context"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-21657",
+        "note": "从 raw `EXPLAIN` rows 切到 normalized plan testdata，避免把 row-count / 展示层细节写死。"
+      },
+      {
+        "case_id": "pr-46849",
+        "note": "把 full explain row 比较降成 `HasPlan` / `MustIndexLookup` 这类 property-level assertion。"
+      },
+      {
+        "case_id": "pr-60980",
+        "note": "通过更稳定的 plan 表示层而不是完整 explain rows 断言计划语义。"
+      },
+      {
+        "case_id": "pr-63148",
+        "note": "修法主轴在更换 plan 断言表示层，而不是去 pin planner inputs。"
+      },
+      {
+        "case_id": "pr-51355",
+        "note": "不再写死脆弱的 exact plan 文本，而是改成更稳定的内部结构验证。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-48700",
+        "note": "这里更像 runtime metric / numeric text normalization，不应并到表示层 sibling。"
+      },
+      {
+        "case_id": "pr-56204",
+        "note": "主修法是 pin `tidb_isolation_read_engines` 这类 planner input，不是换表示层。"
+      },
+      {
+        "case_id": "pr-46963",
+        "note": "这里的核心是 runtime propagation / eventual plan state，而不是 explain 文本层太脆。"
+      }
+    ]
+  }
+}

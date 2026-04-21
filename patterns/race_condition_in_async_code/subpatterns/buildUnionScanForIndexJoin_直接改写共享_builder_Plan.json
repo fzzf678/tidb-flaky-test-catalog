@@ -1,0 +1,66 @@
+{
+  "key": "`buildUnionScanForIndexJoin` 直接改写共享 `builder.Plan`",
+  "family": "race_condition_in_async_code",
+  "summary": "在 `IndexLookupJoin` 的 union scan 分支里，如果多个 inner worker 并发调用 `buildUnionScanForIndexJoin` 时直接改写共享 `dataReaderBuilder.Plan`，或继续借共享 `executorBuilder.err` 传递 `buildUnionScanFromReader` 错误，就会让不同 batch / worker 互相污染 builder 状态，触发 data race 或偶发错结果。",
+  "mechanism": "`dataReaderBuilder` 和其挂着的 `executorBuilder` 都不是只读模板：`Plan` 会决定下一层 reader/build 路径，`err` 也会在建执行器时被反复覆盖。`IndexLookupJoin` 的 inner worker 又会并发按批次重建 union scan reader；如果 `buildUnionScanForIndexJoin` 直接做 `builder.Plan = v.Children()[0]`，或让 `buildUnionScanFromReader` 继续往共享 `b.err` 写错误，后一个 worker 或下一批 outer rows 就可能读到被别的 worker 改过的 plan / err。稳定修法通常是：每次调用都新建局部 `childBuilder` 持有 child plan，并把 `buildUnionScanFromReader` 改成显式返回 `(Executor, error)`，不再写共享 builder 状态。",
+  "signals_required": [
+    "代码位于 `IndexLookupJoin` 的 union scan 构建路径，强锚点通常是 `buildUnionScanForIndexJoin`、`buildUnionScanFromReader`、`dataReaderBuilder`、`UnionScanExec`。",
+    "并发背景明确来自 index lookup join inner worker / batch rebuild，补丁里通常会直接写出 `inner workers`、`concurrently`、`avoid data race` 之类注释或提交说明。",
+    "存在直接改写共享 builder 状态的动作，例如 `builder.Plan = ...`、共享 `b.err = ...`，而这个 builder 会被不同 worker / batch 复用。",
+    "修复核心是每次调用构造局部 `childBuilder` 或等价副本，并把 `buildUnionScanFromReader` 改成返回显式 `error`，而不是继续借共享 builder 字段传状态。"
+  ],
+  "signals_optional": [
+    "高信号组合锚点包括 `childBuilder := &dataReaderBuilder{...}`、`Do not modify Plan of dataReaderBuilder directly`、`local child builder`。",
+    "如果补丁里出现 `Note that this function may be called by inner workers of index lookup join concurrently. Be careful to avoid data race.`，基本就是这条子模式。",
+    "把 `b.err = us.buildAndSortAddedRows()` 改成局部 `err = us.buildAndSortAddedRows()`，也是这条模式的强旁证。"
+  ],
+  "negative_guards": [
+    "如果问题核心是每个 worker 复制 `indexRanges` / `MutableRanges`，应归入相邻的 range 复用子模式。",
+    "如果问题核心是 `lastColHelper/TmpConstant` 这类 compare helper scratch state，应归入 `TmpConstant` per-worker 子模式。",
+    "如果问题核心是 `forDataReaderBuilder/getSnapshotTS/forUpdateTS` 这类 data reader 的时间戳状态线程安全，是 builder 共享状态的相邻 sibling，但不是这条 `builder.Plan` 直改模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；“union scan inner worker 并发 + 直接改共享 builder.Plan/err + 局部 childBuilder 修复”是非常具体的结构性竞态信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然出现了 `dataReaderBuilder` 和 `buildUnionScanForIndexJoin`，但看不清 builder 是否真的会被多个 worker / batch 共享复用。",
+      "代码里使用了 child builder 名称，但实际仍可能把可变状态回写到父 builder，需要继续看共享字段是否彻底隔离。"
+    ]
+  },
+  "scope": [
+    "`executor/builder.go` / `pkg/executor/builder.go` 里 union scan reader 构建路径。",
+    "`executor/index_lookup_join.go` / `pkg/executor/index_lookup_join.go` 里会并发重建 data reader 的 index lookup join inner worker 路径。"
+  ],
+  "fix_hints": [
+    "不要在 `buildUnionScanForIndexJoin` 里直接改共享 `builder.Plan`；每次调用都新建局部 child builder 持有当前 child plan。",
+    "把 `buildUnionScanFromReader` 这类 helper 改成显式返回 `error`，不要再借共享 `b.err` 做跨 worker 状态传递。",
+    "把 `dataReaderBuilder` 看成并发 worker 会复用的模板对象；凡是与本次调用绑定的 plan / error / scratch state，都要落到局部副本里。"
+  ],
+  "related_subpatterns": [
+    "`IndexJoin / IndexLookupJoin / IndexLookupMergeJoin` 每个 inner worker 复制自己的 `indexRanges`",
+    "`IndexJoin / IndexMergeJoin / IndexHashJoin` 每个 inner worker 重建自己的 `TmpConstant`"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-8031",
+        "note": "补丁直接把 `builder.Plan = v.Children()[0]` 改成局部 `childBuilder := &dataReaderBuilder{...}`，并把 `buildUnionScanFromReader` 改成返回显式 `error`，提交说明和注释都明确指出是为了避免 concurrent inner workers 的 data race。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-31956",
+        "note": "这条同样是 `dataReaderBuilder/executorBuilder` 的线程安全问题，但核心是 `forDataReaderBuilder/getSnapshotTS/forUpdateTS` 时间戳状态，而不是直接改写共享 `builder.Plan`。"
+      },
+      {
+        "case_id": "pr-12024",
+        "note": "虽然也在 `buildExecutorForIndexJoin` / union scan 相关路径，但核心稳定修法是每个 inner worker 复制 `indexRanges`，不是局部 child builder 隔离 `Plan`。"
+      },
+      {
+        "case_id": "pr-13669",
+        "note": "这条更像 `lastColHelper/TmpConstant` scratch state 被多个 worker 共用，不是 `builder.Plan` 直改。"
+      }
+    ]
+  }
+}

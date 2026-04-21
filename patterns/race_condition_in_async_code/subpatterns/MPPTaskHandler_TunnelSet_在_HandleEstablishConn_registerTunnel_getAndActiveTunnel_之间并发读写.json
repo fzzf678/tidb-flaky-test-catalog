@@ -1,0 +1,66 @@
+{
+  "key": "`MPPTaskHandler.TunnelSet` 在 `HandleEstablishConn/registerTunnel/getAndActiveTunnel` 之间并发读写",
+  "family": "race_condition_in_async_code",
+  "summary": "`MPPTaskHandler` 长期持有 `TunnelSet` 这张共享 map，而 `HandleEstablishConn`、`registerTunnel`、`getAndActiveTunnel` 这些并发入口会同时读写它。",
+  "mechanism": "这类问题不是一般性的“某个 manager 有共享 map”，而是 MPP tunnel 建连这条非常具体的生命周期：一边有 goroutine 在注册 tunnel，另一边有连接建立或激活逻辑在按 task id 查找 tunnel。只要 `TunnelSet` 还是普通 Go map 且这几个入口没有统一锁，就会稳定落到 `concurrent map read and map write` 或 race detector。修复也很固定：围绕 `TunnelSet` 加一把专用锁，或把访问集中到单线程拥有者。",
+  "signals_required": [
+    "代码对象是 `MPPTaskHandler` 或等价 MPP tunnel handler，且 struct 字段中存在 `TunnelSet` 之类的共享 map。",
+    "并发入口来自 `HandleEstablishConn`、`registerTunnel`、`getAndActiveTunnel` 或等价的建连/注册/激活路径。",
+    "这些入口会按 task id 从共享 map 读写 `ExchangerTunnel` 或同类 tunnel 对象。",
+    "修复核心是给 `TunnelSet` 增加专用锁，例如 `tunnelSetLock`，而不是仅改测试断言。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `TunnelSet`、`ExchangerTunnel`、`taskID`、`HandleEstablishConn`、`registerTunnel`、`getAndActiveTunnel`。",
+    "patch 里常见 `sync.Mutex`、`tunnelSetLock.Lock()`、`defer tunnelSetLock.Unlock()`。",
+    "目录常落在 `store/mockstore/unistore/cophandler/mpp.go` 或相邻的 mock MPP handler 主线。"
+  ],
+  "negative_guards": [
+    "如果共享 map 不是 `TunnelSet`，而是更泛化的 runtime map（如 `groups`、`metricsMap`），更接近对应的专属 manager/map 子模式。",
+    "如果问题核心是 callback 共享结果 slice 或 channel handoff，而不是 tunnel 注册/建连共享 map，不要并到这里。",
+    "如果修复只是单个只读 helper 补读锁，而没有 MPP tunnel 的注册/建连结构，不属于这条。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；`MPPTaskHandler.TunnelSet` 的并发注册/建连是非常硬的机械模式。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到 `TunnelSet` 字段，但看不清建连/注册入口是否真会并发执行。",
+      "共享对象虽然叫 tunnel，但没有实际 Go map 共享状态。"
+    ]
+  },
+  "scope": [
+    "mock MPP / cophandler / unistore 一类 tunnel 建连和 task handoff 主线。",
+    "任何按 task id 管理 tunnel 的共享 handler。"
+  ],
+  "fix_hints": [
+    "围绕 `TunnelSet` 引入专用锁，不要让注册和查找路径裸读写同一张 map。",
+    "如果访问热点集中，优先把 `TunnelSet` 访问封装进少数 helper，统一持锁。",
+    "避免在建连重试循环里反复无锁读取 live `TunnelSet`。"
+  ],
+  "related_subpatterns": [
+    "长期存活的 manager/handler 共享 map 被多个并发入口直接读写",
+    "多个 cop iterator 共享可变 KV request RequestBuilder"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-21836",
+        "note": "`HandleEstablishConn` 与 `registerTunnel` 并发访问 `MPPTaskHandler.TunnelSet`，修复为引入 `tunnelSetLock`。"
+      },
+      {
+        "case_id": "pr-22428",
+        "note": "`getAndActiveTunnel` 继续无锁访问 `TunnelSet`，同样需要落到这条 tunnel map 并发读写子模式。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-44339",
+        "note": "这条是 mock resource manager client 的 `groups` map，并不是 MPP tunnel 建连主线。"
+      },
+      {
+        "case_id": "pr-49354",
+        "note": "这条是 `RunawayManager.metricsMap` 在 `DeriveChecker` 主线上的并发访问，不是 `TunnelSet`。"
+      }
+    ]
+  }
+}

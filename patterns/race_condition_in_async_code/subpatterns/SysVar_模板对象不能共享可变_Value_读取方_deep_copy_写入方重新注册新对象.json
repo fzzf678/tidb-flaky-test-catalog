@@ -1,0 +1,66 @@
+{
+  "key": "`SysVar` 模板对象不能共享可变 `Value`；读取方 deep copy，写入方重新注册新对象",
+  "family": "race_condition_in_async_code",
+  "summary": "`GetSysVar` / `GetSysVars` 返回的 `SysVar` 不能和写路径共享同一个可变模板对象；只要 `.Value` 之类字段还会被改，就必须 deep copy 或重新注册新对象。",
+  "mechanism": "`SysVar` 这类注册表对象很容易被误当成“基本不可变”。但只要 `.Value`、`PossibleValues` 或其他字段在测试、SEM、启动路径里仍会被更新，读路径继续把共享模板对象直接暴露出去，就会与写路径形成 data race。稳定修法有两种：一是读路径 `Clone` / deep copy 后返回；二是写路径不要原地改旧对象，而是在 map/registry 锁保护下重新注册一个全新的 `SysVar` 对象，让外部看到的对象天然不可变。",
+  "signals_required": [
+    "代码对象是 `SysVar`、system variable registry 或等价模板对象，强锚点通常是 `GetSysVar`、`GetSysVars`、`SetSysVar`、`RegisterSysVar`。",
+    "问题核心是共享模板对象的字段仍然可变，尤其是 `.Value`，而不是普通局部变量。",
+    "修复之一是让 `GetSysVar` / `GetSysVars` 返回 deep copy / `Clone()`；另一种修复是 `SetSysVar` 不再原地改对象，而是重新注册新对象。",
+    "补丁目标是把 `SysVar` 变成“读者看到不可变对象”，而不是给调用点临时加锁。"
+  ],
+  "signals_optional": [
+    "高信号文字包括 `fix sysvar datarace with deep copy`、`SysVar are almost immutable`、`avoid SysVar clone every time`。",
+    "高信号代码包括 `return sysVars[name].Clone()`、`copy[name] = sv.Clone()`、`RegisterSysVar(&sv)`、`remove the object from the map and then register a new object`。",
+    "测试里常见 `TestDeepCopyGetSysVars`、`datarace` 这类专门验证读写隔离的样例。"
+  ],
+  "negative_guards": [
+    "如果问题对象是全局 config struct 或 config nested map，更接近全局 config clone/store 子模式。",
+    "如果问题对象是普通 cache/handle snapshot publish，而不是 system variable 模板注册表，不要并到这里。",
+    "如果 `Value` 已经天然不可变且没有注册表重用，不要仅凭名字叫 `SysVar` 就命中。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判为 flaky risk；`GetSysVar/GetSysVars + mutable Value + Clone/重新注册` 这组结构很硬。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "对象虽然叫 `SysVar`，但没有证据表明 `.Value` 等字段会被并发改写。",
+      "补丁只是普通重构，既没有 clone 也没有重新注册新对象。"
+    ]
+  },
+  "scope": [
+    "`sessionctx/variable/sysvar.go` 及其 system variable registry 主线。",
+    "所有“模板对象注册后仍会改字段”的配置/变量元数据场景。"
+  ],
+  "fix_hints": [
+    "如果读路径要把 `SysVar` 暴露给外部，优先返回 deep copy / `Clone()`。",
+    "如果写路径还需要变更字段，不要原地改旧对象，改成在注册表里替换成新对象。",
+    "把 `SysVar` 设计成构造后不可变，比在读写点补锁更稳。"
+  ],
+  "related_subpatterns": [
+    "全局 `bool/seed` 配置开关不能裸读写；要么走 atomic accessor，要么降到 session scope",
+    "后台 refresh/reload 更新共享 cache 时先 clone 副本再 atomic swap 发布"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-24732",
+        "note": "`GetSysVar` / `GetSysVars` 返回 deep copy，避免读取方继续共享会被测试/启动路径修改 `.Value` 的模板对象。"
+      },
+      {
+        "case_id": "pr-26308",
+        "note": "`SysVar` 被进一步收敛成“几乎不可变”，`SetSysVar` 不再要求每次读都 clone，而是通过重新注册新对象消除共享可变状态。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-21415",
+        "note": "这条是全局 config struct copy + `StoreGlobalConfig`，不是 `SysVar` 模板对象注册表。"
+      },
+      {
+        "case_id": "pr-6234",
+        "note": "这条是把全局 plan-cache 开关降到 session scope，不是 `SysVar` 对象 clone / 重新注册。"
+      }
+    ]
+  }
+}

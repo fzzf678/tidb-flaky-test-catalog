@@ -1,0 +1,84 @@
+{
+  "key": "histogram / selectivity / correlation / async-load item count 这类统计派生数值不应做 exact constant assertion",
+  "family": "plan_stability_and_stats_dependency",
+  "summary": "测试如果断言的是 histogram bucket 数、selectivity/row-count 估算、correlation 或 async-load item count 这类统计派生数值，就不能把它们当成 exact constant；应改成更稳定的 range / delta / monotonic / existence 级别断言。",
+  "mechanism": "这条 sibling 和现有 exact-plan family 的 `b2` 只在表面上相邻。`b2` 主要处理 `EXPLAIN ANALYZE` / cost / runtime metric 字符串里的 numeric normalization；这里更一般，测试断言的对象本身就是 stats-derived numeric outputs：例如 histogram bucket 数、row-count/selectivity 估算、correlation、或 async stats-load queue/item 数。patch-backed 正例里，原测试往往把这些值写成 exact constant，但真实运行里它们会因为 hist-building 细节、浮点误差、低 NDV / skew ratio 变化、不同 store/load 路径，或 async-load 环境差异而合法波动。主修法反复落在：`Equal` -> `InDelta` / range、精确数值 -> 单调关系 / 上下界、精确 item count -> 关键 item 存在或 lower-bound。核心是：对统计派生值断言稳定性质，而不是把实现细节固化成精确常数。",
+  "signals_required": [
+    "断言对象是 histogram / selectivity / row-count / correlation / async-load item count 这类统计派生数值，而不是 exact plan text 本身。",
+    "patch 的主修法是把 exact numeric assertion 降成 `InDelta`、range、单调关系、或 existence/lower-bound，而不是去等 stats ready 或 pin analyze inputs。",
+    "不稳定来源是统计派生数值的合法波动，例如 hist-building 结果、浮点误差、risk ratio/NDV 变化、或 async-load 环境差异。",
+    "稳定修法落在 `InDelta`, `Less/Greater`, 范围断言、或“只检查关键 item 存在 / count >= lower-bound”这一层。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `show stats_buckets`, `show stats_topn`, `distinct_count`, `correlation`, `GetRowCountByIndexRanges`, `GetColumnRowCount`, `InDelta`, `Less`, `Greater`, `AsyncLoadHistogramNeededItems.AllItems()`。",
+    "一类 patch 会把 exact float/count 断言改成单调关系，例如“risk ratio 增大时 count 应更大”，这说明测试真正关心的是趋势而不是常数值。",
+    "另一类 patch 会保留 exact SQL/result 检查，但把某个 stats-derived 字段单独 parse 成 float 再做 `InDelta`，如 correlation。"
+  ],
+  "negative_guards": [
+    "如果 patch 主修法是 `LoadNeededHistograms()`、`StatsHandle().Update(...)`、`HandleDDLEvent(...)` 或等待 stats 真正 ready，应转到 `h1`。",
+    "如果 patch 主修法是固定 `samplerate`、`tidb_analyze_version`、predicate-column scope 或 `analyze table ... all columns`，应转到 `h3`。",
+    "如果 patch 主修法是 `EXPLAIN ANALYZE` / cost formula / true_card_cost 这类 exact plan text 或 explain numeric string 的 normalization，应优先回现有 `assert_exact_plan_or_cost/b2`。",
+    "如果 patch 主修法只是补 `ORDER BY` / `.Sort()`，应转到 `nondeterministic_result_order` family。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals，且主修法明确是在把 stats-derived numeric output 从 exact constant 降成更稳的 property 断言时，可直接判为 flaky risk。这条是 generalized numeric-normalization sibling。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然 patch 里出现了 bucket/selectivity/correlation/count 锚点，但主修法更像功能语义变更，无法确认测试抖动来自 numeric exactness。",
+      "patch 同时在改 stats-ready、analyze inputs 和 numeric assertion，难以确认 numeric exactness 才是主机制。"
+    ]
+  },
+  "scope": [
+    "planner/statistics/cardinality tests 中，对 histogram/selectivity/correlation/async-load quantitative outputs 的稳定化。",
+    "尤其适用于 bucket 数量、row-count 估算、correlation、risk-ratio 结果、async histogram load item 数这类场景。"
+  ],
+  "fix_hints": [
+    "如果测试关心的是趋势或性质，优先断言单调关系、上下界或 delta，而不是 exact float/int。",
+    "对 correlation / row-count 这类浮点派生值，优先 `InDelta` 或合理 tolerance，不要把完整字符串硬编码。",
+    "对 async-load item 列表，优先断言关键 item 出现或 lower-bound，而不是把环境相关的总数写死。"
+  ],
+  "related_subpatterns": [
+    "统计信息真正 load / materialize / apply 之前不应断言依赖它的计划或统计输出",
+    "analyze inputs / sampling / version / predicate-column scope 必须先钉死",
+    "EXPLAIN_ANALYZE_cost_runtime_metric_estimate_数值不应做整串硬编码"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-27734",
+        "note": "全局统计测试把 bucket 数量从过窄的 exact-ish 约束放宽成带 delta 的范围检查，因为 hist-building 并不保证最终 bucket 数严格等于目标值。"
+      },
+      {
+        "case_id": "pr-62123",
+        "note": "`TestRiskEqSkewRatio` 不再把 row-count 估算写成精确浮点常数，而是改成随 risk ratio 增大而单调增加的断言。"
+      },
+      {
+        "case_id": "pr-62363",
+        "note": "selectivity/cardinality patch 最终把 `TestIssue39593` 的 estimated row count 从 exact equality 改成 `InDelta(..., 1)`，承认实现细节导致的小幅波动。"
+      },
+      {
+        "case_id": "pr-64119",
+        "note": "new collation stats test 里将 histogram `correlation` 从整串字符串相等改成 parse-float 后 `InDelta`。"
+      },
+      {
+        "case_id": "pr-64428",
+        "note": "对 `AsyncLoadHistogramNeededItems` 不再死卡 `len(items)==3`；real TiKV 侧只检查关键 index item 存在，unit test 侧也放宽到 `>= 3`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-60333",
+        "note": "这里主要是 `EXPLAIN` / cost formula / explain numeric string 的 exactness，更应回现有 `assert_exact_plan_or_cost/b2`。"
+      },
+      {
+        "case_id": "pr-26468",
+        "note": "这里主修法是先 `LoadNeededHistograms()` 让 stats 真正 ready，更像 `h1`。"
+      },
+      {
+        "case_id": "pr-63702",
+        "note": "这里主修法是 pin `tidb_analyze_version` / analyze inputs，更像 `h3`。"
+      }
+    ]
+  }
+}

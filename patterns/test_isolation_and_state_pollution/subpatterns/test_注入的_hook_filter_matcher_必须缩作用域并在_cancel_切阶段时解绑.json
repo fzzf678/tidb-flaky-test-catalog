@@ -1,0 +1,88 @@
+{
+  "key": "test 注入的 hook / filter / matcher 必须缩作用域并在 cancel/切阶段时解绑",
+  "family": "test_isolation_and_state_pollution",
+  "summary": "测试自己注入的 hook、filter、matcher、observer 如果观察范围过大，或在 cancel/阶段切换后没有解绑/清空，就会把无关请求、internal session、下一轮 wait item、后半段场景一起算进去，导致断言污染和阶段串扰。",
+  "mechanism": "这条子模式的核心不是 process-global callback pointer data race，也不是后台 worker 没停，而是 test-local observer state 没有被正确 scope 和 cleanup。典型形态有两类：第一类是 hook/observer 的观察范围过大，本来只该观察某一类请求，却把 internal session、背景请求或无关 RPC 也算进来；第二类是 matcher/filter 注册后只在 happy path 清理，`ctx.Done()`、cancel 或场景切换时没有解绑/清空，后续阶段继承了旧的 `matchFn` 或 message filter。稳定修法也很一致：给目标请求打 context/tag，只在被标记请求上生效；对 internal request 加 guard；在 `ctx.Done()`、cancel、phase switch 和重新注册前显式 `clearMatchFn()` / `ClearMessageFilter()`。",
+  "signals_required": [
+    "patch 的 retained 主体明确在处理 test 注入的 hook / filter / matcher / observer 的作用域或解绑时机，而不是 process-global singleton / callback pointer / trace categories。",
+    "原始不稳定来自观察范围过大，或注册状态在 cancel/阶段切换后没有清空，导致无关请求、internal session 或下一轮场景被错误命中。",
+    "稳定修法显式缩小 scope，例如 context tag、`isInternal()` guard、只看目标请求，或在 `ctx.Done()` / 重新注册前显式 `clearMatchFn()` / `ClearMessageFilter()`。",
+    "patch 的主轴是让 hook/filter/matcher 成为 test-local、phase-local 的短生命周期对象，而不是继续让它们跨请求、跨阶段残留。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `MustQueryWithContext`、`MustExecWithContext`、`clearMatchFn`、`matchFn`、`AddMessageFilter`、`ClearMessageFilter`、`isInternal()`、`context.WithValue(...)`、`ctx.Done()`。",
+    "有些修法不是显式解绑 API，而是给请求打标记后只对被标记请求断言；本质同样是缩作用域。",
+    "这条 sibling 经常和 server/harness state 或 request interceptor 一起出现，但只要 retained 主体更偏“observer scope + cleanup”，优先留在这里。"
+  ],
+  "negative_guards": [
+    "如果 patch 的主体是 process-global callback / singleton / trace categories / logger / recorder 的并发读写，应迁到 `race_condition_in_async_code` 边界，而不是并到这里。",
+    "如果 patch 的主体是后台 worker / manager / queue / loop 的 stop/close/wait，应转到“后台 component 必须显式 Stop/Close/Wait，不能靠 ignore / 自然退出”。",
+    "如果 patch 的主体是路径、端口、socket、temp dir、slow-log、storage 等 namespace 私有化，应优先转到“共享 namespace 资源必须 per-test 唯一化”。",
+    "如果 patch 的主体只是 feature 逻辑重写、golden 变更或 session var 对齐，即使顺手用了 `WithContext` 或 cleanup API，也不算这条正例。",
+    "如果 patch 只是把 generic callback/state 从 global 改成 atomic.Pointer/local singleton，而没有 test-local scope/cleanup 语义，不属于这条。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这条机制虽然 case 数不如前三条多，但 retained patch 纯度很高，而且修法模式非常稳定。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到 `WithContext` / `matchFn` / `filter` 这类局部锚点，但看不清 patch 是在缩作用域还是只是功能配套。",
+      "patch 同时混入大量 global singleton / trace / callback / harness 逻辑，短 diff 下无法确认 retained 主体是否真是 observer scope/cleanup。",
+      "只能看见 cleanup API，但看不出它是否真的发生在 cancel/phase switch 或重注册之前。"
+    ]
+  },
+  "scope": [
+    "测试注入的 request hook / checker / observer。",
+    "matcher / wait item / `matchFn` 在 cancel/ctx.Done/下一阶段之前的解绑与清空。",
+    "message filter / OOM filter / test-local interceptor 在同一测试多阶段场景中的重置。"
+  ],
+  "fix_hints": [
+    "给目标请求打 context/tag，只在被标记请求上触发 hook/observer，不要让无关请求也进入断言窗口。",
+    "对 internal/background request 加 guard，例如 `!isInternal()`，避免把系统流量算进测试断言。",
+    "在 `ctx.Done()`、cancel、phase switch、重新注册 filter/matcher 之前，显式 `clearMatchFn()` / `ClearMessageFilter()`，不要依赖 happy path 自然走到 cleanup。",
+    "如果同一测试里有多段场景连续注册 filter/matcher，默认每段开始前先清空上一段残留状态。"
+  ],
+  "related_subpatterns": [
+    "后台 component 必须显式 Stop/Close/Wait，不能靠 ignore / 自然退出",
+    "server / harness 级 test-global 状态必须重建或清理",
+    "共享 namespace 资源必须 per-test 唯一化"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-37382",
+        "note": "给目标请求打 context 标记，并新增 `MustQueryWithContext` / `MustExecWithContext`，让 priority 检查 hook 只观察带标记请求。"
+      },
+      {
+        "case_id": "pr-42101",
+        "note": "对 internal session 加 `!s.isInternal()` guard，避免 failpoint 断言 hook 误吃到无关请求。"
+      },
+      {
+        "case_id": "pr-53507",
+        "note": "`ctx.Done()` 提前返回时也执行 `item.clearMatchFn()`，不让下一轮 wait 继承旧 matcher。"
+      },
+      {
+        "case_id": "pr-65313",
+        "note": "同一测试多段场景连续加 message filter 前，先 `oom.ClearMessageFilter()` 清掉上一轮残留。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-42009",
+        "note": "主体是全局 callback pointer 并发读写，应归到 global callback / singleton 边界，而不是 test-local hook scope。"
+      },
+      {
+        "case_id": "pr-65317",
+        "note": "主体是 flight recorder / trace categories 这类 process-global singleton 状态，不是 test-local filter/matcher cleanup。"
+      },
+      {
+        "case_id": "pr-17437",
+        "note": "更像 failpoint/global state 与 suite 组织边界，patch 太薄，不适合作为这条正例。"
+      },
+      {
+        "case_id": "pr-38161",
+        "note": "虽然也显式设环境或上下文，但 retained 主体是 paging/golden 行为对齐，不是 observer scope/cleanup。"
+      }
+    ]
+  }
+}

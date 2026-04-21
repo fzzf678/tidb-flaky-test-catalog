@@ -1,0 +1,58 @@
+{
+  "key": "测试改写全局 lease 干扰后台 refresh loader",
+  "family": "race_condition_in_async_code",
+  "summary": "测试直接改写全局 `lease` 开关，但后台 refresh / loader / worker 仍可能并发读取该值并继续运行。",
+  "mechanism": "很多后台刷新路径会持续读取全局 `lease` 来决定是否周期性工作；如果测试在 domain/bootstrap 之后再改写 `bindinfo.Lease`、stats lease 或同类开关，而后台 loader/worker 仍然存活，断言就会受到异步 refresh 干扰，表现为 race、偶发额外事件或状态被后台线程抢先改写。",
+  "signals_required": [
+    "diff 直接改写全局 `lease` 或同类后台刷新开关，例如 `bindinfo.Lease`、stats lease、schema lease。",
+    "测试中存在 domain、loader、refresh loop、background worker 等后台路径，且它们仍可能在同一生命周期内运行。",
+    "测试断言依赖于后台 refresh 不要发生，或依赖某个 drop/capture/update 时序不被后台线程插入。",
+    "代码没有明确保证 `lease` 修改发生在 bootstrap 之前，或后台 worker 在修改前已停干净。"
+  ],
+  "signals_optional": [
+    "修复里把 `lease` 设为 `0`、显式停掉后台 refresh、或把修改顺序提前到 bootstrap 前。",
+    "测试还伴随 `defer` 恢复全局 `lease`、domain teardown 顺序、内部 SQL loop 启动顺序等问题。",
+    "问题经常出现在 bindinfo、stats、TTL、schema 刷新相关测试。"
+  ],
+  "negative_guards": [
+    "如果改写的是一般全局配置，但没有后台 refresh / loader 读者，更接近普通全局状态读写问题。",
+    "如果 `lease` 在 domain/bootstrap 之前就设好，且恢复发生在 teardown 之后，应降级为 `needs_more_evidence`。",
+    "如果问题核心是一次性全局初始化（例如 `sync.Once` 缺失）而不是 `lease` 干扰后台线程，不要命中这个子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是测试线程与后台 refresh 读同一个全局节流开关的典型冲突。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清后台 worker 是否在同一生命周期内仍然活着。",
+      "全局 `lease` 修改时机和 teardown 顺序在 patch 中不够明确。"
+    ]
+  },
+  "scope": [
+    "bindinfo、stats、TTL、schema refresh / loader 相关测试。",
+    "任何通过全局 `lease` 控制后台周期行为的测试。"
+  ],
+  "fix_hints": [
+    "把 `lease` 修改提前到 bootstrap / domain 启动之前。",
+    "如果测试需要静止后台刷新，显式把 `lease` 设为 `0` 或停掉相关 worker。",
+    "恢复全局 `lease` 时确保发生在 domain / worker teardown 之后。"
+  ],
+  "related_subpatterns": [
+    "BindHandle 单例 sctx 并发复用",
+    "测试改写的全局开关被异步运行路径读取"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-66559",
+        "note": "`bindinfo.Lease` 背景 loader 会与 drop binding 断言竞争。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-7901",
+        "note": "前半段属于 lease/后台 worker 干扰，后半段还混有一次性全局初始化问题。"
+      }
+    ]
+  }
+}

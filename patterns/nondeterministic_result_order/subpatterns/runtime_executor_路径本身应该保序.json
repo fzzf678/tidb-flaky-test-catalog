@@ -1,0 +1,84 @@
+{
+  "key": "runtime / executor 路径本身应该保序",
+  "family": "nondeterministic_result_order",
+  "summary": "测试已经有显式顺序契约，但 executor / runtime 路径没有把这条顺序语义正确地保持到结果侧，导致 ordered path 在不同执行路径下返回顺序漂移。",
+  "mechanism": "这条子模式的关键不是测试忘了写 `ORDER BY` 或忘了 `.Sort()`，而是测试已经明确要求了顺序语义，例如 `ORDER BY`、`LIMIT`、`KeepOrder`、双读 / UnionScan / partition direct read 等 ordered path，但 executor / distsql / runtime 没有把这条契约真正守住。常见修法是把 keep-order 语义继续下传、修复 ordered path 上的执行逻辑，或者补专门覆盖 ordered path 的回归测试。核心是“顺序契约已经存在，但执行层没有正确实现它”。",
+  "signals_required": [
+    "测试或 patch 已经有显式顺序契约，例如 `ORDER BY`、`LIMIT`、`KeepOrder`、或 ordered scan / ordered path 语义，而不是完全无序的查询结果。",
+    "patch 的重心在 executor / distsql / UnionScan / double read / index lookup / partition direct read 等运行时路径，而不是单纯在断言侧补 `Result.Sort()` / `ORDER BY`。",
+    "问题机制是运行时路径没有保持应有顺序语义，或者 keep-order / ordered read 语义没有被正确传递和实现。",
+    "稳定修法是修 ordered path 逻辑、下传 keep-order 语义、或补运行时顺序回归测试，而不是把问题降级成 assertion-side 无序比较。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `KeepOrder`、`PhysicalTableScan`、`UnionScan`、`double read`、`IndexLookUp`、`partition direct reading`、`order by ... limit ...`。",
+    "patch 常会新增 ordered path regression test，例如显式断言 plan / executor 的 keep-order 属性，或覆盖 union/direct-read 路径下的 ordered query。",
+    "有些 patch 会同时调整 compare 方式，但主修法仍然是 runtime ordered path，而不是纯断言层归一化。"
+  ],
+  "negative_guards": [
+    "如果 query 根本没有稳定顺序契约，或者修法只是补 `ORDER BY` / `.Sort()`，更接近“多行 SQL 结果做精确顺序断言时，必须显式 ORDER BY 或 Result.Sort”。",
+    "如果问题发生在 helper / collection 层先收集再断言，而不是运行时 ordered path，应转到“map / collection / helper 收集结果后未排序就断言”。",
+    "如果 query 已经有 `ORDER BY`，但不稳定来自 ties + `LIMIT` / 边界裁剪，应转到“ORDER BY 键不唯一时，LIMIT / 结果比对不能断言精确顺序”。",
+    "如果 patch 的核心是排序 helper / comparator / tie-breaker 自身不稳定，不要并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals，且能看出顺序契约已经存在但执行层没守住时，可直接判为 flaky risk；这条模式专门处理 ordered path 的 runtime 失序。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然看到了 `ORDER BY` / `LIMIT` / ordered path 相关词，但看不清主修法到底在 runtime 还是仅仅在断言侧。",
+      "patch 同时补了 `ORDER BY` / `.Sort()` 和 runtime 逻辑，无法确认真正主机制是哪一层。"
+    ]
+  },
+  "scope": [
+    "executor / distsql / planner runtime path 的 ordered query regression tests。",
+    "涉及 `KeepOrder`、UnionScan、double read、IndexLookUp、partition direct read 等 ordered path 的测试和修复。"
+  ],
+  "fix_hints": [
+    "如果测试语义确实要求顺序，优先修 runtime ordered path，让顺序契约在执行层真实成立。",
+    "把 keep-order / ordered read 语义沿 plan -> executor -> storage 路径显式下传并校验。",
+    "补 ordered path 的回归测试时，优先覆盖不同执行路径，而不是简单把断言改成无序比较。"
+  ],
+  "related_subpatterns": [
+    "多行 SQL 结果做精确顺序断言时，必须显式 ORDER BY 或 Result.Sort",
+    "ORDER BY 键不唯一时，LIMIT / 结果比对不能断言精确顺序",
+    "sort / comparator / tie-breaker / repeated sort 本身不稳定"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-1612",
+        "note": "新增 `TestTableScanWithOrder`，直接验证 `PhysicalTableScan.KeepOrder == true`，说明核心是 ordered path 语义是否被正确实现。"
+      },
+      {
+        "case_id": "pr-4470",
+        "note": "double read 场景下显式覆盖 `order by b` 的顺序语义，主问题在执行层是否保持顺序。"
+      },
+      {
+        "case_id": "pr-8251",
+        "note": "新增 `UNION ... ORDER BY a ASC LIMIT 1` 回归测试，关注的是 UNION 路径是否守住显式顺序契约。"
+      },
+      {
+        "case_id": "pr-24455",
+        "note": "partition direct reading + ordered query 的正确性回归，主修法更像 ordered path 语义而不是 ties 或单纯断言归一化。"
+      },
+      {
+        "case_id": "pr-24877",
+        "note": "`TestDirectReadingWithUnionScan` 覆盖 UnionScan + partition/hash/normal 表在 ordered path 上的一致性。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-3781",
+        "note": "这里修的是 assertion-side 无序归一化，不是 runtime keep-order 语义。"
+      },
+      {
+        "case_id": "pr-45513",
+        "note": "这条更像 `ORDER BY` 键不唯一叠加 `LIMIT` / 边界裁剪，而不是 executor 失序。"
+      },
+      {
+        "case_id": "pr-5044",
+        "note": "这里不是 ordered path 没守住，而是排序 helper / comparator 自身不稳定。"
+      }
+    ]
+  }
+}

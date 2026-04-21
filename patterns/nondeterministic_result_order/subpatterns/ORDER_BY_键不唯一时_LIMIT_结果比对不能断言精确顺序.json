@@ -1,0 +1,71 @@
+{
+  "key": "ORDER BY 键不唯一时，LIMIT / 结果比对不能断言精确顺序",
+  "family": "nondeterministic_result_order",
+  "summary": "测试已经写了 `ORDER BY`，但排序键本身不唯一；一旦再叠 `LIMIT` 或两个结果集的精确顺序比较，ties 的合法重排仍然会让测试 flaky。",
+  "mechanism": "这类问题最容易误判，因为表面上测试已经“很认真地写了 ORDER BY”。真正的问题是：`ORDER BY` 只保证按该排序键排序，不保证 ties 之间的相对顺序。只要排序键可重复，再叠加 `LIMIT`、TopN、边界裁剪、结果集 compare 等场景，测试就可能把合法的 ties 重排错当成 bug。稳定修法通常有 3 类：补二级排序键、把测试数据改成唯一键、或对最终结果整体排序后再比较。",
+  "signals_required": [
+    "SQL 已经显式包含 `ORDER BY`。",
+    "排序键不是严格唯一键，ties 合法存在，或者 patch / 测试数据能看出排序键会生成重复值。",
+    "测试对 `LIMIT` 结果或两个结果集的精确行顺序做比较，而不是只比较集合内容。",
+    "稳定修法是补 tie-breaker、让测试数据唯一化，或在 compare 前整体排序，而不是简单声称“已有 ORDER BY 所以顺序稳定”。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `LIMIT`、TopN、两个 query 结果互相 `Check(...)`、随机 / 重复测试数据、边界裁剪。",
+    "patch 里常同时出现“加二级排序键 / 去重数据”和“`Sort().Check(...)`”。",
+    "PR 描述直接提到 unstable order、ORDER BY + LIMIT、ties、duplicate values。"
+  ],
+  "negative_guards": [
+    "如果查询根本没有 `ORDER BY`，更接近“多行 SQL 结果做精确顺序断言时，必须显式 ORDER BY 或 Result.Sort”。",
+    "如果真正的问题是 executor / distsql / keep-order 逻辑没有保住顺序契约，而不是 ties 合法重排，不要并到这里。",
+    "如果测试不是直接 SQL 结果，而是 helper / collection 结果比较，应转到“map / collection / helper 收集结果后未排序就断言”。",
+    "如果 patch 的核心是 sort helper / comparator 本身不稳定，也不要并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals，尤其能明确看到 ties / 非唯一排序键证据时，可直接判定为 flaky risk；这条模式专门处理“已经有 ORDER BY 但仍不稳定”的高价值误判点。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然能看到 `ORDER BY` + `LIMIT`，但看不清排序键是否真的允许 ties。",
+      "patch 同时改动 runtime keep-order 路径，无法确认主问题究竟是 ties 还是执行层失序。"
+    ]
+  },
+  "scope": [
+    "带 `ORDER BY` + `LIMIT` 的测试，尤其是 partition / direct read / TopN / compare 两边结果的场景。",
+    "任何已经写了 `ORDER BY`，但仍然拿 tie rows 的相对顺序做精确断言的测试。"
+  ],
+  "fix_hints": [
+    "如果测试确实要看 top-k 顺序，给 `ORDER BY` 补足 tie-breaker，例如二级主键列。",
+    "如果只是想比较结果内容，不要依赖 tie rows 的相对位置，先整体排序再比。",
+    "随机测试数据如果会产生重复排序键，就不要拿它去做精确 top-k 顺序断言。"
+  ],
+  "related_subpatterns": [
+    "多行 SQL 结果做精确顺序断言时，必须显式 ORDER BY 或 Result.Sort",
+    "map / collection / helper 收集结果后未排序就断言"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-45513",
+        "note": "query 已有 `ORDER BY`，但排序键不唯一；叠加 `LIMIT` / 边界结果比较后仍会漂，需要补更强的 tie-breaker 或整体归一化。"
+      },
+      {
+        "case_id": "pr-64083",
+        "note": "虽然已有 `ORDER BY`，但 top-k / 边界选择仍然依赖 tie rows 的相对位置；修法是收紧顺序契约。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-24455",
+        "note": "这条最终更像 runtime / executor should-preserve-order，而不是 ties + LIMIT 子模式。"
+      },
+      {
+        "case_id": "pr-1612",
+        "note": "核心是 keep-order flag 没下传到 runtime / storage，而不是 `ORDER BY` ties。"
+      },
+      {
+        "case_id": "pr-5044",
+        "note": "排序 helper comparator 不稳定属于另一条 sibling，不应并进 ties + LIMIT。"
+      }
+    ]
+  }
+}

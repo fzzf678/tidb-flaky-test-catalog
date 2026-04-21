@@ -1,0 +1,66 @@
+{
+  "key": "DDL hook callback 复用共享上下文或事务对象",
+  "family": "race_condition_in_async_code",
+  "summary": "DDL hook/callback 沿用外层创建的上下文、存储或事务对象，而不是在 callback 内创建独立对象。",
+  "mechanism": "DDL hook/callback 运行在异步路径中；如果它复用主线程持有的 `context`、`store`、`txn` 等运行时对象，就会和主路径或其他 goroutine 共享同一可变对象，产生并发访问、事务生命周期错位或对象状态被交叉污染的问题。",
+  "signals_required": [
+    "diff 在测试中注册 DDL hook / callback。",
+    "callback 直接捕获并使用外层创建的 `context`、`store`、`txn`、会话级事务对象或等价运行时对象。",
+    "这些对象在 callback 生命周期内仍可能被主线程、DDL 路径或其他 goroutine 访问。",
+    "代码没有在 callback 内重新创建独立上下文/事务，也没有通过明确所有权转移避免共享。"
+  ],
+  "signals_optional": [
+    "callback 会用共享对象执行额外 SQL、提交事务、读写元信息，或驱动 cancel/reorg 操作。",
+    "修复中出现 callback 内新建事务、新建上下文、复制对象句柄，或彻底避免在 callback 中复用外层对象。",
+    "问题对象带明显生命周期语义，例如 `txn`、`sessionctx`、`context.Context`、`store`。"
+  ],
+  "negative_guards": [
+    "如果 callback 的核心问题只是写共享布尔标志、错误值或测试指针，更接近 `DDL hook callback 写共享变量或标志无锁`。",
+    "如果 callback 复用的是共享 `TestKit/session` 来执行 SQL，更接近 `DDL hook callback 复用共享测试会话执行 SQL`。",
+    "如果被复用的只是不可变配置或只读快照，没有可见的生命周期交叉，应降级为 `needs_more_evidence`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 且对象具有运行时生命周期语义时，可直接判定为 flaky risk。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "共享对象是否真的会与 callback 并发访问仍不清楚。",
+      "复用的是只读句柄或局部副本，但 patch 上看不清其可变性。"
+    ]
+  },
+  "scope": [
+    "DDL callback 测试、reorg/cancel/pause/resume 测试。",
+    "任何 callback 会拿外层 `context`、`store`、`txn` 去做额外动作的场景。"
+  ],
+  "fix_hints": [
+    "在 callback 内重新创建独立 `context` / `txn` / 运行时对象，不要沿用主线程的活跃对象。",
+    "如果只是需要传递标识或只读数据，改成传值而不是传整个运行时对象。",
+    "把 callback 中对事务/上下文的副作用挪回主线程串行执行。"
+  ],
+  "related_subpatterns": [
+    "DDL hook callback 写共享变量或标志无锁",
+    "DDL hook callback 复用共享测试会话执行 SQL"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-1903",
+        "note": "DDL hook callback 直接复用共享 context 对象。"
+      },
+      {
+        "case_id": "pr-2167",
+        "note": "DDL hook callback 复用共享 store/txn context。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-13447",
+        "note": "更像 callback 复用共享 TestKit / session 执行 SQL。"
+      },
+      {
+        "case_id": "pr-1687",
+        "note": "更像 callback 写共享测试变量，而不是复用事务对象。"
+      }
+    ]
+  }
+}

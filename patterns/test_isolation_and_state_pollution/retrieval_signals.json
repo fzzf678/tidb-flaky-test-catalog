@@ -1,0 +1,475 @@
+{
+  "family": "test_isolation_and_state_pollution",
+  "kind": "retrieval_signals",
+  "version": "v1",
+  "description": "Repository-scan retrieval hints for the currently formalized test_isolation_and_state_pollution subpatterns. This layer is candidate retrieval only; verdicts must still come from patch review plus the subpattern JSON.",
+  "defaults": {
+    "purpose": "candidate_retrieval_only",
+    "verdict_requires_subpattern_json": true,
+    "group_match_semantics": "For grep_keywords_all_groups, every group should match at least one keyword before the candidate is treated as high-priority.",
+    "any_match_semantics": "grep_keywords_any is only for weak recall; false positives are expected and should be filtered later by manual patch review plus the verdict-layer subpattern JSON.",
+    "exclude_semantics": "grep_keywords_exclude are soft down-rank hints by default unless the caller explicitly chooses hard exclusions. Prefer recall over precision unless a known noise class causes sibling confusion or candidate explosion.",
+    "rg_template_semantics": "Treat broad_recall as the default first hop for coarse repository scanning. Use fallback_no_path only when broad_recall is empty, implausibly sparse, or likely to miss because helpers / layout drift moved code outside the usual test paths. Use group_intersection only as an optional lightweight shrinker after recall; it must never be treated as an absence proof or hard gate.",
+    "path_globs_semantics": "path_globs are soft search-priority hints, not hard absence proofs. A miss in group_intersection should never override a hit from broad_recall or fallback_no_path."
+  },
+  "entries": [
+    {
+      "subpattern_key": "共享 namespace 资源必须 per-test 唯一化",
+      "pattern_file": "共享_namespace_资源必须_per_test_唯一化.json",
+      "grepability": "high",
+      "path_globs": [
+        "**/*_test.go",
+        "**/main_test.go"
+      ],
+      "grep_keywords_any": [
+        "t.TempDir(",
+        "TempStoragePath",
+        "config.TempDir",
+        "SlowQueryFile",
+        "cfg.Socket",
+        "StatusPort",
+        "cfg.Port = 0",
+        "Port = 0",
+        "net.Listen(\"127.0.0.1:\")",
+        "AdvertiseAddress",
+        "plan replayer"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "t.TempDir(",
+          "TempStoragePath",
+          "config.TempDir",
+          "SlowQueryFile",
+          "cfg.Socket",
+          "StatusPort",
+          "cfg.Port = 0",
+          "Port = 0",
+          "net.Listen(\"127.0.0.1:\")",
+          "AdvertiseAddress",
+          "plan replayer"
+        ],
+        [
+          "config.RestoreFunc()",
+          "t.Cleanup(",
+          "os.Remove(",
+          "fmt.Sprintf(",
+          "uuid.NewString(",
+          "t.Name(",
+          "filepath.Join("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "atomic.Load",
+        "atomic.Store",
+        "StoreGlobalConfig(",
+        "UpdateGlobal(",
+        "bindinfo.Lease",
+        "SetStatsLease(",
+        "PessimisticLockTTL",
+        "log.ReplaceGlobals(",
+        "t.Parallel("
+      ],
+      "first_pass_query_hint": "v1 第一跳故意优先抓 path / socket / port / temp-storage / slow-log / plan-replayer 这类显式 namespace 锚点，而不是试图一次性把 table/db 名字唯一化也扫全。这里刻意接受 false positive；如果命中点最后只是在 save-and-restore 全局 knob、atomic 化共享配置、或删 `t.Parallel()`，而没有真正切到独立 namespace，就应迁到 boundary。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳只抓显式 namespace anchors：TempDir / TempStoragePath / SlowQueryFile / socket / port / advertise-address / plan replayer。这样 recall 仍然足够宽，但不会被 `drop table if exists`、`filepath.Join` 这类超高频词直接炸穿。",
+          "command": "rg -n -P -g '**/*_test.go' '(t\\.TempDir\\(|TempStoragePath|config\\.TempDir|SlowQueryFile|cfg\\.Socket|StatusPort|cfg\\.Port\\s*=\\s*0|\\bPort\\s*=\\s*0\\b|net\\.Listen\\(\"127\\.0\\.0\\.1:\"\\)|AdvertiseAddress|plan replayer)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或 helper/layout 漂移时，去掉 `_test.go` 路径限制做全仓兜底；仍然只看显式 namespace/resource anchors，不把 verdict 层判断提前下放到检索层。",
+          "command": "rg -n -P '(t\\.TempDir\\(|TempStoragePath|config\\.TempDir|SlowQueryFile|cfg\\.Socket|StatusPort|cfg\\.Port\\s*=\\s*0|\\bPort\\s*=\\s*0\\b|net\\.Listen\\(\"127\\.0\\.0\\.1:\"\\)|AdvertiseAddress|plan replayer)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳做同文件交集：先找带显式 namespace anchors 的测试文件，再在这些文件里查 `RestoreFunc` / `Cleanup` / `os.Remove` / `uuid` / `filepath.Join` 等私有化或收口动作。它只是轻量 shrinker，不是 absence proof，也不试图覆盖纯 table/db 名字唯一化。",
+          "command": "rg -l -P -g '**/*_test.go' '(t\\.TempDir\\(|TempStoragePath|config\\.TempDir|SlowQueryFile|cfg\\.Socket|StatusPort|cfg\\.Port\\s*=\\s*0|\\bPort\\s*=\\s*0\\b|net\\.Listen\\(\"127\\.0\\.0\\.1:\"\\)|AdvertiseAddress|plan replayer)' <repo_root> | xargs rg -n -P '(config\\.RestoreFunc\\(\\)|t\\.Cleanup\\(|os\\.Remove\\(|fmt\\.Sprintf\\(|uuid\\.NewString\\(|t\\.Name\\(|filepath\\.Join\\()'"
+        },
+        {
+          "name": "fixture_name_weak_recall",
+          "intent": "补纯对象名唯一化的弱召回时再用：它刻意不作为默认第一跳，因为 table/db 名字这条如果写得太宽，很容易被一般建表/清表测试淹没。只有在手动追 `db/table/policy` 名字唯一化 case 时，再显式跑这条。",
+          "command": "rg -n -U -P -g '**/*_test.go' '(?s)(drop (table|database) if exists|create (table|database)).{0,140}(t\\.Name\\(|uuid\\.NewString\\(|time\\.Now\\(\\)\\.UnixNano\\(|rand\\.Intn?\\(|rand\\.Uint|strconv\\.FormatInt\\()|((t\\.Name\\(|uuid\\.NewString\\(|time\\.Now\\(\\)\\.UnixNano\\(|rand\\.Intn?\\(|rand\\.Uint|strconv\\.FormatInt\\().{0,140}(drop (table|database) if exists|create (table|database)))' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "后台 component 必须显式 Stop/Close/Wait，不能靠 ignore / 自然退出",
+      "pattern_file": "后台_component_必须显式_Stop_Close_Wait.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/main_test.go"
+      ],
+      "grep_keywords_any": [
+        "view.Stop(",
+        "WaitStopped(",
+        "DisableStats4Test(",
+        "TTLJobManager().Stop(",
+        "stopServer(",
+        "testleak.AfterTest(",
+        "goleak.IgnoreTopFunction(",
+        "WaitGroupWrapper",
+        "campaignLoop",
+        "loadStatsWorker",
+        "pq.Close("
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "view.Stop(",
+          "WaitStopped(",
+          "DisableStats4Test(",
+          "TTLJobManager().Stop(",
+          "stopServer(",
+          "testleak.AfterTest(",
+          "goleak.IgnoreTopFunction(",
+          "WaitGroupWrapper",
+          "campaignLoop",
+          "loadStatsWorker",
+          "pq.Close("
+        ],
+        [
+          "Stop(",
+          "Close(",
+          "Wait(",
+          "WaitStopped(",
+          "Cancel(",
+          "t.Cleanup(",
+          "defer ",
+          "testleak.AfterTest("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "UpdateGlobal(",
+        "StoreGlobalConfig(",
+        "RestoreFunc()",
+        "atomic.Load",
+        "atomic.Store",
+        "t.Parallel(",
+        "require.Eventually(",
+        "assert.Eventually("
+      ],
+      "first_pass_query_hint": "默认第一跳优先抓显式 lifecycle 收口动作本身，以及曾经被 `goleak.IgnoreTopFunction(...)` 掩盖过的后台 worker 痕迹。默认故意不把 `main_test.go` 里的通用 teardown 全扫进来，也不把 `dom.Close/store.Close` 这种高频收尾直接当 broad recall；那部分交给弱召回模板。这里接受 false positive；如果 patch 最后只是 save-and-restore 全局 lease/TTL/config，或只是 `Eventually` 等状态收敛，而没有把 component 真正 stop/close/wait，就应迁到 boundary。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳抓最像后台 component teardown 的显式 anchors，并默认排除 `main_test.go` 里的通用 Verify/teardown 噪声：`view.Stop()`、`WaitStopped(...)`、`DisableStats4Test()`、`TTLJobManager().Stop()`、`stopServer(...)`、`WaitGroupWrapper`、`goleak.IgnoreTopFunction(...)`、`campaignLoop`、`loadStatsWorker`、`pq.Close()`。",
+          "command": "rg -n -P -g '**/*_test.go' -g '!**/main_test.go' '(view\\.Stop\\(|WaitStopped\\(|DisableStats4Test\\(|TTLJobManager\\(\\)\\.Stop\\(|stopServer\\(|goleak\\.IgnoreTopFunction\\(|WaitGroupWrapper|campaignLoop|loadStatsWorker|pq\\.Close\\()' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或 lifecycle 收口动作落在 helper / non-test file 时，去掉 `_test.go` 路径限制做全仓兜底；仍然只看显式 lifecycle anchors。",
+          "command": "rg -n -P '(view\\.Stop\\(|WaitStopped\\(|DisableStats4Test\\(|TTLJobManager\\(\\)\\.Stop\\(|stopServer\\(|goleak\\.IgnoreTopFunction\\(|WaitGroupWrapper|campaignLoop|loadStatsWorker|pq\\.Close\\()' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳做同文件交集：先找带后台 component teardown anchors 的普通测试文件，再在这些文件里查 `Stop/Close/Wait/Cancel/t.Cleanup` 这类收口动作。它只做轻量 shrinker，不是 absence proof。",
+          "command": "rg -l -P -g '**/*_test.go' -g '!**/main_test.go' '(view\\.Stop\\(|WaitStopped\\(|DisableStats4Test\\(|TTLJobManager\\(\\)\\.Stop\\(|stopServer\\(|goleak\\.IgnoreTopFunction\\(|WaitGroupWrapper|campaignLoop|loadStatsWorker|pq\\.Close\\()' <repo_root> | xargs rg -n -P '(Stop\\(|Close\\(|Wait\\(|WaitStopped\\(|Cancel\\(|t\\.Cleanup\\(|defer |testleak\\.AfterTest\\()'"
+        },
+        {
+          "name": "harness_teardown_weak_recall",
+          "intent": "补 domain/store/server harness close 链的弱召回：它刻意不作为默认第一跳，因为 `dom.Close()` / `store.Close()` 太高频。只有在手动追 harness teardown case 时，再显式跑这条，去找 `CreateMockStoreAndDomain/newStoreWithBootstrap/BootstrapSession/testleak` 与 `dom.Close/store.Close/server.Close/stopServer` 的同文件共现。",
+          "command": "rg -n -U -P -g '**/*_test.go' '(?s)(CreateMockStoreAndDomain|newStoreWithBootstrap|BootstrapSession|testleak\\.AfterTest\\(|VerifyTestMain).{0,180}(dom\\.Close\\(|store\\.Close\\(|server\\.Close\\(|stopServer\\()|((dom\\.Close\\(|store\\.Close\\(|server\\.Close\\(|stopServer\\().{0,180}(CreateMockStoreAndDomain|newStoreWithBootstrap|BootstrapSession|testleak\\.AfterTest\\(|VerifyTestMain))' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "临时句柄 / backend / engine / iterator 必须在所有退出路径上收口",
+      "pattern_file": "临时句柄_backend_engine_iterator_必须在所有退出路径上收口.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "rows.Close(",
+        "stmt.Close(",
+        "resp.Body.Close(",
+        "mustExecToRecodeSet",
+        "recycleChunk(",
+        "DerefAndClose",
+        "Unregister(job.ID)",
+        "rec.Close(",
+        "r.Close("
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "rows.Close(",
+          "stmt.Close(",
+          "resp.Body.Close(",
+          "mustExecToRecodeSet",
+          "recycleChunk(",
+          "DerefAndClose",
+          "Unregister(job.ID)",
+          "rec.Close(",
+          "r.Close("
+        ],
+        [
+          "Close(",
+          "defer ",
+          "rollback",
+          "panic",
+          "reopen",
+          "cancel",
+          "error",
+          "Execute("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "dom.Close(",
+        "store.Close(",
+        "server.Close(",
+        "view.Stop(",
+        "WaitStopped(",
+        "TTLJobManager",
+        "UpdateGlobal(",
+        "StoreGlobalConfig(",
+        "RestoreFunc()",
+        "t.Parallel("
+      ],
+      "first_pass_query_hint": "默认第一跳只抓显式 close-path anchors：`rows.Close()`、`stmt.Close()`、`resp.Body.Close()`、`mustExecToRecodeSet`、`recycleChunk(...)`、`DerefAndClose`、`Unregister(job.ID)`、`rec.Close()`、`r.Close()`。这里刻意不把所有 `RecordSet` / `engine` / `rollback` 都裸扫进来。如果 patch 主体其实是停后台 manager/worker，迁第二条；如果主体是 path/port/socket 私有化，迁第一条。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳抓最像 close-path 收口的显式 anchors，并默认排除 `main_test.go` 噪声：`rows.Close()`、`stmt.Close()`、`resp.Body.Close()`、`mustExecToRecodeSet`、`recycleChunk(...)`、`DerefAndClose`、`Unregister(job.ID)`、`rec.Close()`、`r.Close()`。这样可以优先召回真正已经显式暴露资源收口问题的测试。",
+          "command": "rg -n -P -g '**/*_test.go' -g '!**/main_test.go' '(rows\\.Close\\(|stmt\\.Close\\(|resp\\.Body\\.Close\\(|mustExecToRecodeSet|recycleChunk\\(|DerefAndClose|Unregister\\(job\\.ID\\)|rec\\.Close\\(|r\\.Close\\()' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或 close-path 收口动作落在 helper / non-test file 时，去掉 `_test.go` 路径限制做全仓兜底；仍然只看显式 close-path anchors。",
+          "command": "rg -n -P '(rows\\.Close\\(|stmt\\.Close\\(|resp\\.Body\\.Close\\(|mustExecToRecodeSet|recycleChunk\\(|DerefAndClose|Unregister\\(job\\.ID\\)|rec\\.Close\\(|r\\.Close\\()' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳做文件级交集：先用显式 close-path anchors 找到候选文件，再在这些文件里查 `Execute/RecordSet/rows/stmt/resp.Body/chunk/StorageRC/backend/engine/rollback/panic/reopen/cancel` 等资源或异常路径语义。它只做轻量 shrinker，不是 absence proof。",
+          "command": "rg -l -P -g '**/*_test.go' -g '!**/main_test.go' '(rows\\.Close\\(|stmt\\.Close\\(|resp\\.Body\\.Close\\(|mustExecToRecodeSet|recycleChunk\\(|DerefAndClose|Unregister\\(job\\.ID\\)|rec\\.Close\\(|r\\.Close\\()' <repo_root> | xargs rg -l -P '(Execute\\(|RecordSet|rows|stmt|resp\\.Body|chunk|StorageRC|backend|engine|rollback|panic|reopen|cancel)'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "test 注入的 hook / filter / matcher 必须缩作用域并在 cancel/切阶段时解绑",
+      "pattern_file": "test_注入的_hook_filter_matcher_必须缩作用域并在_cancel_切阶段时解绑.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "MustQueryWithContext",
+        "MustExecWithContext",
+        "clearMatchFn",
+        "AddMessageFilter",
+        "ClearMessageFilter",
+        "isInternal()",
+        "matchFn"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "MustQueryWithContext",
+          "MustExecWithContext",
+          "clearMatchFn",
+          "AddMessageFilter",
+          "ClearMessageFilter",
+          "isInternal()",
+          "matchFn"
+        ],
+        [
+          "context.WithValue(",
+          "ctx.Done(",
+          "ClearMessageFilter(",
+          "AddMessageFilter(",
+          "isInternal()",
+          "clearMatchFn",
+          "MustQueryWithContext",
+          "MustExecWithContext"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "atomic.Pointer",
+        "StoreGlobalConfig(",
+        "UpdateGlobal(",
+        "RestoreFunc()",
+        "log.ReplaceGlobals(",
+        "GlobalStmtSummary",
+        "traceevent",
+        "t.Parallel("
+      ],
+      "first_pass_query_hint": "默认第一跳先抓显式 observer-scope / matcher-cleanup anchors：`MustQueryWithContext`、`MustExecWithContext`、`clearMatchFn`、`AddMessageFilter`、`ClearMessageFilter`、`isInternal()`、`matchFn`。这里故意不把 generic `hook/filter/callback` 裸放进默认 broad recall；如果 patch 主体其实是 process-global singleton / callback pointer / trace categories，就应迁边界。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳抓最像 test-local observer scope / matcher cleanup 的显式 anchors：`MustQueryWithContext`、`MustExecWithContext`、`clearMatchFn`、`AddMessageFilter`、`ClearMessageFilter`、`isInternal()`、`matchFn`。这能优先召回真正显式处理作用域和解绑时机的测试。",
+          "command": "rg -n -P -g '**/*_test.go' '(MustQueryWithContext|MustExecWithContext|clearMatchFn|AddMessageFilter|ClearMessageFilter|isInternal\\(\\)|matchFn)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或 matcher cleanup 落在实现侧代码时，去掉 `_test.go` 路径限制做全仓兜底；这样能补到 `clearMatchFn` 这类只在实现文件中直接暴露的问题。",
+          "command": "rg -n -P '(MustQueryWithContext|MustExecWithContext|clearMatchFn|AddMessageFilter|ClearMessageFilter|isInternal\\(\\)|matchFn)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳做文件级交集：先用显式 anchors 找到候选文件，再在这些文件里查 `context.WithValue` / `ctx.Done` / `ClearMessageFilter` / `isInternal()` 这类作用域或解绑信号。它只做轻量 shrinker，不是 absence proof。",
+          "command": "rg -l -P '(MustQueryWithContext|MustExecWithContext|clearMatchFn|AddMessageFilter|ClearMessageFilter|isInternal\\(\\)|matchFn)' <repo_root> | xargs rg -l -P '(context\\.WithValue\\(|ctx\\.Done\\(|ClearMessageFilter\\(|AddMessageFilter\\(|isInternal\\(\\)|MustQueryWithContext|MustExecWithContext|clearMatchFn)'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "可复用 fixture / executor / stateful helper 在再次使用前必须 reset / restore / clone",
+      "pattern_file": "可复用_fixture_executor_stateful_helper_再次使用前必须_reset_restore_clone.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "actionSpill.Reset(",
+        "OptimizerUseInvisibleIndexes",
+        "payloads = ",
+        "task.State =",
+        "task.Step =",
+        "initializedSlidingWindow",
+        "rowToConsume",
+        "stagedStartRow",
+        "lastStartRow"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "actionSpill.Reset(",
+          "OptimizerUseInvisibleIndexes",
+          "payloads = ",
+          "task.State =",
+          "task.Step =",
+          "initializedSlidingWindow",
+          "rowToConsume",
+          "stagedStartRow",
+          "lastStartRow"
+        ],
+        [
+          "Clone()",
+          "Reset(",
+          "Open(",
+          "Close(",
+          "Reopen(",
+          "defer ",
+          "payload",
+          "tracker",
+          "collation",
+          "SessionVars",
+          "change back",
+          "revert"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "rows.Close(",
+        "resp.Body.Close(",
+        "DerefAndClose",
+        "RunInGoTestChan",
+        "StoreGlobalConfig(",
+        "UpdateGlobal(",
+        "RestoreFunc()",
+        "t.Parallel("
+      ],
+      "first_pass_query_hint": "默认第一跳先抓显式 reset/restore anchors：`actionSpill.Reset()`、`payloads = payloads[:0]`、`OptimizerUseInvisibleIndexes`、`task.State/task.Step` 回写、以及 `PipelinedWindowExec` 这类可复用 executor 的字段归零锚点。generic `Clone()` 不放默认第一跳，而是留给带 `collation` / alias 语义的弱召回；否则太容易被普通 clone 用法淹没。这里也故意不把所有 `Open()` / `Close()` / `Reset()` 或所有 session var 赋值都裸扫进来；如果 patch 主体其实是 close-path 资源回收、process-global knob、或 server harness recreate，就应迁到相邻 sibling 或边界。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳抓最像 reused-state reset 的显式 anchors：`actionSpill.Reset()`、`payloads = payloads[:0]`、`OptimizerUseInvisibleIndexes`、`task.State/task.Step` 回写，以及可复用 executor 的字段归零锚点。这条默认只扫测试文件，优先召回显式把干净前置条件补回来的 patch。",
+          "command": "rg -n -P -g '**/*_test.go' '(actionSpill\\.Reset\\(|OptimizerUseInvisibleIndexes|payloads\\s*=\\s*[^\\n]*\\[:0\\]|task\\.State\\s*=|task\\.Step\\s*=|initializedSlidingWindow|rowToConsume|stagedStartRow|lastStartRow)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse，或 reset/zeroing 动作主要落在实现文件而不是测试文件时，去掉 `_test.go` 限制做全仓兜底；仍然只看显式 reset/restore anchors。",
+          "command": "rg -n -P '(actionSpill\\.Reset\\(|OptimizerUseInvisibleIndexes|payloads\\s*=\\s*[^\\n]*\\[:0\\]|task\\.State\\s*=|task\\.Step\\s*=|initializedSlidingWindow|rowToConsume|stagedStartRow|lastStartRow)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳做文件级交集：先用显式 reset/clone anchors 找候选文件，再在这些文件里查 `Reset/Open/Close/Reopen/defer`、`payload/tracker/collation/SessionVars` 这类 reuse 语义。它只是轻量 shrinker，不是 absence proof。",
+          "command": "rg -l -P '(actionSpill\\.Reset\\(|OptimizerUseInvisibleIndexes|payloads\\s*=\\s*[^\\n]*\\[:0\\]|task\\.State\\s*=|task\\.Step\\s*=|initializedSlidingWindow|rowToConsume|stagedStartRow|lastStartRow)' <repo_root> | xargs rg -l -P '(Reset\\(|Open\\(|Close\\(|Reopen\\(|defer |payload|tracker|collation|SessionVars|change back|revert)'"
+        },
+        {
+          "name": "generic_reset_reuse_weak_recall",
+          "intent": "补更宽的 reset/reuse 弱召回时再用：一类是 generic `Reset/Open/Close` 与 reuse 场景词的窗口搜索；另一类是 `Clone()` 配 `collation/Constant/Expression` 这类 clone-before-mutate 语义。它不作为默认第一跳，因为 generic `Reset/Open/Close` 和 generic `Clone()` 都很容易被普通资源回收或普通对象复制噪声淹没。",
+          "command": "rg -n -U -P -g '**/*_test.go' '(?s)((Clone\\(\\).{0,160}(collation|Constant|Expression))|((collation|Constant|Expression).{0,160}Clone\\(\\))|((Reset\\(|payloads\\s*=\\s*[^\\n]*\\[:0\\]|OptimizerUseInvisibleIndexes).{0,180}(Open\\(|Close\\(|Reopen\\(|SessionVars|tracker|payload))|((Open\\(|Close\\(|Reopen\\(|SessionVars|tracker|payload).{0,180}(Reset\\(|payloads\\s*=\\s*[^\\n]*\\[:0\\]|OptimizerUseInvisibleIndexes)))' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "server / harness / package sandbox 级 test-global 状态必须重建或清理",
+      "pattern_file": "server_harness_package_sandbox_级_test_global_状态必须重建或清理.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/main_test.go"
+      ],
+      "grep_keywords_any": [
+        "RunInGoTestChan",
+        "stopServer(",
+        "clearTiKVStorage(",
+        "clearEtcdStorage(",
+        "ResetStoreForWithTiKVTest(",
+        "goleak.VerifyTestMain(",
+        "testleak.AfterTest(",
+        "t.Cleanup(",
+        "CreateMockStoreAndDomain(",
+        "BootstrapSession("
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "RunInGoTestChan",
+          "stopServer(",
+          "clearTiKVStorage(",
+          "clearEtcdStorage(",
+          "ResetStoreForWithTiKVTest(",
+          "goleak.VerifyTestMain(",
+          "testleak.AfterTest("
+        ],
+        [
+          "t.Cleanup(",
+          "domain.Close(",
+          "store.Close(",
+          "server.Close(",
+          "BootstrapSession(",
+          "CreateMockStoreAndDomain(",
+          "TestMain("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "cfg.Port = 0",
+        "StatusPort",
+        "TempStoragePath",
+        "config.TempDir",
+        "SlowQueryFile",
+        "UpdateGlobal(",
+        "StoreGlobalConfig(",
+        "SetSchemaLease(",
+        "atomic.Pointer",
+        "t.Parallel("
+      ],
+      "first_pass_query_hint": "默认第一跳先抓最硬的 harness-state anchors：`RunInGoTestChan`、`stopServer(...)`、`clearTiKVStorage(...)`、`clearEtcdStorage(...)`、`ResetStoreForWithTiKVTest(...)`。这些更像“测试二进制 / harness 级共享态没有被重建或清掉”。`2026-04-18` 用当前 `10` 条 representative positive patch 回放时，`broad_recall` 只命中 `5 / 10`，但这是有意设计：它在 TiDB HEAD 当前只打到约 `20` 个文件，而 `package_sandbox_weak_recall` 单跑约 `98` 个文件。generic `TestMain()`、`CreateMockStoreAndDomain()`、`goleak.VerifyTestMain(...)` 继续只放在弱召回或交集里；当前也先不把 package sandbox / `TestMain` 单拆成 sibling，而是继续作为第六条里的弱召回修法分支保留。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳只抓最像 harness-global state 的硬锚点：`RunInGoTestChan`、`stopServer(...)`、`clearTiKVStorage(...)`、`clearEtcdStorage(...)`、`ResetStoreForWithTiKVTest(...)`。默认只扫测试文件，优先召回 server/harness/global-env 级污染。`2026-04-18` 在 TiDB HEAD 上的 `20` 个命中文件里，有 `18` 个落在 `pkg/server/**`；说明这一跳当前主召回的确是 server restart / `RunInGoTestChan` / `stopServer` 这条 harness 分支，不必为了少量相邻噪声去继续收窄 regex。",
+          "command": "rg -n -P -g '**/*_test.go' '(RunInGoTestChan|stopServer\\(|clearTiKVStorage\\(|clearEtcdStorage\\(|ResetStoreForWithTiKVTest\\()' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse，或 harness recreate/cleanup 主体落在 helper / impl 文件时，去掉 `_test.go` 路径限制做全仓兜底；仍然只看最硬的 harness-state anchors。",
+          "command": "rg -n -P '(RunInGoTestChan|stopServer\\(|clearTiKVStorage\\(|clearEtcdStorage\\(|ResetStoreForWithTiKVTest\\()' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳做文件级交集：先用硬锚点找候选文件，再在这些文件里查 `t.Cleanup` / `testleak.AfterTest` / `domain.Close` / `store.Close` / `server.Close` / `BootstrapSession` 这类 teardown 语义。它只是轻量 shrinker，不是 absence proof。当前 TiDB HEAD 上大致是 `20 -> 17` 个文件，说明它只做轻度收窄，不承担 recall 主入口。",
+          "command": "rg -l -P '(RunInGoTestChan|stopServer\\(|clearTiKVStorage\\(|clearEtcdStorage\\(|ResetStoreForWithTiKVTest\\()' <repo_root> | xargs rg -l -P '(t\\.Cleanup\\(|testleak\\.AfterTest|domain\\.Close\\(|store\\.Close\\(|server\\.Close\\(|goleak\\.VerifyTestMain\\(|mockstore\\.NewMockStore|BootstrapSession\\()'"
+        },
+        {
+          "name": "package_sandbox_weak_recall",
+          "intent": "补 package sandbox / `main_test.go` / `TestMain` 这条弱召回时再用：只在 `main_test.go` 里把 `TestMain` / `goleak.VerifyTestMain` 和 `tikv.EnableFailpoints` / `autoid.SetStep` / `config.UpdateGlobal` / `BootstrapSession` 这类测试运行时初始化放到同一文件交集里搜索。`2026-04-18` patch-proxy 回放时它能补到 `5 / 10` 个 representative positives，但 TiDB HEAD 当前约有 `98` 个文件命中；而且这些命中里 `92 / 98` 带 `goleak.VerifyTestMain`、`85 / 98` 带 `config.UpdateGlobal`、`69 / 98` 带 `testsetup.SetupForCommonTest`、`63 / 98` 带 `tikv.EnableFailpoints`、`31 / 98` 带 `autoid.SetStep`。也就是说它主要召回的是 generic `main_test.go` scaffolding，而不是纯 package-sandbox 修补；因此它只适合作为定向弱召回，不作为默认第一跳，也不支撑把 package sandbox 单拆成 sibling。",
+          "command": "rg -l -P -g '**/main_test.go' '(goleak\\.VerifyTestMain\\(|TestMain\\()' <repo_root> | xargs rg -l -P '(tikv\\.EnableFailpoints|autoid\\.SetStep|config\\.UpdateGlobal|CreateMockStoreAndDomain|BootstrapSession)'"
+        },
+        {
+          "name": "harness_teardown_weak_recall",
+          "intent": "补旧一批 store/domain/server harness teardown 正例时再用：抓 `CreateMockStoreAndDomain/newStoreWithBootstrap/BootstrapSession/testleak.AfterTest/RunInGoTestChan/ResetStoreForWithTiKVTest` 与 `domain.Close/store.Close/server.Close/stopServer/clearTiKVStorage/clearEtcdStorage` 的近距离共现。`2026-04-18` patch-proxy 回放时它能补到 `5 / 10` 个 representative positives，TiDB HEAD 当前大约命中 `23` 个文件；主要噪声集中在普通 `BootstrapSession + defer dom.Close/store.Close` bootstrap smoke tests，以及带 `SetSchemaLease(...)` 的 global-knob 边界。因此它仍然只作为弱召回，不能直接当 verdict 或默认第一跳。",
+          "command": "rg -l -U -P -g '**/*_test.go' '(?s)(CreateMockStoreAndDomain|newStoreWithBootstrap|BootstrapSession|testleak\\.AfterTest\\(|RunInGoTestChan|ResetStoreForWithTiKVTest\\().{0,180}(domain\\.Close\\(|store\\.Close\\(|server\\.Close\\(|stopServer\\(|clearTiKVStorage\\(|clearEtcdStorage\\()|((domain\\.Close\\(|store\\.Close\\(|server\\.Close\\(|stopServer\\(|clearTiKVStorage\\(|clearEtcdStorage\\().{0,180}(CreateMockStoreAndDomain|newStoreWithBootstrap|BootstrapSession|testleak\\.AfterTest\\(|RunInGoTestChan|ResetStoreForWithTiKVTest\\())' <repo_root>"
+        }
+      ]
+    }
+  ]
+}

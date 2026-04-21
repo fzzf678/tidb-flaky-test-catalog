@@ -1,0 +1,69 @@
+{
+  "key": "执行期 helper/pruning 内部的懒建查找 map 被并发查询路径同时读写",
+  "family": "race_condition_in_async_code",
+  "summary": "执行期 helper、dirty-state 或 pruning 结构把查找/缓存 map 挂在 struct 字段上，并在 `GetDirtyTable`、`LocatePartition` 一类查询路径里按需懒建；一旦这些查询路径可被并发执行，map 的填充与读取就会直接打架。",
+  "mechanism": "这类问题不是长期存活 manager 上的 register/list 并发入口，也不是单个读 helper 漏锁，而是执行期 helper 自己在查询路径里顺手建表、填缓存或写回 map。只要 `Get*`、`Locate*` 这类入口会被并发 worker、index join、partition locate 等路径同时调用，就会在“第一次访问时顺手填 map”这一刻触发 `concurrent map read and map write` 或 race detector。稳定修法通常是给 helper 内部 map 加锁，或者在并发查询开始前一次性建好，不再允许查询路径边读边写。",
+  "signals_required": [
+    "共享 map 是执行期 helper、dirty-state 或 pruning 结构的字段，而不是 session/global manager 上的长期全局状态。",
+    "查询路径本身会按需懒建或填充这个 map，常见形态是 `if len(map)==0 { build... }`、`if !ok { map[k] = ... }`、`Get*` 中缺项即插入。",
+    "这个查询路径可能被并发执行，例如 index join、partition locate、并发 executor worker 或并行测试调用。",
+    "修复核心是给 helper 内部 map 加 `Mutex/RWMutex`，或把懒建提前到并发启动之前，而不是继续允许查询路径裸写 map。"
+  ],
+  "signals_optional": [
+    "字段名常见为 `tables`、`valueMap`。",
+    "函数名常见为 `GetDirtyTable`、`LocatePartition`、`LocateRanges`、`buildPartitionValueMapAndSorted`。",
+    "patch 或注释里常出现 `parallel`、`concurrent map writes`、`index join` 之类的提示。"
+  ],
+  "negative_guards": [
+    "如果共享 map 挂在长期存活的 manager/handler/mock client 上，且问题是 `register/get/list/activate/derive` 多入口直接并发读写，更接近 `长期存活的 manager/handler 共享 map 被多个并发入口直接读写`。",
+    "如果写路径本来已有锁，只是某个 `IsXxx/Get/List` 读 helper 漏掉读侧锁，更接近 `只读 helper/List/IsXxx 访问共享 map 却漏掉读侧锁`。",
+    "如果问题核心是 `SessionVars/userVars` 这类 session 状态 map 被并发 set/get 或 encode/decode，更接近 session-state 主线，不属于这个执行期 helper 子模式。",
+    "如果问题核心是把共享 map 直接 alias 给外部对象，缺少 copy-on-read/copy-on-write，而不是查询路径自己边查边写 map，更接近 copy-on-write / publish-once 子线。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；查询路径自己懒建共享 map，且该路径可并发执行，是非常稳定的结构性信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清这个查询路径是否真会被并发调用。",
+      "map 虽然是 helper 字段，但实际上初始化只发生一次，后续纯只读且有清楚的 happens-before 保证。"
+    ]
+  },
+  "scope": [
+    "executor / union scan / dirty-state helper。",
+    "partition pruning / partition locate / runtime lookup helper。",
+    "任何在执行期查询路径里顺手填共享 map 的 helper 结构。"
+  ],
+  "fix_hints": [
+    "给 helper 内部的懒建 map 加 `Mutex/RWMutex`，把 build/read 都纳入同一把锁。",
+    "如果 map 只是查询辅助索引，优先在并发 worker 启动前一次性建好，而不是边查边建。",
+    "不要让 `Get*`、`Locate*` 这种可并发执行的查询路径直接向共享 Go map 回填新条目。"
+  ],
+  "related_subpatterns": [
+    "长期存活的 manager/handler 共享 map 被多个并发入口直接读写",
+    "只读 helper/List/IsXxx 访问共享 map 却漏掉读侧锁",
+    "懒初始化映射或指针需要一次性发布"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-12868",
+        "note": "`DirtyDB.GetDirtyTable` 在查询路径里缺项即写回 `tables` map；index join 并发访问时触发 map race，修复为给 `DirtyDB` 加锁。"
+      },
+      {
+        "case_id": "pr-32945",
+        "note": "`ForListColumnPruning.LocatePartition/LocateRanges` 会按需构建 `valueMap`；并发 locate 时读写同一个懒建 map，修复为给 `valueMap` 加 `RWMutex`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-3913",
+        "note": "这是 `SessionVars.Users` 的并发 set/get，属于 session-state map 互斥问题，不是执行期 helper 查询路径懒建 map。"
+      },
+      {
+        "case_id": "pr-40754",
+        "note": "这是 encode/decode session states 时替换 `userVars` map，属于 session-state 主线，不是 helper 查询路径自己边查边写 map。"
+      }
+    ]
+  }
+}

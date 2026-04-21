@@ -1,0 +1,75 @@
+{
+  "key": "cache reuse 不应遮蔽 execution-time context",
+  "family": "plan_stability_and_stats_dependency",
+  "summary": "测试如果依赖每次执行重新计算的 runtime context，就不能让 prepared stmt cache、non-prepared plan cache、constant fold 或其他 cache 路径把它提前吃掉；否则测试观测到的就不是它以为自己在验证的那个执行期状态。",
+  "mechanism": "这条 sibling 和 `h4` 不同。`h4` 关注的是 cache hit/read-from-cache 的观测方式太脆；这里关注的是 cache reuse 本身把 execution-time context 遮蔽了。patch-backed 正例里，原测试想验证的对象都应该 per-execution 重新计算：例如 stale-read `as of timestamp now()` 的时间戳、session binding 变化后的计划选择、extension function 的 side effect / privilege context。但如果 prepared statement cache、non-prepared plan cache、constant fold 或 plan cache 继续复用前一次求值结果，测试看到的就是旧的 runtime context，于是会出现合法漂移或偶发失败。主修法反复落在：显式禁用某条 cache 路径、要求每次执行重新计算运行期上下文、或阻止 side-effectful / privilege-sensitive expression 进入 fold / cache。核心是：不要让 cache reuse 把应当按执行时点计算的上下文藏掉。",
+  "signals_required": [
+    "测试真正验证的是 per-execution runtime context，而不是单纯验证是否命中 cache。",
+    "patch 的主修法是禁用 / 绕开某条 cache 路径，或强制每次执行重新计算 runtime context / privilege / side effect。",
+    "不稳定来源是 prepared stmt cache、non-prepared plan cache、constant fold 或类似复用路径遮蔽了 execution-time context。",
+    "稳定修法落在 `SetSkipPlanCache` / `tidb_enable_non_prepared_plan_cache=0` / 重新 evaluate stale-read ts / privilege check at eval / 禁止 constant fold 这一层。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `PrepareStmt`, `ExecutePreparedStmt`, `as of timestamp now(...)`, `SetSkipPlanCache`, `UseCache = false`, `tidb_enable_non_prepared_plan_cache`, `checkPrivileges`, `ConstNone`, `constant_fold`, `binding`。",
+    "一类典型 patch 会在 test setup 里显式关掉某条 cache，再继续保留原断言，说明主问题不是 assertion 形式，而是 cache reuse 掩盖了真实 runtime state。",
+    "另一类典型 patch 会在 expression eval 阶段补 privilege/side-effect re-check，表示 cache/fold 之前把执行期语义提前固化了。"
+  ],
+  "negative_guards": [
+    "如果 patch 主修法是等待 cache warmup、改用 `ReadFromTableCache`、按路径区分 expected cacheability、或允许小比例 miss，应转到 `h4`。",
+    "如果 patch 主修法只服务 exact plan assertion，且核心是 plan cache / binding / shared session runtime context 导致 exact plan 漂移，应优先考虑现有 `assert_exact_plan_or_cost/b5`。",
+    "如果 patch 主修法只是补 `ORDER BY` / `.Sort()`，应转到 `nondeterministic_result_order` family；`pr-43204` 这种 mixed patch 也要看主修法是否在重算 runtime context。",
+    "如果 patch 主修法是 stats load / analyze inputs / stats-ready 时序，应转到 `h1` / `h3`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals，且主修法明确是在阻止 cache reuse 遮蔽执行期上下文时，可直接判为 flaky risk。这条是 generalized runtime-context cache sibling。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然 patch 里出现了 cache / prepared / binding / fold 锚点，但主修法更像常规功能修复，无法确认测试抖动来自 execution-time context 被遮蔽。",
+      "patch 同时大幅修改 cache hit 观测、结果顺序和 runtime context，难以确认真正主机制。"
+    ]
+  },
+  "scope": [
+    "prepared stmt / non-prepared plan cache / constant fold / binding 相关测试中，对 per-execution runtime context 的稳定化。",
+    "尤其适用于 stale-read TS、session binding 变化、extension function side effect、privilege-sensitive evaluation 这类场景。"
+  ],
+  "fix_hints": [
+    "如果测试依赖执行时点的上下文，优先显式禁用会复用旧结果的 cache 路径，而不是假设缓存总能保持语义一致。",
+    "对 stale-read / binding / privilege / side-effect 场景，确保每次执行都重新计算真正的 runtime context。",
+    "不要让 side-effectful 或 privilege-sensitive expression 被 constant fold 或 plan cache 提前固化。"
+  ],
+  "related_subpatterns": [
+    "cache-hit / read-from-cache 不应写成逐次硬断言；必须先等 cache ready，再断稳定性质",
+    "精确 plan 断言前必须固定 runtime context"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-43204",
+        "note": "prepared stale-read statement 原来会复用第一次算出的 timestamp；修法改成执行时重算 stale-read ts，并保留每轮执行断言。"
+      },
+      {
+        "case_id": "pr-51926",
+        "note": "extension function 可能带 side effect / privilege context，所以 patch 禁止 constant fold、跳过 plan cache，并在 eval 时再次检查 privilege。"
+      },
+      {
+        "case_id": "pr-65771",
+        "note": "在 globalstats binding concurrency test 里显式 `set @@tidb_enable_non_prepared_plan_cache=0`，避免 non-prepared cache 把 session binding 变化遮住。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-32139",
+        "note": "这里主修法是等待 cached table ready 并改用 `ReadFromTableCache` 观测 cache hit，更像 `h4`。"
+      },
+      {
+        "case_id": "pr-25138",
+        "note": "这里虽然也和 plan cache/runtime context 相邻，但场景是 exact plan assertion 的 runtime-context 污染，更接近现有 `assert_exact_plan_or_cost/b5`。"
+      },
+      {
+        "case_id": "pr-43204",
+        "note": "同一 patch 里补 `ORDER BY` 只是 mixed 边界噪音；如果后续遇到只剩结果顺序问题的 patch，应转到 `nondeterministic_result_order`。"
+      }
+    ]
+  }
+}

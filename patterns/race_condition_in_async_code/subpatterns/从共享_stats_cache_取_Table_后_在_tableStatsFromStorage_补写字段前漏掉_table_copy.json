@@ -1,0 +1,73 @@
+{
+  "key": "从共享 stats cache 取 Table 后，在 tableStatsFromStorage 补写字段前漏掉 table.copy",
+  "family": "race_condition_in_async_code",
+  "summary": "统计模块从 `statsCache` 取出一份正在被其他读路径共享的 `Table`，然后在 `tableStatsFromStorage` / `TableStatsFromStorage` 这类加载路径里继续给它补写 `Histogram`、`CMSketch`、`col2Idx`、`colNameID` 或相近字段；如果没有先 `table.copy()`，就会把 live cached object 原地改坏。",
+  "mechanism": "这类问题的关键不是整个 `statsCache` snapshot 的版本化发布，也不是 feedback 写回路径的 `newTblStats := tblStats.copy()`，而是“从共享 cache 里先拿到一张 `Table`，再在 from-storage/load-stats 路径里继续往这张 `Table` 的 `Columns/Indices` 或派生字段里补值”。只要这张 `Table` 同时还会被 planner、executor、selectivity 或其他 stats 读路径使用，原地补写 `Histogram`、`CMSketch`、`col2Idx`、`colNameID`、`Pseudo/ErrorRate` 等字段，就会在 `-race` 下报共享对象并发读写。稳定修法通常是：先 `table.copy()`，在副本上补写字段，再把副本发布回 cache。",
+  "signals_required": [
+    "代码位于 `tableStatsFromStorage` / `TableStatsFromStorage` 或其紧邻的 stats load path，而不是 feedback merge 或 whole-cache update 主线。",
+    "逻辑会先从 `statsCache` / `StatsCache` 取出现有 `Table`，而不是每次都新建独立对象。",
+    "随后会继续往这份 `Table` 的 `Columns/Indices` 或派生字段里补写，例如 `Histogram`、`CMSketch`、`col2Idx`、`colNameID`、相近的 `Pseudo/ErrorRate` 字段。",
+    "修复核心是先 `table.copy()` / `table.Copy()`，再在副本上补写字段，而不是继续直接改共享 cache 里的原对象。"
+  ],
+  "signals_optional": [
+    "补丁里常出现注释 `We copy it before writing to avoid race.`。",
+    "函数或字段锚点常见为 `cmSketchFromStorage`、`indexStatsFromStorage`、`columnStatsFromStorage`、`histogramFromStorage`。",
+    "有些 sibling case 会顺手补上 `col2Idx`、`colNameID`、`statsVer`、`CMSketch` 或 `ErrorRate` 的复制。"
+  ],
+  "negative_guards": [
+    "如果问题核心是整个 `statsCache`/`statsCache.version` 的 copy-on-write 发布、`latestVersion` 比较、`updateStatsCache` 原子更新，更接近 whole-cache snapshot 子线，不是这条单个 `Table` 对象补写前漏 `table.copy` 的模式。",
+    "如果问题核心是 feedback/update 路径的 `newTblStats := tblStats.copy()`，随后 `newIdx/newCol + UpdateHistogram/UpdateCMSketch` 回写，更接近 feedback 写回 stats 对象子线，不是这条 from-storage 补写路径。",
+    "如果问题核心是 `internal/cache`、`lru`、`lfu`、`mapcache` 这些 cache internals 的共享 map/list 并发安全封装，更接近 stats cache internals 子线。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；从共享 stats cache 取出 `Table` 后继续原地补写字段而不先 `table.copy()`，是很稳定的结构性竞态信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清这份 `Table` 是否真的来自共享 cache，而不是当前调用栈独占的新对象。",
+      "虽然位于 stats load path，但补写动作已经明确发生在副本或临时对象上。"
+    ]
+  },
+  "scope": [
+    "早期 `statistics/statscache.go` / `statistics/handle.go` / `statistics/table.go` 的 from-storage stats load path。",
+    "后续迁移到 `statistics/handle/*` 或 `pkg/statistics/handle/*` 后，仍保留同一类 `tableStatsFromStorage` + `table.copy()` 结构的路径。"
+  ],
+  "fix_hints": [
+    "从 `statsCache` 取出已有 `Table` 后，不要直接改它；先 `table.copy()` / `table.Copy()`。",
+    "把 `Histogram`、`CMSketch`、`col2Idx`、`colNameID` 等补写动作都放到副本上完成，再发布回 cache。",
+    "如果副本上还要顺手补 `Pseudo`、`ErrorRate`、`statsVer` 这类派生字段，一并在副本里做完，避免只复制主字段而漏复制派生字段。"
+  ],
+  "related_subpatterns": [
+    "异步 global stats merge 直接共享 partitionStats/statsInfo，缺少 copy-on-read 快照"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-3059",
+        "note": "早期 `TableStatsFromStorage` 从 `statsCache` 取出共享 `Table` 后继续补写 histogram，修复锚点就是 `table = table.copy()` 与 `We copy it before writing to avoid race.`。"
+      },
+      {
+        "case_id": "pr-5042",
+        "note": "from-storage 路径继续补写 `Histogram/CMSketch`，如果不先 `table.copy()` 就会把共享 `Table` 原地改坏。"
+      },
+      {
+        "case_id": "pr-6869",
+        "note": "同一条 `tableStatsFromStorage` 主线里继续补 `col2Idx/colNameID` 等派生映射；修复仍然依赖先 `table.copy()` 再补写。"
+      },
+      {
+        "case_id": "pr-10149",
+        "note": "Handle 重构后，这条模式迁移到 `statistics/handle/handle.go`，但结构仍然是从 cache 取 `Table` 后先 `table.copy()` 再补写 `Histogram/CMSketch/ErrorRate`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-6565",
+        "note": "这里也有 `table.copy()` 和共享 stats 对象补写，但更混合了 `Pseudo/ErrorRate` 与反馈聚合逻辑；当前更适合作为相邻 mixed case。"
+      },
+      {
+        "case_id": "pr-13647",
+        "note": "这是整个 `statsCache` snapshot/version 一起 copy-on-write 发布的子线，虽然 changed-files 里还会碰到 `tableStatsFromStorage`，但核心不再是单个 `Table` from-storage 补写前漏 `table.copy()`。"
+      }
+    ]
+  }
+}

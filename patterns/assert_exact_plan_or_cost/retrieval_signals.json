@@ -1,0 +1,361 @@
+{
+  "family": "assert_exact_plan_or_cost",
+  "kind": "retrieval_signals",
+  "version": "v1",
+  "description": "Repository-scan retrieval hints for the currently formalized assert_exact_plan_or_cost subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "defaults": {
+    "purpose": "candidate_retrieval_only",
+    "verdict_requires_subpattern_json": true,
+    "group_match_semantics": "For grep_keywords_all_groups, every group should match at least one keyword before the candidate is treated as high-priority.",
+    "any_match_semantics": "grep_keywords_any is only for weak recall; false positives are acceptable at this layer and should be filtered later by manual review plus the verdict-layer subpattern JSON.",
+    "exclude_semantics": "grep_keywords_exclude are soft down-rank hints by default unless the caller explicitly chooses hard exclusions. Prefer recall over precision unless a known noise class causes sibling confusion or unreviewable candidate explosion.",
+    "rg_template_semantics": "Treat broad_recall as the default first hop for coarse repository scanning. Use fallback_no_path only when broad_recall is empty, implausibly sparse, or likely to miss due to path/layout drift. Use group_intersection only as an optional lightweight shrinker after recall; it must never be treated as an absence proof or hard gate.",
+    "path_globs_semantics": "path_globs are soft search-priority hints, not hard absence proofs. If broad_recall is empty or implausibly sparse, rerun fallback_no_path before concluding the pattern is absent. A miss in group_intersection should never override a hit from broad_recall/fallback_no_path."
+  },
+  "entries": [
+    {
+      "subpattern_key": "精确 explain / plan tree / operator 文本断言应降到更稳定表示层",
+      "pattern_file": "精确_explain_plan_tree_operator_文本断言应降到更稳定表示层.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/testdata/*.json"
+      ],
+      "grep_keywords_any": [
+        "NormalizePlan",
+        "DecodeNormalizedPlan",
+        "plan_normalized_suite",
+        "ordered_result_mode_suite",
+        "plan_tree",
+        "explain format='brief'",
+        "HasPlan(",
+        "MustIndexLookup(",
+        "MustHavePlan(",
+        "MustTableReader(",
+        "LateMaterializationFilterCondition"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "NormalizePlan",
+          "DecodeNormalizedPlan",
+          "plan_normalized_suite",
+          "ordered_result_mode_suite",
+          "plan_tree",
+          "LateMaterializationFilterCondition"
+        ],
+        [
+          "HasPlan(",
+          "MustIndexLookup(",
+          "MustHavePlan(",
+          "MustTableReader(",
+          "explain format='brief'"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "explain analyze",
+        "copr_cache_hit_ratio",
+        "estRows",
+        "actRows",
+        "execution info"
+      ],
+      "first_pass_query_hint": "第一跳优先抓“表示层降级”的 sibling：normalized / `brief` / `plan_tree` / property-level assertion。不要把所有 `EXPLAIN` 都扫进来，也不要把 numeric metric sibling 混进这条。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳按 normalized / brief / property-level assertion 的表示层锚点粗召回。这版 broad 已做过 patch-proxy widening，目的是把真实 sibling 先看见，而不是直接判定。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/testdata/*.json' '(?s)(NormalizePlan|DecodeNormalizedPlan|plan_normalized_suite|ordered_result_mode_suite|plan_tree|explain\\s+format\\s*=\\s*[^\\n]{0,20}brief|HasPlan\\(|Must(?:IndexLookup|HavePlan|TableReader)\\(|LateMaterializationFilterCondition)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或目录结构有漂移时，去掉路径限制做全仓兜底；仍然只保留表示层 sibling 的核心锚点。",
+          "command": "rg -n -U -P '(?s)(NormalizePlan|DecodeNormalizedPlan|plan_normalized_suite|ordered_result_mode_suite|plan_tree|explain\\s+format\\s*=\\s*[^\\n]{0,20}brief|HasPlan\\(|Must(?:IndexLookup|HavePlan|TableReader)\\(|LateMaterializationFilterCondition)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳只保留“表示层锚点 + property-level / brief explain 锚点”在局部窗口共现的候选；它只是 shrinker，不是 absence proof。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/testdata/*.json' '(?s)((NormalizePlan|DecodeNormalizedPlan|plan_normalized_suite|ordered_result_mode_suite|plan_tree|LateMaterializationFilterCondition).{0,220}(HasPlan\\(|Must(?:IndexLookup|HavePlan|TableReader)\\(|explain\\s+format\\s*=\\s*[^\\n]{0,20}brief))|((HasPlan\\(|Must(?:IndexLookup|HavePlan|TableReader)\\(|explain\\s+format\\s*=\\s*[^\\n]{0,20}brief).{0,220}(NormalizePlan|DecodeNormalizedPlan|plan_normalized_suite|ordered_result_mode_suite|plan_tree|LateMaterializationFilterCondition))' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "`EXPLAIN ANALYZE` / cost / runtime metric / estimate 数值不应做整串硬编码",
+      "pattern_file": "EXPLAIN_ANALYZE_cost_runtime_metric_estimate_数值不应做整串硬编码.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/*.test",
+        "**/*.result"
+      ],
+      "grep_keywords_any": [
+        "explain analyze",
+        "copr_cache_hit_ratio",
+        "estRows",
+        "actRows",
+        "execution info",
+        "strconv.ParseFloat(",
+        "strconv.ParseInt(",
+        "require.Regexp(",
+        "--replace_regex"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "explain analyze",
+          "copr_cache_hit_ratio",
+          "estRows",
+          "actRows",
+          "execution info"
+        ],
+        [
+          "strconv.ParseFloat(",
+          "strconv.ParseInt(",
+          "require.Regexp(",
+          "--replace_regex"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "NormalizePlan",
+        "plan_tree",
+        "HasPlan(",
+        "MustIndexLookup(",
+        "MustHavePlan("
+      ],
+      "first_pass_query_hint": "第一跳先看 metric / numeric normalization 锚点，不要把所有 explain sibling 混进来。这里关心的是数值文本被 parse / regex 化，而不是 plan 表示层整体降级。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳抓 execution metric / cost / estimate 以及 parse/regex normalization 的字面锚点；这条 broad 允许较多 false positive，但应尽量和表示层 sibling 分开。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' '(?is)(explain\\s+analyze|copr_cache_hit_ratio|\\bestRows\\b|\\bactRows\\b|execution info|ParseFloat|strconv\\.Parse(?:Float|Int)|require\\.Regexp\\(|--replace_regex)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 时，去掉路径限制做全仓兜底，但仍然只保留 metric / numeric normalization 锚点。",
+          "command": "rg -n -U -P '(?is)(explain\\s+analyze|copr_cache_hit_ratio|\\bestRows\\b|\\bactRows\\b|execution info|ParseFloat|strconv\\.Parse(?:Float|Int)|require\\.Regexp\\(|--replace_regex)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳只保留“metric anchor + normalization anchor”在局部窗口共现的候选，帮助把 feature-side explain 结果改动和真正的 numeric normalization 区分开。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' '(?s)((explain\\s+analyze|copr_cache_hit_ratio|\\bestRows\\b|\\bactRows\\b|execution info).{0,220}(ParseFloat|strconv\\.Parse(?:Float|Int)|require\\.Regexp\\(|--replace_regex))|((ParseFloat|strconv\\.Parse(?:Float|Int)|require\\.Regexp\\(|--replace_regex).{0,220}(explain\\s+analyze|copr_cache_hit_ratio|\\bestRows\\b|\\bactRows\\b|execution info))' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "精确 plan 断言前必须显式 pin planner inputs",
+      "pattern_file": "精确_plan_断言前必须显式_pin_planner_inputs.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/*.test",
+        "**/testdata/*.json"
+      ],
+      "grep_keywords_any": [
+        "tidb_opt_",
+        "tidb_cost_model_version",
+        "tidb_isolation_read_engines",
+        "use index",
+        "/*+",
+        "fix_control",
+        "set @@",
+        "set session",
+        "set global"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "tidb_opt_",
+          "tidb_cost_model_version",
+          "tidb_isolation_read_engines",
+          "use index",
+          "/*+",
+          "fix_control",
+          "set @@",
+          "set session",
+          "set global"
+        ],
+        [
+          "explain format='brief'",
+          "HasPlan(",
+          "MustHavePlan(",
+          "MustIndexLookup(",
+          "testkit.Rows(",
+          "plan_normalized_suite"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "mock statistics",
+        "MaxRegionSampleSize",
+        "show warnings",
+        "explain for connection",
+        "PreparedPlanCache"
+      ],
+      "first_pass_query_hint": "第一跳只把 planner input pinning 相关锚点扫进候选，不要急着把 stats / runtime-context sibling 混进来。第二跳再叠 exact-plan assertion 锚点缩小范围。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳抓 knob / hint / cost model / engine setting / `use index` 这类 planner-input 锚点。它会有 false positive，但这是这条 sibling 可接受的 coarse recall。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/testdata/*.json' '(?is)(tidb_(?:opt|cost_model|isolation_read_engines)|use\\s+index|/\\*\\+|fix_control|set\\s+@@|set\\s+session|set\\s+global)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或目录有漂移时，去掉路径限制做全仓兜底；仍然只保留 planner-input 锚点。",
+          "command": "rg -n -U -P '(?is)(tidb_(?:opt|cost_model|isolation_read_engines)|use\\s+index|/\\*\\+|fix_control|set\\s+@@|set\\s+session|set\\s+global)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳只保留“planner-input anchor + exact-plan assertion anchor”在局部窗口共现的候选，用来降低一般 setup 改动带来的噪声。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/testdata/*.json' '(?s)(?:(tidb_(?:opt|cost_model|isolation_read_engines)|use\\s+index|/\\*\\+|fix_control|set\\s+@@|set\\s+session|set\\s+global).{0,260}(explain\\s+format\\s*=\\s*[^\\n]{0,20}brief|HasPlan\\(|MustHavePlan\\(|MustIndexLookup\\(|testkit\\.Rows\\(|plan_normalized_suite)|(explain\\s+format\\s*=\\s*[^\\n]{0,20}brief|HasPlan\\(|MustHavePlan\\(|MustIndexLookup\\(|testkit\\.Rows\\(|plan_normalized_suite).{0,260}(tidb_(?:opt|cost_model|isolation_read_engines)|use\\s+index|/\\*\\+|fix_control|set\\s+@@|set\\s+session|set\\s+global))' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "精确 plan 断言前必须先冻结统计信息",
+      "pattern_file": "精确_plan_断言前必须先冻结统计信息.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/*.test",
+        "**/testdata/*.json"
+      ],
+      "grep_keywords_any": [
+        "analyze table",
+        "mock statistics",
+        "mock stats",
+        "MaxRegionSampleSize",
+        "samples",
+        "buckets",
+        "stats load",
+        "stats:pseudo",
+        "DumpStatsDeltaToKV",
+        "histogram",
+        "explain format='brief'"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "analyze table",
+          "mock statistics",
+          "mock stats",
+          "MaxRegionSampleSize",
+          "samples",
+          "buckets",
+          "stats load",
+          "stats:pseudo",
+          "DumpStatsDeltaToKV",
+          "histogram"
+        ],
+        [
+          "explain format='brief'",
+          "plan_normalized_suite",
+          "testkit.Rows(",
+          "where a>3",
+          "where a>2"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "PreparedPlanCache",
+        "show warnings",
+        "explain for connection",
+        "UseCache = false",
+        "fix_control"
+      ],
+      "first_pass_query_hint": "第一跳优先抓 stats freeze / sampling variance / selectivity boundary 锚点。为了补 `a>2 -> a>3` 这类 boundary case，broad 里允许一个很窄的 `explain format='brief' ... where ... > (2|3)` heuristic。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳抓 stats freeze 锚点，并带一个非常克制的 explain-boundary heuristic 来补 selectivity-boundary case；这层 broad 仍然只用于 candidate retrieval。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/testdata/*.json' '(?is)(analyze\\s+table|mock\\s+statistics|mock\\s+stats|MaxRegionSampleSize|sample(?:s|\\s*size)?|bucket(?:s|\\s*size)?|stats(?:\\s+load|\\s+delta|:pseudo)?|auto\\s*analyze|DumpStatsDeltaToKV|histogram|explain\\s+format\\s*=\\s*[^\\n]{0,20}brief[^\\n]{0,120}where[^\\n]{0,40}>\\s*(2|3))' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 时，去掉路径限制做全仓兜底；仍然保留同一组 stats anchor 与 explain-boundary heuristic。",
+          "command": "rg -n -U -P '(?is)(analyze\\s+table|mock\\s+statistics|mock\\s+stats|MaxRegionSampleSize|sample(?:s|\\s*size)?|bucket(?:s|\\s*size)?|stats(?:\\s+load|\\s+delta|:pseudo)?|auto\\s*analyze|DumpStatsDeltaToKV|histogram|explain\\s+format\\s*=\\s*[^\\n]{0,20}brief[^\\n]{0,120}where[^\\n]{0,40}>\\s*(2|3))' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳只保留“stats anchor + exact-plan / explain anchor”共现的候选。对 `where a>2 -> a>3` 这种 selectivity-boundary case，也允许 explain-boundary heuristic 单独保留高优先级候选。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/testdata/*.json' '(?s)((analyze\\s+table|mock\\s+statistics|mock\\s+stats|MaxRegionSampleSize|sample(?:s|\\s*size)?|bucket(?:s|\\s*size)?|stats(?:\\s+load|\\s+delta|:pseudo)?|DumpStatsDeltaToKV|histogram).{0,260}(explain\\s+format\\s*=\\s*[^\\n]{0,20}brief|plan_normalized_suite|testkit\\.Rows\\())|((explain\\s+format\\s*=\\s*[^\\n]{0,20}brief|plan_normalized_suite|testkit\\.Rows\\().{0,260}(analyze\\s+table|mock\\s+statistics|mock\\s+stats|MaxRegionSampleSize|sample(?:s|\\s*size)?|bucket(?:s|\\s*size)?|stats(?:\\s+load|\\s+delta|:pseudo)?|DumpStatsDeltaToKV|histogram))|(explain\\s+format\\s*=\\s*[^\\n]{0,20}brief[^\\n]{0,120}where[^\\n]{0,40}>\\s*(2|3))' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "精确 plan 断言前必须固定 runtime context",
+      "pattern_file": "精确_plan_断言前必须固定_runtime_context.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/*.test",
+        "**/*.result",
+        "**/*.go"
+      ],
+      "grep_keywords_any": [
+        "plan cache",
+        "PreparedPlanCache",
+        "prepared_plan_cache",
+        "show warnings",
+        "explain for connection",
+        "prepare stmt",
+        "deallocate prepare",
+        "stmt summary",
+        "binding",
+        "EventuallyMustIndexLookup",
+        "FoundInPlanCache",
+        "last_plan_from_cache",
+        "union scan",
+        "TiFlashReplica",
+        "replica",
+        "UseCache = false",
+        "PreparedStmts[",
+        "CachedPrepareStmt"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "plan cache",
+          "PreparedPlanCache",
+          "prepared_plan_cache",
+          "show warnings",
+          "explain for connection",
+          "stmt summary",
+          "binding",
+          "EventuallyMustIndexLookup",
+          "FoundInPlanCache",
+          "last_plan_from_cache",
+          "union scan",
+          "TiFlashReplica",
+          "replica",
+          "UseCache = false",
+          "PreparedStmts[",
+          "CachedPrepareStmt"
+        ],
+        [
+          "prepare stmt",
+          "deallocate prepare",
+          "HasPlan(",
+          "MustIndexLookup(",
+          "testkit.Rows(",
+          "show warnings"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "mock statistics",
+        "MaxRegionSampleSize",
+        "analyze table",
+        "tidb_cost_model_version"
+      ],
+      "first_pass_query_hint": "第一跳先抓 runtime context / shared-state / cache / binding / warning-state 锚点。不要把这条和 planner-input sibling 混成“另一个 knob”；它关心的是运行时上下文。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳抓 plan cache / binding / stmt summary / warning state / replica / prepared-statement cache 这些 runtime-context anchor。这版 broad 已补 `UseCache = false` / `PreparedStmts[` / `CachedPrepareStmt` 来覆盖 prepared-plan-cache case。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' -g '**/*.go' '(?is)(plan\\s*cache|PreparedPlanCache|prepared_plan_cache|show\\s+warnings|explain\\s+for\\s+connection|prepare\\s+st(?:mt)?\\b|deallocate\\s+prepare|stmt\\s*summary|binding|EventuallyMustIndexLookup|FoundInPlanCache|last_plan_from_cache|union\\s*scan|TiFlashReplica|replica|UseCache\\s*=\\s*false|PreparedStmts\\[|CachedPrepareStmt)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或路径漂移时，去掉路径限制做全仓兜底；仍然保留同一组 runtime-context anchor。",
+          "command": "rg -n -U -P '(?is)(plan\\s*cache|PreparedPlanCache|prepared_plan_cache|show\\s+warnings|explain\\s+for\\s+connection|prepare\\s+st(?:mt)?\\b|deallocate\\s+prepare|stmt\\s*summary|binding|EventuallyMustIndexLookup|FoundInPlanCache|last_plan_from_cache|union\\s*scan|TiFlashReplica|replica|UseCache\\s*=\\s*false|PreparedStmts\\[|CachedPrepareStmt)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳只保留“runtime-context anchor + prepare / warning / plan assertion anchor”在局部窗口共现的候选，帮助把一般 setup 改动和真正的 exact-plan runtime-context sibling 区分开。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' -g '**/*.go' '(?s)(?:(plan\\s*cache|PreparedPlanCache|prepared_plan_cache|show\\s+warnings|explain\\s+for\\s+connection|stmt\\s*summary|binding|EventuallyMustIndexLookup|FoundInPlanCache|last_plan_from_cache|union\\s*scan|TiFlashReplica|replica|UseCache\\s*=\\s*false|PreparedStmts\\[|CachedPrepareStmt).{0,260}(prepare\\s+st(?:mt)?\\b|deallocate\\s+prepare|HasPlan\\(|MustIndexLookup\\(|testkit\\.Rows\\(|show\\s+warnings)|(prepare\\s+st(?:mt)?\\b|deallocate\\s+prepare|HasPlan\\(|MustIndexLookup\\(|testkit\\.Rows\\(|show\\s+warnings).{0,260}(plan\\s*cache|PreparedPlanCache|prepared_plan_cache|explain\\s+for\\s+connection|stmt\\s*summary|binding|EventuallyMustIndexLookup|FoundInPlanCache|last_plan_from_cache|union\\s*scan|TiFlashReplica|replica|UseCache\\s*=\\s*false|PreparedStmts\\[|CachedPrepareStmt))' <repo_root>"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "key": "`Handle.pid2tid/schemaVersion` 分区 physicalID 到 tableID 映射缓存被并发读写，缺少统一锁保护",
+  "family": "race_condition_in_async_code",
+  "summary": "statistics Handle 为了把分区 `physicalID` 映射回逻辑表，会缓存 `pid2tid` 和配套的 `schemaVersion`；如果 `Update`、bootstrap 或 partition stats 读取路径会并发调用 `getTableByPhysicalID` / `buildPartitionID2TableID`，而这两个共享字段没有统一放在 handle owner mutex 下，就会在刷新 schema 映射时和其他读取路径撞出 data race。",
+  "mechanism": "这类问题的关键不是 `rateMap/globalMap/feedback` 这些反馈状态，也不是 `tableStatsFromStorage` 对共享 `Table` 的 copy-before-write，而是 Handle 内部新引入了一份长期存活的“分区 physicalID -> tableID”映射缓存：`pid2tid`，以及它对应的 `schemaVersion`。当 `Update`、`initStatsMeta`、`initStatsHistograms`、`getTableByPhysicalID`、`GetPartitionStats` 这类路径一边根据 `SchemaMetaVersion()` 决定是否重建 `pid2tid`，另一边并发读取该映射来解析 partition stats 时，如果没有统一的 owner lock，就会在 `schemaVersion/pid2tid` 上发生并发读写。稳定修法通常是把 `pid2tid` 和 `schemaVersion` 都收进 `h.mu`，并确保 `getTableByPhysicalID` / `Update` 对这两者的读取、重建、发布都在同一把锁保护下完成。",
+  "signals_required": [
+    "代码位于 statistics handle / bootstrap / partition stats 读取主线，而不是普通 planner/executor 消费路径。",
+    "逻辑显式引入或访问 `pid2tid`、`schemaVersion`、`buildPartitionID2TableID`、`getTableByPhysicalID` 这一组分区映射缓存信号。",
+    "这组映射会根据 `is.SchemaMetaVersion()` 变化被重建，且同时被 `Update` / bootstrap / partition stats 读取路径访问。",
+    "修复核心是把 `pid2tid/schemaVersion` 的读取和更新统一移入 handle owner mutex，而不是只改某个局部 `map` 用法。"
+  ],
+  "signals_optional": [
+    "强锚点包括 `buildPartitionID2TableID(is)`、`if is.SchemaMetaVersion() != h.mu.schemaVersion`、`h.mu.pid2tid = ...`、`if id, ok := h.mu.pid2tid[physicalID]; ok`。",
+    "同一 patch 中常会伴随 `PhysicalID`、`GetPartitionStats(...)`、`table.PhysicalID` 这类 partition stats 读取路径的结构调整。",
+    "有些版本会先把 `pid2tid/schemaVersion` 放在 `Handle` 外层，随后又回收到 `h.mu` 内；这种“字段迁移进 mutex”本身就是很强的修复信号。"
+  ],
+  "negative_guards": [
+    "如果问题核心是 `SessionStatsCollector.rateMap -> Handle.rateMap -> UpdateErrorRate` 这条误差率 map 聚合链，更接近 `SessionStatsCollector.rateMap -> Handle.rateMap -> UpdateErrorRate` 链路直接聚合共享误差率 map，缺少统一互斥。",
+    "如果问题核心是 `globalMap/feedback` 在 dump/clear/reset 路径做 snapshot-swap，更接近 `stats Handle / SessionStatsCollector 在 dump/clear 路径直接重置 live feedback/globalMap/collector state，缺少锁内 snapshot-swap`。",
+    "如果问题核心是 `tableStatsFromStorage` / `UpdateStatsByLocalFeedback` 在共享 `Table/Index/Column` 上原地补写 histogram/CMSketch，更接近 stats object copy-before-write 子线。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；`pid2tid/schemaVersion` 这类共享分区映射缓存如果在更新路径和读取路径之间缺少统一锁保护，是很稳定的结构性 data race 信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清 `pid2tid/schemaVersion` 是否真的是长期存活的 Handle 共享状态，而不是调用栈内局部临时映射。",
+      "虽然 patch 中出现 `pid2tid` 和 `schemaVersion`，但所有读取、重建、发布都已经明确在同一把 owner mutex 下完成。"
+    ]
+  },
+  "scope": [
+    "早期 `statistics/handle.go`、`statistics/boostrap.go`、`statistics/dump.go`、`statistics/table.go` 上的 partition stats 加载主线。",
+    "后续若同类逻辑迁移到 `statistics/handle/handle.go` / `bootstrap.go`，但仍保留 `pid2tid/schemaVersion` 缓存和 `getTableByPhysicalID` 结构，也属于同一子模式。"
+  ],
+  "fix_hints": [
+    "不要让 `pid2tid` 和 `schemaVersion` 在 Handle 外层裸露；把它们收进 owner mutex 管理的状态块里。",
+    "根据 `SchemaMetaVersion()` 判定是否重建映射时，读取版本、重建 `pid2tid`、写回缓存、随后按 `physicalID` 查表这一整段都要在同一把锁保护下完成。",
+    "如果 partition stats 读取路径需要频繁查 `physicalID -> tableID`，优先提供受控 helper（例如锁内 `getTableByPhysicalID`），不要让多个调用点各自裸读写共享映射。"
+  ],
+  "related_subpatterns": [
+    "stats Handle / SessionStatsCollector 在 dump/clear 路径直接重置 live feedback/globalMap/collector state，缺少锁内 snapshot-swap",
+    "`SessionStatsCollector.rateMap -> Handle.rateMap -> UpdateErrorRate` 链路直接聚合共享误差率 map，缺少统一互斥"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-7305",
+        "note": "修复先把 `pid2tid/schemaVersion` 迁入 `h.mu`，再让 `getTableByPhysicalID` 基于 `SchemaMetaVersion()` 在锁保护下重建 `pid2tid` 并读取 `h.mu.pid2tid[physicalID]`；这正是共享分区映射缓存缺少统一锁保护的典型信号。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-6901",
+        "note": "这条更偏 `rateMap` 误差率 map 的 merge/range/delete 互斥保护，虽然同属 stats handle 主线，但不是 `pid2tid/schemaVersion` 这一组分区映射缓存。"
+      },
+      {
+        "case_id": "pr-30550",
+        "note": "这条更偏 `globalMap/feedback` 的 snapshot-swap 与 dump/clear live-state 管理，不是 partition `physicalID -> tableID` 映射缓存的锁保护。"
+      }
+    ]
+  }
+}

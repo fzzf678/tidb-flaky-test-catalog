@@ -1,0 +1,67 @@
+{
+  "key": "BindHandle 单例 sctx 并发复用",
+  "family": "race_condition_in_async_code",
+  "summary": "长期存活的 `BindHandle` 持有单例 `sctx`，多个并发路径同时进入并复用该 `sctx`。",
+  "mechanism": "`BindHandle` 这类全局/单例组件里的 `sctx` 本质上是共享运行时会话上下文；如果 capture、filter、update、prepare 或后台 loop 并发进入同一个 handle，并复用同一个 `sctx`，就会让会话状态、`StmtCtx`、内部 SQL 执行状态或绑定相关上下文发生并发冲突。",
+  "signals_required": [
+    "diff 直接触及 `BindHandle`、`Domain.bindHandle` 或等价单例 bind 组件。",
+    "组件内部持有单例 `sctx` / session context 字段，并被多个方法或路径复用。",
+    "至少两条并发路径可能同时进入同一个 handle，例如 `Update`、bind prepare、capture/filter、后台 reload / internal SQL loop。",
+    "代码没有对 `sctx` 使用关键区加锁，也没有把 `sctx` 改成每次调用独立创建。"
+  ],
+  "signals_optional": [
+    "修复中出现 `mutex` 包住 `sctx` 访问，或把 `sctx` 的使用范围收窄到临界区内。",
+    "问题路径同时涉及内部 SQL、prepare、capture/filter、binding reload 等共享会话状态丰富的操作。",
+    "背景线程与前台 API 同时使用 `BindHandle`。"
+  ],
+  "negative_guards": [
+    "如果共享的是 `BindHandle` 内部 parser 实例，而不是单例 `sctx`，更接近 `BindHandle 共享 parser 并发使用`。",
+    "如果问题是 bind cache 的发布/替换一致性，而不是 `sctx` 会话上下文本身被复用，应降级为 `needs_more_evidence` 或归入其他子模式。",
+    "如果实现已经改成每次调用新建 session context，不要命中这个子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是典型的共享运行时会话上下文被异步路径并发复用。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "代码里已经存在部分锁，但是否覆盖所有 `sctx` 使用点还不明确。",
+      "共享字段虽然名为 `sctx`，但是否真的是活跃会话上下文还看不清。"
+    ]
+  },
+  "scope": [
+    "bindinfo、capture/filter、baseline evolve、内部 SQL loop 相关测试。",
+    "任何单例 handle 内部复用一个 session context 并可能被并发调用的场景。"
+  ],
+  "fix_hints": [
+    "给 `sctx` 使用关键区加 `mutex`，确保一次只允许一个路径进入。",
+    "如果并发度高且锁太粗，改成每次调用创建独立 session context。",
+    "避免让后台 loop 与前台 API 共用同一个活跃 `sctx`。"
+  ],
+  "related_subpatterns": [
+    "BindHandle 共享 parser 并发使用",
+    "测试改写全局 lease 干扰后台 refresh / loader",
+    "同一 session 的上一个 RecordSet 未 Close 就执行下一条 SQL"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-49092",
+        "note": "capture/filter 提取与其他路径并发复用同一个 `sctx`。"
+      },
+      {
+        "case_id": "pr-49164",
+        "note": "`Update` / bind prepare 关键区会并发复用单例 `sctx`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-10321",
+        "note": "更像共享 parser 实例并发使用，而不是 `sctx` 复用。"
+      },
+      {
+        "case_id": "pr-38223",
+        "note": "更像 `Domain.bindHandle` / `BindHandle` 内部状态替换与读者一致性问题。"
+      }
+    ]
+  }
+}

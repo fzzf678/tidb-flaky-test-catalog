@@ -1,0 +1,105 @@
+{
+  "key": "可复用 fixture / executor / stateful helper 在再次使用前必须 reset / restore / clone",
+  "family": "test_isolation_and_state_pollution",
+  "summary": "同一测试里如果继续复用已经被上一步原地污染过的 fixture、executor、helper、buffer、alias 或 session-local 开关，下一步就会继承旧状态，导致断言串扰或行为漂移。稳定修法不是补等待，而是在再次使用前显式 reset / restore，或直接 clone / fresh-create。",
+  "mechanism": "这条子模式的核心不是 process-global knob 竞态，也不是 `rows.Close()` / `DerefAndClose()` 那类 close-path 资源回收，而是 test-local mutable state 被重复复用。常见形态有几类：一是同一个 task / fixture object 在第一次调用里被改了字段，第二次调用还继续拿原对象；二是 executor / helper 支持 `Open()` / `Reopen()` / `Reset()`，但并没有把上一轮留下的游标、缓存、内部 action state、payload buffer 真正清零；三是测试共享了一份可变模板对象，传给下游后被原地 mutate，下一次再用就继承了 alias 污染；四是 helper 暂时翻转 session-local flag，却没有在下一步前 restore。稳定修法也很一致：复用前显式把关键字段改回初始态，保证 `Reset()` / `Open()` / `Reopen()` 递归清理内部状态，必要时 `Clone()` 共享对象，或者在紧贴修改点的地方 `defer` restore test-local 开关。",
+  "signals_required": [
+    "patch 的 retained 主体明确在处理可复用 fixture / executor / helper / alias / session-local state 的 reuse 前置条件，而不是 process-global singleton 或 generic resource close-path。",
+    "原始不稳定来自前一次调用、前一阶段、或前一个测试步骤已经原地污染了对象/缓冲区/内部状态，下一次复用时继承了脏状态。",
+    "稳定修法显式重建了干净前置条件：例如 reset 字段、补全 `Reset()` / `Open()` / `Reopen()` 的递归清零、清空 buffer、`defer` restore session-local flag，或 `Clone()` 后再传给会原地 mutate 的逻辑。",
+    "patch 的主轴是让复用对象重新变成 phase-local / call-local 的干净对象，而不是继续依赖 sleep、Eventually、串行化或 incidental cleanup。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `Clone()`、`actionSpill.Reset()`、`payloads = payloads[:0]`、`OptimizerUseInvisibleIndexes`、`task.State` / `task.Step` 回写，以及 `Open()` / `Reopen()` 附近集中出现的字段归零。",
+    "有些修法不是显式 reset 原对象，而是改成每次新建 fresh object；本质同样是在 reuse 前重建干净前置条件。",
+    "这条 sibling 经常和 close-path / hook cleanup / harness recreate 相邻，但只要 retained 主体更偏 reusable-state reset，优先留在这里。",
+    "共享 expression constant / template object 被 `Clone()` 后再传入下游，也属于这条，因为本质是避免 alias 污染扩散到下一次使用。"
+  ],
+  "negative_guards": [
+    "如果 patch 的主体是 `rows.Close()`、`stmt.Close()`、`resp.Body.Close()`、`DerefAndClose()`、`rec.Close()`、open-failure close-path 等资源收口，应优先转到“临时句柄 / backend / engine / iterator 必须在所有退出路径上收口”。",
+    "如果 patch 的主体是 process-global config / TTL / lease / logger / callback / failpoint / trace categories 的 save-and-restore、atomic 化或串行化，应迁到 `race_condition_in_async_code` 边界。",
+    "如果 patch 的主体是路径、端口、socket、temp dir、slow-log、storage path 等 namespace 私有化，应优先转到“共享 namespace 资源必须 per-test 唯一化”。",
+    "如果 patch 的主体是 `RunInGoTestChan`、`TestMain`、server bootstrap / binding / harness recreate 这类测试二进制级共享状态，应优先留给“server / harness 级 test-global 状态必须重建或清理”。",
+    "如果 patch 只是功能逻辑重写、golden 调整、或泛化断言放宽，即使顺手出现了 `Reset` / `Clone` / `defer`，也不算这条正例。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这条机制虽然不像 namespace sibling 那样 case 最多，但 patch-backed 纯度已经足够高，而且修法模式非常稳定。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到 `Reset()` / `Clone()` / `defer` 这类局部锚点，但看不清 patch 是在重建 reuse 前置条件，还是普通功能代码整理。",
+      "patch 同时混入大量 close-path / harness / global knob 逻辑，短 diff 下看不清 retained 主体到底是不是 reusable-state reset。",
+      "只能看到对象字段被改动，但看不清这些字段是否真是上一次调用残留、也看不清下一次 reuse 是否依赖它们回到初始态。"
+    ]
+  },
+  "scope": [
+    "同一测试里会被再次复用的 task / fixture / helper 对象。",
+    "支持 `Open()` / `Reopen()` / `Reset()` 的 executor / stateful helper，在下一轮使用前必须清掉上轮内部状态。",
+    "带内部 action / buffer / tracker / state machine 的 resettable container，需要递归 reset 子状态，而不只是清表面容器。",
+    "会被下游原地 mutate 的共享 expression constant / template / alias 对象，需要 `Clone()` 或 fresh copy。",
+    "只在当前步骤临时翻转、但后续步骤还会继续共用同一 session / helper 的 test-local flag。"
+  ],
+  "fix_hints": [
+    "如果对象会被第二次使用，优先在第二次使用前重建 clean precondition：重置关键字段，或者直接新建 fresh object。",
+    "实现 `Reset()` / `Open()` / `Reopen()` 时，不要只清表层容器；把游标、缓存、spill action、buffer、tracker、状态位都递归 reset 掉。",
+    "helper 暂时翻转 session-local / helper-local 状态时，把 `defer` restore 紧贴在修改点旁边，不要依赖外围测试逻辑顺手恢复。",
+    "对共享模板/常量/alias，默认假设下游可能原地 mutate；如果后续还会复用，传 `Clone()` 或 fresh copy。",
+    "对会被后半段继续读取的 fixture buffer，明确在切阶段前清空，或在前一阶段 cleanup 里收口，不要让下一阶段继承旧内容。"
+  ],
+  "related_subpatterns": [
+    "临时句柄 / backend / engine / iterator 必须在所有退出路径上收口",
+    "test 注入的 hook / filter / matcher 必须缩作用域并在 cancel/切阶段时解绑",
+    "server / harness 级 test-global 状态必须重建或清理",
+    "共享 namespace 资源必须 per-test 唯一化"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-15119",
+        "note": "sequence binlog 测试在下一轮轮询前先清空 `s.pump.mu.payloads`，避免读取到前序残留 payload。"
+      },
+      {
+        "case_id": "pr-19058",
+        "note": "`RowContainer.Reset()` 不再只 reset 外层容器，而是把内部 `actionSpill` 一起 reset，保证 reset 后还能再次 spill。"
+      },
+      {
+        "case_id": "pr-26233",
+        "note": "`admin check table` helper 暂时打开 session-local `OptimizerUseInvisibleIndexes` 后，在同一测试后续查询前显式 restore。"
+      },
+      {
+        "case_id": "pr-30490",
+        "note": "共享的 expression `Constant` 不再直接复用，而是 `Clone()` 后再传给会原地 mutate `collationInfo` 的逻辑。"
+      },
+      {
+        "case_id": "pr-50008",
+        "note": "同一个 `task` fixture 第二次调用前，把 `task.State` / `task.Step` 改回初始值，避免继承上次 `SwitchTaskStep()` 的污染。"
+      },
+      {
+        "case_id": "pr-54709",
+        "note": "`PipelinedWindowExec.Open()` 在再次 open 前系统性重置游标、窗口边界、缓存和状态位，不再吃到上一轮运行留下的字段。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-37372",
+        "note": "虽然也在把 tracker 状态归零，但 retained 主体发生在 executor `Close()` 生命周期，更适合第三条 close-path sibling。"
+      },
+      {
+        "case_id": "pr-43758",
+        "note": "CTE / `StorageRC` 这条主轴仍是 `DerefAndClose()` / `Reopen()` 等 close-path 生命周期收口，不宜改吸到 reuse-reset sibling。"
+      },
+      {
+        "case_id": "pr-65229",
+        "note": "cluster-table RPC server 这条主体更偏 harness/config/address/readiness 与 namespace 清理，不是 reusable local state reset。"
+      },
+      {
+        "case_id": "pr-65735",
+        "note": "`RunInGoTestChan` 和 global binding 的重建/清理更偏 server harness 二进制级共享状态。"
+      },
+      {
+        "case_id": "pr-65736",
+        "note": "stats tests 反复重建 `RunInGoTestChan` 更像 harness-global channel reset，不是局部 fixture/executor reuse。"
+      }
+    ]
+  }
+}

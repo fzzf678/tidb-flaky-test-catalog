@@ -1,0 +1,62 @@
+{
+  "key": "并发 callback 共享结果 slice append reset snapshot 未统一加锁",
+  "family": "race_condition_in_async_code",
+  "summary": "异步 callback 与测试主线程共享同一个结果 slice，而 `append`、`reset`、`snapshot` 没有统一的锁保护。",
+  "mechanism": "slice 底层数组、长度和容量都会随着 `append` / reset 变化；如果 callback 一边追加结果，主线程一边清空、复制快照或直接断言同一个 slice，就会产生并发读写和底层数组复用问题，导致 race 或断言偶发漂移。",
+  "signals_required": [
+    "测试或 callback 维护一个共享结果 slice。",
+    "异步 callback / hook 会对该 slice 执行 `append` 或写入。",
+    "主线程或其他 goroutine 会对同一个 slice 做 `reset`、snapshot、复制或断言读取。",
+    "这些 `append/reset/snapshot` 没有统一使用同一把 `mutex` 或明确的所有权交接。"
+  ],
+  "signals_optional": [
+    "修复中给 `append/reset/snapshot` 全部加上同一把锁，或改成 channel 聚合。",
+    "slice 保存的是 callback 采集结果、事件列表、审计输出、断言样本。",
+    "失败表现可能是 race detector、偶发缺失条目、重复条目或断言顺序漂移。"
+  ],
+  "negative_guards": [
+    "如果共享的是 map、标志位或单个标量，而不是结果 slice，更接近其他共享状态子模式。",
+    "如果 snapshot 是在 callback 全部退出且有明确同步之后才做，不要命中这个子模式。",
+    "如果 slice 只在单一 goroutine 内写，其他路径只读到独立副本，不要命中这个子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；共享结果 slice 的并发 `append/reset/snapshot` 是很强的结构性信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清 callback 和断言线程是否真的并发。",
+      "slice 的读取可能已经基于受保护的副本，而不是共享底层数组。"
+    ]
+  },
+  "scope": [
+    "审计 callback、hook 收集结果、事件监听器测试。",
+    "任何 callback 将结果积累到 slice，而主线程会边跑边读的测试。"
+  ],
+  "fix_hints": [
+    "把 `append/reset/snapshot` 全部放进同一把 `mutex` 下。",
+    "如果只是事件汇总，优先改成 channel 收集后由单线程聚合。",
+    "断言前先复制出受保护的快照，不要直接读共享 slice。"
+  ],
+  "related_subpatterns": [
+    "DDL hook callback 写共享变量或标志无锁",
+    "manager 级共享 map 并发读写"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-65523",
+        "note": "并发 audit callback 共享 `testResults` slice，`append/reset/snapshot` 必须统一加锁。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-31714",
+        "note": "更像 callback merge 共享 map，而不是共享 slice。"
+      },
+      {
+        "case_id": "pr-44438",
+        "note": "更像 callback 与主线程共享 `RecordSet/err/jobID`。"
+      }
+    ]
+  }
+}

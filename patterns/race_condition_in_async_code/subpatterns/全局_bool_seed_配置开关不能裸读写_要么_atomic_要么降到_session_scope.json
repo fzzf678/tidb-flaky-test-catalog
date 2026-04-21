@@ -1,0 +1,86 @@
+{
+  "key": "全局 `bool/seed` 配置开关不能裸读写；要么走 atomic accessor，要么降到 session scope",
+  "family": "race_condition_in_async_code",
+  "summary": "全局 `bool` / `int` / `seed` / feature flag 这类标量配置不能被测试线程和后台执行路径直接并发读写；要么改成 atomic accessor，要么改成 session-scoped 变量。",
+  "mechanism": "这类 flake 的结构很固定：测试代码或 sysvar setter 直接写一个进程级全局开关，而后台查询、optimizer、binlog、logging、executor 等路径同时在读它。因为它看起来只是一个小标量，最容易被忽略成“直接赋值没事”。稳定修法只有两类：一是改成 `atomic.Load/Store`、`AtomicBool`、专用 accessor；二是彻底取消全局共享，把它降成 `SessionVars` 里的 session scope 开关。",
+  "signals_required": [
+    "问题对象是进程级共享的标量开关或种子，例如 `PlanCacheEnabled`、`PreparedPlanCacheEnabled`、`RandSeed`、`EnableSlowLog`、`CheckMb4ValueInUTF8`、`EnableCollectExecutionInfo`、`IgnoreError`。",
+    "旧代码存在直接读/写裸全局变量、全局 config 标量字段或 package-level 变量的行为。",
+    "修复改成 atomic accessor / `AtomicBool` / `Load` / `Store`，或者把开关搬到 `SessionVars` / session scope。",
+    "并发读路径来自实际 runtime/background path，而不是单个测试局部变量。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `atomic.Load`、`atomic.Store`、`AtomicBool`、`PreparedPlanCacheEnabled()`、`SetIgnoreError()`。",
+    "高信号文字包括 `make XXX atomic`、`fix data race with RandSeed`、`fix data race on global.Config()`。",
+    "测试里常见先保存旧值、再改全局开关、最后 restore 的用法。"
+  ],
+  "negative_guards": [
+    "如果问题是整个全局 config struct 被原地改写，应归入 `测试更新全局 config 必须 UpdateGlobal/StoreGlobalConfig，并配对 RestoreFunc`。",
+    "如果问题是全局 config 里的 nested map（如 `Labels`）被原地改写，应归入对应的 map clone/store 子模式。",
+    "如果共享对象已经是 session-scoped，不要仅凭名字像 flag 就误判成全局开关。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判为 flaky risk；`裸全局标量 + 并发读写 + atomic/session scope 修法` 是非常硬的机械模式。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只看到了一个 config 字段，但没有证据表明它真的是进程级共享开关。",
+      "补丁虽用了 atomic，但用途看起来是性能计数器，不是修复并发 flag race。"
+    ]
+  },
+  "scope": [
+    "config / planner / executor / binlog / sysvar setter 等读写全局开关的主线。",
+    "测试里为了打开某个 feature 直接改 package-global 变量的场景。"
+  ],
+  "fix_hints": [
+    "不要让测试直接写裸全局开关。",
+    "能降成 session scope 的优先降 scope；必须全局共享的，再包成 atomic accessor。",
+    "禁止新代码继续直接读写这类 package-global 标量。"
+  ],
+  "related_subpatterns": [
+    "测试更新全局 config 必须 `UpdateGlobal` / `StoreGlobalConfig`，并配对 `RestoreFunc`",
+    "测试改写全局 lease 干扰后台 refresh / loader"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-6234",
+        "note": "全局 `PlanCacheEnabled` 容易被测试直接改写；修复把它降到 `SessionVars.PlanCacheEnabled`。"
+      },
+      {
+        "case_id": "pr-6548",
+        "note": "`cfg.Binlog.IgnoreError` 不再被测试直接改，改成原子 flag + `SetIgnoreError()` 访问。"
+      },
+      {
+        "case_id": "pr-7232",
+        "note": "`PreparedPlanCacheEnabled` 从裸全局 bool 改成原子 accessor `PreparedPlanCacheEnabled()`。"
+      },
+      {
+        "case_id": "pr-29965",
+        "note": "全局 `RandSeed` 改成 `atomic.Load/Store`。"
+      },
+      {
+        "case_id": "pr-30346",
+        "note": "`EnableSlowLog` 改成 `AtomicBool`。"
+      },
+      {
+        "case_id": "pr-31781",
+        "note": "`CheckMb4ValueInUTF8` 改成原子读写。"
+      },
+      {
+        "case_id": "pr-38409",
+        "note": "`EnableCollectExecutionInfo` 改成 `AtomicBool` / `Load` / `Store`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-17964",
+        "note": "这条是整个 global config 的 copy/update/restore，不是单个标量 flag atomic 化。"
+      },
+      {
+        "case_id": "pr-45563",
+        "note": "这条是 nested `Labels` map 不能原地改，和标量 flag 是另一类结构。"
+      }
+    ]
+  }
+}

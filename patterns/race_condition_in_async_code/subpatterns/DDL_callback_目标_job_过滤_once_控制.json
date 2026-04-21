@@ -1,0 +1,70 @@
+{
+  "key": "DDL callback 目标 job 过滤与单次触发控制",
+  "family": "race_condition_in_async_code",
+  "summary": "DDL hook / failpoint callback 本应只针对特定 job 或特定时机执行一次，但条件过宽或缺少一次性保护，导致误触发或重复触发。",
+  "mechanism": "DDL callback 天然会收到多个 job、多个状态迁移和多个回调时机；如果测试里的 side effect 只需要对目标 job 执行一次，却只按宽泛 action/state 判断，或者没有 `once` 保护，就可能在错误 job、错误 state 或过晚时机执行额外 DML / cancel / drop 动作，使测试结果依赖于后台调度顺序。",
+  "signals_required": [
+    "diff 中存在 DDL hook、callback 或 failpoint callback，会在命中时执行副作用操作，例如 cancel job、drop DB、额外 DML。",
+    "该副作用本应只针对某个目标 job、目标 SQL、目标 action 或某个特定 state 生效。",
+    "现有条件只做了宽泛匹配，例如只看 action/type/state，或根本没有 `once` 防重复触发。",
+    "修复通过精确匹配 `job.Query` / job identity / state，并补上 `once` 或单次触发控制来稳定测试。"
+  ],
+  "signals_optional": [
+    "补充了 `ActionTruncateTable`、`job.Query`、`job.State != JobStateSynced` 之类更精确的筛选条件。",
+    "回调副作用包括 cancel、drop、insert/update、触发额外 DML、failpoint side effect。",
+    "失败表现为误取消错 job、在错误时机额外执行一次 DML、callback 执行次数不稳定。"
+  ],
+  "negative_guards": [
+    "如果 callback 的核心问题是写共享变量无锁，应归到 `DDL hook callback 写共享变量或标志无锁`。",
+    "如果 callback 复用共享 `TestKit/session` 去执行 SQL，应归到 `DDL hook callback 复用共享测试会话执行 SQL`。",
+    "如果回调目标已经通过精确 job identity 和 `once` 保护限定好，不要命中这个子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是 DDL callback 测试里非常稳定的误触发机制。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "副作用是否真的只应命中特定 job/state 还不明确。",
+      "现有条件虽然看起来宽，但没有证据表明 callback 会收到多个可混淆 job。"
+    ]
+  },
+  "scope": [
+    "DDL hook / failpoint callback 测试，尤其是 truncate、cancel、ingest、schema synced 等流程。",
+    "任何 callback 要对目标 job 精确打一枪的测试。"
+  ],
+  "fix_hints": [
+    "用 `job.Query`、job ID、action type、state 组合做精确匹配，而不是只看单一宽泛条件。",
+    "给 callback 补 `once` 或单次触发保护，避免重复副作用。",
+    "如果副作用只应该发生在某个 state 之前/之后，明确写出 state guard。"
+  ],
+  "related_subpatterns": [
+    "DDL hook callback 写共享变量或标志无锁",
+    "DDL hook callback 复用共享测试会话执行 SQL"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-53245",
+        "note": "callback 需要限定 `ActionTruncateTable` 且只触发一次。"
+      },
+      {
+        "case_id": "pr-53887",
+        "note": "callback 驱动 cancel 时需按 `job.Query` 精确匹配并只触发一次。"
+      },
+      {
+        "case_id": "pr-61293",
+        "note": "afterWaitSchemaSynced callback 需要排除 `JobStateSynced`，避免过晚再做一次 DML。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-1687",
+        "note": "更像 callback 写共享变量无锁。"
+      },
+      {
+        "case_id": "pr-13447",
+        "note": "更像 callback 复用共享会话执行 SQL。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "key": "`EXPLAIN ANALYZE` / cost / runtime metric / estimate 数值不应做整串硬编码",
+  "family": "assert_exact_plan_or_cost",
+  "summary": "测试如果直接把 `EXPLAIN ANALYZE` / cost / runtime metric / estimate 里的具体数值整串写死，就会把正常波动的数值文本误判成 flaky；更稳的修法是 parse 后做区间 / 结构化 / regex 断言。",
+  "mechanism": "这条子模式和完整 explain 文本 sibling 不同。这里真正不稳定的是具体数值：例如 `copr_cache_hit_ratio`、`estRows`、`actRows`、execution info 里的耗时 / loops / task 统计等。测试如果直接把这些数值整串写死，不仅会被统计估算波动影响，也会被 runtime metric 抖动、展示格式差异影响。稳定修法通常是 parse 数值、转成 `>` / `<` / 区间断言，或用 regex 保留结构而不写死具体数值。",
+  "signals_required": [
+    "断言对象是 `EXPLAIN ANALYZE` / cost / runtime metric / estimate 里的具体数值，而不是完整 plan 结构本身。",
+    "patch 的主修法是把整串数值文本断言改成 parse / regex / 区间 / 结构化比较。",
+    "数值波动本身就是 flaky 来源，测试原先不该把它们当成稳定字符串契约。",
+    "修法重点在 numeric normalization，而不是换 planner inputs / stats / runtime context。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `copr_cache_hit_ratio`、`estRows`、`actRows`、`execution info`、`strconv.ParseFloat`、`require.Regexp`、`--replace_regex`。",
+    "有些 patch 把 unit-test 里的 exact string compare 迁到 integration `.test/.result`，但核心仍然是数值做 regex normalization。",
+    "如果 patch 里出现 `time:` / `loops:` / `RU:` / task stats 替换，也会提高置信度。"
+  ],
+  "negative_guards": [
+    "如果 patch 主修法是把完整 explain rows 改成 normalized / brief / `HasPlan`，更接近表示层 sibling。",
+    "如果 patch 主修法是先 pin planner inputs 再保住 exact plan，应转到 planner-input sibling。",
+    "如果 patch 主修法是固定 analyze / sample / mock stats，应转到 stats sibling。",
+    "如果 patch 主修法是 plan cache / binding / stmt summary / shared runtime state，应转到 runtime-context sibling。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals，且能看出原测试确实在把波动数值当成稳定字符串时，可直接判为 flaky risk；这条纯度通常很高。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只看到了 `EXPLAIN ANALYZE`，但 patch 重点其实更像 feature / result-file 迁移，数值 normalize 不是主修法。",
+      "patch 同时更换 plan 结构断言和 numeric normalization，无法确认数值是不是主机制。"
+    ]
+  },
+  "scope": [
+    "unit / integration tests 中对 `EXPLAIN ANALYZE` / execution info / cost / estimate 数值的断言。",
+    "尤其适用于 execution info / result-file regex normalization 的场景。"
+  ],
+  "fix_hints": [
+    "不要把 runtime stat / estimate 数值当成稳定字符串；优先 parse 成数值再断言区间或单调关系。",
+    "如果只关心结构存在与否，使用 regex 保留结构，不要写死具体数值。",
+    "把会自然波动的 metric 文本与真正想验证的 plan 结构解耦。"
+  ],
+  "related_subpatterns": [
+    "精确 explain / plan tree / operator 文本断言应降到更稳定表示层",
+    "精确 plan 断言前必须先冻结统计信息"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-21071",
+        "note": "把 `copr_cache_hit_ratio: 0.67` 改成 parse float 后做更稳的断言。"
+      },
+      {
+        "case_id": "pr-48700",
+        "note": "把 `EXPLAIN ANALYZE` / execution info 这类波动数值迁成 regex-normalized integration result。"
+      },
+      {
+        "case_id": "pr-60512",
+        "note": "核心修法是对波动数值做结构化 / regex 断言，而不是继续整串比文本。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-21657",
+        "note": "这里不只是数值 normalize，而是整个 explain 表示层断言降级。"
+      },
+      {
+        "case_id": "pr-62670",
+        "note": "这里计划漂移来自 stats-driven selectivity boundary，而不是 runtime metric 文本。"
+      },
+      {
+        "case_id": "pr-66529",
+        "note": "这里的关键是 runtime context / session pollution，不是 numeric text。"
+      }
+    ]
+  }
+}

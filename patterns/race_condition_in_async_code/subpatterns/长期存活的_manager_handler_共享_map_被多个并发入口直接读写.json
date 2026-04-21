@@ -1,0 +1,74 @@
+{
+  "key": "长期存活的 manager/handler 共享 map 被多个并发入口直接读写",
+  "family": "race_condition_in_async_code",
+  "summary": "长期存活的 manager、handler 或 mock client 把共享 map 挂在 struct 字段上，而 `register/get/list/activate/derive` 等多个并发入口会直接读写这个 map。",
+  "mechanism": "这类对象通常会跨请求、跨 callback、跨 worker 长时间存活；如果共享 map 同时承担注册、查询、激活或派生逻辑，却没有 `mutex`、`RWMutex` 或 `sync.Map` 保护，就很容易在 mock server、manager runtime、并发测试入口里触发 `concurrent map read and map write` 或 race detector。",
+  "signals_required": [
+    "共享 map 是长期存活对象的字段，而不是函数内局部变量。",
+    "至少两个并发入口会访问这个 map，例如 `register`、`get`、`list`、`activate`、`derive`。",
+    "这些入口之间存在读写或写写并发，而不是严格串行。",
+    "代码没有对该 map 统一使用 `mutex/RWMutex/sync.Map`，或修复核心正是补这些同步手段。"
+  ],
+  "signals_optional": [
+    "map 名字常见为 `TunnelSet`、`groups`、`metricsMap`。",
+    "组件名字常见为 `manager`、`handler`、`mock client`。",
+    "patch 里会新增 `tunnelSetLock`、`RWMutex`、`SyncMap`、`Load/Store` 等关键词。"
+  ],
+  "negative_guards": [
+    "如果问题只发生在单个 `List/IsXxx` 只读 helper 漏拿读侧锁，更接近 `只读 helper/List/IsXxx 访问共享 map 却漏掉读侧锁`。",
+    "如果问题核心是测试直接 reset / replace 整个 cache 指针，更接近“测试/helper 直接 reset 或 replace 共享 cache/handle 指针”。",
+    "如果问题核心是把共享 map alias 给外部对象，而不是并发入口直接操作 map，更接近 copy-on-read / copy-on-write 子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；长期存活对象上的共享 map 被多个并发入口直接读写，是很强的结构性信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清这些入口是否真的能并发执行。",
+      "map 虽然是 struct 字段，但调用关系显示实际上只有单线程访问。"
+    ]
+  },
+  "scope": [
+    "mock MPP handler / mock client / resource manager / runaway manager 一类长期存活组件。",
+    "任何在并发测试或后台路径中持有共享 map 的 manager/handler。"
+  ],
+  "fix_hints": [
+    "优先给共享 map 增加 `mutex/RWMutex`，或改成 `sync.Map`。",
+    "如果共享 map 只服务于一次请求或一个 worker，改成 request-local / worker-local。",
+    "不要让 `register/get/list/activate/derive` 混着直接裸访问同一个 Go map。"
+  ],
+  "related_subpatterns": [
+    "并发 callback 共享结果 slice append reset snapshot 未统一加锁",
+    "懒初始化映射或指针需要一次性发布"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-21836",
+        "note": "`MPPTaskHandler.TunnelSet` 被 `HandleEstablishConn` 与 `registerTunnel` 并发访问。"
+      },
+      {
+        "case_id": "pr-22428",
+        "note": "`MPPTaskHandler.getAndActiveTunnel` 无锁访问 `TunnelSet`。"
+      },
+      {
+        "case_id": "pr-44339",
+        "note": "mock resource manager client 的 `groups` map 被并发读写。"
+      },
+      {
+        "case_id": "pr-49354",
+        "note": "`RunawayManager.DeriveChecker` 并发读写 `metricsMap`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-12868",
+        "note": "更像执行期 helper / dirty-state 结构里的共享 map 被并发 worker 读写。"
+      },
+      {
+        "case_id": "pr-32945",
+        "note": "更像 pruning / partition helper 内部 `valueMap` 被并发 worker 读写。"
+      }
+    ]
+  }
+}

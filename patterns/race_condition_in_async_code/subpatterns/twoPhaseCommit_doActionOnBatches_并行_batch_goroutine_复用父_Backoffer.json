@@ -1,0 +1,65 @@
+{
+  "key": "`twoPhaseCommit.doActionOnBatches` 并行 batch goroutine 复用父 `Backoffer`",
+  "family": "race_condition_in_async_code",
+  "summary": "在 TiKV 2PC 的 `doActionOnBatches` 这类并行 batch 执行路径里，如果多个 batch goroutine 直接复用外层同一个 `Backoffer`，或者把每个 batch 的 backoff 统计直接回写到共享 detail 而不做原子/加锁聚合，就会在并发提交/预写时把可变 backoff 状态串在一起，触发 data race 或让 backoff 统计偶发失真。",
+  "mechanism": "`Backoffer` 不是只读配置，它会随着重试推进不断改写 `totalSleep`、`types`、ctx/cancel 链等状态。`twoPhaseCommit.doActionOnBatches` 又会对多个 batch 起 `go func` 并发执行；如果这些 goroutine 共用父 `bo/backoffer`，或在执行后直接把各自 `totalSleep/types` 回写到共享 `CommitDetail` 而没有原子/锁聚合，就会出现典型的“并行 worker 共用可变运行时对象”竞态。稳定修法通常是：每个 batch goroutine 先从父 `Backoffer` 派生自己的 `singleBatchBackoffer`（`Clone()` 或 `Fork()`），然后只把 delta sleep / types 通过 `atomic` 或互斥汇总回共享 detail。",
+  "signals_required": [
+    "代码位于 2PC / commit / prewrite 的并行 batch 执行主线，强锚点是 `doActionOnBatches`、`actionCommit`、`batches`、`go func` 这组结构。",
+    "多个 batch goroutine 共享或派生自同一个父 `Backoffer`，而这个对象仍承载可变重试状态，不是只读模板。",
+    "代码会直接读写 `Backoffer` 的可变字段或其导出统计，例如 `totalSleep`、`types`、`ctx`、cancel 链、`CommitBackoffTime`、`BackoffTypes`。",
+    "修复核心是给每个 goroutine 单独 `Clone()` / `Fork()` 出 `singleBatchBackoffer`，并把共享统计改成 `atomic`/加锁聚合，而不是继续共用父对象。"
+  ],
+  "signals_optional": [
+    "很强的组合锚点是 `singleBatchBackoffer`、`backoffer.Clone()`、`backoffer.Fork()`、`beforeSleep := singleBatchBackoffer.totalSleep`、`atomic.AddInt64(&commitDetail.CommitBackoffTime, ...)`。",
+    "补丁里经常会直接写出注释：`avoid the data race when using the same backoffer in concurrent goroutines`。",
+    "如果 patch 同时把 `CommitDetail` 指针改成 `atomic.Load/StorePointer`，或给 `BackoffTypes` 增加 `Mu.Lock()` 汇总，通常也是这条子模式的强旁证。"
+  ],
+  "negative_guards": [
+    "如果问题核心是异步 goroutine 里读取全局 `CommitMaxBackoff` / lease / flag 等包级变量，更接近全局变量并发读写，不是这条并行 batch 共用父 `Backoffer` 的模式。",
+    "如果问题核心是 `LockResolver` / `getTxnStatusFromLock` / `ResolveLocks` 的单线程重试语义，即使会调用 `bo.Backoff(...)`，也不属于这条“多个 batch goroutine 并发共用父 Backoffer”的模式。",
+    "如果问题核心是多个 iterator / worker 共用 `RequestBuilder` 或 `kv.Request`，更接近 `多个 cop iterator 共享可变 KV request RequestBuilder`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；并行 batch goroutine 共用同一个 `Backoffer` 或其可变统计，是非常稳定的结构性竞态信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清每个 goroutine 是否已经在进入并发路径前拿到了独立 `Backoffer` 副本。",
+      "虽然 patch 中出现 `Backoffer` 和 `go func`，但共享对象只作为只读模板，真正进入 worker 的已是不可变或完全独立的对象。"
+    ]
+  },
+  "scope": [
+    "`store/tikv/2pc.go` / `pkg/store/tikv/2pc.go` 这类 2PC batch 并行执行路径。",
+    "后续若目录迁到 `pkg/store/tikv/*`，但仍保留“`doActionOnBatches` + batch goroutine + per-goroutine backoffer clone/fork + 共享统计聚合”这一结构，也属于同一子模式。"
+  ],
+  "fix_hints": [
+    "不要让多个 batch goroutine 直接共享父 `Backoffer`；在 goroutine 内或进入 goroutine 前先 `Clone()` / `Fork()` 出独立实例。",
+    "把 `totalSleep`、`BackoffTypes` 之类统计从 per-goroutine `Backoffer` 上抽 delta，再用 `atomic` 或互斥汇总回共享 detail。",
+    "如果共享的是 `CommitDetail` 指针，也要保证 detail 的发布与聚合是线程安全的，不要一边替换指针一边让 worker 裸写。"
+  ],
+  "related_subpatterns": [
+    "多个 cop iterator 共享可变 KV request RequestBuilder"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-6472",
+        "note": "`twoPhaseCommit.doActionOnBatches` 的 batch goroutine 明确写出“avoid the data race when using the same backoffer”，修复锚点就是每个 batch 单独 `Clone()` / `Fork()` 出 `singleBatchBackoffer`，不再共用父 `Backoffer`。"
+      },
+      {
+        "case_id": "pr-11757",
+        "note": "同样位于 `doActionOnBatches` 并行 batch 主线；修复除了保留 `singleBatchBackoffer = backoffer.Clone()/Fork()`，还把 `totalSleep` 与 `BackoffTypes` 的汇总改成 `atomic.AddInt64` + `Mu.Lock()`，避免多个 goroutine 直接踩共享 backoff 统计。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-9119",
+        "note": "这条更偏异步 commit goroutine 里读取全局 `CommitMaxBackoff` 的竞态；修复是把 `secondaryBo := NewBackoffer(..., CommitMaxBackoff)` 提前到 goroutine 外，不是 `doActionOnBatches` 多个 batch 共享父 `Backoffer`。"
+      },
+      {
+        "case_id": "pr-13123",
+        "note": "这条更偏 `LockResolver/getTxnStatusFromLock/ResolveLocks` 的重试与 `CheckTxnStatus` 语义；虽然也会对 `bo.Backoff(...)` 操作，但不是多个 batch goroutine 并行共用同一父 `Backoffer`。"
+      }
+    ]
+  }
+}

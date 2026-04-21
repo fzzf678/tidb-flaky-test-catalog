@@ -1,0 +1,62 @@
+{
+  "key": "`cursor fetch` 期间不得复用 cached `StatementContext`；后台 coprocessor 仍持有旧 `memtracker`",
+  "family": "race_condition_in_async_code",
+  "summary": "server-side cursor 的 `COM_STMT_FETCH` 会让后台 coprocessor goroutine 继续持有旧 `StatementContext` / `memtracker`。这时如果下一次请求继续复用 cached stmt ctx 并 reset，就会与后台路径发生 data race。",
+  "mechanism": "问题不在普通的 `StmtCtx` 字段读取，而在 cursor 生命周期跨请求延续：后台 coprocessor 还在使用旧 `StatementContext` 的 `memtracker`，而 server 侧却把 cached stmt ctx 当成可复用对象，在下一次 `COM_STMT_FETCH` / `ResetContextOfStmt` 时直接 reset。稳定修法是：只要 cursor 仍存在，就禁止复用 cached stmt ctx，改为新建新的 `StatementContext`，通常通过 `ServerStatusCursorExists` 这类状态位控制。",
+  "signals_required": [
+    "代码位于 `server/conn_stmt.go`、`executor.ResetContextOfStmt` 或等价 cursor fetch 主线，强锚点是 `COM_STMT_FETCH`、`cursor`、`StatementContext`、`memtracker`。",
+    "补丁说明或代码明确提到后台 coprocessor / background goroutine 仍然持有旧 stmt ctx 或其 memtracker。",
+    "修复引入了 `cursor exists` 状态位、fresh `StatementContext` 分配、或显式禁止在 cursor 生命周期内复用 cached stmt ctx。",
+    "问题是跨请求 reuse/reset 同一个 stmt ctx，而不是普通字段 snapshot。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `ServerStatusCursorExists`、`ResetContextOfStmt`、`CouldRetry || HasCursorExistsFlag`、`RefCountOfStmtCtx`、`COM_STMT_FETCH`。",
+    "测试常见形态是 `TestCursorExistsFlag`、cursor read、`PreparedStmt` + fetch 多轮请求。",
+    "补丁里经常能看到 `do not reuse stmt ctx if has cursor-exists flag` 这类注释/提交信息。"
+  ],
+  "negative_guards": [
+    "如果问题只是 `ProcessInfo` / logging 在另一个 goroutine 中读取共享 `StmtCtx` 切片，不要并到这里。",
+    "如果问题是共享 `session/TestKit` 被另一个 goroutine 复用，也不属于 cursor cached stmt ctx 生命周期模式。",
+    "如果只是 cursor channel / EOF / close 语义，不涉及 cached `StatementContext` 复用，不要命中。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判为 flaky risk；`cursor fetch + cached StatementContext reuse/reset + memtracker held by background copr` 是极强结构信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看到了 cursor 和 stmt ctx，但不能确认后台路径是否仍在持有旧 memtracker。",
+      "补丁只是 cursor 状态位的普通行为修正，没有触及 stmt ctx reuse/reset。"
+    ]
+  },
+  "scope": [
+    "`server/conn_stmt.go` 的 cursor execute/fetch 主线。",
+    "`executor.ResetContextOfStmt` 与 stmt ctx 复用策略相关的 plumbing 代码。"
+  ],
+  "fix_hints": [
+    "只要 cursor 还活着，就不要复用 cached `StatementContext`。",
+    "让下一次 fetch/request 分配新的 stmt ctx，避免 reset 掉后台 goroutine 还在看的旧对象。",
+    "用显式 cursor-exists 状态控制 stmt ctx reuse，而不是依赖隐式时序。"
+  ],
+  "related_subpatterns": [
+    "`ProcessInfo/GenLogFields` 不能直接引用共享 `StmtCtx.TableIDs/IndexNames`；应在 `SetProcessInfo` 时复制快照",
+    "同一个 `TestKit/session` 被两个 goroutine 或后台路径并发复用"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-40023",
+        "note": "cursor read 时后台 coprocessor 仍持有 cached stmt ctx 的 memtracker；修复通过 `ServerStatusCursorExists` 禁止复用 cached stmt ctx，并在需要时新建 `StatementContext`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-45127",
+        "note": "这条虽然也是异步观测路径触碰共享 `StmtCtx`，但核心是 `ProcessInfo` 里的字段快照，不是 cursor 生命周期。"
+      },
+      {
+        "case_id": "pr-30296",
+        "note": "这条是 resource tag callback capture digest，和 cursor fetch / memtracker 生命周期无关。"
+      }
+    ]
+  }
+}

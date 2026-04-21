@@ -1,0 +1,122 @@
+{
+  "key": "server / harness / package sandbox 级 test-global 状态必须重建或清理",
+  "family": "test_isolation_and_state_pollution",
+  "summary": "如果测试二进制、package sandbox、store/domain/server harness 或 real-TiKV 外部环境里的共享状态没有在当前测试生命周期内被重建或清干净，后续 case / 下一次 server 启动就会继承旧 channel、旧 binding、旧 store/etcd 环境或半关闭的 harness，导致跨 case 污染。稳定修法通常不是只修一条断言，而是把 harness 级共享态重建或把 cleanup 绑定回测试生命周期。",
+  "mechanism": "这条子模式的核心不是某个路径/端口名字不唯一，也不是单个后台 worker 没 stop，而是测试自己依赖了一套 package-level / binary-level / harness-level 运行环境。常见对象包括：`main_test.go` / `TestMain`、store/domain/server/bootstrap harness、server test 的 one-shot global channel、plan binding 等 harness-global side effect、real-TiKV / etcd / session-store 环境、以及返回 `clean func()` 的 helper factory。原始不稳定通常表现为：上一条 case 或上一次 server 启动留下的 harness 状态继续影响下一次运行；cleanup 时机散在外围 `defer clean()` / suite `TearDownTest`，一旦漏调或顺序不对就会把残留带给后续测试；或者整个测试与大量无关用例共享一个 package/TestMain/runtime。稳定修法也很一致：给这组测试独立的 package sandbox / `main_test.go` / `TestMain`，在创建 harness 的同一层立即注册 `t.Cleanup(...)` / `defer`，走完整 `stopServer(...)` / close 链，重建 `RunInGoTestChan` 这类 one-shot harness state，并对 real-TiKV / etcd / store 环境做显式 reset/clear。",
+  "signals_required": [
+    "patch 的 retained 主体明确在处理 package-level / binary-level / harness-level 的共享测试状态，而不是单个局部对象或 process-global knob。",
+    "原始不稳定来自前一条 case、前一阶段、或前一次 server/harness 启动留下的共享运行时状态继续影响后续测试，例如未重建的 channel、未清掉的 binding、未 reset 的 store/etcd/session-store 环境、或不完整的 teardown helper。",
+    "稳定修法显式重建 harness 状态，或把 cleanup 绑定到当前测试生命周期：例如 `stopServer(...)`、`t.Cleanup(...)`、`testleak.AfterTest` 对齐、重建 `RunInGoTestChan`、清空 real-TiKV/etcd 环境、拆到独立 package / `main_test.go` / `TestMain`。",
+    "patch 的主轴是让当前测试获得自己可控、可回收的 harness/runtime，而不是只在共享 harness 上补一条路径、端口、sleep 或局部断言。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `RunInGoTestChan`、`stopServer(...)`、`t.Cleanup(...)`、`testleak.AfterTest(...)`、`goleak.VerifyTestMain(...)`、`clearTiKVStorage(...)`、`clearEtcdStorage(...)`、`ResetStoreForWithTiKVTest(...)`、`main_test.go`、`TestMain(...)`。",
+    "这条 sibling 经常和 namespace isolation 一起出现，例如独立 package sandbox + 唯一路径/表名；只要 retained 主体更偏 harness/runtime state，就优先留在这里。",
+    "有些修法不是显式新建 package，而是把返回 `clean func()` 的 helper 改成在 helper 内部直接 `t.Cleanup(...)`；本质同样是把 cleanup 绑定回测试生命周期。",
+    "server harness 里有些副作用不是 `Close()` 能自动带走，例如 global binding、one-shot test channel，这类通常要显式 reset/cleanup。",
+    "当前不单拆 `package sandbox / TestMain` sibling：像 `pr-36506`、`pr-38808` 这类 case 更像给共享 harness/runtime 单独开 sandbox 的修法分支，而不是另一条独立机制。"
+  ],
+  "negative_guards": [
+    "如果 patch 的主体是路径、端口、socket、temp dir、storage path、advertise address 这类 namespace 私有化，应优先转到“共享 namespace 资源必须 per-test 唯一化”。",
+    "如果 patch 的主体是 `Stop()` / `Close()` / `Wait()` 后台 manager/worker/queue 的生命周期，而 harness/package sandbox 只是配套语境，应优先转到“后台 component 必须显式 Stop/Close/Wait，不能靠 ignore / 自然退出”。",
+    "如果 patch 的主体是局部 fixture/executor/helper 的 reset/restore/clone，应优先转到“可复用 fixture / executor / stateful helper 在再次使用前必须 reset / restore / clone”。",
+    "如果 patch 的主体是 process-global config / logger / callback / failpoint / trace categories / singleton 的 atomic 化、save-and-restore 或 serial suite 化，应迁到 `race_condition_in_async_code` 边界。",
+    "如果 patch 只是机械地把 `defer clean()` 批量改成 `t.Cleanup()`，但看不出被保护的到底是不是 harness-global state，也不能直接算这条正例。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这条机制虽然和 namespace/background sibling 相邻，但 patch-backed 证据已经足够厚，而且修法模式很稳定。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到 `t.Cleanup()` / `TestMain()` / `goleak.VerifyTestMain()` 这类通用锚点，但看不清 patch 是否真在重建 harness 级共享态。",
+      "patch 同时混入大量 namespace 私有化、background worker stop、或 global knob restore，短 diff 下看不清 retained 主体是哪一条。",
+      "只能看见 helper 返回 clean func 或 suite teardown 被改动，但看不出残留对象到底是不是会跨 case 共享的 harness/runtime。"
+    ]
+  },
+  "scope": [
+    "package sandbox / `main_test.go` / `TestMain` 级测试运行时隔离。",
+    "store / domain / server / bootstrap / mock cluster / DDL harness 的完整 create-close/stop/recreate 链。",
+    "server harness 内部 one-shot channel、binding、service readiness、temporary infra side effect 的重建与清理。",
+    "real-TiKV / etcd / session-store / external cluster 这类外部测试环境的显式 reset/clear。",
+    "返回 `clean func()` 的 helper factory 或 suite teardown，需要把 cleanup 绑定到当前测试生命周期。"
+  ],
+  "fix_hints": [
+    "如果 helper 创建了 store/domain/server/harness，就在 helper 里或紧邻调用点立刻 `t.Cleanup(...)` / `defer`，不要把 cleanup 散落到外围再赌调用者记得收口。",
+    "同一测试二进制里重复起 server/harness 时，检查 one-shot global state 是否需要显式重建，例如 `RunInGoTestChan`、binding、临时 service registry。",
+    "如果某组测试总是和无关包内 runtime 互相污染，优先考虑拆到独立 package / `main_test.go` / `TestMain`，给专属 goleak/testbridge/failpoint 初始化。",
+    "对 real-TiKV / etcd / store 这类外部环境，不要依赖前一个 case 的 cleanup 假设；在当前测试开始或 helper 内显式 clear/reset。",
+    "如果 cleanup 顺序必须贴着 test body 本身，就不要继续依赖 suite `TearDownTest` 或返回式 `clean func()`；把它移到具体测试函数里。"
+  ],
+  "related_subpatterns": [
+    "共享 namespace 资源必须 per-test 唯一化",
+    "后台 component 必须显式 Stop/Close/Wait，不能靠 ignore / 自然退出",
+    "可复用 fixture / executor / stateful helper 在再次使用前必须 reset / restore / clone",
+    "test 注入的 hook / filter / matcher 必须缩作用域并在 cancel/切阶段时解绑"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-15665",
+        "note": "`TestDumpStatsAPI` 不再只 `server.Close()`，而是回到完整 `stopServer(...)` harness teardown。"
+      },
+      {
+        "case_id": "pr-17667",
+        "note": "`TestIntegration` 补 `testleak.Before/AfterTest`，并把 bootstrap 后拉起的 `store/domain` 明确绑定到当前测试的 close 链。"
+      },
+      {
+        "case_id": "pr-19484",
+        "note": "把 `dom/store` 的关闭从统一 `TearDownTest` 挪回具体测试函数，和 `testleak.AfterTest` 顺序对齐。"
+      },
+      {
+        "case_id": "pr-31896",
+        "note": "DDL harness 把 unistore/pd/rpc/store/ddl/client 等资源全部补 `Close()`，并用 `goleak.VerifyTestMain(...)` 收口。"
+      },
+      {
+        "case_id": "pr-36506",
+        "note": "把内存相关测试拆到独立 `executor/memtest` package，补自己的 `main_test.go` / `TestMain` / goleak 设置。"
+      },
+      {
+        "case_id": "pr-36578",
+        "note": "real-TiKV helper 恢复 `clearTiKVStorage` / `clearEtcdStorage` / `ResetStoreForWithTiKVTest`，不再让共享环境残留跨 case 传播。"
+      },
+      {
+        "case_id": "pr-36722",
+        "note": "大批返回 `clean func()` / `defer clean()` 的 helper 改成在 helper 内直接 `t.Cleanup(...)`，把 harness cleanup 绑回测试生命周期。"
+      },
+      {
+        "case_id": "pr-38808",
+        "note": "autoid 测试拆到独立 `executor/autoidtest` package，补专属 `main_test.go` / BUILD / goleak 配置。"
+      },
+      {
+        "case_id": "pr-65735",
+        "note": "plan replayer tests 在同一二进制里重复起 server 前重建 `RunInGoTestChan`，并在 dump 后显式 `drop global binding`。"
+      },
+      {
+        "case_id": "pr-65736",
+        "note": "stats handler tests 在每次 server 启动前重建 `RunInGoTestChan`，避免继承前一次启动留下的已关闭 channel。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-65229",
+        "note": "虽然也碰 server harness，但 retained 主体更偏 advertise-address / readiness / 文件清理这类 namespace/runtime endpoint 私有化。"
+      },
+      {
+        "case_id": "pr-37908",
+        "note": "这条主轴是 `view.Stop()` 停后台 worker，不是 package/harness 级共享态重建。"
+      },
+      {
+        "case_id": "pr-50008",
+        "note": "这是局部 fixture 对象 reuse 前 reset，更适合第五条 sibling。"
+      },
+      {
+        "case_id": "pr-17964",
+        "note": "主体是 process-global config clone-then-publish / restore，仍应留在 global-state 边界。"
+      },
+      {
+        "case_id": "pr-29053",
+        "note": "表面也像 bootstrap/harness 时序，但 retained 主体仍是 lease/global knob 与后台 loop 的竞态。"
+      }
+    ]
+  }
+}

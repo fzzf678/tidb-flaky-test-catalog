@@ -1,0 +1,174 @@
+{
+  "key": "共享 namespace 资源必须 per-test 唯一化",
+  "family": "test_isolation_and_state_pollution",
+  "summary": "测试如果继续复用共享 table / db / file / path / socket / port / temp-storage / runtime endpoint namespace，就会继承残留状态、互相踩文件或撞端口；稳定修法通常不是补等待，而是把资源切到 per-test 私有 namespace。",
+  "mechanism": "这条子模式的核心不是“忘了 restore 某个全局值”，而是测试本身在复用共享资源名字空间。共享 namespace 可以是数据库/表名、slow-log 文件、plan replayer 输出目录、TempStoragePath、storage path、unix socket、server/status 端口、advertise address，甚至 package 级 sandbox。只要多个 case 或多次运行还在复用同一资源名字，测试就会读取旧残留、覆盖彼此产物、打到尚未就绪的旧 endpoint，或者在 cleanup 窗口里互相踩踏。稳定修法非常一致：给每个 test / suite 分配独占 namespace，例如 `t.TempDir()`、唯一对象名、唯一 slow-log/socket/path、`cfg.Port = 0` / `StatusPort = 0` / 真正占住空闲端口，而不是继续在共享 namespace 上反复 drop / remove / restore。",
+  "signals_required": [
+    "patch 的 retained 主体明确在处理共享 namespace，而不是单纯 save-and-restore 一个 process-global knob。",
+    "共享资源属于 table / db / file / path / socket / port / temp dir / temp storage / runtime endpoint / package sandbox 这一类 namespace 对象。",
+    "原始不稳定来自复用通用名字、共享路径、固定端口、默认输出目录、默认 socket、共享 dump/log/storage 位置，或依赖前一次 cleanup 已经完全生效。",
+    "稳定修法的主轴是把资源切到 per-test 或 per-suite 私有 namespace，例如 `t.TempDir()`、唯一对象名、唯一文件路径、随机空闲端口、独立 advertise address / sandbox。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `t.TempDir()`、`TempStoragePath`、`config.TempDir`、`SlowQueryFile`、`cfg.Socket`、`cfg.Port = 0`、`StatusPort = 0`、`net.Listen(\"127.0.0.1:\")`、`AdvertiseAddress`、`os.Remove(...)`、`drop table if exists ...`、plan replayer / dump / storage path。",
+    "有些 patch 会同时带 `config.RestoreFunc()` / `t.Cleanup()`；但 restore 只是配套动作，主体仍然必须是“换独立 namespace”。",
+    "server/runtime 类测试常同时出现两类动作：唯一端口/路径 + 显式 stop/close。只要 retained 主体更偏 namespace 私有化，仍可保留在这里。",
+    "独立 package sandbox、把测试挪到专用 package / main_test / harness，也可能是 namespace isolation 的外层形态。"
+  ],
+  "negative_guards": [
+    "如果 patch 的主体只是 process-global knob / TTL / lease / retry / logger / callback 的 save-and-restore、atomic 化或前后移 restore 时序，应迁到 `race_condition_in_async_code` 边界，而不是并到这里。",
+    "如果 patch 只是删 `t.Parallel()`、把 case 挪到 serial suite，或通过串行化来避免共享状态混跑，但没有把资源真正做成 per-test 私有 namespace，更接近 `t_parallel_with_shared_state` 或 serial-isolation 边界。",
+    "如果 patch 的主体是 `Stop/Close/Wait` 后台 component、或者 close-path 回收临时 handle / backend / iterator，而 namespace 私有化只是配套动作，应该优先并到对应 lifecycle sibling。",
+    "如果 patch 只是清理旧残留，例如复用同一路径前先 `os.Remove` / `drop table if exists`，但没有进一步切到私有 namespace，通常只能算弱证据，不能直接按这条判 `risk`。",
+    "如果资源对象其实是共享 meta pointer / session flag / helper object alias，而不是 namespace 资源，应转到 clone-before-mutate 或 reset/cleanup 方向。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这条机制的 patch-backed 集中度很高，而且修法高度稳定。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到 `t.TempDir()` / `RestoreFunc()` / `cfg.Port = 0` 这类语句，但看不清它是否真的替换了共享 namespace，而不是一般性的测试清理。",
+      "patch 同时带 namespace 私有化和大量 harness / lifecycle 改造，短 diff 下看不清 retained 主体到底是哪一条。",
+      "只能确认有旧残留清理，但不能确认资源后来是否真的切到了 per-test 唯一路径/名字/端口。"
+    ]
+  },
+  "scope": [
+    "db / table / key / policy 名字唯一化。",
+    "temp dir / temp storage / storage path / spill dir / dump dir / slow-log / export file / socket path 私有化。",
+    "server / status / RPC / advertise-address / listen endpoint 的私有端口或私有地址分配。",
+    "package 或 suite 级 runtime sandbox 私有化，只要 retained 主体是让测试不再共享同一 namespace。"
+  ],
+  "fix_hints": [
+    "优先用 `t.TempDir()` 或等价机制给每个 test 分配独立目录，再把 `TempStoragePath` / `config.TempDir` / dump / log / socket / storage path 指过去。",
+    "对象名不要复用通用的 `t` / `x` / `y` / `db`；改成 case-local 唯一名字，或把对象创建收拢到独立 database / sandbox 里统一清理。",
+    "server/runtime endpoint 优先用 `Port = 0` / `StatusPort = 0` 或真正占住空闲端口，而不是手工扫固定端口区间。",
+    "如果 patch 同时需要 restore 全局配置，把 restore 当配套动作处理；真正的一阶修法仍然应该是资源私有化，而不是共享 namespace 上的 save-and-restore。"
+  ],
+  "related_subpatterns": [
+    "后台 component 必须显式 Stop/Close/Wait，不能靠 ignore / 自然退出",
+    "临时句柄 / backend / engine / iterator 必须在所有退出路径上收口",
+    "server / harness 级 test-global 状态必须重建或清理"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-7937",
+        "note": "把共享 database / table fixture 名字换成独立名字，避免在同名对象上反复 drop / recreate。"
+      },
+      {
+        "case_id": "pr-8585",
+        "note": "多处同名表复用改成唯一表名 / 数据库级 cleanup，主轴是对象 namespace 去共用。"
+      },
+      {
+        "case_id": "pr-14296",
+        "note": "server/status/history runtime 从共享固定端口改成唯一 port/statusPort，并把访问收敛到 per-suite client。"
+      },
+      {
+        "case_id": "pr-18414",
+        "note": "server test 不再复用固定端口，改用 `genPort()` 并配 `server.Close()`。"
+      },
+      {
+        "case_id": "pr-19434",
+        "note": "mock TiKV server 改为端口 `0` 自动分配，并把 client 配置做成 test-local。"
+      },
+      {
+        "case_id": "pr-22009",
+        "note": "disk 包测试不再共用 temp storage 路径，而是在 `TestT` 为整包生成独立 temp dir。"
+      },
+      {
+        "case_id": "pr-27894",
+        "note": "placement policy 测试把极短公共名字 `x/y` 改成更局部的唯一 policy 名。"
+      },
+      {
+        "case_id": "pr-28898",
+        "note": "attributes tests 同时把 runtime singleton 和表名 namespace 做成 per-case 隔离。"
+      },
+      {
+        "case_id": "pr-31167",
+        "note": "mock cluster 不再先找空闲端口再释放，而是用真实 `net.Listen(\"127.0.0.1:\")` 占住唯一端口。"
+      },
+      {
+        "case_id": "pr-32225",
+        "note": "包级共享 `TempStoragePath` 改成具体测试里的 `t.TempDir()` 私有目录。"
+      },
+      {
+        "case_id": "pr-33246",
+        "note": "server/status runtime endpoint 不再沿用默认值，改成 `cfg.Port = 0` 和 `cfg.Status.StatusPort = 0`。"
+      },
+      {
+        "case_id": "pr-38808",
+        "note": "把 autoid 测试拆到独立 package sandbox，并给个别 case 补唯一表名。"
+      },
+      {
+        "case_id": "pr-41321",
+        "note": "slow-log 相关测试改用专用 slow-log 文件名，避免共享 runtime file namespace。"
+      },
+      {
+        "case_id": "pr-41547",
+        "note": "多个 slow-log 测试从默认 `tidb-slow.log` 切到各自文件名前缀。"
+      },
+      {
+        "case_id": "pr-56737",
+        "note": "plan replayer 输出目录和 socket 路径从共享 `/tmp` 改到 `t.TempDir()`。"
+      },
+      {
+        "case_id": "pr-64457",
+        "note": "plan replayer UT 不再共用全局 `config.TempDir`，测试内改到自己的 temp dir。"
+      },
+      {
+        "case_id": "pr-65064",
+        "note": "spill 测试把 `TempStoragePath` 指到各自 `t.TempDir()`，消除共享 spill 路径。"
+      },
+      {
+        "case_id": "pr-65122",
+        "note": "stats handler tests 把 socket 与 dump/json 文件统一挪到 `t.TempDir()` 下。"
+      },
+      {
+        "case_id": "pr-65229",
+        "note": "cluster-table RPC server 测试补私有 advertise address / config / 文件清理，主体仍是 runtime namespace 隔离。"
+      },
+      {
+        "case_id": "pr-65547",
+        "note": "dump-single 测试把 log 文件和 plan replayer 目录都锚到测试专属 temp dir。"
+      },
+      {
+        "case_id": "pr-65644",
+        "note": "storage 初始化测试把共享 `config.Path` 改到 `t.TempDir()`。"
+      },
+      {
+        "case_id": "pr-66074",
+        "note": "extstore 路径探测测试用 `t.TempDir()` 和可注入 FS 替代共享真实 OS 目录环境。"
+      },
+      {
+        "case_id": "pr-66988",
+        "note": "import-into conflict resolution 测试把全局 `config.TempDir` 切到 `t.TempDir()`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-23502",
+        "note": "主要是在复用同名表前显式 cleanup / 串行化，而不是把对象真正做成 per-test 唯一 namespace。"
+      },
+      {
+        "case_id": "pr-23610",
+        "note": "删除旧 unix socket 文件是 namespace cleanup，但还没真正长成 per-test 唯一路径。"
+      },
+      {
+        "case_id": "pr-29053",
+        "note": "看起来也有 restore / bootstrap 时序，但主问题是 lease/global knob 与后台 loop 的时序竞态。"
+      },
+      {
+        "case_id": "pr-30287",
+        "note": "虽然也碰到 socket endpoint，但 retained 主体是 `t.Parallel()` 下共享 failpoint / runtime endpoint。"
+      },
+      {
+        "case_id": "pr-30346",
+        "note": "slow-log 相关这条最终靠 global config atomicization 稳住，不是 file namespace 私有化。"
+      },
+      {
+        "case_id": "pr-65735",
+        "note": "这条更偏 server harness / global binding / channel cleanup，不宜只按 namespace sibling 处理。"
+      }
+    ]
+  }
+}

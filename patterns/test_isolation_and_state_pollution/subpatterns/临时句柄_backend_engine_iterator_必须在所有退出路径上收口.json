@@ -1,0 +1,149 @@
+{
+  "key": "临时句柄 / backend / engine / iterator 必须在所有退出路径上收口",
+  "family": "test_isolation_and_state_pollution",
+  "summary": "测试或执行路径一旦拿到了临时句柄、iterator、query result、chunk、StorageRC、backend/engine 等资源，就必须在正常路径、错误路径、cancel/rollback 路径、panic/reopen/open-failure 路径上统一收口；否则这些资源尾巴会拖进后续测试或留下 goroutine / pool / 物理残留。",
+  "mechanism": "这条子模式的核心不是后台 manager 没停，也不是共享 namespace 没隔离，而是“谁拿到临时资源，谁负责在所有退出路径上收口”。资源对象可以是 `RecordSet`、`sql.Rows`、`stmt`、`resp.Body`、iterator / channel handle、chunk / temporary buffer、CTE `StorageRC`、ingest backend / engine 等。原始不稳定通常表现为：正常路径看起来能跑完，但 error-path、rollback-path、cancel-path、panic-path、reopen-path、open-failure-path 没走同一套 cleanup，于是留下未关闭结果集、未 recycle 的 chunk、未注销的 backend、未关闭的 engine、未 rollback 的事务或 residual state。稳定修法也很一致：把 cleanup 绑到统一 defer / close-path，让所有退出路径都 `Close()` / `recycle` / `rollback` / `Unregister` / `DerefAndClose`。",
+  "signals_required": [
+    "patch 的 retained 主体明确在处理临时句柄、query result、iterator、chunk、StorageRC、backend/engine 等资源的 close-path，而不是后台 component 的 stop/wait 或 global knob restore。",
+    "原始不稳定来自某个返回路径没有走完整 cleanup，例如 error-path、rollback-path、cancel-path、panic-path、reopen-path 或 open-failure-path。",
+    "稳定修法把 cleanup 收敛到统一 defer / close-path，或系统性改 helper，让资源使用者明确承担 `Close()/recycle/rollback/Unregister` 责任。",
+    "patch 的主轴是资源句柄生命周期收口，而不是 feature 语义修正、namespace 私有化或后台 manager 停机。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `rows.Close()`、`stmt.Close()`、`resp.Body.Close()`、`rec.Close()`、`r.Close()`、`mustExecToRecodeSet`、`recycleChunk(...)`、`DerefAndClose`、`Unregister(job.ID)`。",
+    "常见稳定化动作是 helper 分流：纯执行路径自动收口，需要返回句柄时改成显式 `RecordSet` helper，由调用者负责 `Close()`。",
+    "有些 patch 不是直接 close，而是 `rollback`、`recycleChunk`、`Unregister` 或重置底层 RC/state；只要 retained 主体是统一 close-path cleanup，仍属于这条。",
+    "这条 sibling 既可以发生在测试代码，也可以发生在被测试执行路径；关键是 patch 最终在资源 close-path 上补齐了所有退出路径。"
+  ],
+  "negative_guards": [
+    "如果 patch 的主体是 domain/store/server/TTL manager/metrics worker/queue 等后台 component 的 `Stop/Close/Wait`，应转到“后台 component 必须显式 Stop/Close/Wait，不能靠 ignore / 自然退出”。",
+    "如果 patch 的主体是 path / port / socket / temp dir / slow-log / storage namespace 的 per-test 私有化，应优先转到“共享 namespace 资源必须 per-test 唯一化”。",
+    "如果 patch 的主体只是 save-and-restore 全局 lease / TTL / config / callback，或把共享状态改成 atomic，应迁到 `race_condition_in_async_code` 边界。",
+    "如果 patch 主要是在 reset reused executor / memTracker / state machine，而不是谁拿到临时句柄谁负责 close-path，通常更接近 reset/backlog 方向。",
+    "如果 patch 只是继续扩大 `goleak` ignore、直接 `Skip`，或只修功能逻辑而没有明确 lifecycle cleanup，不算这条正例。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这条机制在 `RecordSet`、`resp.Body`、iterator、chunk、StorageRC、backend/engine 等多个对象上都反复出现，而且修法高度统一。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到通用的 `Close()` / `rollback` / `defer`，但看不清对象是否真是临时句柄/资源，而不是后台 component 或普通测试清理。",
+      "patch 同时混入大量 worker teardown、namespace isolation 或 feature 逻辑，短 diff 下看不清 retained 主体到底是哪一条。",
+      "只能确认有资源句柄关键词，但看不出是否真的覆盖了 error/rollback/cancel/panic/open-failure 等缺失路径。"
+    ]
+  },
+  "scope": [
+    "`RecordSet` / `sql.Rows` / `stmt` / `Session().Execute(...)` 返回资源。",
+    "`resp.Body`、iterator / channel handle、chunk / temporary buffer、CTE `StorageRC`。",
+    "ingest backend / engine / registry / temp resource 在 rollback/cancel/error 路径上的 cleanup。"
+  ],
+  "fix_hints": [
+    "把 cleanup 绑定到统一 defer / close-path，确保正常、错误、cancel、panic、reopen、open-failure 路径都走同一套收口逻辑。",
+    "对 `RecordSet` / `rows` / `stmt` / `resp.Body` 这类句柄，要么显式 `Close()`，要么把 helper 改成自动收口版本，避免调用方拿到资源后丢掉不管。",
+    "对 chunk / `StorageRC` / backend / engine / registry 这类资源，不只要在 happy path 清理，还要在 rollback/cancel/error/panic 路径统一 `recycle` / `DerefAndClose` / `Unregister` / cleanup。",
+    "如果问题来自 `Open()` 失败或 early return，优先用 wrapper + `defer Close()` 让失败路径也天然收口。"
+  ],
+  "related_subpatterns": [
+    "后台 component 必须显式 Stop/Close/Wait，不能靠 ignore / 自然退出",
+    "共享 namespace 资源必须 per-test 唯一化",
+    "reused fixture / executor instance 在再次复用前必须 reset"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-2921",
+        "note": "`copIterator` 在 `Close()` 后仍可能悬挂 worker，最终让 close-path 也感知 `finished`。"
+      },
+      {
+        "case_id": "pr-5654",
+        "note": "`copIterator` 关闭后再 `Next()` 不应继续卡住，最终让 recv 路径也感知 finished。"
+      },
+      {
+        "case_id": "pr-6140",
+        "note": "`copIterator.Close()` 等待 worker 时，send/recv 两侧都补 finished 感知，避免 hang/leak。"
+      },
+      {
+        "case_id": "pr-30306",
+        "note": "server tests 在继续发 query/exec 前系统性补 `rows.Close()` / `stmt.Close()`。"
+      },
+      {
+        "case_id": "pr-31989",
+        "note": "`Session().Execute(...)` 返回的 `RecordSet` 切片需要逐个 `Close()`。"
+      },
+      {
+        "case_id": "pr-35373",
+        "note": "错误分支拿到 `RecordSet` 后也必须及时 `Close()`，不能留到后续同 session 执行链路。"
+      },
+      {
+        "case_id": "pr-36507",
+        "note": "insert error path 的 `rec` 必须显式 `Close()` 或走自动收口 helper。"
+      },
+      {
+        "case_id": "pr-37003",
+        "note": "更多 query/exec tests 系统性补 `RecordSet.Close()`。"
+      },
+      {
+        "case_id": "pr-37016",
+        "note": "HTTPS request 读完 body 后必须严格 `resp.Body.Close()`，再继续跑后续请求。"
+      },
+      {
+        "case_id": "pr-39718",
+        "note": "`TestBootstrap` 读取完结果后补 `r.Close()`。"
+      },
+      {
+        "case_id": "pr-39783",
+        "note": "helper 分流成 `mustExecToRecodeSet` 与自动收口路径，明确谁负责关闭结果句柄。"
+      },
+      {
+        "case_id": "pr-40010",
+        "note": "错误路径的裸 `Exec()` 返回句柄改为自动收口 helper。"
+      },
+      {
+        "case_id": "pr-43067",
+        "note": "`cop` 读出的 chunk 在错误路径或返回路径上统一 `recycleChunk(...)`。"
+      },
+      {
+        "case_id": "pr-43758",
+        "note": "CTE 在 `DerefAndClose` / `Reopen` / panic 路径上统一 close 底层 `StorageRC`。"
+      },
+      {
+        "case_id": "pr-44206",
+        "note": "ingest backend 在 rollback/cancel 路径统一 `Unregister(job.ID)`。"
+      },
+      {
+        "case_id": "pr-48133",
+        "note": "`Open()` 失败时也必须走统一 `defer executor.Close()`。"
+      },
+      {
+        "case_id": "pr-48604",
+        "note": "benchmark 循环里的 query handle 与事务最终都需要显式收口。"
+      },
+      {
+        "case_id": "pr-64105",
+        "note": "ingest engine cleanup 被收拢到统一 defer / close-path。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-14839",
+        "note": "虽然也有 cancel path，但 retained 主体更像后台检索 worker/goroutine teardown，应留在第二条 sibling。"
+      },
+      {
+        "case_id": "pr-39023",
+        "note": "worker/waiter goroutine 全部退出的主轴更接近后台 component teardown，而不是单个临时句柄 close。"
+      },
+      {
+        "case_id": "pr-40542",
+        "note": "成组 worker/session/context 的 teardown 主体更接近第二条，而不是第三条。"
+      },
+      {
+        "case_id": "pr-37372",
+        "note": "statement-scoped memTracker 在 close-path 归零，更偏 reset/backlog 方向，不宜直接并入这条。"
+      },
+      {
+        "case_id": "pr-5020",
+        "note": "虽然涉及结果句柄关闭，但工作板当前仍把它保守放在相邻 boundary，不直接并作这条正例。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "key": "测试不要改 process-global logger；需要串行隔离或带互斥的 log capturer",
+  "family": "race_condition_in_async_code",
+  "summary": "测试如果要替换 process-wide global logger（如 `log.ReplaceGlobals`），不能和其他并行测试共跑；应移到单独串行 suite，且用于捕获日志的 hook/capturer 自己也要带互斥。",
+  "mechanism": "global logger 是全进程共享单例。某个测试为了断言日志内容去 `ReplaceGlobals`，同时别的测试或后台 goroutine 还在打日志，就会形成非常直接的共享状态竞态。稳定修法不是在原地赌时序，而是把这类测试隔离到单独的 sequential suite / 单独目录执行；如果还要自定义 capturer，capturer 自己写入共享字段时也必须加 `sync.Mutex`。",
+  "signals_required": [
+    "测试代码显式替换或重配 process-global logger，例如 `log.ReplaceGlobals`、全局 logger hook/capturer。",
+    "同一进程里还有其他并发测试或后台 goroutine 也会继续打日志。",
+    "修复把测试迁到串行执行环境、单独目录/serial suite，或显式保证它不再与并行测试混跑。",
+    "补丁里的 log capturer / hook 如果有共享字段写入，也显式加了 `sync.Mutex` 或等价保护。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `All the tests in this file will be executed sequentially`、`SerialSuites`、`oomtest`、`log.ReplaceGlobals`、`sync.Mutex`。",
+    "常见语义是 OOM / bootstrap / logger capture 这类需要接管全局日志的测试。",
+    "迁移方式常见为从普通 test 文件移动到 `seqtest` 或独立 test package。"
+  ],
+  "negative_guards": [
+    "如果问题只是普通日志断言，但没有替换 process-global logger，不要命中。",
+    "如果问题对象是 global config struct / flag，而不是 global logger 单例，不要并到这里。",
+    "如果已经在单独串行 suite 中运行，且没有共享 capturer 竞态，不要再报。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判为 flaky risk；`ReplaceGlobals + 并行测试 + 串行隔离/互斥 capturer` 是很硬的 logger race 模式。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "测试只是读取 logger 配置，没有真正替换全局 logger。",
+      "串行隔离已经存在，看不出还有并行 logger 访问。"
+    ]
+  },
+  "scope": [
+    "OOM / log capture / bootstrap 等需要接管全局 logger 的测试。",
+    "所有使用 `log.ReplaceGlobals`、全局 logger hook/capturer 的测试。"
+  ],
+  "fix_hints": [
+    "不要让会替换全局 logger 的测试和普通并行测试混跑。",
+    "把这类测试放进单独串行 suite / 单独目录。",
+    "自定义 capturer 如果会写共享状态，内部也要加互斥。"
+  ],
+  "related_subpatterns": [
+    "测试更新全局 config 必须 `UpdateGlobal` / `StoreGlobalConfig`，并配对 `RestoreFunc`",
+    "全局 `bool/seed` 配置开关不能裸读写；要么走 atomic accessor，要么降到 session scope"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-16722",
+        "note": "OOMTest 会替换全局 logger；修复把测试移到单独 `oomtest` 串行目录，并给 log capturer 加 `sync.Mutex`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-17964",
+        "note": "这条是 global config restore，不是 global logger 单例替换。"
+      },
+      {
+        "case_id": "pr-45579",
+        "note": "这条虽然也在测试里控制后台 goroutine，但核心是 global config labels map，而不是 logger。"
+      }
+    ]
+  }
+}

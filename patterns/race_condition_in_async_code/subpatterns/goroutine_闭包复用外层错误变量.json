@@ -1,0 +1,66 @@
+{
+  "key": "goroutine 闭包复用外层错误变量",
+  "family": "race_condition_in_async_code",
+  "summary": "测试启动 goroutine 后，闭包里直接写外层 `err` 或等价错误变量，导致与主线程或其他 goroutine 并发读写。",
+  "mechanism": "外层错误变量本来由主线程持有；一旦 goroutine 闭包直接给它赋值，就会让多个并发路径共享同一个错误变量。主线程读 `err`、兄弟 goroutine 改 `err` 或测试提前返回时，都可能触发 race 或让错误来源变得不稳定。",
+  "signals_required": [
+    "diff 启动 goroutine，例如 `go func(...) { ... }()`。",
+    "闭包内部直接给外层 `err` 或等价错误变量赋值，例如 `err = ...`。",
+    "这个错误变量在父 goroutine、兄弟 goroutine 或后续断言路径中还会被读取。",
+    "代码没有把错误值变成 goroutine 内局部变量，也没有通过 channel/锁完成所有权交接。"
+  ],
+  "signals_optional": [
+    "修复里把 `err = ...` 改成 `err := ...`，或改成通过 channel 回传错误。",
+    "测试还伴随 `WaitGroup`、提前返回、未等待 goroutine 退出等收尾问题，这会放大 race。",
+    "外层除了 `err` 以外还共享了其他结果变量。"
+  ],
+  "negative_guards": [
+    "如果真正被错误捕获的是循环变量、case 参数或 `store/sql/plan` 之类循环对象，更接近 `goroutine 闭包捕获循环变量`。",
+    "如果错误变量虽然在多个 goroutine 之间传递，但每次传递都通过 channel 或锁完成，不要命中这个子模式。",
+    "如果主问题是测试没有等待 goroutine 退出，而不是共享 `err` 本身，应降级为 `needs_more_evidence`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是非常直接的 data-race 代码形态。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "共享的变量是否真的是错误变量还不清楚。",
+      "闭包里虽然引用了外层 `err`，但赋值路径和读取路径之间有明确同步。"
+    ]
+  },
+  "scope": [
+    "单元测试、并发测试、通过 goroutine 并发发请求或执行 SQL 的测试。",
+    "任何 goroutine 闭包内直接写外层错误变量的场景。"
+  ],
+  "fix_hints": [
+    "把 goroutine 内的 `err` 改成局部变量 `err := ...`。",
+    "如果需要把错误回传给主线程，用 channel 或带锁的聚合结构，而不是共享外层变量。",
+    "如果测试还没等待 goroutine 结束，补上 `WaitGroup` 或其他收尾同步。"
+  ],
+  "related_subpatterns": [
+    "goroutine 闭包捕获循环变量",
+    "WaitGroup Add/Done 顺序竞态"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-672",
+        "note": "高纯度样例：goroutine 闭包直接复用外层 `err`。"
+      },
+      {
+        "case_id": "pr-43704",
+        "note": "goroutine 写外层 `err`，主线程并发读取该错误值。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-625",
+        "note": "包含外层 `err` 复用，但还混有 WaitGroup 复制/所有权问题。"
+      },
+      {
+        "case_id": "pr-27436",
+        "note": "既有外层 `err` 共享，也有 goroutine 未等待退出。"
+      }
+    ]
+  }
+}

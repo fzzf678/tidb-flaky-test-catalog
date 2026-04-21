@@ -1,0 +1,67 @@
+{
+  "key": "全局 `lease/TTL` 数值旋钮不能裸读写；必须封装 `atomic` getter/setter",
+  "family": "race_condition_in_async_code",
+  "summary": "像 `Handle.Lease`、`ManagedLockTTL` 这种会被测试线程和后台路径同时读取的全局数值旋钮，不能继续裸读写；必须通过 `atomic` getter/setter 或等价封装访问。",
+  "mechanism": "这类问题和一般的 `bool/seed` 开关不同，核心对象是 `time.Duration` / `uint64` 这类数值型全局旋钮。测试会改它，后台 loop / TTL manager / stats worker 也会在另一个 goroutine 里读它；一旦读写仍是普通字段或普通全局变量，就会在 race detector 下稳定暴露。稳定修法也很一致：把字段改成 `atomic` 容器，或者提供 `Lease()/SetLease()` 这种 getter/setter，把所有调用点都切过去。",
+  "signals_required": [
+    "共享对象是全局或长期存活 handle 上的数值型旋钮，例如 `lease`、`TTL`、`uint64` / `time.Duration` 配置值。",
+    "测试线程与后台 worker / runtime 路径会并发读写这类旋钮，而不是只在单线程初始化期访问。",
+    "修复核心是引入 `atomic.Load/Store`、`atomic2.Duration`、或显式 getter/setter（如 `Lease()/SetLease()`），并替换直接字段访问。",
+    "问题不是把 `lease` 设成 `0` 停掉后台 loop，而是让该数值旋钮本身的并发访问变成线程安全。"
+  ],
+  "signals_optional": [
+    "高信号锚点包括 `Lease()`、`SetLease(`、`ManagedLockTTL`、`atomic.LoadUint64`、`atomic.StoreUint64`、`atomic2.Duration`。",
+    "调用点常出现在 ticker / `LockTtl` / `NeedAnalyzeTable` / stats worker / TTL manager 主线。",
+    "patch 常伴随把 `h.Lease` 这种直接字段访问改成 `h.Lease()`，或把裸变量访问改成 `atomic.LoadUint64(&ManagedLockTTL)`。"
+  ],
+  "negative_guards": [
+    "如果修复核心只是测试把 `lease` 设为 `0`，或把修改顺序提前到 bootstrap 前，更接近 `测试改写全局 lease 干扰后台 refresh loader`。",
+    "如果共享开关是 `bool/seed` 一类标量，且修法是 `AtomicBool` 或降到 session scope，更接近 `全局 bool/seed 配置开关不能裸读写；要么走 atomic accessor，要么降到 session scope`。",
+    "如果问题是 `sync.Once` / singleton init-before-use，而不是数值旋钮的并发读写，不要并到这里。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这是全局数值旋钮并发读写的硬机械模式。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到 `lease` / `TTL` 字段，但看不清它是否真会被多个 goroutine 并发访问。",
+      "patch 虽然引入 getter/setter，但更像普通重构，缺少并发读写背景。"
+    ]
+  },
+  "scope": [
+    "stats handle / domain stats lease 主线。",
+    "TTL manager / tikv 2PC `ManagedLockTTL` 一类全局数值开关。",
+    "任何会被测试代码与后台路径同时读写的 `time.Duration` / `uint64` 旋钮。"
+  ],
+  "fix_hints": [
+    "不要直接暴露可变的全局 `lease/TTL` 数值字段给多 goroutine 读写。",
+    "优先提供统一的 `atomic` getter/setter，并把所有调用点改成走封装接口。",
+    "如果对象挂在长期存活 handle 上，字段本身就应改成 `atomic` 容器，而不是靠调用方自觉加锁。"
+  ],
+  "related_subpatterns": [
+    "测试改写全局 lease 干扰后台 refresh loader",
+    "全局 bool/seed 配置开关不能裸读写；要么走 atomic accessor，要么降到 session scope"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-10771",
+        "note": "`Handle.Lease` 改成 `atomic2.Duration`，并引入 `Lease()/SetLease()` 替换直接字段访问。"
+      },
+      {
+        "case_id": "pr-14407",
+        "note": "`ManagedLockTTL` 改成 `atomic.LoadUint64/StoreUint64`，避免 TTL manager 与测试并发读写。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-66559",
+        "note": "这条的核心是测试把 `bindinfo.Lease` 设为 `0` 停掉后台 loader，而不是给数值旋钮本身加 `atomic` accessor。"
+      },
+      {
+        "case_id": "pr-7901",
+        "note": "这条是 mixed case：一部分是 `stats lease = 0`，另一部分是 `SetSystemTZ` 的一次性初始化保护，不是纯 accessor 子模式。"
+      }
+    ]
+  }
+}

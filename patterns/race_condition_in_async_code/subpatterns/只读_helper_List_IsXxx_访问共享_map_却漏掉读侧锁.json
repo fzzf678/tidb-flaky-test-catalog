@@ -1,0 +1,62 @@
+{
+  "key": "只读 helper/List/IsXxx 访问共享 map 却漏掉读侧锁",
+  "family": "race_condition_in_async_code",
+  "summary": "共享 map 或共享状态的写路径已经受同一把 mutex/RWMutex 保护，但只读 helper（如 `IsXxx`、`Get`、`List`）直接访问共享字段时漏掉了读路径上的锁。",
+  "mechanism": "这类问题最容易误判成“整体已经有锁所以应该安全”。实际情况是写路径、清理路径或大部分调用方都已经按同一把锁串行化，但某个很短的只读 helper 因为被认为天然安全，直接绕过了读侧锁。一旦另一个 goroutine 正在更新或删除同一 map/state，就会在这个 helper 上暴露 race 或 `concurrent map read and map write`。",
+  "signals_required": [
+    "同一个共享 map/state 的写路径已经显式使用 `Lock/Unlock` 或 `RLock/RUnlock` 所属的同一把 mutex/RWMutex。",
+    "某个只读 helper（如 `IsXxx`、`Get`、`List`）直接访问该共享字段。",
+    "helper 本身没有持有读侧锁，也没有清楚的“caller already holds lock”约束。",
+    "修复核心是在这个 helper 外层补锁，或拆出一个仅供持锁调用方使用的 no-lock helper。"
+  ],
+  "signals_optional": [
+    "函数名常见为 `IsXxx`、`Get`、`List`。",
+    "共享字段名常见为 `tableLocked`、`id2Timers` 这类 map/state。",
+    "patch 里可能同时引入 `isTableLocked` 这类 no-lock 变体，避免在已经持锁的调用链上重复加锁。"
+  ],
+  "negative_guards": [
+    "如果 race 的核心发生在 `clear/reset/reuse/delete all` 这类 cleanup 路径，而不是只读 helper，本质上更接近 `cleanup/reuse/reset 路径清空共享 map 时漏锁`。",
+    "如果整个结构从一开始就没有任何稳定的加锁纪律，更接近 `长期存活的 manager/handler 共享 map 被多个并发入口直接读写` 一类直接并发读写。",
+    "如果问题不是单个 helper 漏锁，而是 `namespaces/id2Timers/watchers` 等整组共享状态都要重新设计同步方式，更接近 timer store 整体互斥/复合状态子簇。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；读 helper 访问共享 map/state 却漏掉与写路径对应的同一把锁，是很稳定的结构性信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清这个 helper 是否只会在 caller already holds lock 的上下文里被调用。",
+      "共享字段看起来是只读 snapshot，而不是会被并发更新的 live state。"
+    ]
+  },
+  "scope": [
+    "stats handle、timer store、runtime cache 等带共享 map/state 的组件。",
+    "任何存在“写路径有锁、读 helper 裸读共享字段”形态的并发代码。"
+  ],
+  "fix_hints": [
+    "优先让只读 helper 在自身边界补上读侧锁。",
+    "如果调用方有一部分已经持锁，显式拆出 `no-lock` helper，只允许持锁调用链走它。",
+    "不要默认认为只读 helper 天然安全；只要读的是 live shared state，就必须遵守和写路径一致的锁纪律。"
+  ],
+  "related_subpatterns": [
+    "cleanup reuse reset 路径清空共享 map 时漏锁",
+    "长期存活的 manager/handler 共享 map 被多个并发入口直接读写"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-40572",
+        "note": "`Handle.IsTableLocked` 读取 `tableLocked` 时漏掉读侧锁，修复为 helper 自身加锁并拆出 no-lock 变体。"
+      },
+      {
+        "case_id": "pr-44577",
+        "note": "`memoryStoreCore.List` 作为只读 helper 遍历 `id2Timers/namespaces` 时漏锁，修复为在 `List` 外层补 `mu.Lock/Unlock`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-44446",
+        "note": "更像 timer store 的整组共享状态和 notifier/watcher 生命周期一起重构，不是单个读 helper 漏掉读侧锁。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "key": "`GetPartitionStats` miss 后临时构造 `PseudoTable` 却回填共享 `statsCache`",
+  "family": "race_condition_in_async_code",
+  "summary": "stats handle 在 `GetPartitionStats` 的 cache miss 分支里，会先临时构造一份 `statistics.PseudoTable(tblInfo)` 并绑定 `PhysicalID`；如果同一条读路径又把这份仅用于兜底返回的 pseudo table 通过 `updateStatsCache(statsCache.update(...))` 之类的入口写回共享 `statsCache`，就会把本应短生命周期的 partition placeholder 发布成长期共享对象，随后和并发的 stats load / cache publish 路径互相干扰。",
+  "mechanism": "这类问题的关键不是 `tableStatsFromStorage` 在共享 `Table` 上原地补写，也不是 whole-cache `statsCache.version` 的 snapshot 发布门禁，而是 partition stats 的 miss path 本身：代码先判断 `GetPartitionStats` 没命中缓存，然后临时造一份 `PseudoTable` 作为兜底结果；如果这份临时 pseudo table 又被顺手写回共享 cache，后续其他 goroutine 读到的就不再是“本次 miss 的本地兜底对象”，而是一个带 partition `PhysicalID` 的共享 placeholder。稳定修法通常是：不要无条件把 partition pseudo table 发布进共享 cache；让它只作为当前 miss 的局部返回值，或至少加上明确的 table-kind / cache-size 策略门禁。",
+  "signals_required": [
+    "代码位于 partition stats 的 miss/read path，强锚点是 `GetPartitionStats` 或其紧邻 helper，而不是 whole-cache publish helper 或 cache internal 实现层。",
+    "miss 分支里会显式构造 `statistics.PseudoTable(tblInfo)` 或等价 pseudo stats 对象。",
+    "同一分支里会给这份 pseudo table 绑定 partition 身份，例如 `tbl.PhysicalID = pid`、`GetPartitionInfo()`、`partition` 等锚点。",
+    "在返回前，这份 pseudo table 又通过 `updateStatsCache(statsCache.update(...))`、`Put`、`Set` 或等价入口被回填进共享 `statsCache`，而不是仅作为当前调用的局部临时值。"
+  ],
+  "signals_optional": [
+    "很强的组合锚点是 `GetPartitionStats(` + `statistics.PseudoTable(` + `tbl.PhysicalID = pid` + `updateStatsCache(` + `statsCache.update(`。",
+    "补丁里常会出现 `tblInfo.GetPartitionInfo() == nil`、`statsCacheLen() < N` 这类额外门禁，表示修复在收紧“哪些 pseudo table 允许进 cache”。",
+    "PR 标题、注释或测试说明里若直接出现 `not put pseudo table of partition table into cache`、`pseudo table`、`partition table`，通常是这条子模式的强旁证。"
+  ],
+  "negative_guards": [
+    "如果问题核心是 `oldCache.version/newCache.version`、`CopyAndUpdate`、`statsCache.Store(newCache)` 这类整包 snapshot 发布门禁，更接近 `Handle.statsCache` 整体 snapshot 以 version 做 copy-on-write 发布，缺少串行 store 门禁。",
+    "如果问题核心是 `StatsCacheInner`、`MapCache`、`sync.RWMutex`、`Get/Put/Del/Values/Copy` 这些 internal cache APIs 的统一锁 discipline，更接近 `stats cache internal LRU/map cache` 共享结构被 `Get/Put/Del/Values/Copy` 路径并发访问，缺少统一 `RWMutex`。",
+    "如果问题核心是 `tableStatsFromStorage` / `TableStatsFromStorage` 从共享 cache 取 `Table` 后补写 `Histogram/CMSketch/col2Idx` 却漏 `table.copy()`，更接近 from-storage `table.copy` 子线。",
+    "如果问题核心是 `pid2tid/schemaVersion` 这类 partition physicalID 到 tableID 的映射缓存并发读写，更接近 `Handle.pid2tid/schemaVersion` 分区 physicalID 到 tableID 映射缓存被并发读写，缺少统一锁保护。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；在 `GetPartitionStats` miss 路径里把临时 partition `PseudoTable` 回填进共享 `statsCache`，是很稳定的“临时 placeholder 被错误发布成共享状态”的并发风险信号。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清这份 pseudo table 是否真的被发布回共享 cache，而不是只在当前调用栈里临时返回。",
+      "虽然出现了 `PseudoTable` 与 partition 锚点，但共享 cache 的写回已经被明确限制为非 partition 场景，或被额外 cache policy 门禁隔离。"
+    ]
+  },
+  "scope": [
+    "早期 `statistics/handle.go` / `statistics/handle/handle.go` 中的 `GetPartitionStats` cache miss 路径。",
+    "后续若迁移到 `pkg/statistics/handle/*`，但仍保留“`GetPartitionStats` miss -> `PseudoTable` -> `PhysicalID` -> shared cache writeback”这一结构，也属于同一子模式。"
+  ],
+  "fix_hints": [
+    "不要把 `GetPartitionStats` miss 分支里临时构造的 partition `PseudoTable` 无条件发布回共享 `statsCache`。",
+    "如果必须缓存某些 pseudo stats，至少要把 partition / non-partition、cache 容量或生命周期策略写成显式门禁，而不是在 miss path 里顺手写回。",
+    "优先让共享 cache 只持有稳定、可长期共享的 stats 对象；临时 placeholder 更适合作为当前读取路径的局部返回值。"
+  ],
+  "related_subpatterns": [
+    "`Handle.statsCache` 整体 snapshot 以 version 做 copy-on-write 发布，缺少串行 store 门禁",
+    "从共享 stats cache 取 Table 后，在 tableStatsFromStorage 补写字段前漏掉 table.copy"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-44374",
+        "note": "修复标题直接就是 `not put pseudo table of partition table into cache`；代码锚点也非常集中：`GetPartitionStats` miss 分支先 `statistics.PseudoTable(tblInfo)`、再 `tbl.PhysicalID = pid`，随后把原来的无条件 `h.updateStatsCache(statsCache.update(...))` 收紧到带 `GetPartitionInfo()` / `statsCacheLen()` 门禁的写回策略。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-13647",
+        "note": "这条更偏整份 `statsCache` snapshot 的 `version` / `updateStatsCache` 发布门禁，不是 `GetPartitionStats` miss path 错把 partition pseudo table 发布成共享状态。"
+      },
+      {
+        "case_id": "pr-44748",
+        "note": "这条更偏 stats cache internal 的 `LRU/map cache` 共享结构统一加 `RWMutex`，不是 partition pseudo table 的回填策略。"
+      }
+    ]
+  }
+}
