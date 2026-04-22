@@ -1,0 +1,385 @@
+{
+  "family": "plan_stability_and_stats_dependency",
+  "kind": "retrieval_signals",
+  "version": "v1",
+  "description": "Repository-scan retrieval hints for the currently formalized plan_stability_and_stats_dependency subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "defaults": {
+    "purpose": "candidate_retrieval_only",
+    "verdict_requires_subpattern_json": true,
+    "group_match_semantics": "For grep_keywords_all_groups, every group should match at least one keyword before the candidate is treated as high-priority.",
+    "any_match_semantics": "grep_keywords_any is only for weak recall; false positives are acceptable at this layer and should be filtered later by manual review plus the verdict-layer subpattern JSON.",
+    "exclude_semantics": "grep_keywords_exclude are soft down-rank hints by default unless the caller explicitly chooses hard exclusions. Prefer recall over precision unless a known noise class causes sibling confusion or unreviewable candidate explosion.",
+    "rg_template_semantics": "Treat broad_recall as the default first hop for coarse repository scanning. Use fallback_no_path only when broad_recall is empty, implausibly sparse, or likely to miss due to helper/layout drift. Use group_intersection only as an optional lightweight shrinker after recall; it must never be treated as an absence proof or hard gate.",
+    "path_globs_semantics": "path_globs are soft search-priority hints, not hard absence proofs. Because some anchors may live in helper .go files or SQL/result assets, rerun fallback_no_path before concluding a subpattern is absent."
+  },
+  "entries": [
+    {
+      "subpattern_key": "统计信息真正 load / materialize / apply 之前不应断言依赖它的计划或统计输出",
+      "pattern_file": "统计信息真正_load_materialize_apply_之前不应断言依赖它的计划或统计输出.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/*.test",
+        "**/*.result",
+        "**/*.go"
+      ],
+      "grep_keywords_any": [
+        "LoadNeededHistograms",
+        "StatsHandle().Update",
+        "HandleDDLEvent",
+        "load stats",
+        "sync load",
+        "unInitialized",
+        "stats cache",
+        "histogram",
+        "Buckets",
+        "not loaded"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "LoadNeededHistograms",
+          "StatsHandle().Update",
+          "HandleDDLEvent",
+          "load stats",
+          "sync load",
+          "unInitialized",
+          "Buckets",
+          "not loaded"
+        ],
+        [
+          "show stats_buckets",
+          "show stats_topn",
+          "HasPlan(",
+          "MustHavePlan(",
+          "testkit.Rows(",
+          "GetRowCount",
+          "bucket",
+          "TopN",
+          "histogram",
+          "correlation"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "samplerate",
+        "sample rate",
+        "tidb_analyze_version",
+        "predicate column",
+        "last_plan_from_cache",
+        "ReadFromTableCache",
+        "SetSkipPlanCache",
+        "tidb_enable_non_prepared_plan_cache"
+      ],
+      "first_pass_query_hint": "第一跳优先抓 stats 真正 ready 之前就去断言的场景：显式 load/update、未初始化 histogram/bucket、以及仍未 loaded 的 patch 形态。不要把 analyze-input 漂移、cache 命中或 runtime-context cache reuse 混进这条。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳按 stats-ready/load/materialize anchor 粗召回。这里保留 `Buckets == 0` / `not loaded` 这一类 patch-backed widening，只服务 candidate retrieval。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' -g '**/*.go' '(?is)(LoadNeededHistograms|StatsHandle\\(\\)\\.Update|HandleDDLEvent|load\\s+stats|sync\\s*load|unInitialized|stats\\s+cache|histogram|Buckets\\)\\s*==\\s*0|not\\s+loaded)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或 stats-ready 锚点落在 helper / non-test file 时，去掉路径限制做全仓兜底；仍然只保留 stats-ready anchor。",
+          "command": "rg -n -U -P '(?is)(LoadNeededHistograms|StatsHandle\\(\\)\\.Update|HandleDDLEvent|load\\s+stats|sync\\s*load|unInitialized|stats\\s+cache|histogram|Buckets\\)\\s*==\\s*0|not\\s+loaded)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳把 stats-ready anchor 与 stats/plan 断言锚点做文件级交集，帮助把一般 stats helper 改动和真正依赖 stats output 的测试收束开；它只是 shrinker，不是 absence proof。",
+          "command": "rg -l -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' -g '**/*.go' '(?is)(LoadNeededHistograms|StatsHandle\\(\\)\\.Update|HandleDDLEvent|load\\s+stats|sync\\s*load|unInitialized|stats\\s+cache|histogram|Buckets\\)\\s*==\\s*0|not\\s+loaded)' <repo_root> | xargs rg -n -U -P '(?is)(show\\s+stats_(buckets|topn)|HasPlan\\(|MustHavePlan\\(|testkit\\.Rows\\(|Get(?:RowCount|ColumnRowCount|RowCountByIndexRanges)|TopN|bucket|histogram|correlation)'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "histogram / selectivity / correlation / async-load item count 这类统计派生数值不应做 exact constant assertion",
+      "pattern_file": "统计派生数值_不应做_exact_constant_assertion.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/*.test",
+        "**/*.result",
+        "**/*.go"
+      ],
+      "grep_keywords_any": [
+        "InDelta",
+        "LessEqual",
+        "GreaterEqual",
+        "require.Less",
+        "require.Greater",
+        "len(items) >=",
+        "correlation",
+        "show stats_buckets",
+        "show stats_topn",
+        "GetRowCountByIndexRanges",
+        "GetColumnRowCount",
+        "AsyncLoadHistogramNeededItems.AllItems"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "correlation",
+          "show stats_buckets",
+          "show stats_topn",
+          "GetRowCountByIndexRanges",
+          "GetColumnRowCount",
+          "AsyncLoadHistogramNeededItems.AllItems",
+          "histogram",
+          "selectivity"
+        ],
+        [
+          "InDelta",
+          "LessEqual",
+          "GreaterEqual",
+          "require.Less",
+          "require.Greater",
+          "len(items) >=",
+          "lower-bound",
+          "monotonic"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "LoadNeededHistograms",
+        "StatsHandle().Update",
+        "HandleDDLEvent",
+        "samplerate",
+        "tidb_analyze_version",
+        "predicate column",
+        "last_plan_from_cache",
+        "SetSkipPlanCache"
+      ],
+      "first_pass_query_hint": "第一跳先看 stats-derived numeric output 与 numeric-normalization/stable-property 断言锚点，不要把 stats-ready 或 analyze-input 漂移混进这条。这里关心的是 exact constant 被降级成 delta/range/lower-bound。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳抓 bucket/selectivity/correlation/async-load item count 以及 `Equal -> InDelta/range/lower-bound` 这类 patch-backed normalization 锚点。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' -g '**/*.go' '(?is)(InDelta|LessEqual|GreaterEqual|require\\.Less|require\\.Greater|len\\(items\\)\\s*>?=|correlation|show\\s+stats_buckets|show\\s+stats_topn|GetRowCountBy(?:Index|Column)Ranges|GetColumnRowCount|AsyncLoadHistogramNeededItems\\.AllItems)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或 numeric normalization 落在 helper / non-test file 时，去掉路径限制做全仓兜底；仍然只保留 stats-derived numeric anchor。",
+          "command": "rg -n -U -P '(?is)(InDelta|LessEqual|GreaterEqual|require\\.Less|require\\.Greater|len\\(items\\)\\s*>?=|correlation|show\\s+stats_buckets|show\\s+stats_topn|GetRowCountBy(?:Index|Column)Ranges|GetColumnRowCount|AsyncLoadHistogramNeededItems\\.AllItems)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳做 stats-derived numeric anchor 与 stable-property assertion anchor 的文件级交集，帮助把一般 histogram helper 改动和真正的 numeric exactness case 区分开；它只是 shrinker，不是 absence proof。",
+          "command": "rg -l -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' -g '**/*.go' '(?is)(correlation|show\\s+stats_buckets|show\\s+stats_topn|GetRowCountBy(?:Index|Column)Ranges|GetColumnRowCount|AsyncLoadHistogramNeededItems\\.AllItems|histogram|selectivity)' <repo_root> | xargs rg -n -U -P '(?is)(InDelta|LessEqual|GreaterEqual|require\\.(Less|Greater|Regexp)|len\\(items\\)\\s*>?=|lower-bound|monotonic|AllItems\\()'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "analyze inputs / sampling / version / predicate-column scope 必须先钉死",
+      "pattern_file": "analyze_inputs_sampling_version_predicate_scope_必须先钉死.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/*.test",
+        "**/*.result",
+        "**/*.go"
+      ],
+      "grep_keywords_any": [
+        "samplerate",
+        "sample rate",
+        "tidb_analyze_version",
+        "analyze table ... all columns",
+        "predicate column",
+        "DumpColStatsUsageToKV",
+        "stats_ver",
+        "analyze version",
+        "insert into ... select"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "samplerate",
+          "sample rate",
+          "tidb_analyze_version",
+          "all columns",
+          "predicate column",
+          "DumpColStatsUsageToKV",
+          "stats_ver",
+          "analyze version"
+        ],
+        [
+          "analyze table",
+          "show stats_buckets",
+          "show stats_topn",
+          "HasPlan(",
+          "MustHavePlan(",
+          "testkit.Rows(",
+          "GetRowCount",
+          "correlation",
+          "histogram"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "LoadNeededHistograms",
+        "StatsHandle().Update",
+        "HandleDDLEvent",
+        "InDelta",
+        "LessEqual",
+        "GreaterEqual",
+        "last_plan_from_cache",
+        "SetSkipPlanCache"
+      ],
+      "first_pass_query_hint": "第一跳抓 analyze-input 漂移：samplerate、analyze version、all-columns scope、predicate-column collection，以及 threshold-side 数据规模控制。不要把 stats-ready 或 cache-side case 混进这条。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳按 analyze inputs / scope / version / threshold-side 数据规模的 patch-backed broad anchor 粗召回；这里允许 false positive，因为目标是先把 sibling 真实形态看见。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' -g '**/*.go' '(?is)(samplerate|sample\\s*rate|tidb_analyze_version|analyze\\s+table.{0,80}all\\s+columns|predicate\\s*column|DumpColStatsUsageToKV|stats_ver|analyze\\s+version|for\\s+i\\s*:=\\s*0;\\s*i\\s*<\\s*\\d+\\s*;\\s*i\\+\\+.{0,200}insert\\s+into\\s+\\w+\\s*\\([^\\)]*\\)\\s*select)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或 analyze-input 锚点落在 helper / non-test file 时，去掉路径限制做全仓兜底；仍然只保留 analyze-input anchor。",
+          "command": "rg -n -U -P '(?is)(samplerate|sample\\s*rate|tidb_analyze_version|analyze\\s+table.{0,80}all\\s+columns|predicate\\s*column|DumpColStatsUsageToKV|stats_ver|analyze\\s+version|for\\s+i\\s*:=\\s*0;\\s*i\\s*<\\s*\\d+\\s*;\\s*i\\+\\+.{0,200}insert\\s+into\\s+\\w+\\s*\\([^\\)]*\\)\\s*select)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳把 analyze-input anchor 与依赖 stats 输出/plan 的断言锚点做文件级交集，帮助把一般 analyze 语义改动与真正的 test-stability case 收束开；它只是 shrinker，不是 absence proof。",
+          "command": "rg -l -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' -g '**/*.go' '(?is)(samplerate|sample\\s*rate|tidb_analyze_version|analyze\\s+table.{0,80}all\\s+columns|predicate\\s*column|DumpColStatsUsageToKV|stats_ver|analyze\\s+version|for\\s+i\\s*:=\\s*0;\\s*i\\s*<\\s*\\d+\\s*;\\s*i\\+\\+.{0,200}insert\\s+into\\s+\\w+\\s*\\([^\\)]*\\)\\s*select)' <repo_root> | xargs rg -n -U -P '(?is)(analyze\\s+table|show\\s+stats_(buckets|topn)|HasPlan\\(|MustHavePlan\\(|testkit\\.Rows\\(|Get(?:RowCount|ColumnRowCount|RowCountByIndexRanges)|histogram|correlation)'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "cache-hit / read-from-cache 不应写成逐次硬断言；必须先等 cache ready，再断稳定性质",
+      "pattern_file": "cache_hit_read_from_cache_不应写成逐次硬断言_必须先等_cache_ready.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/*.test",
+        "**/*.result",
+        "**/*.go"
+      ],
+      "grep_keywords_any": [
+        "last_plan_from_cache",
+        "ReadFromTableCache",
+        "HasPlan(",
+        "UnionScan",
+        "cache ready",
+        "helperCheckPlanCache",
+        "missedPlanCache",
+        "cache table",
+        "alter table ... cache"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "last_plan_from_cache",
+          "ReadFromTableCache",
+          "HasPlan(",
+          "UnionScan",
+          "cache table",
+          "alter table",
+          "helperCheckPlanCache"
+        ],
+        [
+          "cache ready",
+          "missedPlanCache",
+          "StmtCtx",
+          "ReadFromTableCache",
+          "analyze table",
+          "UnionScan",
+          "warmup"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "SetSkipPlanCache",
+        "tidb_enable_non_prepared_plan_cache",
+        "as of timestamp",
+        "stale read",
+        "binding",
+        "constant fold",
+        "checkPrivileges",
+        "samplerate",
+        "LoadNeededHistograms"
+      ],
+      "first_pass_query_hint": "第一跳先抓 cache hit/read-from-cache 与 cache ready/warmup 观测，不要把 execution-time context cache reuse 或 stats/analyze case 混进这条。这里关心的是“每轮都必须 hit cache”这种硬约束太脆。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳按 cache hit/read-from-cache/warmup anchor 粗召回。这里故意允许 false positive，因为目标是先把 cache-ready/readiness 相关 sibling 找出来。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' -g '**/*.go' '(?is)(last_plan_from_cache|ReadFromTableCache|HasPlan\\(|UnionScan|cache\\s+ready|helperCheckPlanCache|missedPlanCache|cache\\s+table|alter\\s+table.{0,40}cache)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或 cache-ready 锚点落在 helper / non-test file 时，去掉路径限制做全仓兜底；仍然只保留 cache-ready anchor。",
+          "command": "rg -n -U -P '(?is)(last_plan_from_cache|ReadFromTableCache|HasPlan\\(|UnionScan|cache\\s+ready|helperCheckPlanCache|missedPlanCache|cache\\s+table|alter\\s+table.{0,40}cache)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳把 cache hit/readiness anchor 与 runtime observation/warmup anchor 做文件级交集，帮助把一般 cache table 改动与真正的 per-run cache-hit hard-assertion case 区分开；它只是 shrinker，不是 absence proof。",
+          "command": "rg -l -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' -g '**/*.go' '(?is)(last_plan_from_cache|ReadFromTableCache|HasPlan\\(|UnionScan|cache\\s+ready|helperCheckPlanCache|missedPlanCache|cache\\s+table|alter\\s+table.{0,40}cache)' <repo_root> | xargs rg -n -U -P '(?is)(helperCheckPlanCache|ReadFromTableCache|StmtCtx|cache\\s+ready|missedPlanCache|analyze\\s+table|UnionScan|last_plan_from_cache|warmup)'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "cache reuse 不应遮蔽 execution-time context",
+      "pattern_file": "cache_reuse_不应遮蔽_execution_time_context.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/*.test",
+        "**/*.result",
+        "**/*.go"
+      ],
+      "grep_keywords_any": [
+        "as of timestamp",
+        "stale read",
+        "SetSkipPlanCache",
+        "tidb_enable_non_prepared_plan_cache",
+        "extension function",
+        "constant fold",
+        "ConstNone",
+        "checkPrivileges",
+        "prepare stmt",
+        "ExecutePreparedStmt",
+        "binding",
+        "CachedPrepareStmt",
+        "PreparedStmts["
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "as of timestamp",
+          "stale read",
+          "prepare stmt",
+          "binding",
+          "extension function",
+          "checkPrivileges",
+          "constant fold",
+          "ConstNone"
+        ],
+        [
+          "SetSkipPlanCache",
+          "tidb_enable_non_prepared_plan_cache",
+          "UseCache = false",
+          "ExecutePreparedStmt",
+          "CachedPrepareStmt",
+          "PreparedStmts[",
+          "binding"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "last_plan_from_cache",
+        "ReadFromTableCache",
+        "cache table",
+        "helperCheckPlanCache",
+        "LoadNeededHistograms",
+        "samplerate",
+        "tidb_analyze_version"
+      ],
+      "first_pass_query_hint": "第一跳先抓 execution-time context 会被 cache/fold 藏掉的场景：stale read、prepared/non-prepared cache、binding、extension function、privilege 或 constant fold。不要把 cache-ready/read-from-cache 观测混进这条。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳按 execution-time context + cache reuse / fold anchor 粗召回。它只服务 candidate retrieval，不把 verdict 提前下放到检索层。",
+          "command": "rg -n -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' -g '**/*.go' '(?is)(as\\s+of\\s+timestamp|stale\\s*read|SetSkipPlanCache|tidb_enable_non_prepared_plan_cache|extension\\s+function|constant[_ ]fold|ConstNone|checkPrivileges|prepare\\s+stmt|ExecutePreparedStmt|binding|CachedPrepareStmt|PreparedStmts\\[)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或 execution-time-context 锚点落在 helper / non-test file 时，去掉路径限制做全仓兜底；仍然只保留 execution-time-context anchor。",
+          "command": "rg -n -U -P '(?is)(as\\s+of\\s+timestamp|stale\\s*read|SetSkipPlanCache|tidb_enable_non_prepared_plan_cache|extension\\s+function|constant[_ ]fold|ConstNone|checkPrivileges|prepare\\s+stmt|ExecutePreparedStmt|binding|CachedPrepareStmt|PreparedStmts\\[)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳把 runtime-context anchor 与 cache-disable / fold-disable / prepared-exec anchor 做文件级交集，帮助把一般 stale-read/binding 功能改动和真正的 execution-time-context cache sibling 区分开；它只是 shrinker，不是 absence proof。",
+          "command": "rg -l -U -P -g '**/*_test.go' -g '**/*.test' -g '**/*.result' -g '**/*.go' '(?is)(as\\s+of\\s+timestamp|stale\\s*read|prepare\\s+stmt|binding|extension\\s+function|checkPrivileges|constant[_ ]fold|ConstNone)' <repo_root> | xargs rg -n -U -P '(?is)(SetSkipPlanCache|tidb_enable_non_prepared_plan_cache|UseCache\\s*=\\s*false|ExecutePreparedStmt|PrepareStmt|checkPrivileges|ConstNone|constant[_ ]fold|CachedPrepareStmt|PreparedStmts\\[)'"
+        }
+      ]
+    }
+  ]
+}

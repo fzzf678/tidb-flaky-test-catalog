@@ -141,15 +141,16 @@
 3. 边界复核已经完成，stats 侧三条、cache 侧两条 generalized sibling 已经落盘
 4. 下一步继续 formalize：
    - 当前没有比 `h6` 更强的新候选；先继续观察 singleton 是否成簇
-5. 在这个判断完成之前，不创建 umbrella 级 `retrieval_signals.json`
-   - 因为当前还没有足够稳定的 umbrella-level family boundary
+5. 先把当前 `5` 条已 formalize sibling 的 retrieval layer 补齐
+   - 已新增 [retrieval_signals.json](./retrieval_signals.json)
+   - 这层仍然只服务 coarse retrieval，不代表 umbrella boundary 已经彻底封板
 
 ## retrieval 当前状态
 
-- 当前**仍没有** umbrella 级 `retrieval_signals.json`
-- 但已经起了一版 broad `rg_template` 草案：
-  - [给agent的仓库扫描检索信号.md](./%E7%BB%99agent%E7%9A%84%E4%BB%93%E5%BA%93%E6%89%AB%E6%8F%8F%E6%A3%80%E7%B4%A2%E4%BF%A1%E5%8F%B7.md)
-- 这版 broad `rg_template` 只做 **coarse retrieval**
+- 当前已新增 family-level [retrieval_signals.json](./retrieval_signals.json)
+  - 覆盖当前 `5` 条已 formalize sibling
+  - broad `rg_template` 直接从 [给agent的仓库扫描检索信号.md](./%E7%BB%99agent%E7%9A%84%E4%BB%93%E5%BA%93%E6%89%AB%E6%8F%8F%E6%A3%80%E7%B4%A2%E4%BF%A1%E5%8F%B7.md) 里的 patch-backed draft 提升而来
+- 这版 retrieval 仍然只做 **coarse retrieval**
 - 用当前 `26` 条 full positive patch 文本回放，patch-proxy hit rate 是：
   - `26 / 26 = 100%`
 
@@ -239,11 +240,13 @@
 - [../assert_exact_plan_or_cost_94_case_人工review工作板.md](../assert_exact_plan_or_cost_94_case_%E4%BA%BA%E5%B7%A5review%E5%B7%A5%E4%BD%9C%E6%9D%BF.md)
   - 已经完成的 `94` case patch-first 复读记录
 - [给agent的仓库扫描检索信号.md](./%E7%BB%99agent%E7%9A%84%E4%BB%93%E5%BA%93%E6%89%AB%E6%8F%8F%E6%A3%80%E7%B4%A2%E4%BF%A1%E5%8F%B7.md)
-  - 当前这条 umbrella 的 draft broad `rg_template` 与正例回放结果
+  - 当前这条 umbrella 的 broad `rg_template` 校准说明与正例回放结果
+- [retrieval_signals.json](./retrieval_signals.json)
+  - 当前 `5` 条已 formalize sibling 的正式 retrieval layer
 - `subpatterns/`
   - 当前已 formalize 的 umbrella sibling JSON
 
 ## 下一步优先级
 
 1. 继续观察 `h6` 是否能成簇
-2. 在此之前仍不创建 umbrella 级 `retrieval_signals.json`
+2. 先在真实 TiDB 仓库上校准当前 `retrieval_signals.json` 的 candidate 量级、precision 和炸量

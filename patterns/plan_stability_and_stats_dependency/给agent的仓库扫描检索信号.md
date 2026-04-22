@@ -2,13 +2,16 @@
 
 这份文档记录的是：
 
-- 当前这条 umbrella family 的 **draft broad `rg_template`**
+- 当前这条 umbrella family 的 **broad `rg_template` 校准笔记**
 - 以及它们在 **历史正例 patch 文本** 上的回放结果
 
 它不是：
 
-- 正式的 `retrieval_signals.json`
 - verdict / classification 规则
+
+当前正式可执行入口已经是：
+
+- [retrieval_signals.json](./retrieval_signals.json)
 
 这一步仍然只服务：
 
@@ -23,7 +26,7 @@
 
 1. 这些 `rg_templates` 只能做粗筛，允许 false positive。
 2. 不能因为某条 regex 能 hit 到某个 patch，就反过来把它当成 sibling 定义。
-3. 当前仍然**不创建** umbrella 级 `retrieval_signals.json`。
+3. `retrieval_signals.json` 也只服务 coarse retrieval，不能当 verdict 层分类器。
 4. 这轮验证的是：
    - **patch-text proxy hit rate**
    - 不是实际仓库 precision
@@ -176,4 +179,4 @@ miss 原因：
    - 优先补 path hint / group narrowing
    - 不要回头缩 sibling 定义
 3. 在真实 repo-scan precision 没过一轮之前：
-   - 仍然不要把这条 umbrella 直接升成正式 `retrieval_signals.json`
+   - 不要把 `retrieval_signals.json` 当成 verdict 层，也不要把 broad hit 直接等价成 family 命中
