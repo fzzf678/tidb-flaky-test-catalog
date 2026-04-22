@@ -237,7 +237,7 @@
   - 当前这轮扩展的人工作业入口
 - [../assert_exact_plan_or_cost/README.md](../assert_exact_plan_or_cost/README.md)
   - 当前已 formalize 的窄子 family
-- [../assert_exact_plan_or_cost_94_case_人工review工作板.md](../assert_exact_plan_or_cost_94_case_%E4%BA%BA%E5%B7%A5review%E5%B7%A5%E4%BD%9C%E6%9D%BF.md)
+- [../assert_exact_plan_or_cost/assert_exact_plan_or_cost_94_case_人工review工作板.md](../assert_exact_plan_or_cost/assert_exact_plan_or_cost_94_case_%E4%BA%BA%E5%B7%A5review%E5%B7%A5%E4%BD%9C%E6%9D%BF.md)
   - 已经完成的 `94` case patch-first 复读记录
 - [给agent的仓库扫描检索信号.md](./%E7%BB%99agent%E7%9A%84%E4%BB%93%E5%BA%93%E6%89%AB%E6%8F%8F%E6%A3%80%E7%B4%A2%E4%BF%A1%E5%8F%B7.md)
   - 当前这条 umbrella 的 broad `rg_template` 校准说明与正例回放结果
