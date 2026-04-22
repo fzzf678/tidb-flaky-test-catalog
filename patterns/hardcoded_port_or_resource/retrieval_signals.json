@@ -1,0 +1,223 @@
+{
+  "family": "hardcoded_port_or_resource",
+  "kind": "retrieval_signals",
+  "version": "v1",
+  "description": "Repository-scan retrieval hints for the currently formalized hardcoded_port_or_resource subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "defaults": {
+    "purpose": "candidate_retrieval_only",
+    "verdict_requires_subpattern_json": true,
+    "group_match_semantics": "For grep_keywords_all_groups, every group should match at least one keyword before the candidate is treated as high-priority.",
+    "any_match_semantics": "grep_keywords_any is only for weak recall; false positives are acceptable at this layer and should be filtered later by manual review plus the verdict-layer subpattern JSON.",
+    "exclude_semantics": "grep_keywords_exclude are soft down-rank hints by default unless the caller explicitly chooses hard exclusions. Prefer recall over precision unless a known noise class causes sibling confusion or unreviewable candidate explosion.",
+    "rg_template_semantics": "Treat broad_recall as the default first hop for coarse repository scanning. Use fallback_no_path only when broad_recall is empty, implausibly sparse, or likely to miss due to path/layout drift. Use group_intersection only as an optional lightweight shrinker after recall; it must never be treated as an absence proof or hard gate.",
+    "path_globs_semantics": "path_globs are soft search-priority hints, not hard absence proofs. If broad_recall is empty or implausibly sparse, rerun fallback_no_path before concluding the pattern is absent. A miss in group_intersection should never override a hit from broad_recall/fallback_no_path."
+  },
+  "entries": [
+    {
+      "subpattern_key": "本地服务端口必须由 listener/httptest 分配（:0），避免硬编码/伪随机/扫描端口",
+      "pattern_file": "本地服务端口必须由_listener_httptest_分配_0_避免硬编码_伪随机_扫描端口.json",
+      "grepability": "high",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "httptest.NewServer",
+        "httptest.NewTLSServer",
+        "net.Listen(\"tcp\", \":0\")",
+        "net.Listen(\"tcp\", \"127.0.0.1:0\")",
+        "net.Listen(\"tcp\", \"localhost:0\")",
+        "tls.Listen(\"tcp\", \":0\")",
+        "tls.Listen(\"tcp\", \"localhost:0\")",
+        "127.0.0.1:0",
+        "localhost:0"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "httptest.NewServer",
+          "httptest.NewTLSServer",
+          "net.Listen(\"tcp\"",
+          "tls.Listen(\"tcp\""
+        ],
+        [
+          "127.0.0.1:0",
+          "localhost:0",
+          "\":0\""
+        ],
+        [
+          "server.URL",
+          "Addr().String()",
+          "(*net.TCPAddr).Port",
+          "SplitHostPort",
+          "TrimPrefix(server.URL"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "net.Listen(\"unix\"",
+        "GenerateExecID(",
+        "new_session:0"
+      ],
+      "first_pass_query_hint": "优先抓 `httptest.NewServer` / `net.Listen(\"tcp\", \"...:0\")` / `tls.Listen(\"tcp\", \"...:0\")` 这类低噪声端口分配锚点。不要用裸 `rand.Intn` 或裸 `:0` 做第一跳召回；需要覆盖 helper 场景时用 `127.0.0.1:0` + 第二跳（端口消费/提取）做收敛。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳：按低噪声端口分配锚点做粗召回（0 端口 / httptest），覆盖 HTTP/gRPC/TLS/etcd/mock server 常见形态。",
+          "command": "rg -n -F -g '**/*_test.go' -e 'httptest.NewServer' -e 'httptest.NewTLSServer' -e 'net.Listen(\"tcp\", \":0\")' -e 'net.Listen(\"tcp\", \"127.0.0.1:0\")' -e 'net.Listen(\"tcp\", \"localhost:0\")' -e 'tls.Listen(\"tcp\", \":0\")' -e 'tls.Listen(\"tcp\", \"localhost:0\")' -e '127.0.0.1:0' -e 'localhost:0' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录结构变化或 broad_recall 过 sparse 时，去掉路径限制做全仓兜底召回，但仍然只看低噪声端口分配锚点。",
+          "command": "rg -n -F -e 'httptest.NewServer' -e 'httptest.NewTLSServer' -e 'net.Listen(\"tcp\", \":0\")' -e 'net.Listen(\"tcp\", \"127.0.0.1:0\")' -e 'net.Listen(\"tcp\", \"localhost:0\")' -e 'tls.Listen(\"tcp\", \":0\")' -e 'tls.Listen(\"tcp\", \"localhost:0\")' -e '127.0.0.1:0' -e 'localhost:0' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳：要求“端口分配锚点出现的文件”里还出现“端口消费/提取锚点”（如 Port/SplitHostPort/server.URL），将候选收敛到更可 review 的集合。",
+          "command": "rg -l -F -g '**/*_test.go' -e 'httptest.NewServer' -e 'httptest.NewTLSServer' -e 'net.Listen(\"tcp\", \":0\")' -e 'net.Listen(\"tcp\", \"127.0.0.1:0\")' -e 'net.Listen(\"tcp\", \"localhost:0\")' -e 'tls.Listen(\"tcp\", \":0\")' -e 'tls.Listen(\"tcp\", \"localhost:0\")' -e '127.0.0.1:0' -e 'localhost:0' <repo_root> | xargs rg -n -F -e 'server.URL' -e 'SplitHostPort' -e '(*net.TCPAddr).Port' -e 'Addr().String()' -e 'TrimPrefix(server.URL'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "临时文件/目录要用 t.TempDir/os.CreateTemp 隔离，避免写死 /tmp 或共享全局 TempDir",
+      "pattern_file": "临时文件目录必须_t_TempDir_os_CreateTemp_隔离_避免写死_tmp_共享_TempDir.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go",
+        "**/main_test.go"
+      ],
+      "grep_keywords_any": [
+        "/tmp/",
+        "file:///tmp/",
+        "os.TempDir()",
+        "filepath.Join(os.TempDir()",
+        "path.Join(os.TempDir()",
+        "t.TempDir(",
+        "os.CreateTemp(",
+        "os.MkdirTemp(",
+        "TempStoragePath",
+        "GetGlobalConfig().TempDir",
+        "GetGlobalConfig().TempStoragePath",
+        "conf.TempDir =",
+        "conf.TempStoragePath ="
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "/tmp/",
+          "file:///tmp/",
+          "os.TempDir()",
+          "t.TempDir(",
+          "os.CreateTemp(",
+          "os.MkdirTemp(",
+          "TempStoragePath",
+          "GetGlobalConfig().TempDir",
+          "GetGlobalConfig().TempStoragePath",
+          "conf.TempDir =",
+          "conf.TempStoragePath ="
+        ],
+        [
+          "t.Cleanup(",
+          "os.RemoveAll(",
+          "os.Remove(",
+          "os.Create(",
+          "os.Open(",
+          "os.WriteFile(",
+          "os.MkdirAll(",
+          "os.Symlink(",
+          "exec.Command("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "load data local infile '/tmp/",
+        "LOAD DATA LOCAL INFILE '/tmp/",
+        "parseFilename(",
+        "sqlCAPath",
+        "sqlClientCertPath",
+        "sqlClientKeyPath"
+      ],
+      "first_pass_query_hint": "第一跳优先抓 `/tmp/`、`os.TempDir()`、`TempStoragePath`、全局 TempDir 读写这些“共享命名空间风险锚点”。`t.TempDir()` 很常见，适合作为“修法锚点”补 recall，但不要单独用它当风险证据。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳：按临时路径/全局 temp 配置锚点做粗召回（既包含风险锚点，也包含常见修法锚点）。",
+          "command": "rg -n -F -g '**/*_test.go' -e '/tmp/' -e 'file:///tmp/' -e 'os.TempDir()' -e 'filepath.Join(os.TempDir()' -e 'path.Join(os.TempDir()' -e 't.TempDir(' -e 'os.CreateTemp(' -e 'os.MkdirTemp(' -e 'TempStoragePath' -e 'GetGlobalConfig().TempDir' -e 'GetGlobalConfig().TempStoragePath' -e 'conf.TempDir =' -e 'conf.TempStoragePath =' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录结构变化或 broad_recall 过 sparse 时，去掉路径限制做全仓兜底召回，但仍然只看临时路径/全局 temp 配置锚点。",
+          "command": "rg -n -F -e '/tmp/' -e 'file:///tmp/' -e 'os.TempDir()' -e 'filepath.Join(os.TempDir()' -e 'path.Join(os.TempDir()' -e 't.TempDir(' -e 'os.CreateTemp(' -e 'os.MkdirTemp(' -e 'TempStoragePath' -e 'GetGlobalConfig().TempDir' -e 'GetGlobalConfig().TempStoragePath' -e 'conf.TempDir =' -e 'conf.TempStoragePath =' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳：从包含 temp 锚点的文件中，再筛出包含“真实落地动作”（create/remove/cleanup/exec）的候选，降低纯字符串/expected 值类噪声。",
+          "command": "rg -l -F -g '**/*_test.go' -e '/tmp/' -e 'os.TempDir()' -e 'TempStoragePath' -e 'GetGlobalConfig().TempDir' -e 'GetGlobalConfig().TempStoragePath' -e 'conf.TempDir =' -e 'conf.TempStoragePath =' <repo_root> | xargs rg -n -F -e 't.Cleanup(' -e 'os.RemoveAll(' -e 'os.Remove(' -e 'os.Create(' -e 'os.Open(' -e 'os.WriteFile(' -e 'os.MkdirAll(' -e 'os.Symlink(' -e 'exec.Command('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "TiDB mock/server 的 unix socket 路径需唯一（或禁用），避免 /tmp 下冲突",
+      "pattern_file": "TiDB_mock_server_unix_socket_路径需唯一或禁用_避免_tmp_冲突.json",
+      "grepability": "high",
+      "path_globs": [
+        "pkg/server/**/*",
+        "pkg/server/tests/**/*",
+        "pkg/server/handler/**/*",
+        "pkg/domain/**/*",
+        "pkg/config/**/*",
+        "br/pkg/mock/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "cfg.Socket =",
+        "conf.Socket =",
+        "cfg.Socket = \"\"",
+        "conf.Socket = \"\"",
+        "{Port}.sock",
+        "tidbtest.sock",
+        "authsock.sock",
+        "tidb-mock-",
+        ".sock\""
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "cfg.Socket =",
+          "conf.Socket ="
+        ],
+        [
+          "{Port}.sock",
+          ".sock\"",
+          "cfg.Socket = \"\"",
+          "conf.Socket = \"\""
+        ],
+        [
+          "NewTestConfig()",
+          "NewServer(",
+          "CreateTidbTestSuite",
+          "cfg.Port = 0",
+          "StatusPort = 0"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "unix:///",
+        ".socket",
+        "socketCred",
+        "AuthSocket"
+      ],
+      "first_pass_query_hint": "第一跳优先抓 `cfg.Socket =` / `conf.Socket =` 及 `.sock\"` 这类更像“socket 文件路径字面量”的锚点；避免用裸 `.sock`（会误命中 `.socketCredUID` 等字段名）。第二跳再用 `NewServer/NewTestConfig/cfg.Port=0` 等锚点确认语境。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳：按 cfg.Socket/conf.Socket 赋值与 `.sock\"` 字面量粗召回，快速聚焦到 TiDB server/mock 的 unix socket 配置相关代码。",
+          "command": "rg -n -F -g '*.go' -e 'cfg.Socket =' -e 'conf.Socket =' -e '.sock\"' -e '{Port}.sock' -e 'tidbtest.sock' -e 'authsock.sock' -e 'tidb-mock-' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录结构变化或 broad_recall 过 sparse 时，去掉路径限制做全仓兜底召回，但仍然只看 socket 配置锚点。",
+          "command": "rg -n -F -e 'cfg.Socket =' -e 'conf.Socket =' -e '.sock\"' -e '{Port}.sock' -e 'tidbtest.sock' -e 'authsock.sock' -e 'tidb-mock-' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳：只保留“socket 配置文件”里同时出现 `.sock\"/{Port}.sock/显式禁用 cfg.Socket=\"\"` 等信号的候选，减少 url/parser/注释噪声。",
+          "command": "rg -l -F -g '*.go' -e 'cfg.Socket =' -e 'conf.Socket =' <repo_root> | xargs rg -n -F -e '.sock\"' -e '{Port}.sock' -e 'cfg.Socket = \"\"' -e 'conf.Socket = \"\"' -e 'NewTestConfig()' -e 'NewServer(' -e 'cfg.Port = 0' -e 'StatusPort = 0'"
+        }
+      ]
+    }
+  ]
+}
