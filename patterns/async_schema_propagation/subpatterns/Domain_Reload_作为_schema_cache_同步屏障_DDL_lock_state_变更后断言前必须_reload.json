@@ -1,0 +1,75 @@
+{
+  "key": "Domain.Reload() 作为 schema/cache 同步屏障：DDL/lock 状态变更后断言前必须 reload",
+  "family": "async_schema_propagation",
+  "summary": "在包含 domain 的测试里，DDL/表锁等状态变更对 infoschema 与相关 cache 的可见性存在异步窗口；测试如果把“DDL/lock 已执行”当作同步屏障，可能读到旧 infoschema/旧 cache。patch-backed 的稳定修法是一类很一致的做法：在关键断言/执行前显式调用 `dom.Reload()`，强制 domain 刷新 infoschema（并释放相关 cache），把可见性屏障显式化。",
+  "mechanism": "许多 DDL / lock-unlock 相关测试会在状态切换后立刻执行下一条 SQL 并断言行为（例如：schema state change 下应返回某类错误；或 unlock 后 point-get/explain 的缓存行为应变化）。但 domain 的 infoschema/caches 刷新并不总是与“SQL 返回/观察到 job state”处在同一同步点：存在一个窗口使得后续语句仍使用旧 infoschema、或依赖的 cache/lock 视图尚未释放/刷新，从而导致偶发失败。patch-backed 的共同修法是把 `dom.Reload()` 当作硬同步屏障：要么在执行断言 SQL 前先 reload（确保 schema/caches 已刷新），要么把 DDL/lock/unlock 封装成 `MustExec` + `Reload` 的组合，保证每次状态切换后的可见性都被显式推进。",
+  "signals_required": [
+    "patch 在测试代码中新增/上移了 `dom.Reload()`（或 `domain.GetDomain(sess).Reload()`）调用，作为 DDL/lock/unlock 状态切换后的同步屏障。",
+    "`Reload()` 的调用与后续断言/SQL 执行存在明确的因果关系：目的是“确保 schema/caches 已刷新/释放”，而不是为了测试 Reload 本身。",
+    "该修法主要发生在测试侧（`*_test.go`）或测试辅助函数中，而不是生产默认行为的改动。"
+  ],
+  "signals_optional": [
+    "出现注释类似：`Force reload schema to ensure the cache is released.`",
+    "出现封装函数/助手：如 `forceReloadDomain(sess)` 或 `mustExecDDL(...){ MustExec; Reload }`。",
+    "发生在表锁（`lock tables`/`unlock tables`）、schema state change、或其它依赖 infoschema 可见性的 DDL 测试中。"
+  ],
+  "negative_guards": [
+    "如果修法是显式等待 `dom.InfoSchema().SchemaMetaVersion()` 推进（`> v1`），应归到 `s1`（该子模式更偏“readiness 等待”而非“强制推进”）。",
+    "如果 patch 的核心是“不要对 infoschema internal cache/TS 做 sentinel 硬断言”，且 `Reload()` 只是噪音来源之一，应归到 `s2`。",
+    "如果 `Reload()` 出现在生产代码路径、且目标是修复产品语义而非测试同步/稳定化，不应并入该子模式。",
+    "如果修法只是插入固定 `time.Sleep(...)`，应迁移到 `time_sleep_for_sync` / `async_wait_without_backoff` 方向。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中 required signals 时可判为 flaky risk：测试把“DDL/lock 已执行”当作可见性屏障是稳定的失稳机制；`dom.Reload()` 是对应的稳定化修法簇。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "`Reload()` 只是偶然出现在 patch 中（例如仅用于日志或 unrelated setup），无法证明其作为同步屏障。",
+      "patch 同时包含多条机制且 `Reload()` 不是稳定化主线（例如大型 feature patch 混杂）。"
+    ]
+  },
+  "scope": [
+    "DDL / lock-unlock / schema state change 等测试里，后续断言依赖 infoschema/caches 及时可见的路径。",
+    "尤其容易出现在：表锁状态影响执行路径/缓存行为、或 schema state change 影响 error/plan 断言的场景。"
+  ],
+  "fix_hints": [
+    "在状态切换（DDL/lock/unlock）后、关键断言/SQL 执行前显式 `dom.Reload()`，把可见性屏障显式化。",
+    "如果只需要“确保 infoschema 已加载”，优先考虑更轻的 readiness 信号（例如 `SchemaMetaVersion` 等待，见 `s1`），避免在 tight loop 中频繁 reload。",
+    "多 domain / 多 server 场景下，必要时对相关 domain 都做 reload（或用版本推进等待）避免只同步单点。"
+  ],
+  "related_subpatterns": [
+    "DDL 完成不等于 domain infoschema 已加载；断言前必须等 SchemaMetaVersion 推进",
+    "InfoSchema internal cache/TS 不能断言 sentinel；断言应基于 snapshot 或只校验不变量"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-19580",
+        "note": "在 schema state change / lock 相关测试里，执行断言 SQL 前显式 `domain.GetDomain(sess).Reload()`。"
+      },
+      {
+        "case_id": "pr-21491",
+        "note": "`unlock tables` 后追加 `dom.Reload()`，注释强调释放 cache 后再断言 explain/point-get 行为。"
+      },
+      {
+        "case_id": "pr-21624",
+        "note": "同类表锁测试中把 `dom.Reload()` 作为 unlock 后的同步屏障。"
+      },
+      {
+        "case_id": "pr-21664",
+        "note": "把 DDL/lock/unlock 封装为 `MustExec` + `Reload`，保证每次状态切换后 domain 已刷新。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-54447",
+        "note": "同样目标是“别把 job state 当 infoschema readiness”，但修法是等待 `SchemaMetaVersion` 推进（`s1`）。"
+      },
+      {
+        "case_id": "pr-66732",
+        "note": "`Reload()` 会触发内部 infoschema 访问导致 TS/MinTS 观测不稳定；该类修法应归到 `s2`。"
+      }
+    ]
+  }
+}
+

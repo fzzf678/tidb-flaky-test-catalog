@@ -1,0 +1,215 @@
+{
+  "family": "async_schema_propagation",
+  "kind": "retrieval_signals",
+  "version": "v1",
+  "description": "Repository-scan retrieval hints for the currently formalized async_schema_propagation subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "defaults": {
+    "purpose": "candidate_retrieval_only",
+    "verdict_requires_subpattern_json": true,
+    "group_match_semantics": "For grep_keywords_all_groups, every group should match at least one keyword before the candidate is treated as high-priority.",
+    "any_match_semantics": "grep_keywords_any is only for weak recall; false positives are acceptable at this layer and should be filtered later by manual review plus the verdict-layer subpattern JSON.",
+    "exclude_semantics": "grep_keywords_exclude are soft down-rank hints by default unless the caller explicitly chooses hard exclusions. Prefer recall over precision unless a known noise class causes sibling confusion or unreviewable candidate explosion.",
+    "rg_template_semantics": "Treat broad_recall as the default first hop for coarse repository scanning. Use fallback_no_path only when broad_recall is empty, implausibly sparse, or likely to miss due to helper/layout drift. Use group_intersection only as an optional lightweight shrinker after recall; it must never be treated as an absence proof or hard gate.",
+    "path_globs_semantics": "path_globs are soft search-priority hints, not hard absence proofs. Because some anchors may live in helper .go files or non-test code, rerun fallback_no_path before concluding a subpattern is absent."
+  },
+  "entries": [
+    {
+      "subpattern_key": "DDL 完成不等于 domain infoschema 已加载；断言前必须等 SchemaMetaVersion 推进",
+      "pattern_file": "DDL_完成不等于_domain_infoschema_已加载_断言前必须等_SchemaMetaVersion_推进.json",
+      "grepability": "high",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "SchemaMetaVersion(",
+        "InfoSchema().SchemaMetaVersion(",
+        "admin show ddl jobs",
+        "infoschema loaded",
+        "ddl finish does not mean",
+        "require.Eventually",
+        "Eventually("
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "SchemaMetaVersion(",
+          "InfoSchema().SchemaMetaVersion("
+        ],
+        [
+          "admin show ddl jobs",
+          "ddl jobs",
+          "SchemaState",
+          "delete only",
+          "public",
+          "infoschema loaded",
+          "ddl finish"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "SchemaMetaVersion() in production",
+        "BgLogger",
+        "zap."
+      ],
+      "first_pass_query_hint": "优先召回“把 DDL job state 当作 infoschema readiness 屏障”这类 patch：特征是测试在关键断言前显式等待 `dom.InfoSchema().SchemaMetaVersion()` 推进（> baseline），而不是只 sleep 或只看 job state。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳用 SchemaMetaVersion 锚点粗召回（默认只扫 *_test.go）。",
+          "command": "rg -n -S -g '**/*_test.go' 'SchemaMetaVersion\\(' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当锚点落在 helper/non-test file 或 broad_recall 过 sparse 时，去掉路径限制兜底。",
+          "command": "rg -n -S 'SchemaMetaVersion\\(' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳把 SchemaMetaVersion 命中文件与 DDL/job/state 上下文做交集，帮助从通用版本读写里收束出更像测试稳定化的候选；它只是 shrinker，不是 absence proof。",
+          "command": "rg -l -S -g '**/*_test.go' 'SchemaMetaVersion\\(' <repo_root> | xargs rg -n -S -g '**/*_test.go' 'admin show ddl jobs|ddl jobs|SchemaState|waitFor\\(|delete only|delete reorganization|public|infoschema loaded|ddl finish'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "InfoSchema internal cache/TS 不能断言 sentinel；断言应基于 snapshot 或只校验不变量",
+      "pattern_file": "InfoSchema_internal_cache_TS_不能断言_sentinel_应基于_snapshot_或只校验不变量.json",
+      "grepability": "high",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "GetSnapshotInfoSchema(",
+        "GetAndResetRecentInfoSchemaTS(",
+        "tidb_snapshot",
+        "tidb_read_staleness",
+        "MaxUint64"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "GetSnapshotInfoSchema(",
+          "GetAndResetRecentInfoSchemaTS("
+        ],
+        [
+          "snapshot",
+          "staleness",
+          "MaxUint64",
+          "recent"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "ORDER BY",
+        "nondeterministic"
+      ],
+      "first_pass_query_hint": "优先召回“把 infoschema internal cache/TS 当成固定 sentinel”导致不稳的 patch：核心锚点是 `GetSnapshotInfoSchema(ts)` 或 `GetAndResetRecentInfoSchemaTS(...)`，修法往往是基于 snapshot 推导期望或只断言不变量。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳按 snapshot infoschema / recent-ts reset 锚点粗召回。",
+          "command": "rg -n -S -g '**/*_test.go' 'GetSnapshotInfoSchema\\(|GetAndResetRecentInfoSchemaTS\\(' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "去掉路径限制兜底（避免 helper/layout 漂移漏召回）。",
+          "command": "rg -n -S 'GetSnapshotInfoSchema\\(|GetAndResetRecentInfoSchemaTS\\(' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "SchemaOutOfDate/InfoSchemaChanged 的容错旋钮被测试调大（RetryTimes / max_delta_schema_count）",
+      "pattern_file": "SchemaOutOfDate_InfoSchemaChanged_容错旋钮_被测试调大_RetryTimes_max_delta_schema_count.json",
+      "grepability": "high",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "SchemaOutOfDateRetryTimes",
+        "SchemaOutOfDateRetryInterval",
+        "tidb_max_delta_schema_count",
+        "InfoSchemaChanged",
+        "schema out of date"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "SchemaOutOfDateRetryTimes",
+          "SchemaOutOfDateRetryInterval",
+          "tidb_max_delta_schema_count"
+        ],
+        [
+          "set @@global.tidb_max_delta_schema_count",
+          "domain.SchemaOutOfDateRetryTimes",
+          "InfoSchemaChanged",
+          "try again later"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "docs",
+        "comment"
+      ],
+      "first_pass_query_hint": "优先召回“通过扩大 out-of-date 重试窗口或 delta schema diff 容量来稳定测试”的 patch。注意：这是稳定但偏 workaround 的修法簇，候选命中后仍需人工确认其发生在测试 setup 而非生产默认值改动。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳按 RetryTimes / max_delta_schema_count 锚点粗召回。",
+          "command": "rg -n -S -g '**/*_test.go' 'SchemaOutOfDateRetryTimes|SchemaOutOfDateRetryInterval|tidb_max_delta_schema_count' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "去掉路径限制兜底（避免 knob 设置落在 helper/non-test file）。",
+          "command": "rg -n -S 'SchemaOutOfDateRetryTimes|SchemaOutOfDateRetryInterval|tidb_max_delta_schema_count' <repo_root>"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "Domain.Reload() 作为 schema/cache 同步屏障：DDL/lock 状态变更后断言前必须 reload",
+      "pattern_file": "Domain_Reload_作为_schema_cache_同步屏障_DDL_lock_state_变更后断言前必须_reload.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        ".Reload()",
+        "GetDomain(",
+        "Force reload schema",
+        "cache is released",
+        "lock tables",
+        "unlock tables"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "GetDomain(",
+          ".Reload()",
+          "Reload()"
+        ],
+        [
+          "lock tables",
+          "unlock tables",
+          "admin show ddl jobs",
+          "SchemaState",
+          "OnJob",
+          "TestDDLCallback"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "bootstrap",
+        "RestoreFunc",
+        "testkit.CreateMockStoreAndDomain"
+      ],
+      "first_pass_query_hint": "优先召回“测试侧把 dom.Reload 当作可见性/缓存释放同步屏障”的 patch。仅命中 Reload 不足以下结论；需要回到 patch-first 复核其是否作为 DDL/lock 状态切换后的因果屏障。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳用 Reload 锚点粗召回（限制 *_test.go，避免生产代码噪音）。",
+          "command": "rg -n -S -g '**/*_test.go' 'GetDomain\\(.*\\)\\.Reload\\(|\\.Reload\\(\\)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "去掉路径限制兜底（如果 helper/layout 漂移导致 broad_recall 漏召回）。",
+          "command": "rg -n -S 'GetDomain\\(.*\\)\\.Reload\\(|\\.Reload\\(\\)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳把 Reload 命中文件与 DDL/lock/state 上下文做交集以收束候选；它只是 shrinker，不是 absence proof。",
+          "command": "rg -l -S -g '**/*_test.go' 'GetDomain\\(.*\\)\\.Reload\\(|\\.Reload\\(\\)' <repo_root> | xargs rg -n -S -g '**/*_test.go' 'lock tables|unlock tables|admin show ddl jobs|SchemaState|OnJob|TestDDLCallback'"
+        }
+      ]
+    }
+  ]
+}

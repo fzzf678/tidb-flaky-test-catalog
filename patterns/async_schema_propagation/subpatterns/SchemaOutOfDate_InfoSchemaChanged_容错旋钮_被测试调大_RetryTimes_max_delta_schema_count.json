@@ -1,0 +1,65 @@
+{
+  "key": "SchemaOutOfDate/InfoSchemaChanged 的容错旋钮被测试调大（RetryTimes / max_delta_schema_count）",
+  "family": "async_schema_propagation",
+  "summary": "测试在遭遇 schema out-of-date / infoschema changed 类 transient 失败时，不是引入显式同步信号，而是直接调大容错旋钮（`SchemaOutOfDateRetryTimes`、`tidb_max_delta_schema_count` 等）来“消化”异步 schema 传播抖动。",
+  "mechanism": "在 DDL/schema churn 较高的测试里，session 可能走到 schema validator/out-of-date 路径并报错（例如 `Information schema is changed... try again later` 或等价的 out-of-date 错误）。一类稳定但偏 workaround 的修法是：在测试 init/setup 阶段把相关的 **容错容量/重试** 旋钮调大，例如：\n\n- `domain.SchemaOutOfDateRetryTimes = ...`\n- `set @@global.tidb_max_delta_schema_count = ...`\n\n这些旋钮本质上是让“schema diff 链路可恢复/可重试”的窗口更大，从而降低 transient 失败的概率。它能稳定测试，但也可能掩盖了更本质的同步缺口（例如没有明确等待 infoschema ready）。因此它既是一个可复用的 fix 机制簇，也是一种 flaky risk 信号：一旦看到测试需要调这些旋钮，通常意味着该测试正在依赖异步 schema 传播的实现细节。",
+  "signals_required": [
+    "patch 在测试代码（或测试 suite setup）里修改了与 schema out-of-date/infoschema changed 相关的容错旋钮（例如 `SchemaOutOfDateRetryTimes` 或 `tidb_max_delta_schema_count`）。",
+    "旋钮的修改是为了测试稳定性（通常在 `init()`/`setUpSuite()`/测试入口处设置），而不是产品默认行为变更。",
+    "该修改不依赖具体模块名/测试名；核心是“通过扩大容错窗口稳定异步传播”。"
+  ],
+  "signals_optional": [
+    "同时设置了 `SchemaOutOfDateRetryInterval` 或类似 retry interval。",
+    "PR body / commit message / 代码注释提到 `InfoSchemaChanged`、`schema out of date`、`try again later`。",
+    "修改发生在 `ddl/*_test.go` 或 DDL 相关测试目录中。"
+  ],
+  "negative_guards": [
+    "如果修法是增加 `SchemaMetaVersion` readiness 等待（显式确保 infoschema loaded），应归到本 family 的 `s1`。",
+    "如果修法是基于 snapshot 推导期望、或移除 sentinel 断言以适配 internal cache/TS 行为，应归到 `s2`。",
+    "如果修法主要是调 `schema lease`（例如 `SetSchemaLease(10s)`），先放入 watchlist：该旋钮更像控制 background loop 周期，和 out-of-date/delta schema 容量机制不同。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中 required signals 时可判为 flaky risk：这是一个高一致性的“异步 schema 传播抖动 → 扩大容错窗口”的修法簇。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "旋钮修改发生在生产代码默认值或全局配置加载路径中，无法确认是测试稳定化。",
+      "旋钮修改是为了性能/压力测试等非 flaky 稳定性目的。"
+    ]
+  },
+  "scope": [
+    "DDL / schema validator 相关测试中，通过扩大 out-of-date retry 或 delta schema diff capacity 来稳定测试的修法。",
+    "常见于大量 DDL 或 schema diff churn 的 suite。"
+  ],
+  "fix_hints": [
+    "如果测试真正需要验证传播/可见性，应优先引入更硬的同步信号（例如 `SchemaMetaVersion` readiness）而非纯旋钮 workaround。",
+    "若必须使用旋钮：尽量在测试内局部设置并确保可回滚，避免污染其他测试。",
+    "对 `InfoSchemaChanged` 类错误，优先确认是否缺少显式等待 infoschema ready（可与 `s1` 组合）。"
+  ],
+  "related_subpatterns": [
+    "DDL 完成不等于 domain infoschema 已加载；断言前必须等 SchemaMetaVersion 推进"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-14305",
+        "note": "在 DDL suite setup 中把 `@@global.tidb_max_delta_schema_count` 调大，降低 `InfoSchemaChanged` 类 transient 失败。"
+      },
+      {
+        "case_id": "pr-14976",
+        "note": "在测试 init 中把 `domain.SchemaOutOfDateRetryTimes` 调大，让 out-of-date 重试窗口更大。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-16511",
+        "note": "同样是“调旋钮”，但调整的是 schema lease，机制更偏 background loop 周期控制，当前未纳入本子模式。"
+      },
+      {
+        "case_id": "pr-54367",
+        "note": "修法是接受 `ErrInfoSchemaChanged`（而非扩大 retry/capacity 旋钮），更像另一个候选 sibling。"
+      }
+    ]
+  }
+}
+
