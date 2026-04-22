@@ -1,0 +1,323 @@
+{
+  "family": "async_wait_without_backoff",
+  "kind": "retrieval_signals",
+  "version": "v1",
+  "description": "Repository-scan retrieval hints for the currently formalized async_wait_without_backoff subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "defaults": {
+    "purpose": "candidate_retrieval_only",
+    "verdict_requires_subpattern_json": true,
+    "group_match_semantics": "For grep_keywords_all_groups, every group should match at least one keyword before the candidate is treated as high-priority.",
+    "any_match_semantics": "grep_keywords_any is only for weak recall; false positives are acceptable at this layer and should be filtered later by manual review plus the verdict-layer subpattern JSON.",
+    "exclude_semantics": "grep_keywords_exclude are soft down-rank hints by default unless the caller explicitly chooses hard exclusions. Prefer recall over precision unless a known noise class causes sibling confusion or unreviewable candidate explosion.",
+    "rg_template_semantics": "Treat broad_recall as the default first hop for coarse repository scanning. Use fallback_no_path only when broad_recall is empty, implausibly sparse, or likely to miss due to path/layout drift. Use group_intersection only as an optional lightweight shrinker after recall; it must never be treated as an absence proof or hard gate.",
+    "path_globs_semantics": "path_globs are soft search-priority hints, not hard absence proofs. If broad_recall is empty or implausibly sparse, rerun fallback_no_path before concluding the pattern is absent. A miss in group_intersection should never override a hit from broad_recall/fallback_no_path."
+  },
+  "entries": [
+    {
+      "subpattern_key": "disttask cleanup 完成前不要做清理断言（等 task 消失 / 双 cleanup 信号）",
+      "pattern_file": "disttask_cleanup_完成前不要做清理断言_等_task_消失_or_双_cleanup_信号.json",
+      "grepability": "high",
+      "path_globs": [
+        "pkg/disttask/**/*",
+        "tests/realtikvtest/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "WaitCleanUpFinished",
+        "doCleanupTask",
+        "GetTaskManager(",
+        "GetTaskByID(",
+        "ErrTaskNotFound",
+        "DefaultCleanUpInterval",
+        "ReduceCheckInterval",
+        "TestLastTaskID"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "disttask",
+          "GetTaskManager(",
+          "TaskManager",
+          "GetTaskByID("
+        ],
+        [
+          "WaitCleanUpFinished",
+          "doCleanupTask",
+          "ErrTaskNotFound",
+          "CleanUpInterval"
+        ],
+        [
+          "require.Eventually(",
+          "Eventually(",
+          "time.Sleep("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "gc_delete_range_done",
+        "WaitMemoryLimitTunerExitInTest"
+      ],
+      "first_pass_query_hint": "先锁定 disttask 相关用例，再看断言是否依赖 cleanup 完成；高优先检查 `GetTaskByID` + `ErrTaskNotFound` / `WaitCleanUpFinished` 作为 completion barrier 的用法，而不是单纯调大 sleep/timeout。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "优先从 disttask 目录与 realtikv/integration 测试召回，避免被全仓通用的 sleep/Eventually 信号淹没。",
+          "command": "cd <repo_root> && rg -n -F -g 'pkg/disttask/**/*' -g 'tests/realtikvtest/**/*' -g '**/*_test.go' -e WaitCleanUpFinished -e doCleanupTask -e 'GetTaskManager(' -e 'GetTaskByID(' -e ErrTaskNotFound -e DefaultCleanUpInterval -e ReduceCheckInterval -e TestLastTaskID ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录结构变化或 broad_recall 过 sparse 时，去掉路径限制做全仓兜底召回，但仍使用 disttask/task manager 锚点降低噪声。",
+          "command": "rg -n -F -e WaitCleanUpFinished -e doCleanupTask -e 'GetTaskManager(' -e 'GetTaskByID(' -e ErrTaskNotFound -e DefaultCleanUpInterval -e ReduceCheckInterval -e TestLastTaskID <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "先用 task manager/ErrTaskNotFound 粗过滤到候选文件，再叠加 Eventually/sleep 作为“有等待语义”的弱确认，适合缩小人工复核集合。",
+          "command": "rg -l -0 -F -e 'GetTaskByID(' -e ErrTaskNotFound -g 'pkg/disttask/**/*' -g 'tests/realtikvtest/**/*' -g '**/*_test.go' <repo_root> | xargs -0 -r rg -n -F -e WaitCleanUpFinished -e doCleanupTask -e 'require.Eventually(' -e 'Eventually(' -e 'time.Sleep('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "DDL delete-range 清理由异步 GC 驱动：用 mysql.gc_delete_range(_done) 取代扫 KV/盲等",
+      "pattern_file": "DDL_gc_delete_range_用_mysql_gc_delete_range_done_替代_扫KV_或盲等.json",
+      "grepability": "high",
+      "path_globs": [
+        "pkg/ddl/**/*",
+        "ddl/**/*",
+        "pkg/ddl/tests/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "mysql.gc_delete_range_done",
+        "mysql.gc_delete_range",
+        "gc_delete_range_done",
+        "waitGCDeleteRangeDone",
+        "setDeleteRangeChecker"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "gc_delete_range_done",
+          "mysql.gc_delete_range_done",
+          "waitGCDeleteRangeDone",
+          "setDeleteRangeChecker"
+        ],
+        [
+          "mysql.gc_delete_range",
+          "SetHook",
+          "OnJobUpdated",
+          "jobID",
+          "job_id",
+          "element_id"
+        ],
+        [
+          "require.Eventually(",
+          "Eventually(",
+          "time.Sleep("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "disttask",
+        "GetTaskByID(",
+        "WaitMemoryLimitTunerExitInTest"
+      ],
+      "first_pass_query_hint": "优先找 `mysql.gc_delete_range(_done)` / helper（`waitGCDeleteRangeDone` 等）命中点；再回到 patch/语义确认：是否把“扫 KV/固定 sleep 推测清理完成”改成“用系统表状态 + bounded polling/hook 拿 jobID”。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "优先从 DDL 目录与 DDL tests 召回，直接用系统表/辅助函数名做锚点（噪声较低）。",
+          "command": "rg -n -F -g 'pkg/ddl/**/*' -g 'ddl/**/*' -g 'pkg/ddl/tests/**/*' -g '**/*_test.go' -e mysql.gc_delete_range_done -e mysql.gc_delete_range -e gc_delete_range_done -e waitGCDeleteRangeDone -e setDeleteRangeChecker <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录结构变化或 broad_recall 过 sparse 时，去掉路径限制做全仓兜底召回；仍然只用 gc_delete_range 相关锚点，避免炸量。",
+          "command": "rg -n -F -e mysql.gc_delete_range_done -e mysql.gc_delete_range -e gc_delete_range_done -e waitGCDeleteRangeDone -e setDeleteRangeChecker <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "先过滤出包含 gc_delete_range 锚点的文件，再叠加 jobID/hook 或 Eventually/sleep 语义做轻量收敛；注意 intersection 不可作为 absence proof。",
+          "command": "rg -l -0 -F -e gc_delete_range_done -e mysql.gc_delete_range -g 'pkg/ddl/**/*' -g 'ddl/**/*' -g 'pkg/ddl/tests/**/*' -g '**/*_test.go' <repo_root> | xargs -0 -r rg -n -F -e SetHook -e OnJobUpdated -e jobID -e job_id -e element_id -e 'require.Eventually(' -e 'Eventually(' -e 'time.Sleep('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "GC/MemoryLimit 触发型等待：Eventually 谓词内主动 runtime.GC()（并等待 tuner 退出）",
+      "pattern_file": "GC_MemoryLimit_触发型等待_Eventually_谓词内主动_runtime_GC_并等待_tuner_exit.json",
+      "grepability": "medium",
+      "path_globs": [
+        "pkg/util/gctuner/**/*",
+        "util/gctuner/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "WaitMemoryLimitTunerExitInTest",
+        "nextGCTriggeredByMemoryLimit",
+        "adjustPercentageInProgress",
+        "TestGlobalMemoryTuner",
+        "TestIssue48741",
+        "memory_limit_tuner"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "gctuner",
+          "memory_limit_tuner",
+          "WaitMemoryLimitTunerExitInTest",
+          "TestGlobalMemoryTuner",
+          "TestIssue48741",
+          "nextGCTriggeredByMemoryLimit",
+          "adjustPercentageInProgress"
+        ],
+        [
+          "runtime.GC(",
+          "debug.SetGCPercent(",
+          "SetMemoryLimit("
+        ],
+        [
+          "require.Eventually(",
+          "Eventually(",
+          "EventuallyWithT("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "gc_delete_range_done",
+        "ErrTaskNotFound"
+      ],
+      "first_pass_query_hint": "优先用 `WaitMemoryLimitTunerExitInTest` / tuner state 变量做锚点；`runtime.GC()` 本身太泛，必须与 gctuner/memory_limit_tuner 语境共现才有意义。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先在 gctuner 相关目录做第一跳召回，抓 tuner 状态变量/等待退出等低噪声锚点。",
+          "command": "cd <repo_root> && rg -n -F -g 'pkg/util/gctuner/**/*' -g 'util/gctuner/**/*' -e WaitMemoryLimitTunerExitInTest -e nextGCTriggeredByMemoryLimit -e adjustPercentageInProgress -e TestGlobalMemoryTuner -e TestIssue48741 ."
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录结构变化或 broad_recall 过 sparse 时，去掉路径限制做兜底召回，但仍以 tuner 专属锚点为主，避免 `runtime.GC()` 炸量。",
+          "command": "rg -n -F -e WaitMemoryLimitTunerExitInTest -e nextGCTriggeredByMemoryLimit -e adjustPercentageInProgress -e TestGlobalMemoryTuner -e TestIssue48741 <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "先锁定 gctuner/memory_limit_tuner 语境的候选文件，再叠加 `runtime.GC()` 与 Eventually 语义，快速缩小到“主动推进状态”的高相关候选。",
+          "command": "rg -l -0 -F -e nextGCTriggeredByMemoryLimit -e adjustPercentageInProgress -e memory_limit_tuner -g 'pkg/util/gctuner/**/*' -g 'util/gctuner/**/*' -g '**/*_test.go' <repo_root> | xargs -0 -r rg -n -F -e 'runtime.GC(' -e 'require.Eventually(' -e 'Eventually(' -e 'EventuallyWithT('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "验证 retry 的测试不要“碰运气”：用 failpoint 强制触发，或 Eventually 重试直到触发",
+      "pattern_file": "验证_retry_不要靠高并发碰运气_用_failpoint_或_Eventually_保证触发.json",
+      "grepability": "medium",
+      "path_globs": [
+        "pkg/server/tests/**/*",
+        "pkg/session/**/*",
+        "tests/realtikvtest/**/*",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "TestAuditPluginRetrying",
+        "IsRetryingCtxKey",
+        "ExecRetryCount",
+        "mockCommitError",
+        "retrying"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "IsRetryingCtxKey",
+          "ExecRetryCount",
+          "retrying",
+          "TestAuditPluginRetrying",
+          "mockCommitError"
+        ],
+        [
+          "failpoint.Enable(",
+          "failpoint.Enable",
+          "testfailpoint.EnableCall(",
+          "testfailpoint.Enable",
+          "require.Eventually(",
+          "Eventually("
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "gc_delete_range_done",
+        "WaitMemoryLimitTunerExitInTest",
+        "GetTaskByID("
+      ],
+      "first_pass_query_hint": "这条的关键不是“出现 retry 关键字”，而是：测试在验证 retry 行为，却用 one-shot 高并发碰运气；稳定修法通常是 failpoint 注入强制触发，或把触发过程包进 Eventually 做 bounded retry。优先以 `IsRetryingCtxKey`/`mockCommitError`/`TestAuditPluginRetrying` 等低噪声锚点切入。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先用低噪声测试锚点（IsRetryingCtxKey/mockCommitError/TestAuditPluginRetrying）召回，避免被全仓通用的 retry/backoff 噪声淹没。",
+          "command": "rg -n -F -g 'pkg/server/tests/**/*' -g 'pkg/session/**/*' -g 'tests/realtikvtest/**/*' -g '**/*_test.go' -e TestAuditPluginRetrying -e IsRetryingCtxKey -e ExecRetryCount -e mockCommitError -e retrying <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录结构变化或 broad_recall 过 sparse 时，去掉路径限制做兜底召回；仍坚持用低噪声锚点，不扫裸 `retry`。",
+          "command": "rg -n -F -e TestAuditPluginRetrying -e IsRetryingCtxKey -e ExecRetryCount -e mockCommitError -e retrying <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "先用 retry 观测锚点（IsRetryingCtxKey/mockCommitError/TestAuditPluginRetrying）锁定候选文件，再找 failpoint 注入或 Eventually 重试的信号，适合缩小人工复核集合。",
+          "command": "rg -l -0 -F -e TestAuditPluginRetrying -e IsRetryingCtxKey -e ExecRetryCount -e mockCommitError -e retrying -g '**/*_test.go' <repo_root> | xargs -0 -r rg -n -F -e 'failpoint.Enable(' -e 'testfailpoint.EnableCall(' -e 'require.Eventually(' -e 'Eventually('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "等待/重试循环必须可中断：检查 ctx/killed，避免不可取消的 Sleep 等待",
+      "pattern_file": "等待_重试循环_必须可中断_检查_ctx_done_or_killed_避免不可取消_sleep.json",
+      "grepability": "low",
+      "path_globs": [
+        "pkg/**/",
+        "store/**/",
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "ErrQueryInterrupted",
+        "QueryInterrupted",
+        "SessionVars().Killed",
+        "SessionVars.Killed",
+        "ExecWithContext(",
+        "ctx.Err() == nil",
+        "ctx.Done()",
+        "<-ctx.Done()",
+        "context.WithTimeout("
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "ErrQueryInterrupted",
+          "QueryInterrupted",
+          "SessionVars().Killed",
+          "SessionVars.Killed",
+          "Killed"
+        ],
+        [
+          "ctx.Done()",
+          "<-ctx.Done()",
+          "context.WithTimeout(",
+          "ExecWithContext("
+        ],
+        [
+          "time.Sleep(",
+          "for {",
+          "for i :="
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "WaitMemoryLimitTunerExitInTest",
+        "gc_delete_range_done",
+        "GetTaskByID("
+      ],
+      "first_pass_query_hint": "这条 grepability 低：`ctx.Done()`/`WithTimeout` 全仓通用。优先从 `ErrQueryInterrupted`/`SessionVars().Killed`/`ExecWithContext` 这类更低噪声锚点切入，再人工确认是否存在“sleep-wait 不可取消/kill 不生效”的失稳链路。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "先用相对低噪声的 kill/interrupt 锚点召回，再回到代码语义确认是否存在不可取消 sleep-wait 或 kill flag 未贯穿。",
+          "command": "rg -n -F -g 'pkg/**' -g 'store/**' -g '**/*_test.go' -e ErrQueryInterrupted -e QueryInterrupted -e 'SessionVars().Killed' -e 'SessionVars.Killed' -e 'ExecWithContext(' -e 'ctx.Err() == nil' -e 'ctx.Err() != nil' -e 'context.WithTimeout(' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当目录结构变化或 broad_recall 过 sparse 时，去掉路径限制做兜底召回；仍坚持用 interrupt/killed/ExecWithContext 作为锚点。",
+          "command": "rg -n -F -e ErrQueryInterrupted -e QueryInterrupted -e 'SessionVars().Killed' -e 'SessionVars.Killed' -e 'ExecWithContext(' -e 'ctx.Err() == nil' -e 'ctx.Err() != nil' -e 'context.WithTimeout(' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "先锁定 interrupt/killed 语境的候选文件，再叠加 ctx cancel 与 sleep/loop 信号做轻量收敛；intersection 只用于缩小集合，不可作为 absence proof。",
+          "command": "rg -l -0 -F -e ErrQueryInterrupted -e QueryInterrupted -e 'SessionVars().Killed' -e 'SessionVars.Killed' -g 'pkg/**' -g 'store/**' -g '**/*_test.go' <repo_root> | xargs -0 -r rg -n -F -e 'ctx.Done()' -e '<-ctx.Done()' -e 'context.WithTimeout(' -e 'ExecWithContext(' -e 'time.Sleep(' -e 'for {'"
+        }
+      ]
+    }
+  ]
+}

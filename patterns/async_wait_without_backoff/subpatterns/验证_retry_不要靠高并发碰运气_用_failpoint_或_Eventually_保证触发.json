@@ -1,0 +1,62 @@
+{
+  "key": "验证 retry 的测试不要“碰运气”：用 failpoint 强制触发，或 Eventually 重试直到触发",
+  "family": "async_wait_without_backoff",
+  "summary": "测试如果要断言“发生了 retry / retrying=true”，不能靠一次性高并发 workload 去赌一定会触发冲突/重试；在 CI 上经常会“太幸运”从而不触发，导致 flaky。",
+  "mechanism": "这类 flaky 的共享机制不是“最终状态不对”，而是“触发条件不稳定”：测试用高并发 UPDATE/COMMIT 试图触发 retryable error（锁冲突、commit error 等），然后断言 audit plugin 或其他观测点记录到 retry。但并发与调度使得 retry 是否发生具有随机性：有时一次跑完没有任何 retry，断言就会失败。稳定修法有两条：\n\n1) 更优（高纯）：用 failpoint/mock 强制注入一次 retryable error，使 retry 必然发生，然后断言观测点。\n2) 次优（仍可接受）：把 workload 包进 `require.Eventually`，重复执行直到观测到 retry 信号（或超时），把“触发概率”转换成“bounded waiting”。\n\n两者的共同点是：不再把一次性碰运气当成确定性前置条件，而是把触发变成可复查、可复现的机制。",
+  "signals_required": [
+    "测试目标是验证 retry 行为/观测（例如 audit plugin 的 `retrying` 标志或 retry 计数），而不是验证业务结果本身。",
+    "原实现依赖高并发或时序去“触发一次 retry”，但触发并不确定（存在“太幸运”路径）。",
+    "patch 的主修法让 retry 触发变得确定：使用 failpoint/mock 强制触发，或 Eventually 重试直到观测到触发。",
+    "修复后的等待是 bounded 的（Eventually 有 timeout/interval，或 failpoint 控制次数）。"
+  ],
+  "signals_optional": [
+    "出现 `TestAuditPluginRetrying`、`IsRetryingCtxKey`、`retrying`、`ExecRetryCount` 等锚点。",
+    "使用 failpoint（例如 `mockCommitError...`）注入一次 commit error/重试路径。",
+    "如果仍采用高并发触发，则修复把断言放进 `require.Eventually` 并在每轮重置观测数据，避免 one-shot 失败。"
+  ],
+  "negative_guards": [
+    "如果 patch 主机制是修复 retry 逻辑本身（比如错误分类/退避策略），而测试只是顺手调整，不要命中本子模式。",
+    "如果 patch 只是调大 sleep/timeout 但仍是 one-shot 碰运气，优先视为弱缓解，不升格为该子模式正例。",
+    "如果等待目标是 disttask cleanup/DDL GC 等异步完成，不要命中。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 且能直接看到 flaky 来自“触发条件不确定”时，可直接判定为 flaky risk。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "无法确认 retry 是否真的不稳定触发，patch 改动又较大。",
+      "patch 同时改了 retry 语义与观测方式，因果关系不清。"
+    ]
+  },
+  "scope": [
+    "需要断言 retry/重试观测的测试（audit plugin、retry metrics、retry counters）。",
+    "任何把“发生一次冲突/失败”当成确定前置条件的并发测试。"
+  ],
+  "fix_hints": [
+    "优先用 failpoint/mock 注入一次 retryable error，让触发确定且可复现。",
+    "如果必须依赖并发触发，至少用 `require.Eventually` 把触发变成 bounded waiting，并确保每轮重置观测数据。",
+    "避免用一次性高并发 one-shot 断言来验证 retry，这在 CI 上天然不稳。"
+  ],
+  "related_subpatterns": [
+    "disttask cleanup 完成前不要做清理断言（等 task 消失 / 双 cleanup 信号）"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-65114",
+        "note": "把一次性 500 并发 one-shot 断言改成 Eventually 重复运行，直到 `retrying` 信号出现（或超时）。"
+      },
+      {
+        "case_id": "pr-67308",
+        "note": "用 failpoint 强制注入一次 commit error 触发 retry，彻底消除“太幸运不触发”的不确定性。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-45657",
+        "note": "同样在 Eventually 语义上做改进（Require().Eventually），但主目标是 fail-fast 避免后续竞态，不是让 retry 触发确定。"
+      }
+    ]
+  }
+}
+

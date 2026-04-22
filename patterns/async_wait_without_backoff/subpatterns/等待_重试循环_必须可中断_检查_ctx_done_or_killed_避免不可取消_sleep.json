@@ -1,0 +1,66 @@
+{
+  "key": "等待/重试循环必须可中断：检查 ctx/killed，避免不可取消的 Sleep 等待",
+  "family": "async_wait_without_backoff",
+  "summary": "异步等待/重试如果不可中断（不检查 ctx.Done / killed / cancel），容易在 CI 里变成偶发 hang/超时，且会把“取消/kill 应该生效”的测试变成 flaky。",
+  "mechanism": "很多等待/重试代码（测试或生产逻辑）会进入“sleep → retry → sleep”的循环，或在某个阻塞点等待外部条件。如果这条等待链路没有把 cancellation 信号接上（例如没有把 ctx 传下去、没有在循环中检查 ctx/killed、或 sleep 期间完全不可打断），那么一旦 CI 抖动导致等待更久，就会出现：\n\n- kill/cancel 不生效（卡死到超时）\n- 测试以为 cancel 已发生但后台仍在跑，导致后续断言/资源清理竞态\n\n稳定修法的共同点是：把“可中断”当成等待机制的一等约束——把 ctx/killed 标志贯穿到阻塞/重试路径，在循环里周期检查并提前返回；对 stop/shrink 这类收尾路径用 `context.WithTimeout` 给出硬上限；对测试侧则必须用 `ExecWithContext` 等把 ctx 真正绑定到执行调用上。",
+  "signals_required": [
+    "存在阻塞等待或 sleep-retry 循环，且该等待需要响应 cancel/kill/stop 等中断信号。",
+    "原实现没有把 ctx/cancel/killed 接入关键阻塞点（例如没用 ExecWithContext、循环内不检查 ctx/killed，或 sleep 期间完全不可打断）。",
+    "失败表现与 hang/超时/取消不生效强相关（或导致后续步骤竞态）。",
+    "patch 的主修法是把中断信号接入：传递 killed/ctx，循环内检查 `ctx.Err()`/atomic killed，并给收尾路径加 timeout 上限。"
+  ],
+  "signals_optional": [
+    "出现 `ExecWithContext`、`context.WithTimeout`、`ctx.Err() == nil`、`<-ctx.Done()` 等锚点。",
+    "出现 killed flag（如 `SessionVars.Killed`）在等待循环中被周期检查。",
+    "错误形态包含 `ErrQueryInterrupted`、context cancel/timeout 等。"
+  ],
+  "negative_guards": [
+    "如果等待目标是“等某个异步任务自然完成”（例如 disttask cleanup 或 DDL delete-range GC），但不涉及 cancel/kill 语义，不要命中本子模式。",
+    "如果 patch 主修法只是调大 sleep/timeout，而没有接入 cancel/kill，可视为缓解型修法，不升格为本子模式正例。",
+    "如果 patch 主机制是纯并发数据竞态（shared state race），而不是等待不可中断，应迁移到 race_condition_in_async_code。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中 required signals 且能看出“不可中断等待”是直接失稳源时，可直接判定为 flaky risk。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然出现 ctx/killed 相关改动，但看不清它是否处于关键阻塞点。",
+      "patch 同时包含大量逻辑变更，等待/取消只是附带改动。"
+    ]
+  },
+  "scope": [
+    "锁等待、查询取消、worker stop/shrink 收尾、后台重试循环等场景。",
+    "任何需要保证 cancel/kill 可生效的等待链路。"
+  ],
+  "fix_hints": [
+    "对 sleep-retry 循环：每轮都检查 `ctx.Err()`/killed，并让 sleep 可被切分或可提前返回。",
+    "对执行调用：使用 `ExecWithContext` / 把 ctx 传入底层 API，避免 cancel 只停在外层变量上。",
+    "对 stop/shrink：用 `context.WithTimeout` 给最终 drain/flush 一个硬上限，避免无限等待。"
+  ],
+  "related_subpatterns": [
+    "GC/MemoryLimit 触发型等待：Eventually 谓词内主动 runtime.GC()（并等待 tuner 退出）"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-12852",
+        "note": "pessimistic lock 等待期间不检查 killed；修复把 killed 传入锁获取链路并在 sleep-wait 中周期检查，中断返回 `ErrQueryInterrupted`。"
+      },
+      {
+        "case_id": "pr-57140",
+        "note": "测试取消 query 但 ctx 没绑定到 Exec；修复改用 `ExecWithContext(ctx, ...)`，让 cancel() 真实生效。"
+      },
+      {
+        "case_id": "pr-57703",
+        "note": "worker stop 收尾路径需要有界等待；修复在循环中检查 `ctx.Err()`，并用 `context.WithTimeout` 做最终 drain/重试上限。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-33809",
+        "note": "同样是为异步收尾加 barrier，但更像“等后台 rollback 完成”的测试同步，不涉及 cancel/kill 语义。"
+      }
+    ]
+  }
+}
+

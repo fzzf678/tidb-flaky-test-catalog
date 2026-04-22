@@ -1,0 +1,62 @@
+{
+  "key": "GC/MemoryLimit 触发型等待：Eventually 谓词内主动 runtime.GC()（并等待 tuner 退出）",
+  "family": "async_wait_without_backoff",
+  "summary": "依赖 runtime GC 或 memory-limit tuner 的测试，若只用 Eventually 轮询而不主动推进 GC，会在 CI 调度抖动下随机超时；稳定修法是在谓词内显式调用 `runtime.GC()` 并补齐后台 tuner 退出等待。",
+  "mechanism": "这类 flaky 的共同点是：测试在等一个“由 GC 触发/推进”的状态变化（例如 memory limit 调整触发的 GC、tuner 的 in-progress 标志翻转、nextGCTriggeredByMemoryLimit 复位等），但 GC 本身是受 runtime 调度影响的异步事件。在 CI 负载下，单纯 Eventually + sleep 的轮询可能在 timeout 内等不到 GC 发生。稳定修法是把“推进 GC”合入等待谓词：在 `require.Eventually` 的 predicate 内调用 `runtime.GC()`，使每次轮询都主动推进一次 GC，从而降低对调度的依赖。同时，测试 teardown 阶段要避免后台 tuner goroutine 泄漏/残留状态干扰后续用例：可以在 defer 里显式等待 tuner 退出（例如 `WaitMemoryLimitTunerExitInTest()`），并对关键状态做 bounded Eventually 收敛。",
+  "signals_required": [
+    "测试在等待 GC/memory-tuner 驱动的状态（例如 `adjustPercentageInProgress`/`nextGCTriggeredByMemoryLimit`/GC 计数）。",
+    "原等待依赖“runtime 自然触发 GC”在 timeout 内发生，存在明显调度依赖。",
+    "patch 的主修法是在 polling/Eventually 谓词中加入 `runtime.GC()` 来主动推进状态。",
+    "等待仍是 bounded 的（Eventually 有 timeout/interval，或显式有上限），不会无上限自旋。"
+  ],
+  "signals_optional": [
+    "出现 `TestIssue48741`、`TestGlobalMemoryTuner`、`memory_limit_tuner_test.go` 等典型锚点。",
+    "修复中在 teardown 里补 `WaitMemoryLimitTunerExitInTest()` 或类似退出等待，避免后台 goroutine 残留。",
+    "修复中把多个状态收敛点拆成多条 Eventually（分别等 isValidValueSet / inProgress / nextGCTriggeredByMemoryLimit）。"
+  ],
+  "negative_guards": [
+    "如果等待目标与 GC 无关（例如 disttask cleanup、DDL delete-range），不要命中。",
+    "如果 patch 主修法只是调大 timeout/interval，没有引入 `runtime.GC()` 或更硬的推进手段，优先视为缓解型修法（不升格）。",
+    "如果 patch 把 Eventually 改成无上限 for-loop busy wait（没有 timeout），应降级为边界样本而非正例修法。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中 required signals 且能看出 flaky 的直接原因是 GC 调度不确定时，可直接判定风险；这是 CI 上常见的 runtime 依赖抖动源。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然出现 `runtime.GC()`，但它更像无关的补充调用，无法确认与等待条件有强因果。",
+      "patch 同时在改功能逻辑与测试等待，主机制不够单一。"
+    ]
+  },
+  "scope": [
+    "gctuner/memory-limit tuner 相关测试。",
+    "任何把“GC 发生”当作前置条件的 Eventually 等待。"
+  ],
+  "fix_hints": [
+    "把 `runtime.GC()` 放进 Eventually 的 predicate，使每次轮询都主动推进一次 GC。",
+    "保留 bounded timeout；避免把 Eventually 退化成无上限 busy loop。",
+    "在 teardown 里显式等待 tuner/background goroutine 退出，避免残留状态污染后续用例。"
+  ],
+  "related_subpatterns": [
+    "等待/重试循环必须可中断：检查 ctx/killed，避免不可取消的 Sleep 等待"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-66870-1",
+        "note": "在 `TestIssue48741` 的 `require.Eventually` predicate 内加入 `runtime.GC()`，降低“等不到 GC 触发”的调度依赖。"
+      },
+      {
+        "case_id": "pr-67377",
+        "note": "在多个 Eventually 收敛点内加入 `runtime.GC()`，并在 defer 里 `WaitMemoryLimitTunerExitInTest()`，保证状态收敛/退出。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-46973",
+        "note": "同样试图靠多次 `runtime.GC()` 推进状态，但把 Eventually 改成缺少 timeout 的循环，属于不建议复用的边界修法。"
+      }
+    ]
+  }
+}
+

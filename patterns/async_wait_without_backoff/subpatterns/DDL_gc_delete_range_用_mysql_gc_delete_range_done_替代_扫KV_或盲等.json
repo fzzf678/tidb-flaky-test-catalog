@@ -1,0 +1,62 @@
+{
+  "key": "DDL delete-range 清理由异步 GC 驱动：用 mysql.gc_delete_range(_done) 取代扫 KV/盲等",
+  "family": "async_wait_without_backoff",
+  "summary": "DROP SCHEMA / DROP INDEX / TRUNCATE PARTITION 等 DDL 的真正数据清理通常通过异步 GC delete-range 完成；测试如果靠扫 KV/索引或靠固定 sleep 估计“应该清完了”，会在 CI 时序抖动下随机失败。",
+  "mechanism": "TiDB 的多类 DDL 会把“元信息变更”与“物理数据清理”解耦：元信息 job 可能先完成，但 delete-range 的执行/完成记录（`mysql.gc_delete_range` / `mysql.gc_delete_range_done`）会在后台异步推进。历史 flaky patch 里常见的错误做法是：DDL 后立刻扫索引 KV 判断是否为空，或固定 sleep 若干轮再断言；这对 CI 抖动极其敏感。稳定修法反复落在：通过 DDL hook 或其他方式拿到 jobID/elementID，然后用系统表 `mysql.gc_delete_range` / `_done` 做更硬的状态验证；必要时做 bounded polling，并在超时时明确降级（记录日志并放弃脆弱断言），而不是让用例随机失败。",
+  "signals_required": [
+    "patch 涉及 DDL 引发的 delete-range 清理（drop schema/index/partition 等），且测试对“数据是否被清理”做断言。",
+    "原测试使用扫 KV/索引、或靠固定轮询 sleep 推测清理已完成，存在明显 timing 窗口。",
+    "修复把断言锚到 `mysql.gc_delete_range`/`mysql.gc_delete_range_done` 的可复核状态（并且/或者用 hook 捕获 jobID）。",
+    "等待策略是 bounded 的（有限轮询/有超时），不会无上限 busy loop。"
+  ],
+  "signals_optional": [
+    "出现 `waitGCDeleteRangeDone` / `setDeleteRangeChecker` / 统一 query template 查询 `gc_delete_range(_done)`。",
+    "出现 DDL hook（`SetHook`/`OnJobUpdated`）用来记录 jobID。",
+    "修复在超时时选择“放弃进一步检查/提前 return”，并记录 duration/log，避免把清理慢误当失败。"
+  ],
+  "negative_guards": [
+    "如果等待目标是 disttask cleanup 或外部文件清理，不要命中本子模式（见 disttask cleanup 子模式）。",
+    "如果 patch 只是调大 `waitForCleanDataInterval`/`waitForCleanDataRound`，且没有把等待条件锚到 `gc_delete_range(_done)`，更像 time_sleep_for_sync 缓解型修法。",
+    "如果 patch 的主机制是 DDL job step/poll 计数、row count 进度等观察口径问题，不要误归到 delete-range GC。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 且能清楚看到测试断言对象依赖 delete-range 完成时序时，可直接判定 flaky risk。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然出现 `gc_delete_range` 关键字，但无法确认其与失败断言存在直接因果。",
+      "patch 同时混入大量不相关重构，主机制不够单一。"
+    ]
+  },
+  "scope": [
+    "DDL + GC delete-range 相关的 unit/integration 测试。",
+    "任何试图断言 drop/truncate 后数据已物理清理的用例。"
+  ],
+  "fix_hints": [
+    "优先用 `mysql.gc_delete_range` / `mysql.gc_delete_range_done` 做状态锚点，而不是扫 KV/索引。",
+    "尽量通过 hook 捕获 jobID，把断言绑定到 (job_id, element_id)。",
+    "等待一定要 bounded，并且超时要显式降级策略（skip brittle checks/记录日志），不要让用例随机失败。"
+  ],
+  "related_subpatterns": [
+    "disttask cleanup 完成前不要做清理断言（等 task 消失 / 双 cleanup 信号）"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-29499",
+        "note": "对 drop schema/partition 清理用 `mysql.gc_delete_range_done` 做 bounded polling；超时则放弃脆弱检查并记录 duration。"
+      },
+      {
+        "case_id": "pr-29651",
+        "note": "把“扫索引 KV 等清理”替换为：hook 拿 jobID + 查询 `gc_delete_range/_done` 断言 delete-range 状态。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-15065",
+        "note": "更像 DDL binlog 可见性轮询（sleep 调参），不是 delete-range GC。"
+      }
+    ]
+  }
+}
+

@@ -1,0 +1,67 @@
+{
+  "key": "disttask cleanup 完成前不要做清理断言（等 task 消失 / 双 cleanup 信号）",
+  "family": "async_wait_without_backoff",
+  "summary": "disttask 的 cleanup/收尾是异步完成的；测试如果在 cleanup 结束前就断言“外部文件已清理 / 表模式已切回 / 任务已完全结束”，会在 CI 里随机抢跑失败。",
+  "mechanism": "disttask（常见于 DDL backfill / IMPORT INTO 等）会把执行与 cleanup 拆成多个异步阶段：任务结束、资源释放、外部文件清理、表模式切回等都可能在后台推进。测试若只等到其中一个信号（甚至完全不等），就直接检查“文件不存在/状态已恢复”，会因时序抖动而 flaky。稳定修法是把断言挂到更硬的 completion barrier 上：要么等待 scheduler 的 cleanup hook（必要时双信号都等齐），要么通过 TaskManager 轮询直到任务在 storage 侧变为不可见（例如 `ErrTaskNotFound`）。必要时可在 testutil 里把 cleanup interval 降到更短，减少等待时间，但核心仍是等待“cleanup 完成”这一事实，而不是盲睡。",
+  "signals_required": [
+    "场景涉及 disttask（scheduler/task manager/subtask）驱动的异步任务（例如 IMPORT INTO、DDL backfill 的 disttask 路径）。",
+    "测试会在任务结束附近断言外部副作用（外部文件清理、表模式切回、任务记录消失等）。",
+    "失败机制是 cleanup 未完成导致断言抢跑，而不是业务逻辑错误或结果本身不确定。",
+    "patch 的主修法是增加可复核的 cleanup completion barrier：等待 scheduler cleanup hook（必要时双信号），或轮询 TaskManager 直到 `ErrTaskNotFound`。"
+  ],
+  "signals_optional": [
+    "出现 `WaitCleanUpFinished` / `doCleanupTask` 等 scheduler cleanup 相关 failpoint/hook。",
+    "出现 `storage.GetTaskManager()` + `GetTaskByID(...)` 并用 `ErrTaskNotFound` 判断 cleanup 完成。",
+    "使用 `testutil.ReduceCheckInterval` / `DefaultCleanUpInterval` 等把 cleanup interval 降低（加速而非替代 barrier）。",
+    "修复中同时调整了 taskID 获取方式（例如从 task manager 按 key 查），避免读取表记录的时序竞态。"
+  ],
+  "negative_guards": [
+    "如果 patch 主机制是等待 subtask 数量变化/任务推进，而不是 cleanup 完成，不要命中本子模式（更像 disttask workflow/scale-in 语义）。",
+    "如果 patch 只是把 sleep/timeout 调大，且没有引入可复核的 cleanup 完成信号，优先降级为缓解型修法（更像 time_sleep_for_sync）。",
+    "如果该用例根本不走 disttask/scheduler/task manager 路径，不要命中。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals，且能从 patch 看出断言对象确实依赖 cleanup 完成时序时，可直接判定为 flaky risk。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然出现 disttask 相关关键字，但无法确认断言失败来自 cleanup 抢跑。",
+      "patch 同时大改业务逻辑与测试，无法确定主机制。"
+    ]
+  },
+  "scope": [
+    "IMPORT INTO / DDL backfill 等 disttask 驱动的异步任务测试。",
+    "任何对外部文件、表模式或 task storage 可见性做断言的用例。"
+  ],
+  "fix_hints": [
+    "优先用 TaskManager 侧的“任务不可见/已清理”作为 barrier（例如轮询直到 `ErrTaskNotFound`）。",
+    "如果 cleanup 分多阶段，确保等待信号覆盖真实 completion（必要时等齐多个 cleanup hook）。",
+    "只调大 sleep/timeout 不算 completion barrier；应把断言挂到可复核状态上。"
+  ],
+  "related_subpatterns": [
+    "DDL delete-range 清理由异步 GC 驱动：用 mysql.gc_delete_range(_done) 取代扫 KV/盲等"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-61207",
+        "note": "external files cleanup 有两段信号：同时 hook `doCleanupTask` 与 `WaitCleanUpFinished`，等两次 channel receive 后再检查文件清理。"
+      },
+      {
+        "case_id": "pr-64478",
+        "note": "负例 import 提交后 cleanup 异步切回表模式；通过 TaskManager `GetTaskByID` 轮询直到 `ErrTaskNotFound` 再 drop table。"
+      },
+      {
+        "case_id": "pr-66701",
+        "note": "duplicate-key error 场景同样需要等 cleanup；Eventually 轮询 TaskManager 直到任务消失，避免 mode 未恢复导致后续步骤抖动。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-62489",
+        "note": "更像 disttask scale-in/workflow 推进语义：等待新 subtasks 不在旧集合中，而不是 cleanup 完成。"
+      }
+    ]
+  }
+}
+
