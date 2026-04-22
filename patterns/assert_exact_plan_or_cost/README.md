@@ -80,9 +80,9 @@
 
 ## 当前目录结构
 
-- [../assert_exact_plan_or_cost_94_case_人工review工作板.md](../assert_exact_plan_or_cost_94_case_%E4%BA%BA%E5%B7%A5review%E5%B7%A5%E4%BD%9C%E6%9D%BF.md)
+- [assert_exact_plan_or_cost_94_case_人工review工作板.md](./assert_exact_plan_or_cost_94_case_%E4%BA%BA%E5%B7%A5review%E5%B7%A5%E4%BD%9C%E6%9D%BF.md)
   - `94` 个 patch 的人工工作板、完整正例与排除清单
-- [../assert_exact_plan_or_cost_第二轮聚类草案.md](../assert_exact_plan_or_cost_%E7%AC%AC%E4%BA%8C%E8%BD%AE%E8%81%9A%E7%B1%BB%E8%8D%89%E6%A1%88.md)
+- [assert_exact_plan_or_cost_第二轮聚类草案.md](./assert_exact_plan_or_cost_%E7%AC%AC%E4%BA%8C%E8%BD%AE%E8%81%9A%E7%B1%BB%E8%8D%89%E6%A1%88.md)
   - sibling 边界、formalize 顺序、retrieval calibration 记录
 - `subpatterns/`
   - 当前 `5` 个正式 sibling JSON
