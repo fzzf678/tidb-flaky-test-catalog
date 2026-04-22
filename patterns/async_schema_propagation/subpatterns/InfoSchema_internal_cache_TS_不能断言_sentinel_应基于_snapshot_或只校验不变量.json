@@ -1,0 +1,61 @@
+{
+  "key": "InfoSchema internal cache/TS 不能断言 sentinel；断言应基于 snapshot 或只校验不变量",
+  "family": "async_schema_propagation",
+  "summary": "infoschema v2/cache/reload/stale-read 相关测试里，内部 infoschema access 可能在后台发生，导致 internal cache/TS 观测值并非稳定的 sentinel（如 `0` / `MaxUint64`）；应改为基于 `GetSnapshotInfoSchema(ts)` 推导期望或只断言不变量。",
+  "mechanism": "这类不稳定不是来自“DDL 没等完”，而是来自 infoschema 的内部实现：`dom.Reload()`、session refresh、background routine 可能会触发内部 infoschema 访问，从而更新 cache 的 recent TS / recentMinTS 之类的观测值；另一方面，stale read 需要拿 snapshot infoschema，版本号天然不是固定 sentinel。测试如果写成“Reload 后 GetAndResetRecentInfoSchemaTS 一定是 `MaxUint64`”或“staleness infoschema 的 SchemaMetaVersion 一定是 `0`”，就会被内部实现细节与后台访问打穿。patch-backed 修法有两条稳定路径：\n\n1) **基于 snapshot 推导期望**：先算出 `expectedTS`，再调用 `domain.GetDomain(se).GetSnapshotInfoSchema(expectedTS)` 得到 `expectedIS`，与被测对象返回的 infoschema 版本对齐。\n2) **只校验不变量 + reset**：在关键读之前先 reset（调用一次 `GetAndReset...` 丢弃本轮噪音），随后只断言 `!= sentinel`、`<`/`<=` 等相对关系，避免对内部访问次数做硬断言。",
+  "signals_required": [
+    "测试断言的对象是 infoschema internal cache/TS 观测值或 stale-read infoschema 的 SchemaMetaVersion，而不是业务层结果。",
+    "patch 移除了对 sentinel 的硬断言（例如 `== 0` 或 `== MaxUint64`），改为 snapshot 推导或只断言不变量。",
+    "patch 中出现 `GetSnapshotInfoSchema(...)` 或 `GetAndResetRecentInfoSchemaTS(...)` 等相关 API（或等价封装）。"
+  ],
+  "signals_optional": [
+    "注释指出 `Reload may trigger internal infoschema accesses` 或 `recentMinTS might be updated by background routines`。",
+    "测试包含 `tidb_snapshot` / `tidb_read_staleness` 相关设置，或调用 staleness TS 计算函数。",
+    "修复同时引入“reset first so this round mainly reflects the read below”之类的测试隔离说明。"
+  ],
+  "negative_guards": [
+    "如果 patch 的主修法是等待 `dom.InfoSchema().SchemaMetaVersion() > v1` 来确保 infoschema loaded，应归到本 family 的 `s1`。",
+    "如果 patch 的主修法是调大 `SchemaOutOfDateRetryTimes` / `tidb_max_delta_schema_count` 这类容错旋钮，应归到 `s3`。",
+    "如果 patch 的主修法是 DDL callback 的 job 过滤/once 控制，应迁移到 `race_condition_in_async_code` 对应子模式。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中 required signals 时可判为 flaky risk：测试对 internal cache/TS 写了实现细节级别的硬断言，是稳定的失稳来源；基于 snapshot 或不变量的断言是更稳的修法。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然出现了相关 API，但 patch 只是做重构或日志，不涉及断言语义改变。",
+      "断言对象其实是业务输出，internal cache/TS 只是 incidental。"
+    ]
+  },
+  "scope": [
+    "infoschema v2 / info cache / dom.Reload / recent TS 追踪相关测试。",
+    "stale read / snapshot read 需要对齐 snapshot infoschema 的测试。"
+  ],
+  "fix_hints": [
+    "避免断言 internal cache/TS 的 sentinel 值；若需要断言，先 reset 再只断言相对关系或非 sentinel。",
+    "stale read 场景用 `GetSnapshotInfoSchema(ts)` 推导期望 infoschema，再比较版本/行为。",
+    "当 `Reload()` 可能触发后台访问时，把“本轮要测的 read”与“reload 自身带来的噪音”通过 reset 隔离开。"
+  ],
+  "related_subpatterns": [
+    "DDL 完成不等于 domain infoschema 已加载；断言前必须等 SchemaMetaVersion 推进"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-65786",
+        "note": "不再断言 staleness infoschema meta version 为 0；改为基于 `expectedTS` 的 `GetSnapshotInfoSchema(expectedTS)` 推导期望版本。"
+      },
+      {
+        "case_id": "pr-66732",
+        "note": "不再断言 `dom.Reload()` 后 `GetAndResetRecentInfoSchemaTS` 必为 `MaxUint64`；改为 reset 并仅校验不变量（非 sentinel、相对大小）。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-54367",
+        "note": "同样涉及 `Reload`/v1↔v2 切换副作用，但修法是接受 `ErrInfoSchemaChanged`；是否应升级为 sibling 仍需更多 patch-backed 证据。"
+      }
+    ]
+  }
+}
+

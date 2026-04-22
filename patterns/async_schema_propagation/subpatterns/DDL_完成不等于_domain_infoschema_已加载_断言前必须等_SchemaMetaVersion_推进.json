@@ -1,0 +1,70 @@
+{
+  "key": "DDL 完成不等于 domain infoschema 已加载；断言前必须等 SchemaMetaVersion 推进",
+  "family": "async_schema_propagation",
+  "summary": "在包含 domain 的测试里，DDL job 的状态推进（甚至 DDL 已返回）不等于本地 domain 已经加载了新 infoschema；如果后续断言/读写依赖新 schema，需要显式等待 `SchemaMetaVersion` 推进。",
+  "mechanism": "很多 DDL 相关测试会用 `admin show ddl jobs` 或 hook 观测 job 的 state（例如 `delete only / public`），然后立刻执行 DML/Query 断言新的 schema 行为。但 infoschema 的加载/切换是异步的：job state 的可见性与 domain infoschema cache 的刷新并不是同一个同步屏障，尤其在 infoschema v1↔v2 切换触发 full reload 的路径上更明显。于是出现一个窗口：测试已经认为“DDL 进入某状态/已结束”，但 domain 仍在使用旧 infoschema，导致偶发读写走到旧 schema、拿不到新对象、或行为不一致。patch-backed 修法集中落在：在关键断言前记录 `v1 := dom.InfoSchema().SchemaMetaVersion()`，并用循环/`require.Eventually` 等待 `dom.InfoSchema().SchemaMetaVersion() > v1`，把“infoschema 已加载”显式变成可复用的等待条件。若测试存在多阶段 state 进展/多次等待，通常需要在每个阶段更新 baseline（例如 `v1 = v2`）避免后续等待退化为 no-op。",
+  "signals_required": [
+    "测试先观察 DDL job state/完成（例如 `admin show ddl jobs`、hook 或 DDL 返回），随后执行依赖新 schema 的 DML/Query/断言。",
+    "patch 在关键断言前新增了对 `dom.InfoSchema().SchemaMetaVersion()` 的显式等待（`> v1`），而不是只靠 sleep 或只靠 job state。",
+    "等待逻辑的目的明确是“确保新的 infoschema 已被加载/切换”，而非泛泛延长时间窗口。"
+  ],
+  "signals_optional": [
+    "出现了类似注释：`ddl finish does not mean the infoschema loaded` / `wait for the new infoschema loading`。",
+    "等待实现形态包括 `require.Eventually(... SchemaMetaVersion() > v1 ...)` 或循环 + `time.Sleep`。",
+    "测试显式创建 domain（如 `CreateMockStoreAndDomain`）并读取 `dom.InfoSchema()`。"
+  ],
+  "negative_guards": [
+    "如果修法只是把 `time.Sleep` 从 10ms 改成 100ms，而没有引入 `SchemaMetaVersion` 级别的 readiness 信号，更像 `time_sleep_for_sync` / `async_wait_without_backoff`。",
+    "如果修法是调大 `SchemaOutOfDateRetryTimes` / `tidb_max_delta_schema_count` 等容错旋钮来绕过错误，应归到本 family 的 `s3`。",
+    "如果修法是给 DDL callback 增加 job 过滤/once 控制（例如按 `job.Type` 或 `job.State==synced` 过滤），应迁移到 `patterns/race_condition_in_async_code/subpatterns/DDL_callback_目标_job_过滤_once_控制.json`。",
+    "如果修法是 drain stats handle 的 DDL event（`HandleDDLEvent(<-DDLEventCh())`）以让 stats ready，应迁移到 `plan_stability_and_stats_dependency`。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中 required signals 时可直接判为 flaky risk：测试把 DDL job state 当作 infoschema readiness 屏障是一个稳定的失稳机制；`SchemaMetaVersion` 等待是对应的稳定修法。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "虽然出现 `SchemaMetaVersion()`，但无法看出它与 DDL readiness 的因果关系（例如只是打印日志）。",
+      "等待写法存在，但后续断言并不依赖新 schema（不构成真实风险）。"
+    ]
+  },
+  "scope": [
+    "DDL/partition/rename 等测试中，使用 domain infoschema 做断言或做后续 DML 的路径。",
+    "infoschema v1↔v2 切换或 full reload 更容易放大该窗口，但不是必要条件。"
+  ],
+  "fix_hints": [
+    "在观测到 DDL job state/完成后，新增 infoschema readiness 检查：记录 `v1 := dom.InfoSchema().SchemaMetaVersion()` 并等待 `> v1`。",
+    "优先使用 `require.Eventually`（带超时与间隔）而不是无限循环或裸 sleep。",
+    "如果涉及多 domain / 多 server，必要时对所有 domain 做 `Reload` 或版本推进等待，避免只同步单点。"
+  ],
+  "related_subpatterns": [
+    "InfoSchema internal cache/TS 不能断言 sentinel；断言应基于 snapshot 或只校验不变量",
+    "SchemaOutOfDate/InfoSchemaChanged 的容错旋钮被测试调大（RetryTimes / max_delta_schema_count）"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-54447",
+        "note": "在 `admin show ddl jobs` 观察到目标 state 后，同时等待 `dom.InfoSchema().SchemaMetaVersion() > v1` 再继续。"
+      },
+      {
+        "case_id": "pr-54695",
+        "note": "DDL `public` 后用 `require.Eventually(dom.InfoSchema().SchemaMetaVersion() > v1)` 显式等待 infoschema loaded，注释强调 v1→v2 full load。"
+      },
+      {
+        "case_id": "pr-59974",
+        "note": "同样用 `SchemaMetaVersion` 作为 infoschema readiness 屏障；多阶段等待时在阶段内更新 `v1 = v2`，避免后续等待退化。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-18468",
+        "note": "同样是 schema version 同步语义，但修复点在 mock schema syncer 的 `==`/`>=` 条件，不是测试侧等待 SchemaMetaVersion。"
+      },
+      {
+        "case_id": "pr-16511",
+        "note": "通过调大 schema lease 缓解时序问题，更像“旋钮 workaround”，不足以归入本子模式的 infoschema readiness 等待。"
+      }
+    ]
+  }
+}
