@@ -1,0 +1,66 @@
+{
+  "key": "TiDB mock/server 的 unix socket 路径需唯一（或禁用），避免 /tmp 下冲突",
+  "family": "hardcoded_port_or_resource",
+  "summary": "测试启动 TiDB server/mock cluster 时，如果启用 unix socket（`cfg.Socket`），必须显式设置为 per-test 唯一路径（最好在 `t.TempDir()` 下），或直接禁用 `cfg.Socket`；否则默认/固定 `/tmp/...*.sock` 容易在并行 UT 或残留文件情况下冲突。",
+  "mechanism": "TiDB server 既可以用 TCP 端口，也可能配置 unix domain socket（`cfg.Socket`）。在 UT 中启动多个 server/mock cluster 时，如果 `cfg.Socket` 沿用默认模板或固定路径（常见落在 `/tmp`），会出现两类不稳定：\n\n1) **并行冲突**：多个测试同时创建同一路径的 socket 文件，导致 listen 失败或互相覆盖。\n\n2) **残留污染**：上一次失败/中断的测试残留 socket 文件（或路径尚未清理），下一次启动直接撞到已有文件。\n\n稳定修法是把 socket 路径纳入 test-local namespace：`cfg.Socket = filepath.Join(t.TempDir(), fmt.Sprintf(\"tidb-mock-%d.sock\", ...))`，或 `cfg.Socket = \"\"` 只走 TCP（并配合 `cfg.Port = 0`）。",
+  "signals_required": [
+    "patch 涉及测试启动 TiDB server/mock cluster（例如 `server.NewServer` 或 BR 的 mock cluster），并使用/配置 `cfg.Socket`。",
+    "旧实现中 `cfg.Socket` 为空但默认会落到固定模板路径，或显式写死 `/tmp/...*.sock`（或等价的固定 socket 路径）。",
+    "修复中对 `cfg.Socket` 做了 test-local namespace 处理：设置为唯一 `.sock` 路径（时间戳/随机后缀）或改为 `\"\"` 禁用，并在需要时将 socket 文件放到 `t.TempDir()` 下。"
+  ],
+  "signals_optional": [
+    "修复同时把其他临时文件（如 dump json）从 `/tmp` 迁到 `t.TempDir()`，形成一致的 per-test 临时目录策略。",
+    "修复同时设置 `cfg.Port = 0`/`cfg.Status.StatusPort = 0`，避免 TCP 端口与 socket 双重冲突。",
+    "失败症状包含 socket 文件已存在、无法创建、或被其他测试提前清理等。"
+  ],
+  "negative_guards": [
+    "如果 patch 只是在做 TCP 端口分配（`:0`），未涉及 `cfg.Socket`，不要命中此 subpattern。",
+    "如果 `.sock` 路径来自外部依赖或运行态配置且不在测试控制范围内，需要降级为 needs_more_evidence。",
+    "如果 socket 路径本身已唯一化且不会被其他测试复用，修复只是顺手改动，不要把它当作主机制。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "满足 required signals 且旧实现存在固定/默认 socket path 时，可直接判定为 flaky risk（并行 UT 下 socket path 冲突概率高）。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清 `cfg.Socket` 是否真的启用（或是否会落到固定路径）。",
+      "测试进程/工作目录天然隔离，socket path 不共享（需要结合执行环境判断）。"
+    ]
+  },
+  "scope": [
+    "server tests / statistics handler tests / BR mock cluster 等启动 TiDB server 的 UT。",
+    "所有显式设置或隐式依赖 `cfg.Socket` 默认值的测试。"
+  ],
+  "fix_hints": [
+    "优先：`tmp := t.TempDir(); cfg.Socket = filepath.Join(tmp, fmt.Sprintf(\"tidb-mock-%d.sock\", time.Now().UnixNano()))`。",
+    "如果不需要 socket：设置 `cfg.Socket = \"\"` 并确保 TCP 端口使用 `0` 由 OS 分配。",
+    "不要把 socket 固定放在 `/tmp` 且使用固定文件名；即使加时间戳，也更建议放在 `t.TempDir()` 下统一管理清理。"
+  ],
+  "related_subpatterns": [
+    "本地服务端口必须由 listener/httptest 分配（:0），避免硬编码/伪随机/扫描端口",
+    "临时文件/目录要用 t.TempDir/os.CreateTemp 隔离，避免写死 /tmp 或共享全局 TempDir"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-29767",
+        "note": "mock cluster 启动时显式设置 `cfg.Socket = /tmp/tidb-mock-<ts>.sock`，避免 socket 冲突。"
+      },
+      {
+        "case_id": "pr-29835",
+        "note": "server/statistics handler 测试为 `cfg.Socket` 设置唯一 `.sock`，避免并行启动冲突。"
+      },
+      {
+        "case_id": "pr-65122",
+        "note": "将 socket 路径放入 `t.TempDir()` 下，并同时把临时 json 文件路径迁入同一目录。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-36154",
+        "note": "更像“启动 server 的 go test mode/端口冲突”综合修法，socket 只是其中一环。"
+      }
+    ]
+  }
+}
+

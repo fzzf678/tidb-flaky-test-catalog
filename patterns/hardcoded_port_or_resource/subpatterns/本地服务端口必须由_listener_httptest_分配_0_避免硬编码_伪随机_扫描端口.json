@@ -1,0 +1,79 @@
+{
+  "key": "本地服务端口必须由 listener/httptest 分配（:0），避免硬编码/伪随机/扫描端口",
+  "family": "hardcoded_port_or_resource",
+  "summary": "测试启动本地服务（HTTP/gRPC/TLS/embedded etcd/自建 server）时，不要用固定端口、rand 端口或“只分配不保留”的端口分配方式；应真正绑定 `:0`（或 `httptest.NewServer`）并使用 listener 返回的实际端口。",
+  "mechanism": "在并行执行（`make ut`/bazel/多 package 并行）或 CI 负载较高时，固定端口/伪随机端口/端口扫描区间都可能被其他测试或后台进程占用，导致 `listen ...: bind: address already in use`、连接建立失败、或连接到了错误的服务。即便使用某些“端口分配 helper”（如返回一个看似可用的 port），如果没有真正 `Listen` 去占住端口，也会出现 TOCTOU：拿到的端口在下一秒就被别的并发测试抢走。稳定修法通常是：让 OS 分配端口（`127.0.0.1:0`/`localhost:0`/`httptest.NewServer`），并从 `listener.Addr()` 取回实际端口写入配置；必要时对 `EADDRINUSE` 做有限重试。",
+  "signals_required": [
+    "patch 涉及测试或测试辅助代码启动本地网络服务（如 `http.Server`/`httptest`/`grpc.Server`/`tls.Listen`/embedded etcd 等）。",
+    "旧实现中端口存在以下至少一种风险形态：硬编码端口号、用 `rand`/`tempurl.Alloc` 等生成但未保留的端口、扫描端口区间并碰撞、或假设 `port+1` 也可用。",
+    "修复中出现真正的端口占用/获取动作：`Listen(...:0)` / `httptest.NewServer` / 从 listener 读取实际端口并回填到 client/config，或对 `EADDRINUSE` 做重试。"
+  ],
+  "signals_optional": [
+    "CI/测试失败症状包含 `bind: address already in use`、`listen tcp`、`can't start ... because no available ports` 等字样。",
+    "同一测试中需要同时分配多个端口（如 embedded etcd 的 client/peer port，或 server port/status port）。",
+    "修复同时补齐 `defer server.Close()/Stop()` 或将启动/停止放入 `Setup/TearDown`，减少端口占用泄漏窗口。"
+  ],
+  "negative_guards": [
+    "如果 patch 只是在增加 `time.Sleep` 或放宽 timeout，而没有改变端口分配/绑定策略，不要命中此 subpattern。",
+    "如果端口已由测试框架统一隔离（例如每个测试进程独立网络 namespace）且没有并行冲突风险，需要降级为 needs_more_evidence。",
+    "如果修复是“避免断言里出现固定端口字符串”，而不是端口分配本身（例如只调整 SQL 查询列/断言字段），更接近 watchlist 的断言稳定性方向。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "满足 required signals 且端口来自固定/伪随机/未保留来源时，可直接判定为 flaky risk（端口冲突在并行 UT 中非常高频）。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清测试是否并行执行（或是否会与其他测试/进程共享端口空间）。",
+      "端口虽看似固定，但服务不会真实 listen（例如只是拼接 DSN 字符串，未启动服务）。"
+    ]
+  },
+  "scope": [
+    "所有 `_test.go` 里启动本地网络服务的场景（HTTP/gRPC/TLS/etcd/mock server）。",
+    "BR/mock cluster、server tests、privilege/ldap tests 等会在 UT 内自建 listener 的测试。"
+  ],
+  "fix_hints": [
+    "优先使用 `httptest.NewServer`（HTTP）或 `net.Listen(\"tcp\", \"127.0.0.1:0\")`（通用）让 OS 分配端口。",
+    "需要写入 config/DSN 时，从 `listener.Addr()` 解析实际端口（`SplitHostPort`/`(*net.TCPAddr).Port`）。",
+    "如果必须分配多个端口（client/peer/status），分别独立获取并避免 `port+1` 假设；必要时对 `EADDRINUSE` 做有限重试。",
+    "确保 `defer Close()/Stop()`，避免端口占用泄漏影响后续测试。"
+  ],
+  "related_subpatterns": [
+    "TiDB mock/server 的 unix socket 路径需唯一（或禁用），避免 /tmp 下冲突",
+    "临时文件/目录要用 t.TempDir/os.CreateTemp 隔离，避免写死 /tmp 或共享全局 TempDir"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-14988",
+        "note": "HTTP mock server 从固定端口改为 `httptest.NewServer`，并回填实际地址。"
+      },
+      {
+        "case_id": "pr-19434",
+        "note": "gRPC mock 服务从扫描端口区间改为 `net.Listen(..., 0)` 获取实际端口。"
+      },
+      {
+        "case_id": "pr-61362",
+        "note": "fake-gcs-server 不再写死端口，改从 `server.URL()` 获取实际 host:port。"
+      },
+      {
+        "case_id": "pr-65549",
+        "note": "embedded etcd 用 `getFreePort()` + `EADDRINUSE` 重试替代 randPort/port+1 假设。"
+      },
+      {
+        "case_id": "pr-65773",
+        "note": "TLS/LDAP 测试改为 `localhost:0` 并从 listener 解析实际端口。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-33295",
+        "note": "更像“避免断言动态网络细节（instance/host/port）”而不是端口分配本身。"
+      },
+      {
+        "case_id": "pr-58006",
+        "note": "更像“避免断言 OS-specific network error string”，端口只是触发 dial 的手段。"
+      }
+    ]
+  }
+}
+

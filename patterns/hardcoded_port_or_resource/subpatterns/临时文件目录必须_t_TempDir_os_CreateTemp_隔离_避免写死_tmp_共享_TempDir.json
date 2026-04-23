@@ -1,0 +1,71 @@
+{
+  "key": "临时文件/目录要用 t.TempDir/os.CreateTemp 隔离，避免写死 /tmp 或共享全局 TempDir",
+  "family": "hardcoded_port_or_resource",
+  "summary": "测试写文件/目录时，不要把路径写死为 `/tmp/...` 或 `os.TempDir()+固定文件名`，也不要多个测试共享全局 `TempDir/TempStoragePath`；应使用 `t.TempDir()` 或 `os.CreateTemp()`/`os.MkdirTemp()` 生成 per-test 唯一路径，并在需要时临时改写全局配置后恢复。",
+  "mechanism": "当多个测试并行执行，或同一机器上重复跑 UT 时，写死的临时路径会出现两类高频不稳定：\n\n1) **命名空间冲突**：同名文件被并发创建/覆盖，触发 \"file exists\"、读到别人写的内容、或覆盖导致断言偶发失败。\n\n2) **跨测试互删**：某些测试会在结束时 `Remove/RemoveAll` 固定路径来清理；如果另一个测试刚好复用同一固定路径，文件会被提前清理掉，出现 \"file not found\"、\"unexpected EOF\" 等。\n\n稳定修法是把临时资源收敛到 test-local namespace：`t.TempDir()`、`os.CreateTemp()`、或把 `config.TempDir/TempStoragePath` 指向 test-local 路径并在 defer 中 restore。",
+  "signals_required": [
+    "patch 涉及测试写入临时文件/目录（如 dump/export/load infile、TLS 证书生成、spill/tmp storage、plan replayer 产物等）。",
+    "旧实现中路径存在以下至少一种风险形态：硬编码 `/tmp/...`、在 `os.TempDir()` 下使用固定 basename、或使用全局 `config.TempDir/TempStoragePath` 且被多个测试共享/清理。",
+    "修复中引入 test-local 的唯一路径（`t.TempDir()` / `os.CreateTemp()` / `os.MkdirTemp()` / `filepath.Join(tmp, ...)`），并在需要时把全局配置指向该路径且测试结束后恢复。"
+  ],
+  "signals_optional": [
+    "失败症状包含 `file exists`、`no such file or directory`、`remove ...`、或“被其他测试清理掉/覆盖”这类描述。",
+    "修复把 `os.RemoveAll` 从 `TestMain` 级别下沉到单测级别，并改为 per-test temp path。",
+    "修复把多个测试共用的固定路径改为按测试名/时间戳/随机后缀唯一化（但仍建议放在 `t.TempDir()` 下）。"
+  ],
+  "negative_guards": [
+    "如果路径指向的是只读 `testdata/` fixture（不会写入/删除），不要命中此 subpattern。",
+    "如果 patch 的主体是端口分配（`Listen(:0)`/httptest），而不是文件路径隔离，应优先命中端口 subpattern。",
+    "如果修复只是增加 sleep/timeout，未改变路径命名空间或清理策略，不要命中此 subpattern。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "满足 required signals 且旧实现存在固定临时路径/共享 temp dir 时，可直接判定为 flaky risk（并行 UT 下的命名空间冲突非常常见）。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "看不清该路径是否真的会被并行测试共享（例如测试进程天然隔离了工作目录/TempDir）。",
+      "路径虽在 `/tmp`，但每次都会唯一化且不会被其他测试清理（需要结合上下文判断）。"
+    ]
+  },
+  "scope": [
+    "所有在 UT 中写入临时文件/目录的场景（dump/load/cert/spill/tmp storage/plan replayer 等）。",
+    "尤其关注会 `RemoveAll` 清理固定路径、或在 `TestMain` 里清理 temp 目录的测试包。"
+  ],
+  "fix_hints": [
+    "优先使用 `tmp := t.TempDir()` 并通过 `filepath.Join(tmp, ...)` 构造所有临时路径。",
+    "需要临时文件时用 `os.CreateTemp(tmp, \"prefix\")` 或 `os.CreateTemp(\"\", \"prefix\")`（并记录 `fp.Name()`）。",
+    "如果必须改写全局配置（如 `config.TempDir/TempStoragePath`），用 `origin := ...; defer restore` 且尽量缩小作用域。",
+    "避免在 `TestMain` 级别对共享 temp path 做 `RemoveAll`；改为 per-test namespace。"
+  ],
+  "related_subpatterns": [
+    "本地服务端口必须由 listener/httptest 分配（:0），避免硬编码/伪随机/扫描端口",
+    "TiDB mock/server 的 unix socket 路径需唯一（或禁用），避免 /tmp 下冲突"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-19717",
+        "note": "`select into outfile` 测试从固定文件名改为每次生成唯一临时文件路径，避免 file exists 冲突。"
+      },
+      {
+        "case_id": "pr-31876",
+        "note": "大量写死 `/tmp/*.csv` 和 `/tmp/*cert.pem` 的测试改为 `CreateTemp/MkdirTemp` 隔离。"
+      },
+      {
+        "case_id": "pr-32225",
+        "note": "把共享 `TempStoragePath` 改成 `t.TempDir()`，避免跨测试清理/覆盖。"
+      },
+      {
+        "case_id": "pr-64457",
+        "note": "Plan replayer UT 将 `config.TempDir` 指向 `t.TempDir()` 并在测试后恢复。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-65122",
+        "note": "虽然也用 `t.TempDir()`，但主机制更集中在 TiDB server `cfg.Socket` 的 unix socket 路径冲突。"
+      }
+    ]
+  }
+}
+
