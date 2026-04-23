@@ -1,0 +1,78 @@
+{
+  "key": "TiKV/TiFlash RPC 遇到 leader/region/engine 不可用类错误时，不能直接失败；要 backoff 并换 peer 或 fallback",
+  "family": "network_without_retry",
+  "summary": "当 RPC 命中 `NotLeader/NoLeader/EpochNotMatch`、或 TiFlash/Mpp 端不可用这类“拓扑/引擎瞬态错误”时，不能把错误原样抛出导致操作/测试直接失败；要用 backoff 把重试节奏收敛，并在重试时明确换 target（换 peer 或触发 fallback）。",
+  "mechanism": "这条 subpattern 关注的不是“加 retry 次数”，而是“重试语义是否正确”。patch-backed 正例里，失败来自集群拓扑/引擎可用性在 CI/chaos/真实环境中的短暂抖动：例如 region leader 信息陈旧导致 `NoLeader/NotLeader`、region epoch 抖动导致 `EpochNotMatch`、或 TiFlash/Mpp 侧 IO/recv/dispatch 失败。若把这些错误当成 fatal error 直接 return，就会把本应可自愈的瞬态网络/拓扑抖动放大成 flaky 失败。稳定修法高度一致：把错误明确分类到 retriable 层（region/leader/engine-unavailable），用 `bo.Backoff(...)` 控制节奏，并且重试必须伴随换 target（通过 invalidation + peer rotation，或通过把错误归一为 fallback 识别的 sentinel（如 `ErrTiFlashServerTimeout`）来触发 fallback 到 TiKV），避免“原地死磕同一个 endpoint”。",
+  "signals_required": [
+    "patch 主体在 RPC/region cache/coprocessor/mpp 这类网络调用路径的错误处理与重试语义上，而不是纯业务逻辑改动。",
+    "失败机制属于拓扑/region/leader/engine 可用性短暂抖动（例如 `NotLeader/NoLeader/EpochNotMatch`、RPC resp body 缺失、TiFlash/Mpp IO/recv/dispatch error），不是确定性功能 bug。",
+    "修法包含显式的 backoff/retry 控制（例如 `bo.Backoff(...)` + `continue` 重试，或等价的 backoffer 机制）。",
+    "修法包含“换 target”的语义：要么换 peer/刷新 region cache，要么把错误归一到能触发 fallback 的 sentinel，从而让请求转到可用的备选 target（例如 TiFlash → TiKV）。"
+  ],
+  "signals_optional": [
+    "常见锚点：`GetRegionError`, `BoRegionMiss`, `NotLeader`, `NoLeader`, `EpochNotMatch`, `InvalidateCachedRegionWithReason`, `ErrTiFlashServerTimeout`, `BoTiFlashRPC`, `tidb_enable_tiflash_fallback_tikv`。",
+    "patch 可能会补 failpoint/回归测试来稳定复现 region/engine 瞬态错误路径（例如注入 epoch-not-match 或 mock RPC recv timeout）。",
+    "如果 patch 做的是“把 raw IO error 映射成 fallback 识别的超时错误”，只要目标是触发 reroute/fallback，也属于这条机制。"
+  ],
+  "negative_guards": [
+    "如果 patch 主体是端口/路径/namespace 冲突（`Port=0`、`net.Listen(\"127.0.0.1:0\")`、EADDRINUSE），应迁到 `test_isolation_and_state_pollution / 共享 namespace 资源必须 per-test 唯一化`。",
+    "如果 patch 主体是对象存储/HTTP/S3 的 streaming 重试（reopen + resume offset），属于另一条 external dependency I/O 机制，不应并入这里。",
+    "如果 patch 主体是 SQL/DB 操作的 `WithRetry` + rebuild conn + reset accumulator，属于另一条“DB retry 语义”机制，不应并入这里。",
+    "如果 patch 只是加大超时、增加 sleep、或把错误吞掉/skip，而没有 backoff + reroute/fallback 语义，应降级到相邻方向（如 `insufficient_timeout` / `async_wait_without_backoff` / `needs_more_evidence`）。",
+    "如果 patch 是 gRPC resolver/dial 行为的混合改动，但看不清它是否在修“可重试错误的语义”，应先放观察池或排除。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals，且能从 patch 看出“瞬态 RPC/拓扑错误被当 fatal 导致 flaky”时，可直接判为 flaky risk。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只看到 `Backoff(...)` 或错误映射，但看不清它是否真的触发了换 peer / fallback。",
+      "patch 同时包含大量功能性重构或测试脚本改动，主修法机制不够单一。",
+      "错误类型/场景太泛（例如普通业务错误），无法确认是网络/拓扑瞬态导致。"
+    ]
+  },
+  "scope": [
+    "TiKV region/leader 相关 RPC：NotLeader/NoLeader/EpochNotMatch 等。",
+    "TiFlash/Mpp coprocessor RPC：send/recv/dispatch IO error 触发 fallback 的路径。",
+    "任何“需要在重试时换 target 才能自愈”的内部 RPC 调用链。"
+  ],
+  "fix_hints": [
+    "对 region/leader error：用 Backoffer 分类（例如 `BoRegionMiss`）+ retry，并确保 invalidation/peer selection 会让下一次请求打到不同的可用 target。",
+    "对 TiFlash/Mpp error：把错误归一到 fallback 识别的 sentinel（如 `ErrTiFlashServerTimeout`），并使用合适的 backoff 分类（例如 `BoTiFlashRPC`），让系统能自动转到 TiKV。",
+    "补一个可控的 failpoint/mock，把瞬态错误路径变成可回归的单测/集成测试，避免“只靠 CI 运气”。"
+  ],
+  "related_subpatterns": [
+    "共享 namespace 资源必须 per-test 唯一化",
+    "async_wait_without_backoff"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-22449",
+        "note": "region cache 记住 invalid reason=NoLeader，下一次访问强制换 peer，避免反复命中同一条 stale leader 路径。"
+      },
+      {
+        "case_id": "pr-39834",
+        "note": "prepare flashback RPC 遇到 region error / missing resp / resp error 时，不直接 return，而是 `bo.Backoff(...)` 后 continue retry。"
+      },
+      {
+        "case_id": "pr-23078",
+        "note": "把 TiFlash/Mpp 的 IO/recv/dispatch error 归一成 `ErrTiFlashServerTimeout`，触发 fallback 到 TiKV；并修正 backoff 类别为 `BoTiFlashRPC`。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-30673",
+        "note": "这是 SQL/DB 操作层的 retry（rebuild conn + reset accumulator），不属于内部 RPC reroute/fallback 这条。"
+      },
+      {
+        "case_id": "pr-51506",
+        "note": "这是对象存储 streaming read 的 reopen+resume retry，不属于 region/engine RPC 这条。"
+      },
+      {
+        "case_id": "pr-65549",
+        "note": "这是端口/namespace 冲突与 deadline 缺失导致 hang，更像 test isolation 方向。"
+      }
+    ]
+  }
+}
