@@ -1,0 +1,79 @@
+{
+  "family": "network_without_retry",
+  "kind": "retrieval_signals",
+  "version": "v1",
+  "description": "Repository-scan retrieval hints for the currently formalized network_without_retry subpatterns. Use this file to build a candidate set before applying the verdict-layer subpattern JSON files.",
+  "defaults": {
+    "purpose": "candidate_retrieval_only",
+    "verdict_requires_subpattern_json": true,
+    "group_match_semantics": "For grep_keywords_all_groups, every group should match at least one keyword before the candidate is treated as high-priority.",
+    "any_match_semantics": "grep_keywords_any is only for weak recall; false positives are acceptable at this layer and should be filtered later by manual review plus the verdict-layer subpattern JSON.",
+    "exclude_semantics": "grep_keywords_exclude are soft down-rank hints by default unless the caller explicitly chooses hard exclusions. Prefer recall over precision unless a known noise class causes sibling confusion or unreviewable candidate explosion.",
+    "rg_template_semantics": "Treat broad_recall as the default first hop for coarse repository scanning. Use fallback_no_path only when broad_recall is empty, implausibly sparse, or likely to miss due to path/layout drift. Use group_intersection only as an optional lightweight shrinker after recall; it must never be treated as an absence proof or hard gate.",
+    "path_globs_semantics": "path_globs are soft search-priority hints, not hard absence proofs. If broad_recall is empty or implausibly sparse, rerun fallback_no_path before concluding the pattern is absent. A miss in group_intersection should never override a hit from broad_recall/fallback_no_path."
+  },
+  "entries": [
+    {
+      "subpattern_key": "TiKV/TiFlash RPC 遇到 leader/region/engine 不可用类错误时，不能直接失败；要 backoff 并换 peer 或 fallback",
+      "pattern_file": "TiKV_TiFlash_RPC_遇到_leader_region_engine_不可用类错误时_不能直接失败_要_backoff_并换_peer_或_fallback.json",
+      "grepability": "medium",
+      "path_globs": [
+        "store/tikv/**/*.go",
+        "store/copr/**/*.go",
+        "ddl/**/*.go",
+        "kv/**/*.go",
+        "txnkv/**/*.go",
+        "**/*.go"
+      ],
+      "grep_keywords_any": [
+        "InvalidateCachedRegionWithReason",
+        "NoLeader",
+        "NotLeader",
+        "EpochNotMatch",
+        "GetRegionError",
+        "RegionError",
+        "BoRegionMiss",
+        "Backoff(",
+        "ErrTiFlashServerTimeout",
+        "BoTiFlashRPC",
+        "tidb_enable_tiflash_fallback_tikv"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "NoLeader",
+          "NotLeader",
+          "EpochNotMatch",
+          "GetRegionError",
+          "RegionError",
+          "ErrTiFlashServerTimeout"
+        ],
+        [
+          "InvalidateCachedRegionWithReason",
+          "BoRegionMiss",
+          "Backoff(",
+          "BoTiFlashRPC",
+          "tidb_enable_tiflash_fallback_tikv"
+        ]
+      ],
+      "grep_keywords_exclude": [],
+      "first_pass_query_hint": "第一跳优先抓 region/leader/engine-unavailable 与 TiFlash fallback 的锚点；这层只做候选召回。命中后仍需回到 subpattern JSON 验证：是否存在 backoff + 换 target（换 peer / fallback）的修法语义。不要把对象存储 streaming Read 的 reopen+resume、或 SQL/DB retry（rebuild conn + per-attempt reset）混进来。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳按 region/leader error + TiFlash fallback 相关强锚点粗召回。该模板追求 recall 而非 precision，命中后必须再用 verdict-layer subpattern JSON 复核机制。",
+          "command": "rg -n -U -P -g '**/*.go' '(?i)(InvalidateCachedRegionWithReason|NoLeader|NotLeader|EpochNotMatch|GetRegionError|RegionError|BoRegionMiss|ErrTiFlashServerTimeout|BoTiFlashRPC|tidb_enable_tiflash_fallback_tikv)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 broad_recall 过 sparse 或目录布局漂移时，去掉路径限制做全仓兜底；仍然只保留同一组强锚点。",
+          "command": "rg -n -U -P '(?i)(InvalidateCachedRegionWithReason|NoLeader|NotLeader|EpochNotMatch|GetRegionError|RegionError|BoRegionMiss|ErrTiFlashServerTimeout|BoTiFlashRPC|tidb_enable_tiflash_fallback_tikv)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳 shrinker：只保留“错误类型锚点 + backoff/reroute/fallback 锚点”在局部窗口共现的候选。它只是轻量压噪，不是 absence proof；不要用它否定 broad_recall 的命中。",
+          "command": "rg -n -U -P -g '**/*.go' '(?s)((NoLeader|NotLeader|EpochNotMatch|GetRegionError|RegionError|ErrTiFlashServerTimeout).{0,260}(Backoff\\\\(|BoRegionMiss|BoTiFlashRPC|InvalidateCachedRegionWithReason|tidb_enable_tiflash_fallback_tikv))|((Backoff\\\\(|BoRegionMiss|BoTiFlashRPC|InvalidateCachedRegionWithReason|tidb_enable_tiflash_fallback_tikv).{0,260}(NoLeader|NotLeader|EpochNotMatch|GetRegionError|RegionError|ErrTiFlashServerTimeout))' <repo_root>"
+        }
+      ]
+    }
+  ]
+}
