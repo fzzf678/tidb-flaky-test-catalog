@@ -1,0 +1,112 @@
+{
+  "key": "sleep 等异步状态传播必须改成 Eventually/条件轮询",
+  "family": "time_sleep_for_sync",
+  "summary": "当测试用固定 `time.Sleep(...)` 等待异步状态“传播/可见”（后台任务、异步刷新、分布式可见性、内存状态收敛）时，CI 环境波动会导致固定窗口偶发不够；稳定修法应把 sleep 改成 `Eventually`/条件轮询（明确 condition + timeout + interval），让偶发慢不会被误判成失败。",
+  "mechanism": "这类 case 的 sleep 不是为了提供顺序屏障，而是为了给异步路径留出“足够时间”让状态变得可观测：例如后台 goroutine 更新了某个 flag、一个 manager 完成了一轮调度、系统表/缓存最终写入可读、连接状态最终切换等。固定 sleep 的问题在于：它把一个高度不确定的收敛时间当成常数。稳定修法的共同形态是把断言改成 Eventually/轮询：持续检查目标 condition，直到满足或超时，并在轮询里允许 transient error / transient mismatch。这样能显著提高鲁棒性，同时保留 failure 的可诊断性（超时仍是明确失败）。",
+  "signals_required": [
+    "patch 的问题点里，`time.Sleep(...)` 被用作等待异步状态传播/可见性的固定窗口，sleep 之后紧跟断言或依赖该状态的逻辑。",
+    "等待目标是“最终收敛/最终可见”的状态，而不是可直接握手的 ready 事件（否则应优先用确定性同步原语）。",
+    "稳定修法把 sleep 改为 `Eventually` 或带 timeout 的条件轮询：有明确的 condition（query/flag/state）以及 timeout + 轮询间隔。",
+    "修法允许短暂的不满足或 transient error（例如在 Eventually 中重复尝试），而不是把单次观测当成硬失败。"
+  ],
+  "signals_optional": [
+    "常见锚点：`require.Eventually`、`assert.Eventually`、`EventuallyMustQueryAndCheck`、`EventuallyMust...` helper、自写 `for start := time.Now(); time.Since(start) < ...` 的轮询循环。",
+    "轮询 condition 常见来自：系统表/metrics/view 的可见性、atomic flag、job/state machine 状态、远端组件 ready/epoch 更新等。",
+    "修法会把 sleep 后的硬断言拆成多个 Eventually：分别等待不同的状态位收敛（例如多个 atomic flag）。"
+  ],
+  "negative_guards": [
+    "如果 patch 只是把 sleep 加长、把循环次数/timeout 加大、或直接 Skip，而没有引入明确 condition 的 Eventually/轮询，不要命中这条。",
+    "如果 patch 通过新增固定 sleep（包括脚本层 `sleep N`、failpoint `sleep(...)`）来兜底“等异步生效”，但断言仍是单次观测（sleep 后硬断言），不要命中这条（例如：pr-46301/pr-53225）。",
+    "如果 patch 引入了轮询框架但缺少明确 timeout/deadline/maxRetry 上界（有 hang 风险），不要作为稳定正例；应降级为 `needs_more_evidence`（例如：pr-23243）。",
+    "如果 sleep 的作用是制造并发重叠窗口/编排 interleaving（而不是等待最终可见性收敛），更像 sibling 或 anti-pattern：`固定 sleep 当同步屏障必须改成确定性同步原语`（例如：pr-53225）。",
+    "如果等待对象是本地可同步的启动/初始化/握手事件（应能引入 ready 信号），更像 sibling：`固定 sleep 当同步屏障必须改成确定性同步原语`。",
+    "如果场景是 stale read / as-of timestamp 的时间/TSO 语义（sleep 用来赌时间推进），更像 sibling：`stale read / as-of timestamp 测试必须显式控制 TSO/now，而不是短 sleep`。",
+    "如果 `time.Sleep` 出现在生产代码 backoff/节流/重试间隔的业务语义中，应排除（不属于测试 flaky 同步机制）。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；固定 sleep 等异步传播是典型的 CI 抖动触发源，而 Eventually/轮询是跨模块通用且可复用的稳定修法。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只能看到轮询框架，但看不清 condition 是否真的与异步传播相关（可能只是换了写法）。",
+      "patch 把 Eventually 写成无限循环或缺少明确 timeout，导致语义不清或引入 hang 风险（例如：pr-23243）。"
+    ]
+  },
+  "scope": [
+    "任何依赖后台 goroutine / manager / worker 最终更新状态的测试。",
+    "需要等待系统表、缓存、指标、视图、epoch 或状态机最终可见的用例。",
+    "分布式/异步系统里“状态最终一致”而不是“立即可同步”的场景。"
+  ],
+  "fix_hints": [
+    "把 sleep 后的断言改成 `Eventually`：明确 condition、timeout、interval，并在失败时输出最后一次观测值以便诊断。",
+    "对多阶段收敛，用多个小 Eventually 逐阶段等待，不要用一个超长 sleep 兜底。",
+    "优先复用项目内已有 helper（例如 EventuallyMustQueryAndCheck），避免每个用例自己写不一致的轮询框架。",
+    "避免把轮询写成无限循环；必须有 timeout 上界。"
+  ],
+  "related_subpatterns": [
+    "固定 sleep 当同步屏障必须改成确定性同步原语",
+    "stale read / as-of timestamp 测试必须显式控制 TSO/now，而不是短 sleep"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-28794",
+        "note": "把 sleep 等异步生效改为带 timeout 的条件轮询/Eventually。"
+      },
+      {
+        "case_id": "pr-32622",
+        "note": "通过轮询条件等待状态可见，替代固定 sleep 窗口。"
+      },
+      {
+        "case_id": "pr-42776",
+        "note": "把 defer 里的 sleep 等 tuning finished 改成多个 require.Eventually 等状态位收敛。"
+      },
+      {
+        "case_id": "pr-44918",
+        "note": "把 sleep 等 quarantine/状态生效改成 Eventually（含错误码/边界处理）。"
+      },
+      {
+        "case_id": "pr-49317",
+        "note": "用 Eventually/轮询等待异步状态传播完成后再断言。"
+      },
+      {
+        "case_id": "pr-65229",
+        "note": "把固定 sleep 改为 Eventually 等待系统状态真正可见（带 timeout/interval）。"
+      },
+      {
+        "case_id": "pr-65732",
+        "note": "任务注册/租约状态从 sleep 窗口改为 require.Eventually，并处理 transient lease-not-found。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-4167",
+        "note": "它是把 sleep 屏障替换成 WaitGroup 握手（确定性门禁），更像 A 类。"
+      },
+      {
+        "case_id": "pr-57579",
+        "note": "它虽然也轮询，但等待的是 `@@tidb_current_ts` 达到阈值，属于 TSO/时间语义分支（C 类）。"
+      },
+      {
+        "case_id": "pr-13824",
+        "note": "仍然用 sleep(50ms) 等异步可见性，只是窗口缓解；当前先放 watchlist。"
+      },
+      {
+        "case_id": "pr-23243",
+        "note": "轮询 epoch 变化但缺 timeout 上界，且仍用 failpoint+sleep 造触发窗口；属于 B-like 但不够稳定。"
+      },
+      {
+        "case_id": "pr-46301",
+        "note": "脚本层新增 `sleep 3` 等 TiFlash replica progress；应改为有界轮询直到 condition 满足或超时。"
+      },
+      {
+        "case_id": "pr-42138",
+        "note": "GC 后加 sleep 等 finalizer 回调，属于扩大赌窗；应改为 Eventually/轮询等待回调条件（含 timeout）。"
+      },
+      {
+        "case_id": "pr-53225",
+        "note": "通过 failpoint `sleep(...)` 放大并发重叠窗口以稳定冲突复现，属于并发编排/缓解型，不是 B 的传播等待升级。"
+      }
+    ]
+  }
+}

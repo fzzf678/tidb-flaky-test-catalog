@@ -1,0 +1,188 @@
+{
+  "family": "time_sleep_for_sync",
+  "kind": "retrieval_signals",
+  "version": "v1",
+  "description": "Repository-scan retrieval hints for the currently formalized time_sleep_for_sync subpatterns. This layer is candidate retrieval only; verdicts must still come from patch review plus the subpattern JSON.",
+  "defaults": {
+    "purpose": "candidate_retrieval_only",
+    "verdict_requires_subpattern_json": true,
+    "group_match_semantics": "For grep_keywords_all_groups, every group should match at least one keyword before the candidate is treated as high-priority.",
+    "any_match_semantics": "grep_keywords_any is only for weak recall; false positives are acceptable at this layer and should be filtered later by manual review plus the verdict-layer subpattern JSON.",
+    "exclude_semantics": "grep_keywords_exclude are soft down-rank hints by default unless the caller explicitly chooses hard exclusions. Prefer recall over precision unless a known noise class causes sibling confusion or unreviewable candidate explosion.",
+    "rg_template_semantics": "Treat broad_recall as the default first hop for coarse repository scanning. Use fallback_no_path only when broad_recall is empty, implausibly sparse, or likely to miss due to helper/layout drift. Use group_intersection only as an optional lightweight shrinker after recall; it must never be treated as an absence proof or hard gate.",
+    "path_globs_semantics": "path_globs are soft search-priority hints, not hard absence proofs. Because some anchors may live in helper .go files or SQL/result assets, rerun fallback_no_path before concluding a subpattern is absent."
+  },
+  "entries": [
+    {
+      "subpattern_key": "固定 sleep 当同步屏障必须改成确定性同步原语",
+      "pattern_file": "固定_sleep_当同步屏障必须改成确定性同步原语.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "time.Sleep(",
+        "time.After(",
+        "time.NewTimer("
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "time.Sleep(",
+          "time.After(",
+          "time.NewTimer("
+        ],
+        [
+          "sync.WaitGroup",
+          "WaitGroup",
+          "wg.Wait(",
+          "chan struct{}",
+          "close(",
+          "ready",
+          "bootstrap",
+          "createSession",
+          "LoadNeededHistograms",
+          "WaitReady",
+          "waitUntilReady"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "backoff",
+        "rate limit",
+        "ratelimit",
+        "throttle",
+        "retry interval",
+        "retryInterval"
+      ],
+      "first_pass_query_hint": "第一跳先用 sleep/timer 召回，再用“同步门禁/握手锚点（WaitGroup/channel/ready/bootstrap/显式 load/wait API）”做文件级交集，优先检查 sleep 是否在充当同步屏障，而不是业务 backoff/节流。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "按 sleep/timer 入口做粗召回；默认先限制在 Go tests（*_test.go），避免把生产 backoff/节流语义大量捞进来。",
+          "command": "rg -n -F -g '**/*_test.go' -e 'time.Sleep(' -e 'time.After(' -e 'time.NewTimer(' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 sleep/timer 锚点出现在 helper 或非 test file 时，去掉路径限制做兜底召回（注意：可能爆炸）。",
+          "command": "rg -n -F -e 'time.Sleep(' -e 'time.After(' -e 'time.NewTimer(' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳把“sleep/timer”与“同步门禁/握手锚点”做文件级交集，用于排序/优先级提示；它不一定能显著 shrink（锚点较通用），也不是 absence proof。",
+          "command": "rg -l -F -g '**/*_test.go' -e 'time.Sleep(' -e 'time.After(' -e 'time.NewTimer(' <repo_root> | xargs rg -n -U -P '(?i)(sync\\.WaitGroup|WaitGroup|wg\\.Wait\\(|chan\\s+struct\\{}|close\\(|\\bready\\b|\\bbootstrap\\b|createSession|LoadNeededHistograms|WaitReady|waitUntilReady)'"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "sleep 等异步状态传播必须改成 Eventually/条件轮询",
+      "pattern_file": "sleep_等异步状态传播必须改成_Eventually_条件轮询.json",
+      "grepability": "medium",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "require.Eventually",
+        "assert.Eventually",
+        "EventuallyMust",
+        "EventuallyMustQueryAndCheck",
+        "waitUntil",
+        "waitFor"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "time.Sleep(",
+          "time.After(",
+          "time.NewTimer("
+        ],
+        [
+          "require.Eventually",
+          "assert.Eventually",
+          "EventuallyMust",
+          "EventuallyMustQueryAndCheck",
+          "waitUntil",
+          "waitFor"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "benchmark",
+        "backoff",
+        "rate limit",
+        "ratelimit",
+        "throttle"
+      ],
+      "first_pass_query_hint": "优先抓 Eventually/轮询等待相关锚点；如果只看到 sleep 而没有明确 condition+timeout，先当低优先级候选，再回到 verdict layer 判断它是否只是“加长 sleep”的缓解。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳直接按 Eventually/轮询等待锚点召回；它会跨 family 命中，但可作为优先候选池。",
+          "command": "rg -n -U -P -g '**/*_test.go' '(require\\.Eventually|assert\\.Eventually|EventuallyMust(QueryAndCheck)?|\\bwaitUntil\\b|\\bwaitFor\\b)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 Eventually/轮询等待锚点落在 helper 或非 test file 时，去掉路径限制兜底召回。",
+          "command": "rg -n -U -P '(require\\.Eventually|assert\\.Eventually|EventuallyMust(QueryAndCheck)?|\\bwaitUntil\\b|\\bwaitFor\\b)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳把 Eventually/轮询等待锚点与 sleep/timer 症状做文件级交集，帮助把“确实从 sleep 迁移到条件轮询”的候选优先挑出来；只是 shrinker，不是 absence proof。",
+          "command": "rg -l -U -P -g '**/*_test.go' '(require\\.Eventually|assert\\.Eventually|EventuallyMust(QueryAndCheck)?|\\bwaitUntil\\b|\\bwaitFor\\b)' <repo_root> | xargs rg -n -F -e 'time.Sleep(' -e 'time.After(' -e 'time.NewTimer('"
+        }
+      ]
+    },
+    {
+      "subpattern_key": "stale read / as-of timestamp 测试必须显式控制 TSO/now，而不是短 sleep",
+      "pattern_file": "stale_read_as_of_timestamp_测试必须显式控制_TSO_now_而不是短_sleep.json",
+      "grepability": "high",
+      "path_globs": [
+        "**/*_test.go"
+      ],
+      "grep_keywords_any": [
+        "as of timestamp",
+        "stale read",
+        "@@tidb_current_ts",
+        "tidb_parse_tso",
+        "oracle.ComposeTS",
+        "ExtractPhysical",
+        "injectNow",
+        "assertStaleTSO"
+      ],
+      "grep_keywords_all_groups": [
+        [
+          "as of timestamp",
+          "stale read"
+        ],
+        [
+          "@@tidb_current_ts",
+          "tidb_current_ts",
+          "tidb_parse_tso",
+          "oracle.ComposeTS",
+          "ExtractPhysical",
+          "injectNow",
+          "assertStaleTSO"
+        ]
+      ],
+      "grep_keywords_exclude": [
+        "plan cache",
+        "last_plan_from_cache",
+        "ReadFromTableCache"
+      ],
+      "first_pass_query_hint": "先抓 stale read / as-of timestamp 场景，再用 TSO/now 控制锚点做交集；这条子模式的检索层可以更 aggressive，因为锚点相对具体。",
+      "rg_templates": [
+        {
+          "name": "broad_recall",
+          "intent": "第一跳按 stale read/as-of 场景粗召回。",
+          "command": "rg -n -U -P -g '**/*_test.go' '(?i)(as\\s+of\\s+timestamp|stale\\s*read)' <repo_root>"
+        },
+        {
+          "name": "fallback_no_path",
+          "intent": "当 stale read/as-of 锚点落在 helper 或非 test file 时，去掉路径限制兜底召回。",
+          "command": "rg -n -U -P '(?i)(as\\s+of\\s+timestamp|stale\\s*read)' <repo_root>"
+        },
+        {
+          "name": "group_intersection",
+          "intent": "第二跳对 stale read/as-of 候选做 TSO/now 控制锚点交集，优先挑出“显式控制时间语义”的候选；只是 shrinker，不是 absence proof。",
+          "command": "rg -l -U -P -g '**/*_test.go' '(?i)(as\\s+of\\s+timestamp|stale\\s*read)' <repo_root> | xargs rg -n -U -P '(?i)(@@tidb_current_ts|tidb_parse_tso|oracle\\.ComposeTS|ExtractPhysical|injectNow|assertStaleTSO)'"
+        }
+      ]
+    }
+  ]
+}

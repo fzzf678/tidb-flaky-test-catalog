@@ -1,0 +1,96 @@
+{
+  "key": "stale read / as-of timestamp 测试必须显式控制 TSO/now，而不是短 sleep",
+  "family": "time_sleep_for_sync",
+  "summary": "stale read / `AS OF TIMESTAMP` 相关测试里，固定 sleep（尤其是毫秒级）常被用来赌“now/TSO 已经往前走”，从而让 snapshot 语义成立；但在不同机器、不同调度与时钟粒度下，这个假设会偶发失效。稳定修法必须显式控制时间来源或 TSO 条件（读取 `@@tidb_current_ts`、`tidb_parse_tso`、`oracle.ComposeTS`、failpoint 注入 `NOW()`，或等待 `current_ts >= expected_ts`）。",
+  "mechanism": "stale read 的核心前提是：读的 timestamp 必须稳定地落在预期的时间点（例如更新之前），而且与后续写入的 commit ts 存在明确的先后关系。用 `time.Sleep(3ms/5ms/100ms)` 试图制造这个先后关系时，会被多个因素破坏：物理时钟粒度、TSO 分配节奏、事务 begin/commit 的实际落点、CI 抢占/GC 抖动等。高纯修法的共同点是把“时间推进”从不可靠的 sleep 迁移到显式可验证的 TSO/now 控制：要么直接读取并解析 `@@tidb_current_ts`，要么用 failpoint 固定 `NOW()`，要么明确等待 `@@tidb_current_ts` 达到阈值后再执行后续步骤，从而把语义变成可证明的条件，而不是赌窗口。",
+  "signals_required": [
+    "测试场景明确涉及 stale read / `AS OF TIMESTAMP` / snapshot ts / `NOW()` 等时间相关语义，并且 sleep 的目的主要是拉开 time/TSO 的先后关系。",
+    "patch 中出现了对 `@@tidb_current_ts` / `tidb_current_ts` / `tidb_parse_tso` / `oracle.ComposeTS` / `ExtractPhysical` / failpoint 注入 now 的显式控制或校验。",
+    "修法把“sleep 一下再继续”升级为可验证的 TSO/时间条件：例如把 as-of ts 绑定到 current_ts、或等待 `current_ts >= expected_ts` 后再进行后续写入/断言。",
+    "修法的 retained 主体是时间/TSO 语义的确定化，而不是单纯把 sleep/timeout 加长。"
+  ],
+  "signals_optional": [
+    "常见锚点：`select @@tidb_current_ts`、`tidb_parse_tso(@@tidb_current_ts)`、`oracle.ComposeTS(...)`、`oracle.ExtractPhysical(...)`、`as of timestamp`、`stale read`。",
+    "修法可能通过 `begin/commit/rollback` 把读取 current_ts 的语义钉到明确的事务边界上，避免隐式 cache 或时序漂移。",
+    "也可能通过 failpoint 把 `NOW()` 固定在某个 unix 时间点上，直接去掉对 wall clock 的依赖。"
+  ],
+  "negative_guards": [
+    "如果 patch 的主轴只是把 sleep 改成 Eventually/轮询等待某个业务状态（非 TSO/时间语义），更像 sibling：`sleep 等异步状态传播必须改成 Eventually/条件轮询`。",
+    "如果 patch 只是在 stale read 相关测试里把 sleep 加长或调整 now 格式，但没有引入显式 TSO/now 控制，应降到 watchlist。",
+    "如果 patch 出现 `GetTimestamp` / `@@tidb_current_ts` 等，但语义是 flashback/DDL/cluster 的 TSO 落点选择（例如 `flashback cluster to tso ...`），而非 stale read/as-of/staleness 的 snapshot 语义，不要命中这条（例如：pr-40291/pr-55588）。",
+    "如果 patch 的核心是在等元信息可见/缓存刷新（例如 `show bindings` 读取到的 create_time/update_time 变化），sleep/Eventually 本质是传播/刷新等待，优先归到 B（例如：pr-41643）。",
+    "如果 patch 的目标是稳定耗时/trace duration 等时间输出断言（sleep 只是减少调度抖动），不属于 stale read 的 TSO/时间语义分支（例如：pr-30716）。",
+    "即便引入了 oracle TSO 时间基准（如 `oracle.GetTimeFromTS`），若修法主体仍是扩大 sleep 窗口 + buffer（而不是把时间推进变成可证明条件），仍应作为 boundary/watchlist（例如：pr-63196）。",
+    "如果场景并非 stale read / as-of timestamp，而是本地可同步的初始化/握手事件，应回到 A 类确定性同步门禁。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；stale read 的时间语义对环境敏感，固定 sleep 是典型不稳定来源，而显式 TSO/now 控制是更可证明的稳定修法。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "只看到了 `as of timestamp` 与 sleep，但没看到明确的 TSO/now 控制动作（可能只是窗口缓解）。",
+      "patch 同时混入大量 unrelated 改动，难以确认 retained 主体是否真是“TSO/时间语义确定化”。"
+    ]
+  },
+  "scope": [
+    "executor / planner / testkit 里的 stale txn、stale read、`AS OF TIMESTAMP` 相关测试。",
+    "任何需要保证“读取时间点 < 后续写入/commit 时间点”的测试。",
+    "用 `now()` / `unix_timestamp()` / `@@tidb_current_ts` 构造 snapshot 的用例。"
+  ],
+  "fix_hints": [
+    "不要用毫秒级 sleep 赌 TSO/时钟推进；优先读取并解析 `@@tidb_current_ts`，把 as-of ts 绑定到可验证的 TSO 值。",
+    "必要时在循环里等待 `@@tidb_current_ts` 达到阈值（明确 condition + timeout），再进入后续写入/断言。",
+    "如果测试依赖 `NOW()`，考虑用 failpoint 注入固定 now，避免 wall clock 漂移与粒度差异。",
+    "把读取 current_ts 的动作放到明确的事务边界里（begin/commit/rollback），减少语义歧义。"
+  ],
+  "related_subpatterns": [
+    "固定 sleep 当同步屏障必须改成确定性同步原语",
+    "sleep 等异步状态传播必须改成 Eventually/条件轮询"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-27163",
+        "note": "通过 failpoint 注入 NOW() 并断言 stale TSO，避免靠 sleep+容忍度赌时间。"
+      },
+      {
+        "case_id": "pr-44962",
+        "note": "stale read prepare 用 `@@tidb_current_ts` / `tidb_parse_tso` 固定 as-of ts，减少对短 sleep 的依赖。"
+      },
+      {
+        "case_id": "pr-57579",
+        "note": "显式等待 `@@tidb_current_ts >= expected_ts`（TSO 条件）后再做 stale read，避免时间窗口假设。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-33093",
+        "note": "`AS OF TIMESTAMP` 场景通过新增/加长 sleep 拉开 now/TSO 顺序，但缺少显式 TSO/now 控制，属于窗口缓解。"
+      },
+      {
+        "case_id": "pr-33351",
+        "note": "stale read 相关但主要通过调整 sleep/now 窗口缓解，缺少显式 TSO 控制，当前先放 watchlist。"
+      },
+      {
+        "case_id": "pr-63196",
+        "note": "staleness 用例虽引入 oracle 时间基准，但仍主要靠 sleep+buffer 造窗口；用于提醒“有 TSO 读数也不等于时间语义已确定化”。"
+      },
+      {
+        "case_id": "pr-40291",
+        "note": "flashback/DDL 的 TSO 落点选择插入短 sleep，不属于 stale read/as-of/staleness 的 snapshot 语义分支。"
+      },
+      {
+        "case_id": "pr-41643",
+        "note": "`show bindings` 可见性/刷新等待导致的 create_time/update_time 读不稳，更像 B（传播/刷新等待）而非 C。"
+      },
+      {
+        "case_id": "pr-30716",
+        "note": "通过 sleep 稳定 tracing span duration 等耗时断言，属于 timing assertion 方向，不应归入 C。"
+      },
+      {
+        "case_id": "pr-42776",
+        "note": "它是 Eventually 等状态收敛，不涉及 TSO/时间语义；属于 B 类。"
+      }
+    ]
+  }
+}

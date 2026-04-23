@@ -1,0 +1,111 @@
+{
+  "key": "固定 sleep 当同步屏障必须改成确定性同步原语",
+  "family": "time_sleep_for_sync",
+  "summary": "当测试或 harness 用固定 `time.Sleep(...)` 充当“同步屏障/握手”（赌 goroutine 已启动、初始化已完成、某个 ready 事件已发生）时，CI 调度抖动会把这个时间窗打穿；稳定修法必须把 sleep 屏障替换成确定性同步原语或确定性 ready 门禁（WaitGroup/channel/ready-notify/显式阻塞式 API）。",
+  "mechanism": "这类 case 的 sleep 不是为了“让系统慢慢收敛”，而是承担了一个本应由同步原语提供的顺序约束：A 先触发异步启动/初始化，然后 sleep 一段时间，最后 B 假定前置步骤已完成并继续读写共享对象或做断言。只要机器更慢、调度更挤、GC/IO 抖动更大，这个“赌窗口”就会偶发失效。高纯修法的共同点是：把“时间窗”改成“事件/状态门禁”，要么直接引入 `WaitGroup`/channel 等握手，要么改成显式阻塞式 API（例如显式 load/启动/等待 ready 的调用），让测试在继续之前能确定性地等到关键步骤完成。",
+  "signals_required": [
+    "patch 的问题点里，`time.Sleep(...)` 被用作同步屏障：它发生在启动 goroutine/worker/初始化之后、断言/使用资源之前，用来赌“已经 ready”。",
+    "sleep 等待的对象是本地可同步的初始化/启动/握手事件（例如 session 创建、worker 启动、组件 ready），而不是不可控的最终一致传播。",
+    "稳定修法引入或强化了确定性同步门禁：WaitGroup/channel/ready-notify/显式等待 ready 的阻塞式 API（例如显式 load/Start 完成后再继续）。",
+    "修法不再依赖“把 sleep 加长/加倍”来解决；核心是用确定性门禁替代时间窗。"
+  ],
+  "signals_optional": [
+    "常见锚点：`sync.WaitGroup`、`wg.Add/Done/Wait`、`chan struct{}`、`<-readyCh` / `close(readyCh)`、`Notify/Wait`、`Start...` + `WaitReady(...)`。",
+    "有些修法会把“先 sleep 再继续”的逻辑改成“显式调用某个 load/初始化 API”，例如 `LoadNeededHistograms()`、显式 bootstrap/Start 顺序调整等。",
+    "diff 里经常能看到注释语义从“wait a while”变成“wait until X is ready”。"
+  ],
+  "negative_guards": [
+    "如果 sleep 的目的主要是等待异步状态传播/可见性（例如后台任务最终完成、状态最终一致），更像 sibling：`sleep 等异步状态传播必须改成 Eventually/条件轮询`。",
+    "如果 patch 的主体是 stale read / as-of timestamp 的 TSO/now 语义（sleep 只是为了让时间走动），更像 sibling：`stale read / as-of timestamp 测试必须显式控制 TSO/now，而不是短 sleep`。",
+    "如果 patch 只是把 sleep/timeout 加长、增加重试次数或直接 Skip，并没有引入确定性门禁，不要命中这条。",
+    "如果 patch 的核心做法是通过新增/调大 sleep 来“更可能”让对端执行流推进到某个阶段（进入阻塞、完成订阅、SQL 开始 running 等），但没有建立可证明的 ready/blocked 握手门禁，这属于调度窗口工程（未完成的同步屏障修法），当前应保持 watchlist（例如：pr-18227/pr-21733/pr-15094/pr-16610/pr-38198/pr-44709）。",
+    "如果 patch 只是把 `runtime.Gosched()`/让位替换成固定 sleep 来稳定 interleaving，本质仍是赌调度与机器速度，不要命中（例如：pr-59100）。",
+    "如果 `time.Sleep` 出现在生产代码 backoff/节流/重试间隔等业务语义中，应排除出本 family（不属于“测试用 sleep 同步”机制）。"
+  ],
+  "verdict_policy": {
+    "default": "risk",
+    "threshold": "命中全部 required signals 时可直接判定为 flaky risk；这条机制的共同点是“用时间窗模拟同步”，且修法高度一致：用确定性同步门禁替代固定 sleep。",
+    "downgrade_to": "needs_more_evidence",
+    "downgrade_when": [
+      "sleep 前后看不清到底是在同步启动/初始化事件，还是在等最终一致状态传播。",
+      "patch 同时混入了大量 unrelated 重构或功能修改，难以确认 retained 主体是否真是“用确定性门禁替代 sleep 屏障”。"
+    ]
+  },
+  "scope": [
+    "启动 goroutine/worker 后立刻依赖其副作用或状态的测试/harness。",
+    "初始化/bootstrapping 之后，需要等 ready 才能继续的组件（session、后台 worker、stats load 等）。",
+    "任何用“sleep 一下再继续”来提供顺序保证的测试代码。"
+  ],
+  "fix_hints": [
+    "优先引入明确的 ready 信号：channel/WaitGroup/notify 回调，让等待方只在收到 ready 后继续。",
+    "如果存在阻塞式的“等待 ready”API，优先用 API 替代 sleep（例如显式 load/启动/等待完成）。",
+    "把同步边界收口到 helper：提供 `StartAndWaitReady()` / `waitUntilReady()` 之类可复用门禁，避免每个用例自己写 sleep。",
+    "避免通过加长 sleep 解决问题；那只是在扩大赌窗。"
+  ],
+  "related_subpatterns": [
+    "sleep 等异步状态传播必须改成 Eventually/条件轮询",
+    "stale read / as-of timestamp 测试必须显式控制 TSO/now，而不是短 sleep"
+  ],
+  "examples": {
+    "positive": [
+      {
+        "case_id": "pr-4167",
+        "note": "GC worker 启动/会话创建用 WaitGroup 做握手，去掉 createSession 里的固定 sleep。"
+      },
+      {
+        "case_id": "pr-8597",
+        "note": "stats 测试不再 sleep 等待，改为显式触发/等待 stats load（例如 LoadNeededHistograms）。"
+      },
+      {
+        "case_id": "pr-14805",
+        "note": "用确定性门禁等待后台路径 ready，避免 sleep 作为屏障。"
+      },
+      {
+        "case_id": "pr-24082",
+        "note": "启动/初始化顺序调整，把“先启动再 sleep”改成“完成 bootstrap 后再启动”。"
+      },
+      {
+        "case_id": "pr-37873",
+        "note": "用显式同步保证异步任务进入可观测状态后再继续断言。"
+      },
+      {
+        "case_id": "pr-53636",
+        "note": "通过 ready-信号/阻塞式等待替代固定 sleep 屏障。"
+      }
+    ],
+    "boundary": [
+      {
+        "case_id": "pr-42776",
+        "note": "它把 sleep 换成 Eventually/轮询等待状态收敛；这是 B 类，不是确定性握手。"
+      },
+      {
+        "case_id": "pr-33351",
+        "note": "stale read 时间语义相关，sleep 用来拉开 now/ts；更像 C 类。"
+      },
+      {
+        "case_id": "pr-32949",
+        "note": "引入 WaitGroup 但仍依赖 sleep 窗口，属于 mixed/mitigation，当前先放 watchlist。"
+      },
+      {
+        "case_id": "pr-18227",
+        "note": "用新增 sleep 当让位屏障，赌另一个连接/回调循环推进到某阶段；机制像 A，但修法仍是时间窗。"
+      },
+      {
+        "case_id": "pr-44709",
+        "note": "Watch/Notify 之间缺少“订阅已生效”的确定性握手，靠 sleep/拉超时兜底；机制像 A，但仍是缓解型。"
+      },
+      {
+        "case_id": "pr-38198",
+        "note": "用 sleep 赌 SQL 已进入 running 阶段再并发施压触发 OOM 行为；缺少可观测/可握手的 started 信号。"
+      },
+      {
+        "case_id": "pr-16610",
+        "note": "在 oneflight 的 loadFunc 里 sleep 人为制造并发重叠窗口；属于调度窗口工程，不是确定性门禁。"
+      },
+      {
+        "case_id": "pr-59100",
+        "note": "把 yield/Gosched 换成固定 sleep 试图稳定 interleaving；仍是赌调度，不构成 A 的确定性同步替换。"
+      }
+    ]
+  }
+}
